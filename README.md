@@ -13,10 +13,17 @@ pip install -r ./requirements.txt
 pip freeze > requirements.txt
 ```
 
-# command
+# jupyter notebook起動
 ```
 jupyter notebook
 ```
+
+# jupyer notebookで自動補完を動かす
+```
+jupyter nbextensions_configurator enable
+
+```
+Nbextentionsタブ内のHinterlandを有効にする
 
 # venv
 ```
