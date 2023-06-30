@@ -8,6 +8,11 @@ source env/bin/activate
 pip install -r ./requirements.txt
 ```
 
+# add pip list
+```
+pip freeze > requirements.txt
+```
+
 # command
 ```
 jupyter notebook
