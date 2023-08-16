@@ -10,31 +10,31 @@
 ## イメージ
 ![tizu](https://github.com/ritogk/speedio/assets/72111956/45f0e260-7a98-4e1a-8178-4b9bad5fdb3b)
 
-# setup
+## setup
 ```
 python3 -m venv env
 source env/bin/activate
 pip install -r ./requirements.txt
 ```
 
-# add pip list
+## add pip list
 ```
 pip freeze > requirements.txt
 ```
 
-# jupyter notebook起動
+## jupyter notebook起動
 ```
 jupyter notebook
 ```
 
-# jupyer notebookで自動補完を動かす
+## jupyer notebookで自動補完を動かす
 ```
 jupyter nbextensions_configurator enable
 
 ```
 Nbextentionsタブ内のHinterlandを有効にする
 
-# venv
+## venv
 ```
 # 仮想環境作成
 python3 -m venv env
