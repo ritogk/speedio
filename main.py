@@ -11,7 +11,7 @@ def main():
   # 指定範囲のエッジとノードを取得
   graph = ox.graph_from_point(center_point=(latitude, longitude)
                                   , network_type='drive'
-                                  , dist=1000
+                                  , dist=3000
                                   , simplify=True
                                   , custom_filter='["highway"~"tertiary|secondary|primary"]')
   # グラフデータをpandasのdataFrame形式に変換
