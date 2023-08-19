@@ -3,7 +3,7 @@ import folium
 import geopandas as gpd
 from typing import List
 import helper
-from edge_network_search import EdgeNetworkSearch
+from old.edge_network_search import EdgeNetworkSearch
 
 def main():
   latitude = 35.334446
