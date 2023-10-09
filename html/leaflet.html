@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Leaflet CSSとスタイルのリンク -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    />
+    <style>
+      /* 地図のコンテナのスタイル */
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <!-- Leaflet JavaScriptのリンク -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+      var latitude = 35.338218
+      var longitude = 137.005638 // 経度を指定
+
+      // 地図を初期化し、指定位置を中心にする
+      var map = L.map("map").setView([latitude, longitude], 13)
+
+      // OpenStreetMapのタイルレイヤーを追加
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map)
+
+      // 緯度経度のポイントを指定
+      var polylineCoordinates1 = [
+        [35.337112, 137.001513], // ポイント1
+        [35.334435, 136.990727], // ポイント2
+        [35.329611, 136.989003], // ポイント3
+        // 追加のポイントをここに指定
+      ]
+      // ポリライン（ライン）を描画し、地図に追加
+      var polyline1 = L.polyline(polylineCoordinates1, {
+        color: "blue",
+        width: 3,
+      })
+        .bindPopup("You clicked the 2222!")
+        .addTo(map)
+
+      // 緯度経度のポイントを指定
+      var polylineCoordinates2 = [
+        [35.350758, 137.004756], // ポイント1
+        [35.356469, 137.004367], // ポイント2
+        // 追加のポイントをここに指定
+      ]
+      // ポリライン（ライン）を描画し、地図に追加
+      var polyline2 = L.polyline(polylineCoordinates2, {
+        color: "blue",
+        width: 3,
+        popup: "This is a Polyline2",
+      }).addTo(map)
+      polyline2.on("click", function () {
+        polyline2.bindPopup("You clicked the Polyline!").openPopup()
+      })
+    </script>
+  </body>
+</html>
