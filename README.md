@@ -8,11 +8,10 @@ UI作成
 API作成  
 
 ## 抽出したワインディング
-緑 = 候補  
+青 = 候補  
 赤 = 有力候補  
-![image](https://github.com/ritogk/speedio/assets/72111956/90c69e60-b7b2-4d2b-831f-112aeafaaf92)
+![image](https://github.com/ritogk/speedio/assets/72111956/65daca0c-838f-4dcf-88cc-7ba7c43c439f)
 
-![image](https://github.com/ritogk/speedio/assets/72111956/bfb7904c-dfb4-490a-92b5-0c05cc524bf0)
 
 
 
