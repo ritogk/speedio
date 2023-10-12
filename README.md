@@ -1,15 +1,19 @@
 # speedio
 
 ## タスク
-[済] ワインディングを抽出するロジックを作る  
-抽出したワインディングを実際に運転してみて自分が評価する
-UI作成
-API作成
+[済] ワインディングを抽出する評価関数をざっくり作る  
+評価関数に高低差をふくめる    
+評価関数に信号をふくめる  
+UI作成  
+API作成  
 
 ## 抽出したワインディング
 緑 = 候補  
 赤 = 有力候補  
 ![image](https://github.com/ritogk/speedio/assets/72111956/90c69e60-b7b2-4d2b-831f-112aeafaaf92)
+
+![image](https://github.com/ritogk/speedio/assets/72111956/bfb7904c-dfb4-490a-92b5-0c05cc524bf0)
+
 
 
 ## flask起動
