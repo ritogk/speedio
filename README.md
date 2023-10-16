@@ -5,7 +5,7 @@
 [済] 評価関数に高低差をふくめる  
 高度をgoogle elevation apiからではなくて基盤地図情報のデータから取得する(金がかかるので)  
 UI作成  
-API作成  
+JupyterNoteBookのコードをAPI化   
 
 ## 抽出したワインディング
 青 = 候補  
