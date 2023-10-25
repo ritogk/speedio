@@ -24,10 +24,6 @@ JupyterNoteBookのコードをAPI化
 flask --app server run
 ```
 
-
-## イメージ
-![tizu](https://github.com/ritogk/speedio/assets/72111956/45f0e260-7a98-4e1a-8178-4b9bad5fdb3b)
-
 ## setup
 ```
 python3 -m venv env
