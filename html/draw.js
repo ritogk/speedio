@@ -28,6 +28,7 @@ export const draw = () => {
     const streetViewStUrl = `https://www.google.com/maps/@${st[0]},${st[1]},20?layer=c&cbll=${st[0]},${st[1]}&cbp=12,0,0,0,0`
     const streetViewCenterUrl = `https://www.google.com/maps/@${center[0]},${center[1]},20?layer=c&cbll=${center[0]},${center[1]}&cbp=12,0,0,0,0`
     const streetViewEdUrl = `https://www.google.com/maps/@${ed[0]},${ed[1]},20?layer=c&cbll=${ed[0]},${ed[1]}&cbp=12,0,0,0,0`
+    const mapRouteUrl = `https://www.google.co.jp/maps/dir/${st[0]},${st[1]}/'${ed[0]},${ed[1]}'`
     const googleEarthCenterUrl = `https://earth.google.com/web/search/${center[0]},+${center[1]}`
 
     var color
@@ -43,8 +44,10 @@ export const draw = () => {
     })
       .bindPopup(
         `
+        center: <a href="${mapRouteUrl}" target="_blank">mapRouteUrl</a><br><br>
             center: <a href="${streetViewCenterUrl}" target="_blank">streetViewCenter</a><br><br>
             center: <a href="${googleEarthCenterUrl}" target="_blank">googleEarthCenter</a><br><br>
+            rate: ${rate}
             `,
         { maxWidth: 400 }
       )
