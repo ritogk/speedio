@@ -5,3 +5,5 @@
 .env
 key_store
 /html/target.json
+
+*.tif
