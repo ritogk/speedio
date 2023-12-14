@@ -7,3 +7,7 @@ key_store
 /html/target.json
 
 *.tif
+
+key_store.bak
+key_store.dat
+key_store.dir
