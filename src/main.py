@@ -126,9 +126,8 @@ def main() -> GeoDataFrame:
         lambda x: list(map(lambda y: [y[1], y[0]], x.coords))
     )
 
+    # jsonに変換して出力する
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
-
-    # jsonに変換する
     gdf_edges[
         [
             "geometry_list",
