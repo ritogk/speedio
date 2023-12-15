@@ -11,3 +11,8 @@ key_store
 key_store.bak
 key_store.dat
 key_store.dir
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
