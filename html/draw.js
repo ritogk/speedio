@@ -20,6 +20,9 @@ export const draw = () => {
   // // 上位10件を抽出
   // target = target.sort((a, b) => b.score - a.score).slice(0, 10);
 
+  // targetのscore_normalizationを大きい順に並び替える
+  target.sort((a, b) => a.score_normalization - b.score_normalization);
+
   target.forEach((x) => {
     const polyline = x.geometry_list;
     debugger;
