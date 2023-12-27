@@ -17,10 +17,10 @@ def short_search() -> GeoDataFrame:
     latitude_end = 35.402261
     longitude_end = 137.072889
 
-    # latitude_start = 35.479240
-    # longitude_start = 136.983065
-    # latitude_end = 35.313280
-    # longitude_end = 137.172579
+    # latitude_start = 35.522528
+    # longitude_start = 136.457897
+    # latitude_end = 34.880662
+    # longitude_end = 137.768017
 
     # # 自宅 ~ 豊橋方面
     # latitude_start = 35.371642
@@ -135,7 +135,18 @@ def short_search() -> GeoDataFrame:
     gdf_edges["street_view_url"] = column_generater.street_view_url.generate(gdf_edges)
     excution_timer_ins.stop()
 
-    # 上位5件を抽出する
+    # 上位5件を抽出して最短ルートを求める
+    excution_timer_ins.start("calc short_root")
+    g_all = ox.graph_from_bbox(
+        north=max(latitude_start, latitude_end),
+        south=min(latitude_start, latitude_end),
+        east=max(longitude_start, longitude_end),
+        west=min(longitude_start, longitude_end),
+        network_type="drive",
+        simplify=True,
+        retain_all=True,
+    )
+
     gdf_edges = gdf_edges.head(5)
     current_location = (35.352738, 136.922609)
 
@@ -161,12 +172,54 @@ def short_search() -> GeoDataFrame:
         ]
 
     # Function to calculate the total distance of a route
+
+    two_node_distances = {}
+
     def calculate_route_distance(route):
         total_distance = 0
+        routes = []
+        # short_routeの合計をグラフで表示する
         for i in range(len(route) - 1):
-            total_distance += geodesic(
-                points[route[i]], points[route[i + 1]]
-            ).kilometers
+            # 最短経路を取得
+            # print(route[i])
+            node_start = ox.nearest_nodes(
+                g_all, points[route[i]][1], points[route[i]][0]
+            )
+            # print(node_start)
+            # print(route[i + 1])
+            node_end = ox.nearest_nodes(
+                g_all, points[route[i + 1]][1], points[route[i + 1]][0]
+            )
+            shortest_route = ox.shortest_path(g_all, node_start, node_end)
+
+            if shortest_route != None:
+                routes.append(shortest_route)
+                # 最短経路を可視化する
+                if f"{node_start}_{node_end}" not in two_node_distances:
+                    gdf = ox.utils_graph.route_to_gdf(g_all, shortest_route, "length")
+                    # ox.plot_graph_route(g_all, shortest_route)
+                    # print(
+                    #     f'st_{route[i]}: {points[route[i]][0]},{points[route[i]][1]} ed_{route[i+1]}: {points[route[i + 1]][0]},{points[route[i+1]][1]} length_total:{gdf["length"].sum()}'
+                    # )
+
+                    # なんかここの単位がおかしい気がする。ほんとにm?
+                    length_total = gdf["length"].sum()
+                    total_distance += length_total
+                    two_node_distances[f"{node_start}_{node_end}"] = length_total
+                    two_node_distances[f"{node_end}_{node_start}"] = length_total
+                else:
+                    total_distance += two_node_distances[f"{node_start}_{node_end}"]
+
+            # ox.shortest_path(graph, node_start, node_end, weight="length")
+            # # 経路上の各エッジの距離を合計してルートの全長を計算
+            # route_distance = sum(ox.utils_graph.get_route_edge_attributes(graph, route, 'length')
+
+            # total_distance += geodesic(
+            #     points[route[i]], points[route[i + 1]]
+            # ).kilometers
+
+        print(total_distance)
+        ox.plot_graph_routes(g_all, routes)
         return total_distance
 
     # 2-opt Swap function
@@ -192,6 +245,8 @@ def short_search() -> GeoDataFrame:
                     ):
                         route = new_route
                         improvement = True
+        print("route")
+        print(calculate_route_distance(route))
         return route
 
     # Initial route without the start/end point A
@@ -202,6 +257,15 @@ def short_search() -> GeoDataFrame:
     optimized_route = two_opt(initial_route)
 
     print(optimized_route)
+
+    # optimized_routeの緯度と経度を出力する
+    for i in range(1, len(optimized_route) - 1):
+        now_name = optimized_route[i]
+        now_st_point = edges[now_name][0]
+        now_ed_point = edges[now_name][1]
+        print(
+            f"name: {now_name}st: {now_st_point[0]},{now_st_point[1]}, ed] {now_ed_point[0]},{now_ed_point[1]}"
+        )
 
     routes_seikika = [current_location]
     # routes_seikikaの頭とけつをのぞいたものをループさせる
@@ -243,6 +307,7 @@ def short_search() -> GeoDataFrame:
     routes_seikika.append(current_location)
 
     print(routes_seikika)
+    excution_timer_ins.stop()
 
     # # LINESTRINGを緯度と経度のリストに変換する.coords[0]とcoords[1]を入り変えたリストを返す
     gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
