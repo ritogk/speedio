@@ -143,8 +143,9 @@ def short_search() -> GeoDataFrame:
         east=max(longitude_start, longitude_end),
         west=min(longitude_start, longitude_end),
         network_type="drive",
-        simplify=True,
+        simplify=False,
         retain_all=True,
+        custom_filter='["toll"!~"yes"]',
     )
 
     gdf_edges = gdf_edges.head(5)
@@ -177,49 +178,36 @@ def short_search() -> GeoDataFrame:
 
     def calculate_route_distance(route):
         total_distance = 0
-        routes = []
+        # shortest_routes = []
         # short_routeの合計をグラフで表示する
         for i in range(len(route) - 1):
             # 最短経路を取得
-            # print(route[i])
             node_start = ox.nearest_nodes(
-                g_all, points[route[i]][1], points[route[i]][0]
+                graph, points[route[i]][1], points[route[i]][0]
             )
-            # print(node_start)
-            # print(route[i + 1])
             node_end = ox.nearest_nodes(
-                g_all, points[route[i + 1]][1], points[route[i + 1]][0]
+                graph, points[route[i + 1]][1], points[route[i + 1]][0]
             )
+            # 開始と終了位置を表示
+            print(f"{route[i]} -->{route[i + 1]}")
             shortest_route = ox.shortest_path(g_all, node_start, node_end)
-
             if shortest_route != None:
-                routes.append(shortest_route)
+                # shortest_routes.append(shortest_route)
                 # 最短経路を可視化する
                 if f"{node_start}_{node_end}" not in two_node_distances:
+                    print("new")
                     gdf = ox.utils_graph.route_to_gdf(g_all, shortest_route, "length")
-                    # ox.plot_graph_route(g_all, shortest_route)
-                    # print(
-                    #     f'st_{route[i]}: {points[route[i]][0]},{points[route[i]][1]} ed_{route[i+1]}: {points[route[i + 1]][0]},{points[route[i+1]][1]} length_total:{gdf["length"].sum()}'
-                    # )
-
-                    # なんかここの単位がおかしい気がする。ほんとにm?
                     length_total = gdf["length"].sum()
                     total_distance += length_total
                     two_node_distances[f"{node_start}_{node_end}"] = length_total
                     two_node_distances[f"{node_end}_{node_start}"] = length_total
                 else:
                     total_distance += two_node_distances[f"{node_start}_{node_end}"]
+            else:
+                print(f"None")
 
-            # ox.shortest_path(graph, node_start, node_end, weight="length")
-            # # 経路上の各エッジの距離を合計してルートの全長を計算
-            # route_distance = sum(ox.utils_graph.get_route_edge_attributes(graph, route, 'length')
-
-            # total_distance += geodesic(
-            #     points[route[i]], points[route[i + 1]]
-            # ).kilometers
-
-        print(total_distance)
-        ox.plot_graph_routes(g_all, routes)
+        # print(total_distance)
+        # ox.plot_graph_routes(g_all, routes)
         return total_distance
 
     # 2-opt Swap function
@@ -245,8 +233,6 @@ def short_search() -> GeoDataFrame:
                     ):
                         route = new_route
                         improvement = True
-        print("route")
-        print(calculate_route_distance(route))
         return route
 
     # Initial route without the start/end point A
@@ -264,7 +250,7 @@ def short_search() -> GeoDataFrame:
         now_st_point = edges[now_name][0]
         now_ed_point = edges[now_name][1]
         print(
-            f"name: {now_name}st: {now_st_point[0]},{now_st_point[1]}, ed] {now_ed_point[0]},{now_ed_point[1]}"
+            f"name: {now_name} st: {now_st_point[0]},{now_st_point[1]}, ed: {now_ed_point[0]},{now_ed_point[1]}"
         )
 
     routes_seikika = [current_location]
