@@ -9,17 +9,22 @@ from .core import shortest_navi_generater
 
 
 def main() -> GeoDataFrame:
-    # 自宅周辺の軽いデータ
-    latitude_start = 35.330878
-    longitude_start = 136.951774
-    latitude_end = 35.402261
-    longitude_end = 137.072889
+    # # 自宅周辺の軽いデータ
+    # latitude_start = 35.330878
+    # longitude_start = 136.951774
+    # latitude_end = 35.402261
+    # longitude_end = 137.072889
 
     # # 自宅 ~ 豊橋方面
     # latitude_start = 35.371642
     # longitude_start = 136.967037
     # latitude_end = 34.833082
     # longitude_end = 137.672158
+
+    latitude_start = 35.962525
+    longitude_start = 136.718364
+    latitude_end = 33.610539
+    longitude_end = 135.151121
 
     excution_timer_ins = excution_timer.ExcutionTimer()
 
@@ -122,18 +127,18 @@ def main() -> GeoDataFrame:
     gdf_edges["street_view_url"] = column_generater.street_view_url.generate(gdf_edges)
     excution_timer_ins.stop()
 
-    # ナビゲーション用URLを生成する
-    excution_timer_ins.start("create navigation_url")
-    shortest_navi_generater.generate(
-        latitude_start,
-        longitude_start,
-        latitude_end,
-        longitude_end,
-        graph,
-        gdf_edges,
-        10,
-    )
-    excution_timer_ins.stop()
+    # # ナビゲーション用URLを生成する
+    # excution_timer_ins.start("create navigation_url")
+    # shortest_navi_generater.generate(
+    #     latitude_start,
+    #     longitude_start,
+    #     latitude_end,
+    #     longitude_end,
+    #     graph,
+    #     gdf_edges,
+    #     10,
+    # )
+    # excution_timer_ins.stop()
 
     # # LINESTRINGを緯度と経度のリストに変換する.coords[0]とcoords[1]を入り変えたリストを返す
     gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
