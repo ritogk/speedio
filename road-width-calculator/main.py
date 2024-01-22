@@ -115,21 +115,38 @@ def sample_line_string(df, id_column="rID", interval=1):
     return tmp
 
 
+# 線データの上に等間隔に点を発生させる
 sampled_points = sample_line_string(road_center_proj)
 
+# こいつは何をしているの？
 road_edge_union = road_edge_proj["geometry"].unary_union
-ray_length = 20
+ray_length = 20  # 法線を伸ばす長さ
 
 
+# 衝突した要素のうち，発生元の点に最も近い点を求める
+# ★★★★ラインストリングの道幅の最小値を道幅にしている。ここは組み込む時に検証する必要あり。
 def compute_half_road_width(shape, point, normal, ray_length, invert_normal=False):
+    # shape: 道路縁の線データ(MultiStrings)
+    # point: 線の上に発生させた点
+    # normal: 法線の何かしらのデータ。ベクトルらしい。
+    # ray_length: 法線から伸ばす長さ
+    # invert_normal: 法線を反転させる。半径だけ取得できれば道幅はわかる。
     if invert_normal:
         normal = normal * -1
+    # 開始地点
     src = point
+    # 終了地点
+    # normal * ray_lengthで法線ベクトルを増幅させてる
+    # その増幅した値と増幅したベクトルを足したら終了地点になるのか。
     dst = point + normal * ray_length
+    # 道路縁と法線を伸ばした線のラインストリングを生成
     ray = shapely.geometry.LineString([src, dst])
+    # linestringとshape内のlinestringの交点を求める
     intersection = ray.intersection(shape)
+    # 交差点がない場合はnanを返す
     if intersection.is_empty:
         return np.nan
+    # 座標系を緯度経度に変換
     coords = (
         gpd.GeoSeries([intersection])
         .explode()
@@ -137,14 +154,20 @@ def compute_half_road_width(shape, point, normal, ray_length, invert_normal=Fals
         .explode()
         .reset_index(drop=True)
     )
+    # 衝突した点までの距離を求めているっぽいけど、よくわからん・・・
     sortable = (
         coords.apply(lambda x: x[0] - point[0])
+        # .7ってなんだ・・？
         if normal[0] > 0.7
         else coords.apply(lambda x: x[1] - point[1])
     )
+    # 絶対値を求めて符号を消す
     abs_sortable = np.abs(sortable.values)
+    # 最小値のインデックスを取得
     argmin = np.argmin(abs_sortable)
+    # 幅が最小の点の座標を取得
     coord = coords[argmin]
+    # 2点間の距離を求める
     distance = np.sqrt((coord[0] - point[0]) ** 2 + (coord[1] - point[1]) ** 2)
     return distance
 
