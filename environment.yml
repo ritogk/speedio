@@ -19,7 +19,7 @@ dependencies:
   - c-ares=1.19.1=h5eee18b_0
   - ca-certificates=2023.11.17=hbcca054_0
   - cairo=1.16.0=hb05425b_5
-  - certifi=2023.11.17=py311h06a4308_0
+  - certifi=2023.11.17=pyhd8ed1ab_0
   - cfitsio=4.2.0=hd9d235c_0
   - charset-normalizer=3.3.2=pyhd8ed1ab_0
   - click=8.1.7=unix_pyh707e725_0
@@ -47,8 +47,10 @@ dependencies:
   - freetype=2.12.1=h4a9f257_0
   - freexl=1.0.6=h27cfd23_0
   - gdal=3.6.2=py311hadb6153_9
+  - geographiclib=1.52=pyhd8ed1ab_0
   - geopandas=0.14.1=pyhd8ed1ab_0
   - geopandas-base=0.14.1=pyha770c72_0
+  - geopy=2.4.1=pyhd8ed1ab_0
   - geos=3.11.1=h27087fc_0
   - geotiff=1.7.1=h7a142b4_6
   - gettext=0.21.1=h27087fc_0
