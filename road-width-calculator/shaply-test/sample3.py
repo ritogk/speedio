@@ -30,6 +30,8 @@ def to_xy(lat, lon):
 # 座標系を緯度経度から平面直角座標系に変換
 road_center = gpd.read_file("./combined_json.geojson")
 road_center = road_center.to_crs("EPSG:6677")
+road_edge = gpd.read_file("../roadEdge_clipped.geojson")
+road_edge_proj = road_edge.to_crs("EPSG:6677")
 # road_centerからgeometryのみを取り出す
 lines = road_center["geometry"]
 
@@ -52,27 +54,48 @@ for i in range(len(edges)):
 # んじゃあ、空間インデックスを含む固定値を保存しておいたほうがいいかも。
 geo_index = road_center.sindex
 print(time.time() - time_st)
-nearest_area = []
+nearest_lines = []
 for edge in edges:
     area = []
     for point in edge:
         # 空間インデックスを使用して最も近いLineStringを取得
         a = geo_index.nearest(point, max_distance=100)
-        # print(f"x: {point.x} y: {point.y} index: {a[1:]}")
 
         # なぜか先頭にindex番号0が含まれているので消す。
         a = a[1:]
         line = lines.iloc[a[0][0]]
         syototu_point = nearest_points(line, point)[0]
         area.append(syototu_point)
-    nearest_area.append(LineString(area))
+    nearest_lines.append(LineString(area))
+
+normals = []
+for line in nearest_lines:
+    # lineの0と1の点を取り出す
+    p1 = line.coords[0]
+    p2 = line.coords[1]
+    # 法線ベクトルを求める
+    dx = p2[0] - p1[0]
+    dy = p2[1] - p1[1]
+    len = np.sqrt(dx * dx + dy * dy)
+    normal = np.array([-dy, dx]) / len
+    normal_length = 20
+    # 法線ベクトルを使って線分を伸ばす
+    # p1 = np.array(p1)
+    p2 = np.array(p2)
+    # p1 = p1 + normal * normal_length
+    p_normal = p2 + normal * normal_length
+    normals.append(LineString([p2, p_normal]))
 
 # nearest_areaのを描画
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(11, 11))
 for line in lines:
     ax.plot(*line.xy, color="blue", linewidth=1)
-for area in nearest_area:
-    ax.plot(*area.xy, color="red", linewidth=3)
+for line in nearest_lines:
+    ax.plot(*line.xy, color="red", linewidth=1)
+for normal in normals:
+    ax.plot(*normal.xy, color="green", linewidth=1)
+for edge in road_edge_proj["geometry"]:
+    ax.plot(*edge.xy, color="black", linewidth=1)
 ax.legend()
 plt.show()
 
