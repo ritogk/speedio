@@ -32,6 +32,8 @@ road_center = gpd.read_file("./combined_json.geojson")
 road_center = road_center.to_crs("EPSG:6677")
 road_edge = gpd.read_file("../roadEdge_clipped.geojson")
 road_edge_proj = road_edge.to_crs("EPSG:6677")
+road_edges = road_edge_proj["geometry"]
+rode_edges_index = road_edges.sindex
 # road_centerからgeometryのみを取り出す
 lines = road_center["geometry"]
 
@@ -68,7 +70,9 @@ for edge in edges:
         area.append(syototu_point)
     nearest_lines.append(LineString(area))
 
+syototu_lines = []
 normals = []
+edfes_length = []
 for line in nearest_lines:
     # lineの0と1の点を取り出す
     p1 = line.coords[0]
@@ -80,10 +84,39 @@ for line in nearest_lines:
     normal = np.array([-dy, dx]) / len
     normal_length = 20
     # 法線ベクトルを使って線分を伸ばす
-    # p1 = np.array(p1)
     p2 = np.array(p2)
-    # p1 = p1 + normal * normal_length
     p_normal = p2 + normal * normal_length
+
+    # ★★★★★★★p_normalと衝突するroad_edgeで最も近い点を求める。見つからない場合はnanを返す。
+    normal_line = LineString([p2, p_normal])
+    # 以下の処理が衝突ではなく、linestringの周辺の点を取得してしまっている。
+    possible_collisions = rode_edges_index.intersection(normal_line.bounds)
+    for idx in possible_collisions:
+        road_edge = road_edges[idx]
+        if normal_line.intersects(road_edge):
+            collision_point = normal_line.intersection(road_edge)
+            # print(normal_line[0].xy)
+            src = Point(p2)
+            dst = collision_point
+            dx = dst.x - src.x
+            dy = dst.y - src.y
+            distance = np.sqrt(dx * dx + dy * dy)
+
+            nearest_distance = distance
+            nearest_collision_point = collision_point
+            print(nearest_distance)
+            print(to_latlon(nearest_collision_point.y, nearest_collision_point.x))
+            syototu_lines.append(LineString([src, dst]))
+
+    # print(f"syototu_edge: ${syototu}")
+
+    # 空間インデックスを使用して最も近いLineStringを取得
+
+    # なぜか先頭にindex番号0が含まれているので消す。
+    # a = a[1:]
+    # line = lines.iloc[a[0][0]]
+    # syototu_point = nearest_points(line, point)[0]
+    # 衝突するまでの距離を二倍にする
     normals.append(LineString([p2, p_normal]))
 
 # nearest_areaのを描画
@@ -96,56 +129,10 @@ for normal in normals:
     ax.plot(*normal.xy, color="green", linewidth=1)
 for edge in road_edge_proj["geometry"]:
     ax.plot(*edge.xy, color="black", linewidth=1)
+for edge in syototu_lines:
+    ax.plot(*edge.xy, color="orangered", linewidth=1)
+# ax.plot(*road_edge_proj["geometry"][26].xy, color="orangered", linewidth=1)
+# ax.plot(road_edge_proj["geometry"][81], color="orangered", linewidth=1)
+# ax.plot(road_edge_proj["geometry"][81], color="orangered", linewidth=1)
 ax.legend()
 plt.show()
-
-
-# for i in a:
-#     # print(i)
-#     # indexからgeometryを取り出す
-#     nearest.append(lines.iloc[i[0]])
-
-# # 最も近いLineStringから最も近い点を取り出す
-# syototu_point = nearest_points(nearest[0], point)[0]
-# tr = Transformer.from_proj(6677, 6668)
-# x, y = tr.transform(syototu_point.y, syototu_point.x)
-
-# print(time.time() - time_st)
-
-# # 候補を描画
-# fig, ax = plt.subplots()
-# for line in lines:
-#     ax.plot(*line.xy, color="blue", linewidth=1)
-# for line in nearest:
-#     ax.plot(*line.xy, color="red", linewidth=3)
-# ax.plot(*point.xy, "go", label="Point")
-# ax.legend()
-# plt.show()
-
-
-# nearest_lines = road_center.iloc[nearest_index]
-
-# # 空間インデックスを使用して候補となるLineStringを取得
-# possible_matches_index = list(road_center.sindex.nearest(point))
-# possible_matches = road_center.iloc[possible_matches_index]
-
-# # 最も近いLineStringを見つける
-# closest_line = possible_matches.geometry.distance(point).idxmin()
-
-
-# # Matplotlibを使用してLineStringsと点をプロット
-# fig, ax = plt.subplots()
-
-# # 全てのLineStringsをプロット（最も近いもの以外は青色）
-# for line in lines:
-#     if line == closest_line:
-#         ax.plot(*line.xy, color="red", linewidth=3, label="Closest LineString")
-#     else:
-#         ax.plot(*line.xy, color="blue", linewidth=1)
-
-# # 座標点をプロット
-# ax.plot(*point.xy, "go", label="Point")
-
-# # ラベルと凡例の追加
-# ax.legend()
-# plt.show()
