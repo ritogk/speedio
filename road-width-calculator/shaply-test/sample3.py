@@ -26,22 +26,34 @@ def to_xy(lat, lon):
     x, y = tr.transform(lat, lon)
     return x, y
 
+import glob
 
-# 座標系を緯度経度から平面直角座標系に変換
-road_center = gpd.read_file("./combined_json.geojson")
+
+# 中央線のデータを読み込む
+file_pattern = 'center/*.geojson'
+file_list = glob.glob(file_pattern)
+gdf_list = [gpd.read_file(file) for file in file_list]
+road_center = gpd.GeoDataFrame(pd.concat(gdf_list, ignore_index=True))
+# road_center = gpd.read_file("./combined_json.geojson")
 road_center = road_center.to_crs("EPSG:6677")
-road_edge = gpd.read_file("../roadEdge_clipped.geojson")
+
+# 道幅線のデータを読み込む
+file_pattern = 'rdedg/*.xml'
+file_list = glob.glob(file_pattern)
+gdf_list = [gpd.read_file(file) for file in file_list]
+road_edge = gpd.GeoDataFrame(pd.concat(gdf_list, ignore_index=True))
 road_edge_proj = road_edge.to_crs("EPSG:6677")
 road_edges = road_edge_proj["geometry"]
 rode_edges_index = road_edges.sindex
 # road_centerからgeometryのみを取り出す
 lines = road_center["geometry"]
 
+
 edges = [
-    [(35.6938077, 139.7628514), (35.6937878, 139.7629656)],
-    [(35.6937779, 139.7630426), (35.6937729, 139.7631321)],
-    [(35.6937506, 139.7632687), (35.6937506, 139.7633904)],
-    [(35.6937282, 139.7635320), (35.6937083, 139.7637705)],
+    [(34.6958752,132.9045786), (34.6952861,132.9054915)],
+    [(34.6949956,132.9059147), (34.6943401,132.9065122)],
+    [(34.6942737,132.9065371), (34.6939002,132.9068773)],
+    [(34.6937426,132.9070101), (34.6934189,132.9073005)],
 ]
 # edgesの座標をtransformする
 for i in range(len(edges)):
@@ -55,7 +67,6 @@ for i in range(len(edges)):
 # 空間インデックスの作成には時間がかかるが、一度作成しておけば何度でも高速に探索できる。
 # んじゃあ、空間インデックスを含む固定値を保存しておいたほうがいいかも。
 geo_index = road_center.sindex
-print(time.time() - time_st)
 nearest_lines = []
 for edge in edges:
     area = []
@@ -104,35 +115,27 @@ for line in nearest_lines:
 
             nearest_distance = distance
             nearest_collision_point = collision_point
-            print(nearest_distance)
-            print(to_latlon(nearest_collision_point.y, nearest_collision_point.x))
-            syototu_lines.append(LineString([src, dst]))
-
-    # print(f"syototu_edge: ${syototu}")
-
-    # 空間インデックスを使用して最も近いLineStringを取得
-
-    # なぜか先頭にindex番号0が含まれているので消す。
-    # a = a[1:]
-    # line = lines.iloc[a[0][0]]
-    # syototu_point = nearest_points(line, point)[0]
-    # 衝突するまでの距離を二倍にする
+            # print(nearest_distance)
+            # print(to_latlon(nearest_collision_point.y, nearest_collision_point.x))
+            syototu_lines.append({'line_string': LineString([src, dst]), 'distance': nearest_distance})
     normals.append(LineString([p2, p_normal]))
+    
+print(time.time() - time_st)
 
-# nearest_areaのを描画
-fig, ax = plt.subplots(figsize=(11, 11))
-for line in lines:
-    ax.plot(*line.xy, color="blue", linewidth=1)
-for line in nearest_lines:
-    ax.plot(*line.xy, color="red", linewidth=1)
-for normal in normals:
-    ax.plot(*normal.xy, color="green", linewidth=1)
-for edge in road_edge_proj["geometry"]:
-    ax.plot(*edge.xy, color="black", linewidth=1)
-for edge in syototu_lines:
-    ax.plot(*edge.xy, color="orangered", linewidth=1)
-# ax.plot(*road_edge_proj["geometry"][26].xy, color="orangered", linewidth=1)
-# ax.plot(road_edge_proj["geometry"][81], color="orangered", linewidth=1)
-# ax.plot(road_edge_proj["geometry"][81], color="orangered", linewidth=1)
-ax.legend()
-plt.show()
+# # nearest_areaのを描画
+# fig, ax = plt.subplots(figsize=(11, 11))
+# for line in lines:
+#     ax.plot(*line.xy, color="blue", linewidth=1)
+# for line in nearest_lines:
+#     ax.plot(*line.xy, color="red", linewidth=1)
+# for normal in normals:
+#     ax.plot(*normal.xy, color="green", linewidth=1)
+# for edge in road_edge_proj["geometry"]:
+#     ax.plot(*edge.xy, color="black", linewidth=1)
+# for edge in syototu_lines:
+#     ax.plot(*edge['line_string'].xy, color="orangered", linewidth=1)
+# # ax.plot(*road_edge_proj["geometry"][26].xy, color="orangered", linewidth=1)
+# # ax.plot(road_edge_proj["geometry"][81], color="orangered", linewidth=1)
+# # ax.plot(road_edge_proj["geometry"][81], color="orangered", linewidth=1)
+# ax.legend()
+# plt.show()
