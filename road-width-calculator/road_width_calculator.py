@@ -100,7 +100,7 @@ class RoadWidthCalculator:
                     nearest_collision_point = collision_point
                     # print(nearest_distance)
                     # print(to_latlon(nearest_collision_point.y, nearest_collision_point.x))
-                    syototu_lines.append({'line_string': LineString([src, dst]), 'distance': nearest_distance})
+                    syototu_lines.append({'line_string': LineString([src, dst]), 'distance': nearest_distance * 2})
             normals.append(LineString([p2, p_normal]))
         # print(syototu_lines)
         print(f"time: {time.time() - time_st}")
