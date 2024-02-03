@@ -24,6 +24,7 @@ def generate(gdf: GeoDataFrame, tif_path: str) -> Series:
 
         elevetion_change_amount = 0
         for i in range(1, len(elevations)):
+            # print(elevations[i - 1]["elevation"])
             elevetion_change_amount += abs(
                 elevations[i]["elevation"] - elevations[i - 1]["elevation"]
             )

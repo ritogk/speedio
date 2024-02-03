@@ -8,3 +8,4 @@ from .column_generater_module import score_normalization
 from .column_generater_module import google_map_url
 from .column_generater_module import google_earth_url
 from .column_generater_module import street_view_url
+from .column_generater_module import width
