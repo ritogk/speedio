@@ -21,10 +21,20 @@ def main() -> GeoDataFrame:
     # latitude_end = 34.833082
     # longitude_end = 137.672158
 
-    latitude_start = 35.962525
-    longitude_start = 136.718364
-    latitude_end = 33.610539
-    longitude_end = 135.151121
+    # latitude_start = 35.962525
+    # longitude_start = 136.718364
+    # latitude_end = 33.610539
+    # longitude_end = 135.151121
+
+    # latitude_start = 35.602175    
+    # longitude_start = 132.134046
+    # latitude_end = 34.317817, 133.556762
+    # longitude_end = 133.556762
+
+    latitude_start = 34.898635
+    longitude_start = 133.030126
+    latitude_end = 34.635895
+    longitude_end = 133.575308
 
     excution_timer_ins = excution_timer.ExcutionTimer()
 
@@ -78,13 +88,30 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 座標間の標高の変化量を求める
+    
+    # ./tyugoku.tifのフルパスを取得する
+    tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/tyugoku.tif"
+    print(tif_path)
     excution_timer_ins.start("calc elevation_change_amount")
     gdf_edges[
         "elevation_change_amount"
     ] = column_generater.elevation_change_amount.generate(
-        gdf_edges, "./merge-chubu-tokuriku-kanto3-tohoku.tif"
+        gdf_edges, tif_path
     )
     excution_timer_ins.stop()
+
+
+
+    # 道幅を取得する
+    excution_timer_ins.start("calc width")
+    gdf_edges["width"] = column_generater.width.generate(gdf_edges)
+    excution_timer_ins.stop()
+
+
+    # 道幅を評価する
+
+
+
 
     # 標高と距離の比率を求める
     excution_timer_ins.start("calc elevation_change_rate")
