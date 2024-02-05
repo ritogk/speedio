@@ -14,35 +14,41 @@ from rtree import Rtree
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
+
 class RoadWidthCalculator:
     road_center_s: gpd.GeoSeries
     road_center_i: Rtree
     road_edge_s: gpd.GeoSeries
     road_edge_i: Rtree
+
     def __init__(self, center_path: str, edge_path: str):
         file_list = glob.glob(f"{center_path}/*.geojson")
         gdf_list = [gpd.read_file(file) for file in file_list]
-        road_center_df = gpd.GeoDataFrame(pd.concat(gdf_list, ignore_index=True)).to_crs("EPSG:6677")
+        road_center_df = gpd.GeoDataFrame(
+            pd.concat(gdf_list, ignore_index=True)
+        ).to_crs("EPSG:6677")
         self.road_center_s = road_center_df["geometry"]
         self.road_center_i = self.road_center_s.sindex
-        
+
         # file_list = glob.glob(f"{edge_path}/*.xml")
         file_list = glob.glob(f"{edge_path}/*.geojson")
         gdf_list = [gpd.read_file(file) for file in file_list]
-        road_edge_df = gpd.GeoDataFrame(pd.concat(gdf_list, ignore_index=True)).to_crs("EPSG:6677")
+        road_edge_df = gpd.GeoDataFrame(pd.concat(gdf_list, ignore_index=True)).to_crs(
+            "EPSG:6677"
+        )
         self.road_edge_s = road_edge_df["geometry"]
         self.road_edge_i = self.road_edge_s.sindex
+
     def _to_latlon(self, x, y):
         tr = Transformer.from_proj(6677, 6668)
         lat, lon = tr.transform(x, y)
         return lat, lon
 
-
     def _to_xy(self, lat, lon):
         tr = Transformer.from_proj(6668, 6677)
         x, y = tr.transform(lat, lon)
         return x, y
-    
+
     def calculate(self, st_coord: Point, ed_coord: Point) -> int:
         time_st = time.time()
         st_x, st_y = self._to_xy(st_coord.x, ed_coord.y)
@@ -58,7 +64,7 @@ class RoadWidthCalculator:
             # なぜか先頭にindex番号0が含まれているので消す。
             index = indexs[1:]
             line = self.road_center_s.iloc[index[0][0]]
-            a =  nearest_points(line, point)
+            a = nearest_points(line, point)
             syototu_point = a[0]
             area.append(syototu_point)
 
@@ -100,7 +106,12 @@ class RoadWidthCalculator:
                     nearest_collision_point = collision_point
                     # print(nearest_distance)
                     # print(to_latlon(nearest_collision_point.y, nearest_collision_point.x))
-                    syototu_lines.append({'line_string': LineString([src, dst]), 'distance': nearest_distance * 2})
+                    syototu_lines.append(
+                        {
+                            "line_string": LineString([src, dst]),
+                            "distance": nearest_distance * 2,
+                        }
+                    )
             normals.append(LineString([p2, p_normal]))
         # print(syototu_lines)
         print(f"time: {time.time() - time_st}")
