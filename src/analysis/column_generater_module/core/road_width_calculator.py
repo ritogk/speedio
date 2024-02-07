@@ -11,6 +11,7 @@ import glob
 from rtree import Rtree
 import pickle
 import os
+from shapely.geometry import MultiPoint
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
@@ -63,81 +64,96 @@ class RoadWidthCalculator:
 
     def _to_latlon(self, x, y):
         tr = Transformer.from_proj(6677, 6668)
-        lat, lon = tr.transform(x, y)
-        return lat, lon
+        lat, lon = tr.transform(y, x)
+        return lon, lat
 
-    def _to_xy(self, lat, lon):
+    def _to_xy(self, lon, lat):
         tr = Transformer.from_proj(6668, 6677)
-        x, y = tr.transform(lat, lon)
+        y, x = tr.transform(lat, lon)
         return x, y
 
     def calculate(self, st_coord: Point, ed_coord: Point) -> int:
         time_st = time.time()
-        st_x, st_y = self._to_xy(st_coord.x, ed_coord.y)
+
+        st_x, st_y = self._to_xy(st_coord.x, st_coord.y)
         ed_x, ed_y = self._to_xy(ed_coord.x, ed_coord.y)
-        points = [Point(st_y, st_x), Point(ed_y, ed_x)]
+        points = [Point(st_x, st_y), Point(ed_x, ed_y)]
 
         nearest_lines = []
         area = []
         # ２座標に近い中央線を求める。
         for point in points:
-            # 空間インデックスを使用して最も近いLiのindexをneStringを取得
-            # 星以下でエラーがでる
+            # 空間インデックスを使用して最も近いLiのindexをneStringを取得する。
             indexs = self.road_center_i.nearest(point, max_distance=100)
             # なぜか先頭にindex番号0が含まれているので消す。
             index = indexs[1:]
             if index.size != 0:
+                # print(index[0][0])
                 line = self.road_center_s.iloc[index[0][0]]
                 a = nearest_points(line, point)
                 syototu_point = a[0]
                 area.append(syototu_point)
-                nearest_lines.append(LineString(area))
+        nearest_lines.append(LineString(area))
 
         syototu_lines = []
         normals = []
         edfes_length = []
-        # print(nearest_lines)
-        for line in nearest_lines:
-            print(line)
-            # lineの0と1の点を取り出す
-            p1 = line.coords[0]
-            p2 = line.coords[1]
-            # 法線ベクトルを求める
-            dx = p2[0] - p1[0]
-            dy = p2[1] - p1[1]
-            len = np.sqrt(dx * dx + dy * dy)
-            normal = np.array([-dy, dx]) / len
-            normal_length = 20
-            # 法線ベクトルを使って線分を伸ばす
-            p2 = np.array(p2)
-            p_normal = p2 + normal * normal_length
 
-            # ★★★★★★★p_normalと衝突するroad_edgeで最も近い点を求める。見つからない場合はnanを返す。
-            normal_line = LineString([p2, p_normal])
-            # 以下の処理が衝突ではなく、linestringの周辺の点を取得してしまっている。
-            possible_collisions = self.road_edge_i.intersection(normal_line.bounds)
-            for idx in possible_collisions:
-                road_edge = self.road_edge_s[idx]
-                if normal_line.intersects(road_edge):
-                    collision_point = normal_line.intersection(road_edge)
-                    # print(normal_line[0].xy)
-                    src = Point(p2)
-                    dst = collision_point
-                    dx = dst.x - src.x
-                    dy = dst.y - src.y
-                    distance = np.sqrt(dx * dx + dy * dy)
+        line = nearest_lines[0]
+        # print("line")
+        # print(line)
+        # lineの0と1の点を取り出す
+        p1 = line.coords[0]
+        p2 = line.coords[1]
+        # p1とp2が同じ場合がある。なぜ？
+        # p1: (-581523.5580293104, -122131.76981817895)
+        # p2: (-581523.5580293104, -122131.76981817895)
+        if p1 == p2:
+            return 0
+        # 法線ベクトルを求める
+        dx = p2[0] - p1[0]
+        dy = p2[1] - p1[1]
+        len = np.sqrt(dx * dx + dy * dy)
+        # print("len: " + str(len), " dx: " + str(dx), " dy: " + str(dy))
+        # len: 0.0  dx: 0.0  dy: 0.0
+        normal = np.array([-dy, dx]) / len
+        normal_length = 20
+        # 法線ベクトルを使って線分を伸ばす
+        p2 = np.array(p2)
+        p_normal = p2 + normal * normal_length
 
-                    nearest_distance = distance
-                    nearest_collision_point = collision_point
-                    # print(nearest_distance)
-                    # print(to_latlon(nearest_collision_point.y, nearest_collision_point.x))
-                    syototu_lines.append(
-                        {
-                            "line_string": LineString([src, dst]),
-                            "distance": nearest_distance * 2,
-                        }
-                    )
-            normals.append(LineString([p2, p_normal]))
+        # ★★★★★★★p_normalと衝突するroad_edgeで最も近い点を求める。見つからない場合はnanを返す。
+        normal_line = LineString([p2, p_normal])
+        # 以下の処理が衝突ではなく、linestringの周辺の点を取得してしまっている。
+        possible_collisions = self.road_edge_i.intersection(normal_line.bounds)
+        for idx in possible_collisions:
+            road_edge = self.road_edge_s[idx]
+            # print(road_edge)
+            if normal_line.intersects(road_edge):
+                # 衝突点を求める
+                collision_point = normal_line.intersection(road_edge)
+                # print("衝突")
+                # 複数の衝突点がある場合は最も近い点を選ぶ? ★★ここから？？？
+                if isinstance(collision_point, MultiPoint):
+                    collision_point = gpd.GeoSeries([collision_point]).explode().iloc[0]
+                # print(collision_p/oint)
+                src = Point(p2)
+                dst = collision_point
+                dx = dst.x - src.x
+                dy = dst.y - src.y
+                distance = np.sqrt(dx * dx + dy * dy)
+
+                nearest_distance = distance
+                nearest_collision_point = collision_point
+                # print(nearest_distance)
+                syototu_lines.append(
+                    {
+                        "line_string": LineString([src, dst]),
+                        "distance": nearest_distance * 2,
+                    }
+                )
+                # print(syototu_lines)
+        normals.append(LineString([p2, p_normal]))
         # print(syototu_lines)
         # print(f"time: {time.time() - time_st}")
 
