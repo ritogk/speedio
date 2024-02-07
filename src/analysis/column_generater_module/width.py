@@ -31,6 +31,7 @@ def generate(gdf: GeoDataFrame) -> Series:
             st_point = points[0]
             ed_point = points[1]
             width = calclator.calculate(st_point, ed_point)
+            print(width)
             widths.append(width)
         # widthから0を除外する
         widths = [w for w in widths if w != 0]
