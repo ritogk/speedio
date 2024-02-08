@@ -31,17 +31,20 @@ def generate(gdf: GeoDataFrame) -> Series:
             st_point = points[0]
             ed_point = points[1]
             width = calclator.calculate(st_point, ed_point)
-            print(width)
-            widths.append(width)
-        # widthから0を除外する
-        widths = [w for w in widths if w != 0]
+            if width is None:
+                continue
+            widths.append(width * 2)
+            print(f"width: {width * 2}")
+        # 平均値を求める
         if len(widths) == 0:
             geometry_width_list.append(0)
         else:
+            print(f"平均: {sum(widths) / len(widths)}")
             geometry_width_list.append(sum(widths) / len(widths))
 
+    print(geometry_width_list)
     # widthをseriesに変換する
-    series = Series(geometry_width_list)
+    series = Series(geometry_width_list, index=gdf.index)
     return series
 
 

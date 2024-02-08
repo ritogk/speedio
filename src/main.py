@@ -103,6 +103,8 @@ def main() -> GeoDataFrame:
     gdf_edges["width"] = column_generater.width.generate(gdf_edges)
     excution_timer_ins.stop()
 
+    return gdf_edges
+
     # 道幅を評価する
 
     # 標高と距離の比率を求める
