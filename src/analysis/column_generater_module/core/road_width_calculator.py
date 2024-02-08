@@ -72,44 +72,26 @@ class RoadWidthCalculator:
         y, x = tr.transform(lat, lon)
         return x, y
 
-    def calculate(self, st_coord: Point, ed_coord: Point) -> int:
-        time_st = time.time()
+    # 1. 指定座標に最も近い中央線を探す
+    def _search_nearest_center_line(self, point: Point) -> LineString | None:
+        # 空間インデックスを使用して最も近いLiのindexをneStringを取得する。
+        indexs = self.road_center_i.nearest(point, max_distance=100)
+        # なぜか先頭にindex番号0が含まれているので消す。
+        index = indexs[1:]
+        if index.size != 0:
+            line = self.road_center_s.iloc[index[0][0]]
+            return line
+        return None
 
-        st_x, st_y = self._to_xy(st_coord.x, st_coord.y)
-        ed_x, ed_y = self._to_xy(ed_coord.x, ed_coord.y)
-        points = [Point(st_x, st_y), Point(ed_x, ed_y)]
-
-        nearest_lines = []
-        area = []
-        # ２座標に近い中央線を求める。
-        for point in points:
-            # 空間インデックスを使用して最も近いLiのindexをneStringを取得する。
-            indexs = self.road_center_i.nearest(point, max_distance=100)
-            # なぜか先頭にindex番号0が含まれているので消す。
-            index = indexs[1:]
-            if index.size != 0:
-                # print(index[0][0])
-                line = self.road_center_s.iloc[index[0][0]]
-                a = nearest_points(line, point)
-                syototu_point = a[0]
-                area.append(syototu_point)
-        nearest_lines.append(LineString(area))
-
-        syototu_lines = []
-        normals = []
-        edfes_length = []
-
-        line = nearest_lines[0]
-        # print("line")
-        # print(line)
-        # lineの0と1の点を取り出す
+    # 3. LineStringに垂直な法線を作成する
+    def _create_normal_line(self, line: LineString, length: int) -> LineString | None:
         p1 = line.coords[0]
         p2 = line.coords[1]
         # p1とp2が同じ場合がある。なぜ？
         # p1: (-581523.5580293104, -122131.76981817895)
         # p2: (-581523.5580293104, -122131.76981817895)
         if p1 == p2:
-            return 0
+            return None
         # 法線ベクトルを求める
         dx = p2[0] - p1[0]
         dy = p2[1] - p1[1]
@@ -117,47 +99,69 @@ class RoadWidthCalculator:
         # print("len: " + str(len), " dx: " + str(dx), " dy: " + str(dy))
         # len: 0.0  dx: 0.0  dy: 0.0
         normal = np.array([-dy, dx]) / len
-        normal_length = 20
-        # 法線ベクトルを使って線分を伸ばす
+        # 垂直な法線を指定の長さに伸ばす(m)
         p2 = np.array(p2)
-        p_normal = p2 + normal * normal_length
-
-        # ★★★★★★★p_normalと衝突するroad_edgeで最も近い点を求める。見つからない場合はnanを返す。
+        p_normal = p2 + normal * length
         normal_line = LineString([p2, p_normal])
+        return normal_line
+
+    def calculate(self, st_coord: Point, ed_coord: Point) -> int | None:
+        time_st = time.time()
+
+        st_x, st_y = self._to_xy(st_coord.x, st_coord.y)
+        ed_x, ed_y = self._to_xy(ed_coord.x, ed_coord.y)
+        points = [Point(st_x, st_y), Point(ed_x, ed_y)]
+        # 1. 指定座標に最も近い中央線を探す
+        nearest_center_line = self._search_nearest_center_line(points[0])
+        if nearest_center_line is None:
+            print("nearest_center_line is None")
+            return None
+
+        # 2. 1で抽出した中央線上で最も近い座標を含んだlineStringを作成する
+        nearest_line = LineString(
+            [
+                nearest_points(nearest_center_line, points[0])[0],
+                nearest_points(nearest_center_line, points[1])[0],
+            ]
+        )
+
+        # 3. 2のLineStringから法線を作成する
+        normal_line = self._create_normal_line(nearest_line, 10)
+        if normal_line is None:
+            print("normal_line is None")
+            return None
+
         # 以下の処理が衝突ではなく、linestringの周辺の点を取得してしまっている。
-        possible_collisions = self.road_edge_i.intersection(normal_line.bounds)
-        for idx in possible_collisions:
-            road_edge = self.road_edge_s[idx]
-            # print(road_edge)
-            if normal_line.intersects(road_edge):
-                # 衝突点を求める
-                collision_point = normal_line.intersection(road_edge)
-                # print("衝突")
-                # 複数の衝突点がある場合は最も近い点を選ぶ? ★★ここから？？？
+
+        width_lines = []
+        # 法線に衝突する道幅線を探す
+        # 複数のエッジが返ってくる場合があるので最も近いものを選ぶ
+        collision_edge_index_list = self.road_edge_i.intersection(normal_line.bounds)
+        for idx in collision_edge_index_list:
+            collision_edge = self.road_edge_s[idx]
+            # 道幅線と法線の衝突点を求める
+            collision_point = normal_line.intersection(collision_edge)
+            if collision_point:
+                # ん？そもそもなんでMultiPointになるの？法線と1道幅線の交点は1点のはずなのに。
                 if isinstance(collision_point, MultiPoint):
+                    print("要調査")
                     collision_point = gpd.GeoSeries([collision_point]).explode().iloc[0]
                 # print(collision_p/oint)
-                src = Point(p2)
+                src = Point(nearest_line.coords[1])
                 dst = collision_point
                 dx = dst.x - src.x
                 dy = dst.y - src.y
                 distance = np.sqrt(dx * dx + dy * dy)
-
-                nearest_distance = distance
-                nearest_collision_point = collision_point
-                # print(nearest_distance)
-                syototu_lines.append(
+                width_lines.append(
                     {
                         "line_string": LineString([src, dst]),
-                        "distance": nearest_distance * 2,
+                        "distance": distance,
                     }
                 )
-                # print(syototu_lines)
-        normals.append(LineString([p2, p_normal]))
-        # print(syototu_lines)
-        # print(f"time: {time.time() - time_st}")
 
-        if not syototu_lines:
-            return 0
-        else:
-            return syototu_lines[0]["distance"]
+        # width_linesを距離が大きい順にソート
+        width_lines = sorted(width_lines, key=lambda x: x["distance"], reverse=True)
+
+        if not width_lines:
+            return None
+        return width_lines[0]["distance"]
