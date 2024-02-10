@@ -8,6 +8,8 @@ key_store
 
 *.tif
 
+output.geojson
+
 key_store.bak
 key_store.dat
 key_store.dir
