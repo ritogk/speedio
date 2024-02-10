@@ -179,8 +179,8 @@ class RoadWidthCalculator:
                     }
                 )
 
-        # width_linesを距離が大きい順にソート
-        width_lines = sorted(width_lines, key=lambda x: x["distance"], reverse=True)
+        # 最初に衝突したLineStringが道幅のLineStringになるので、並び替えて先頭の要素を取り出す。
+        width_lines = sorted(width_lines, key=lambda x: x["distance"], reverse=False)
 
         if not width_lines:
             return None
