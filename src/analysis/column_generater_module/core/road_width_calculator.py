@@ -111,6 +111,7 @@ class RoadWidthCalculator:
         st_x, st_y = self._to_xy(st_coord.x, st_coord.y)
         ed_x, ed_y = self._to_xy(ed_coord.x, ed_coord.y)
         points = [Point(st_x, st_y), Point(ed_x, ed_y)]
+
         # 1. 指定座標に最も近い中央線を探す
         nearest_center_line = self._search_nearest_center_line(points[0])
         if nearest_center_line is None:
@@ -154,8 +155,27 @@ class RoadWidthCalculator:
                 distance = np.sqrt(dx * dx + dy * dy)
                 width_lines.append(
                     {
-                        "line_string": LineString([src, dst]),
+                        "line": LineString(
+                            [
+                                Point(self._to_latlon(src.x, src.y)),
+                                Point(self._to_latlon(dst.x, dst.y)),
+                            ]
+                        ),
                         "distance": distance,
+                        "base_line": LineString(
+                            [
+                                Point(
+                                    self._to_latlon(
+                                        nearest_line[0].x, nearest_line[0].y
+                                    )
+                                ),
+                                Point(
+                                    self._to_latlon(
+                                        nearest_line[1].x, nearest_line[1].y
+                                    )
+                                ),
+                            ]
+                        ),
                     }
                 )
 
@@ -164,4 +184,4 @@ class RoadWidthCalculator:
 
         if not width_lines:
             return None
-        return width_lines[0]["distance"]
+        return width_lines[0]
