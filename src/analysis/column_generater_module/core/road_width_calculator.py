@@ -27,11 +27,11 @@ class RoadWidthCalculator:
         path = f"{os.path.dirname(os.path.abspath(__file__))}/center_gdf"
         # print(path)
         if os.path.exists(path):
-            print("load center_gdf")
+            print("  load center_gdf")
             with open(path, "rb") as f:
                 road_center_df = pickle.load(f)
         else:
-            print("create center_gdf")
+            print("  create center_gdf")
             gdf_list = [gpd.read_file(file) for file in file_list]
             road_center_df = gpd.GeoDataFrame(
                 pd.concat(gdf_list, ignore_index=True)
@@ -46,11 +46,11 @@ class RoadWidthCalculator:
         # print(file_list)
         path = f"{os.path.dirname(os.path.abspath(__file__))}/edge_gdf"
         if os.path.exists(path):
-            print("load edge_gdf")
+            print("  load edge_gdf")
             with open(path, "rb") as f:
                 road_edge_df = pickle.load(f)
         else:
-            print("create edge_gdf")
+            print("  create edge_gdf")
             gdf_list = [gpd.read_file(file) for file in file_list]
             road_edge_df = gpd.GeoDataFrame(
                 pd.concat(gdf_list, ignore_index=True)
@@ -143,11 +143,14 @@ class RoadWidthCalculator:
             # 道幅線と法線の衝突点を求める
             collision_point = normal_line.intersection(collision_edge)
             if collision_point:
-                # ん？そもそもなんでMultiPointになるの？法線と1道幅線の交点は1点のはずなのに。
+                # 道幅線は直線とは限らない(V字型の道路など)ので、複数の衝突点が返ってくる場合がある。
+                # その場合は法線の始点に最も近い点を選ぶ。
                 if isinstance(collision_point, MultiPoint):
-                    print("要調査")
-                    collision_point = gpd.GeoSeries([collision_point]).explode().iloc[0]
-                # print(collision_p/oint)
+                    collision_point = min(
+                        collision_point.geoms,
+                        key=lambda point: point.distance(Point(normal_line.coords[0])),
+                    )
+                assert isinstance(collision_point, Point)
                 src = Point(nearest_line.coords[1])
                 dst = collision_point
                 dx = dst.x - src.x
