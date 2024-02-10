@@ -166,14 +166,11 @@ class RoadWidthCalculator:
                             [
                                 Point(
                                     self._to_latlon(
-                                        nearest_line[0].x, nearest_line[0].y
+                                        nearest_line.coords[0][0],
+                                        nearest_line.coords[0][1],
                                     )
                                 ),
-                                Point(
-                                    self._to_latlon(
-                                        nearest_line[1].x, nearest_line[1].y
-                                    )
-                                ),
+                                Point(self._to_latlon(src.x, src.y)),
                             ]
                         ),
                     }
