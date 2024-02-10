@@ -6,6 +6,7 @@ import os
 from pyproj import Transformer
 import geopandas as gpd
 from shapely.geometry import Point, LineString
+import json
 
 # 道幅計算モジュールを読み込む
 from .core import road_width_calculator
@@ -24,15 +25,18 @@ def generate(gdf: GeoDataFrame) -> Series:
     )
     # print(series)
     geometry_width_list = []
+    result_list = []
     # seriesをループさせる
     for geometry in geometry_series:
         widths = []
         for points in geometry:
             st_point = points[0]
             ed_point = points[1]
-            width = calclator.calculate(st_point, ed_point)
-            if width is None:
+            result = calclator.calculate(st_point, ed_point)
+            if result is None:
                 continue
+            result_list.append(result)
+            width = result["distance"]
             widths.append(width * 2)
             print(f"width: {width * 2}")
         # 平均値を求める
@@ -42,7 +46,8 @@ def generate(gdf: GeoDataFrame) -> Series:
             print(f"平均: {sum(widths) / len(widths)}")
             geometry_width_list.append(sum(widths) / len(widths))
 
-    print(geometry_width_list)
+    # print(geometry_width_list)
+    output_geojson(result_list)
     # widthをseriesに変換する
     series = Series(geometry_width_list, index=gdf.index)
     return series
@@ -84,3 +89,35 @@ def interpolate_points_with_offset(
         for p in points
     ]
     return points
+
+
+def output_geojson(result_list) -> None:
+    # GeoJSONに変換
+    def line_to_geojson(line):
+        return {"type": "LineString", "coordinates": list(line.coords)}
+
+    features = []
+    geojson_data = []
+    for item in result_list:
+        geojson_line = line_to_geojson(item["line"])
+        geojson_line_base = line_to_geojson(item["base_line"])
+        # 各LineStringをFeatureとして追加
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": geojson_line,
+                "properties": {"type": "line"},
+            }
+        )
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": geojson_line_base,
+                "properties": {"type": "base_line"},
+            }
+        )
+    # 全てのFeatureをFeatureCollectionにまとめる
+    geojson_data = {"type": "FeatureCollection", "features": features}
+
+    with open("output.geojson", "w") as file:
+        json.dump(geojson_data, file, indent=4)
