@@ -1,12 +1,11 @@
 from geopandas import GeoDataFrame
 from pandas import Series
-import osmnx as ox
-import numpy as np
 import os
 from pyproj import Transformer
-import geopandas as gpd
 from shapely.geometry import Point, LineString
-import json
+from ...core.convert_linestrings_to_geojson import convert
+from ...core.write_file import write
+
 
 # 道幅計算モジュールを読み込む
 from .core import road_width_calculator
@@ -46,8 +45,10 @@ def generate(gdf: GeoDataFrame) -> Series:
             print(f"平均: {sum(widths) / len(widths)}")
             geometry_width_list.append(sum(widths) / len(widths))
 
-    # print(geometry_width_list)
-    output_geojson(result_list)
+    geojson = convert(
+        [[d[k] for k in ["line", "base_line"] if k in d] for d in result_list]
+    )
+    write(geojson, "output.geojson")
     # widthをseriesに変換する
     series = Series(geometry_width_list, index=gdf.index)
     return series
@@ -89,35 +90,3 @@ def interpolate_points_with_offset(
         for p in points
     ]
     return points
-
-
-def output_geojson(result_list) -> None:
-    # GeoJSONに変換
-    def line_to_geojson(line):
-        return {"type": "LineString", "coordinates": list(line.coords)}
-
-    features = []
-    geojson_data = []
-    for item in result_list:
-        geojson_line = line_to_geojson(item["line"])
-        geojson_line_base = line_to_geojson(item["base_line"])
-        # 各LineStringをFeatureとして追加
-        features.append(
-            {
-                "type": "Feature",
-                "geometry": geojson_line,
-                "properties": {"type": "line"},
-            }
-        )
-        features.append(
-            {
-                "type": "Feature",
-                "geometry": geojson_line_base,
-                "properties": {"type": "base_line"},
-            }
-        )
-    # 全てのFeatureをFeatureCollectionにまとめる
-    geojson_data = {"type": "FeatureCollection", "features": features}
-
-    with open("output.geojson", "w") as file:
-        json.dump(geojson_data, file, indent=4)
