@@ -121,42 +121,45 @@ class RoadWidthCalculator:
         # 法線に衝突する道幅線を探す
         # 複数のエッジが返ってくる場合があるので最も近いものを選ぶ
         collision_edge_index_list = self.road_edge_i.intersection(normal_line.bounds)
-        for idx in collision_edge_index_list:
-            collision_edge = self.road_edge_s[idx]
-            # 道幅線と法線の衝突点を求める
-            collision_point = normal_line.intersection(collision_edge)
-            if collision_point:
-                # 道幅線は直線とは限らない(V字型の道路など)ので、複数の衝突点が返ってくる場合がある。
-                # その場合は法線の始点に最も近い点を選ぶ。
-                if isinstance(collision_point, MultiPoint):
-                    collision_point = min(
-                        collision_point.geoms,
-                        key=lambda point: point.distance(Point(normal_line.coords[0])),
-                    )
-                assert isinstance(collision_point, Point)
-                # ★これ大丈夫?
-                src = Point(normal_line.coords[0])
-                dst = collision_point
-                dx = dst.x - src.x
-                dy = dst.y - src.y
-                distance = np.sqrt(dx * dx + dy * dy)
-                width_lines.append(
-                    {
-                        "line": LineString(
-                            [
-                                Point(self._to_latlon(src.x, src.y)),
-                                Point(self._to_latlon(dst.x, dst.y)),
-                            ]
-                        ),
-                        "distance": distance,
-                    }
-                )
+        min_distance = 100000000
+        collision_edge: LineString | None = None
+        for index in collision_edge_index_list:
+            edge = self.road_edge_s[index]
+            distance = normal_line.distance(edge)
+            if distance < min_distance:
+                min_distance = distance
+                collision_edge = edge
 
-        # 最初に衝突したLineStringが道幅のLineStringになるので、並び替えて先頭の要素を取り出す。
-        width_lines = sorted(width_lines, key=lambda x: x["distance"], reverse=False)
-        if not width_lines:
+        # 道幅線と法線の衝突点を求める
+        collision_point = normal_line.intersection(collision_edge)
+        if collision_point is None:
             return None
-        return width_lines[0]
+        if collision_point.is_empty:
+            return None
+        # 道幅線は直線とは限らない(V字型の道路など)ので、複数の衝突点が返ってくる場合がある。
+        # その場合は法線の始点に最も近い点を選ぶ。
+        if isinstance(collision_point, MultiPoint):
+            collision_point = min(
+                collision_point.geoms,
+                key=lambda point: point.distance(Point(normal_line.coords[0])),
+            )
+        assert isinstance(collision_point, Point)
+        # ★これ大丈夫?
+        src = Point(normal_line.coords[0])
+        dst = collision_point
+        dx = dst.x - src.x
+        dy = dst.y - src.y
+        distance = np.sqrt(dx * dx + dy * dy)
+
+        return {
+            "line": LineString(
+                [
+                    Point(self._to_latlon(src.x, src.y)),
+                    Point(self._to_latlon(dst.x, dst.y)),
+                ]
+            ),
+            "distance": distance,
+        }
 
     def calculate(self, st_coord: Point, ed_coord: Point) -> tuple | None:
         time_st = time.time()
@@ -187,7 +190,7 @@ class RoadWidthCalculator:
         normal_line = normal_result[0]
         normal_line_opposite = normal_result[1]
 
-        # 4. 3の法線から道幅を求める
+        # 4. 3の法線を道幅に収まる形にする
         width_line = self._create_width_line(normal_line)
         width_opposite_line = self._create_width_line(normal_line_opposite)
         if width_line is None or width_opposite_line is None:
