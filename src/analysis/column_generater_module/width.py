@@ -34,10 +34,11 @@ def generate(gdf: GeoDataFrame) -> Series:
             result = calclator.calculate(st_point, ed_point)
             if result is None:
                 continue
-            result_list.append(result)
-            width = result["distance"]
-            widths.append(width * 2)
-            print(f"width: {width * 2}")
+            result_list.append(result[0])
+            result_list.append(result[1])
+            width = result[0]["distance"] + result[1]["distance"]
+            widths.append(width)
+            print(f"width: {width}")
         # 平均値を求める
         if len(widths) == 0:
             geometry_width_list.append(0)
