@@ -106,6 +106,11 @@ def main() -> GeoDataFrame:
     gdf_edges["avg_width"] = avg_width
     excution_timer_ins.stop()
 
+    # 道幅が6.5m未満のエッジを削除する
+    excution_timer_ins.start("remove min-width edge")
+    gdf_edges = gdf_edges[gdf_edges["min_width"] >= 6.5]
+    excution_timer_ins.stop()
+
     # 標高と距離の比率を求める
     excution_timer_ins.start("calc elevation_change_rate")
     gdf_edges["elevation_change_rate"] = (
