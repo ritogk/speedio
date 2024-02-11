@@ -7,8 +7,7 @@ key_store
 /html/target.json
 
 *.tif
-
-output.geojson
+*.geojson
 
 key_store.bak
 key_store.dat
