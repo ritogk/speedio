@@ -119,7 +119,8 @@ class RoadWidthCalculator:
     def _create_width_line(self, normal_line: LineString) -> LineString | None:
         width_lines = []
         # 法線に衝突する道幅線を探す
-        # 複数のエッジが返ってくる場合があるので最も近いものを選ぶ
+        # 空間インデックス使用して近くのラインを取得している。
+        # そのため、複数の値が返ってくることがある。
         collision_edge_index_list = self.road_edge_i.intersection(normal_line.bounds)
         min_distance = 100000000
         collision_edge: LineString | None = None
@@ -183,7 +184,7 @@ class RoadWidthCalculator:
         )
 
         # 3. 2のLineStringから法線を作成する
-        normal_result = self._create_normal_line(nearest_line, 10)
+        normal_result = self._create_normal_line(nearest_line, 15)
         if normal_result is None:
             print("normal_line or normal_line_opposite is None")
             return None

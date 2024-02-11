@@ -98,14 +98,13 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
+    # gdf_edges = gdf_edges[gdf_edges["name"] == "かぐら街道"]
     # 道幅を取得する
     excution_timer_ins.start("calc width")
-    gdf_edges["width"] = column_generater.width.generate(gdf_edges)
+    avg_width, min_width = column_generater.width.generate(gdf_edges)
+    gdf_edges["min_width"] = min_width
+    gdf_edges["avg_width"] = avg_width
     excution_timer_ins.stop()
-
-    return gdf_edges
-
-    # 道幅を評価する
 
     # 標高と距離の比率を求める
     excution_timer_ins.start("calc elevation_change_rate")
@@ -185,5 +184,8 @@ def main() -> GeoDataFrame:
     ].to_json(output_dir, orient="records")
 
     excution_timer_ins.finish()
+
+    # gdf_edgesのavg_widthを小さい順に並び替える
+    gdf_edges = gdf_edges.sort_values("avg_width")
 
     return gdf_edges
