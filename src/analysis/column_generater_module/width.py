@@ -16,10 +16,7 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series]:
     center_path = f"{os.path.dirname(os.path.abspath(__file__))}/_center"
     rdedg_path = f"{os.path.dirname(os.path.abspath(__file__))}/_rdedg"
     calclator = road_width_calculator.RoadWidthCalculator(center_path, rdedg_path)
-    # 座標間の角度の変化の合計値を求める
-    # a = gdf["length"]
-    # print(a)
-    # gdf = gdf[gdf["length"] == 4594.289]
+
     geometry_series = gdf["geometry"].apply(
         lambda x: interpolate_points_with_offset(x, 50, 1)
     )
