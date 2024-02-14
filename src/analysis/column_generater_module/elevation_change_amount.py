@@ -14,13 +14,11 @@ def generate(gdf: GeoDataFrame, tif_path: str) -> Series:
         elevations = []
         # ジオメトリーの座標から標高を取得する
         for location in locations:
-            elevations.append(
-                {
-                    "elevation": elevetion_service_ins.get_elevation(
-                        location[0], location[1]
-                    )
-                }
-            )
+            elevation = elevetion_service_ins.get_elevation(location[0], location[1])
+            if elevation is None:
+                print("elevation is None")
+                continue
+            elevations.append({"elevation": elevation})
 
         elevetion_change_amount = 0
         for i in range(1, len(elevations)):
