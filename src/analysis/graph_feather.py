@@ -8,6 +8,8 @@ def fetch_graph(
     # キャッシュを使う
     ox.settings.use_cache = True
     ox.settings.log_console = False
+    # 道幅用のタグを追加
+    ox.settings.useful_tags_way += ["yh:WIDTH"] + ["source"]
 
     graph = ox.graph_from_bbox(
         north=max(latitude_start, latitude_end),
@@ -19,15 +21,4 @@ def fetch_graph(
         retain_all=True,
         custom_filter='["highway"~"secondary|secondary_link|primary|primary_link|trunk|trunk_link|tertiary"]["lanes"!=1]',
     )
-    graph2 = ox.graph_from_bbox(
-        north=max(latitude_start, latitude_end),
-        south=min(latitude_start, latitude_end),
-        east=max(longitude_start, longitude_end),
-        west=min(longitude_start, longitude_end),
-        network_type="drive",
-        simplify=True,
-        retain_all=True,
-        custom_filter='["highway"="tertiary"]',
-    )
-    graph = nx.compose(graph, graph2)
     return graph

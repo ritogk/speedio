@@ -5,7 +5,7 @@ from pyproj import Transformer
 from shapely.geometry import Point, LineString
 from ...core.convert_linestrings_to_geojson import convert
 from ...core.write_file import write
-
+import pandas as pd
 
 # 道幅計算モジュールを読み込む
 from .core import road_width_calculator
@@ -13,6 +13,29 @@ from .core import road_width_calculator
 
 # エッジの幅を求める
 def generate(gdf: GeoDataFrame) -> tuple[Series, Series]:
+    # アルプスマップのデータから道幅を求める
+    # エッジが結合していると「YahooJapan/ALPSMAP;GSI ortorectified」のようなデータが含まれるが「YahooJapan/ALPSMAP」以外の道幅はタグから取得できないので、除外する
+    alps_avg_series, alps_min_series = generate_from_alpsmap(
+        gdf[(gdf["source"] == "YahooJapan/ALPSMAP") & pd.notna(gdf["yh:WIDTH"])]
+    )
+
+    # 国土地理院のデータから道幅を求める
+    gsi_avg_series, gsi_min_series = generate_from_gsi(
+        gdf[
+            (gdf["source"] != "YahooJapan/ALPSMAP")
+            | (gdf["source"] == "YahooJapan/ALPSMAP") & pd.isna(gdf["yh:WIDTH"])
+        ]
+    )
+
+    # 結果を結合する
+    avg_series = pd.concat([gsi_avg_series, alps_avg_series]).drop_duplicates()
+    min_series = pd.concat([gsi_min_series, alps_min_series]).drop_duplicates()
+
+    return avg_series, min_series
+
+
+# 国土地理院のデータから道幅を求める
+def generate_from_gsi(gdf: GeoDataFrame) -> tuple[Series, Series] | None:
     center_path = f"{os.path.dirname(os.path.abspath(__file__))}/_center"
     rdedg_path = f"{os.path.dirname(os.path.abspath(__file__))}/_rdedg"
     calclator = road_width_calculator.RoadWidthCalculator(center_path, rdedg_path)
@@ -103,3 +126,31 @@ def interpolate_points_with_offset(
         for p in points
     ]
     return points
+
+
+# アルプスマップのタグから道幅を求める
+def generate_from_alpsmap(gdf: GeoDataFrame) -> tuple[Series, Series] | None:
+    # 条件に基づいてシリーズを整形
+    def format_min(x):
+        if isinstance(x, str):
+            return float(x.split("〜")[0].replace("m", ""))
+        elif isinstance(x, list):
+            return min(float(item.split("〜")[0].replace("m", "")) for item in x)
+
+    def format_avg(x):
+        if isinstance(x, str):
+            min = float(x.split("〜")[0].replace("m", ""))
+            max = float(x.split("〜")[1].replace("m", ""))
+            return (min + max) / 2
+        elif isinstance(x, list):
+            cnt = 0
+            for item in x:
+                min = float(item.split("〜")[0].replace("m", ""))
+                max = float(item.split("〜")[1].replace("m", ""))
+                cnt += min + max
+            return cnt / (len(x) * 2)
+
+    min_series = gdf["yh:WIDTH"].apply(lambda x: format_min(x))
+    avg_series = gdf["yh:WIDTH"].apply(lambda x: format_avg(x))
+
+    return avg_series, min_series
