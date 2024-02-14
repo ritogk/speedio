@@ -17,7 +17,7 @@ def fetch_graph(
         network_type="drive",
         simplify=True,
         retain_all=True,
-        custom_filter='["highway"~"secondary|secondary_link|primary|primary_link|trunk|trunk_link"]["lanes"=2]',
+        custom_filter='["highway"~"secondary|secondary_link|primary|primary_link|trunk|trunk_link|tertiary"]["lanes"!=1]',
     )
     graph2 = ox.graph_from_bbox(
         north=max(latitude_start, latitude_end),
