@@ -2,6 +2,8 @@ from geopandas import GeoDataFrame
 from pandas import Series
 import osmnx as ox
 
+from tqdm import tqdm
+
 
 # エッジ内の分岐数を取得する
 def generate(
@@ -29,6 +31,7 @@ def generate(
         result = nodes["street_count"].sum() - (len(nodes) * 2)
         return result
 
-    series = gdf.apply(func, axis=1)
+    tqdm.pandas()
+    series = gdf.progress_apply(func, axis=1)
 
     return series
