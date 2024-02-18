@@ -103,17 +103,31 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
-    # gdf_edges = gdf_edges[gdf_edges["name"] == "かぐら街道"]
-    # 道幅を取得する
-    excution_timer_ins.start("calc width")
-    avg_width, min_width = column_generater.width.generate(gdf_edges)
-    gdf_edges["min_width"] = min_width
-    gdf_edges["avg_width"] = avg_width
+    # gsiの道幅を取得する
+    excution_timer_ins.start("calc gsi width")
+    avg_width, min_width = column_generater.width_gsi.generate(gdf_edges)
+    gdf_edges["gsi_min_width"] = min_width
+    gdf_edges["gsi_avg_width"] = avg_width
     excution_timer_ins.stop()
 
-    # 道幅が6.5m未満のエッジを削除する
-    excution_timer_ins.start("remove min-width edge")
-    gdf_edges = gdf_edges[gdf_edges["min_width"] >= 6.5]
+    # gsiの道幅が6.5m未満のエッジを削除する
+    excution_timer_ins.start("remove gsi_min_width edge")
+    gdf_edges = gdf_edges[gdf_edges["gsi_min_width"] >= 6.5]
+    excution_timer_ins.stop()
+
+    # alpsmapの道幅を取得する
+    excution_timer_ins.start("calc alpsmap width")
+    gdf_edges["is_alpsmap"] = column_generater.is_alpsmap.generate(gdf_edges)
+    avg_width, min_width = column_generater.width_alpsmap.generate(gdf_edges)
+    gdf_edges["alpsmap_min_width"] = min_width
+    gdf_edges["alpsmap_avg_width"] = avg_width
+    excution_timer_ins.stop()
+
+    # alpsmapの道幅が3m以下のエッジを削除する
+    excution_timer_ins.start("remove alpsmap_min_width edge")
+    gdf_edges = gdf_edges[
+        ~((gdf_edges["is_alpsmap"] == 1) & (gdf_edges["alpsmap_min_width"] <= 3))
+    ]
     excution_timer_ins.stop()
 
     # 標高と距離の比率を求める
@@ -190,12 +204,17 @@ def main() -> GeoDataFrame:
             "google_map_url",
             "google_earth_url",
             "street_view_url",
+            "gsi_min_width",
+            "gsi_avg_width",
+            "is_alpsmap",
+            "alpsmap_min_width",
+            "alpsmap_avg_width",
         ]
     ].to_json(output_dir, orient="records")
 
     excution_timer_ins.finish()
 
-    # gdf_edgesのavg_widthを小さい順に並び替える
-    gdf_edges = gdf_edges.sort_values("avg_width")
+    # # gdf_edgesのavg_widthを小さい順に並び替える
+    # gdf_edges = gdf_edges.sort_values("avg_width")
 
     return gdf_edges

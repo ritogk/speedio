@@ -17,14 +17,15 @@ dependencies:
   - brotli-python=1.1.0=py311hb755f60_1
   - bzip2=1.0.8=h7b6447c_0
   - c-ares=1.19.1=h5eee18b_0
-  - ca-certificates=2023.11.17=hbcca054_0
+  - ca-certificates=2024.2.2=hbcca054_0
   - cairo=1.16.0=hb05425b_5
-  - certifi=2023.11.17=pyhd8ed1ab_0
+  - certifi=2024.2.2=pyhd8ed1ab_0
   - cfitsio=4.2.0=hd9d235c_0
   - charset-normalizer=3.3.2=pyhd8ed1ab_0
   - click=8.1.7=unix_pyh707e725_0
   - click-plugins=1.1.1=py_0
   - cligj=0.7.2=pyhd8ed1ab_1
+  - colorama=0.4.6=pyhd8ed1ab_0
   - comm=0.1.4=pyhd8ed1ab_0
   - contourpy=1.2.0=py311h9547e67_0
   - curl=8.4.0=hdbd6064_1
@@ -142,7 +143,7 @@ dependencies:
   - numpy=1.25.2=py311h24aa872_0
   - numpy-base=1.25.2=py311hbfb1bba_0
   - openjpeg=2.5.0=hfec8fc6_2
-  - openssl=3.1.4=hd590300_0
+  - openssl=3.1.5=hd590300_0
   - osmnx=1.8.0=pyhd8ed1ab_0
   - packaging=23.2=pyhd8ed1ab_0
   - pandas=2.1.4=py311h320fe9a_0
@@ -192,6 +193,7 @@ dependencies:
   - tiledb=2.13.2=hd532e3d_0
   - tk=8.6.13=noxft_h4845f30_101
   - tornado=6.3.3=py311h459d7ec_1
+  - tqdm=4.66.2=pyhd8ed1ab_0
   - traitlets=5.14.0=pyhd8ed1ab_0
   - typing_extensions=4.9.0=pyha770c72_0
   - tzcode=2023c=h0b41bf4_0
