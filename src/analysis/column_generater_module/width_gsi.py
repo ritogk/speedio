@@ -5,6 +5,7 @@ from pyproj import Transformer
 from shapely.geometry import Point, LineString
 from ...core.convert_linestrings_to_geojson import convert
 from ...core.write_file import write
+from tqdm import tqdm
 
 # 道幅計算モジュールを読み込む
 from .core import road_width_calculator
@@ -32,7 +33,7 @@ def generate_from_gsi(gdf: GeoDataFrame) -> tuple[Series, Series] | None:
     geometry_width_min_list = []
     result_list = []
     # seriesをループさせる
-    for geometry in geometry_series:
+    for geometry in tqdm(geometry_series):
         widths = []
         for points in geometry:
             st_point = points[0]
@@ -44,18 +45,18 @@ def generate_from_gsi(gdf: GeoDataFrame) -> tuple[Series, Series] | None:
             result_list.append(result[1])
             width = result[0]["distance"] + result[1]["distance"]
             widths.append(width)
-            print(f"width: {width}")
+            # print(f"width: {width}")
         # 道幅の平均値を求める
         if len(widths) == 0:
             geometry_width_avg_list.append(0)
         else:
-            print(f"平均: {sum(widths) / len(widths)}")
+            # print(f"平均: {sum(widths) / len(widths)}")
             geometry_width_avg_list.append(sum(widths) / len(widths))
         # 道幅の最小値を求める
         if len(widths) == 0:
             geometry_width_min_list.append(0)
         else:
-            print(f"最小: {min(widths)}")
+            # print(f"最小: {min(widths)}")
             geometry_width_min_list.append(min(widths))
 
     geojson = convert(
