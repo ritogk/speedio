@@ -60,7 +60,7 @@ class RoadWidthCalculator:
                 pickle.dump(road_edge_df, f)
         self.road_edge_s = road_edge_df["geometry"]
         self.road_edge_i = self.road_edge_s.sindex
-        print("end")
+        print("  Loading completed")
 
     def _to_latlon(self, x, y):
         tr = Transformer.from_proj(6677, 6668)
@@ -172,7 +172,7 @@ class RoadWidthCalculator:
         # 1. 指定座標に最も近い中央線を探す
         nearest_center_line = self._search_nearest_center_line(points[0])
         if nearest_center_line is None:
-            print("nearest_center_line is None")
+            # print("nearest_center_line is None")
             return None
 
         # 2. 1で抽出した中央線上で最も近い座標を含んだlineStringを作成する
@@ -186,7 +186,7 @@ class RoadWidthCalculator:
         # 3. 2のLineStringから法線を作成する
         normal_result = self._create_normal_line(nearest_line, 15)
         if normal_result is None:
-            print("normal_line or normal_line_opposite is None")
+            # print("normal_line or normal_line_opposite is None")
             return None
         normal_line = normal_result[0]
         normal_line_opposite = normal_result[1]
@@ -195,6 +195,6 @@ class RoadWidthCalculator:
         width_line = self._create_width_line(normal_line)
         width_opposite_line = self._create_width_line(normal_line_opposite)
         if width_line is None or width_opposite_line is None:
-            print("width_line or width_opposite_line is None")
+            # print("width_line or width_opposite_line is None")
             return None
         return width_line, width_opposite_line
