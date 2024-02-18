@@ -31,15 +31,15 @@ def main() -> GeoDataFrame:
     # latitude_end = 34.317817, 133.556762
     # longitude_end = 133.556762
 
-    # latitude_start = 35.5394475699293
-    # longitude_start = 130.77163012638954
-    # latitude_end = 34.09641028769427
-    # longitude_end = 134.68825588550826
+    latitude_start = 35.5394475699293
+    longitude_start = 130.77163012638954
+    latitude_end = 34.09641028769427
+    longitude_end = 134.68825588550826
 
-    latitude_start = 34.898635
-    longitude_start = 133.030126
-    latitude_end = 34.635895
-    longitude_end = 133.575308
+    # latitude_start = 34.898635
+    # longitude_start = 133.030126
+    # latitude_end = 34.635895
+    # longitude_end = 133.575308
 
     excution_timer_ins = excution_timer.ExcutionTimer()
 
