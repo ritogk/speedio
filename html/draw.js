@@ -54,7 +54,7 @@ export const draw = () => {
             angle_change_amount: ${x.angle_change_amount}<br><br>
             angle_change_rate: ${x.angle_change_rate}<br><br>
             length: ${x.length}<br><br>
-            lans: ${x.lanes}<br><br>
+            lanes: ${x.lanes}<br><br>
             gsi_min_width: ${x.gsi_min_width}<br><br>
             gsi_avg_width: ${x.gsi_avg_width}<br><br>
             is_alpsmap: ${x.is_alpsmap}<br><br>
