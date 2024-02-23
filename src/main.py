@@ -207,6 +207,7 @@ def main() -> GeoDataFrame:
             "google_map_url",
             "google_earth_url",
             "street_view_url",
+            "lanes",
             "gsi_min_width",
             "gsi_avg_width",
             "is_alpsmap",
