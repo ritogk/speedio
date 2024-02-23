@@ -35,9 +35,8 @@ def main() -> GeoDataFrame:
     # point_st = (37.53627194869022, 135.79398402003446)
     # point_ed = (34.53413423069011, 138.5625385699785)
 
-    # 愛知
-    point_st = (35.604645, 136.466557)
-    point_ed = (34.807973103481125, 137.7162513989135)
+    point_st = (37.49467562789999, 135.88247503110705)
+    point_ed = (34.549759, 139.128935)
 
     # latitude_start = 34.898635
     # longitude_start = 133.030126
@@ -113,9 +112,9 @@ def main() -> GeoDataFrame:
     gdf_edges["gsi_avg_width"] = avg_width
     excution_timer_ins.stop()
 
-    # gsiの道幅が6.5m未満のエッジを削除する
+    # gsiの道幅が6m未満のエッジを削除する. 酷道は4~5m程度の道幅があり、地元の峠道は道幅が6.3mの道幅があるため。
     excution_timer_ins.start("remove gsi_min_width edge")
-    gdf_edges = gdf_edges[gdf_edges["gsi_min_width"] >= 6.5]
+    gdf_edges = gdf_edges[gdf_edges["gsi_min_width"] >= 6]
     excution_timer_ins.stop()
 
     # alpsmapの道幅を取得する
