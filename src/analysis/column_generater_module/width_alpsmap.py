@@ -19,7 +19,7 @@ def generate_from_alpsmap(gdf: GeoDataFrame) -> tuple[Series, Series] | None:
         if isinstance(x, str):
             if x == "1.5m未満":
                 return 1.5
-            if x == "13.0以上":
+            if x == "13.0以上" or x == "13.0m以上":
                 return 13.0
             return float(x.split("〜")[0].replace("m", ""))
         elif isinstance(x, list):
@@ -29,7 +29,7 @@ def generate_from_alpsmap(gdf: GeoDataFrame) -> tuple[Series, Series] | None:
                 values = item.split("〜")
                 if values[0] == "1.5m未満":
                     widths.append(1.5)
-                elif values[0] == "13.0以上":
+                elif values[0] == "13.0以上" or values[0] == "13.0m以上":
                     widths.append(13.0)
                 else:
                     widths.append(float(values[0].replace("m", "")))
@@ -39,7 +39,7 @@ def generate_from_alpsmap(gdf: GeoDataFrame) -> tuple[Series, Series] | None:
         if isinstance(x, str):
             if x == "1.5m未満":
                 return 1.5
-            if x == "13.0以上":
+            if x == "13.0以上" or x == "13.0m以上":
                 return 13.0
             min = float(x.split("〜")[0].replace("m", ""))
             max = float(x.split("〜")[1].replace("m", ""))
@@ -51,7 +51,8 @@ def generate_from_alpsmap(gdf: GeoDataFrame) -> tuple[Series, Series] | None:
                 if values[0] == "1.5m未満":
                     widths.append(1.5)
                     widths.append(1.5)
-                elif values[0] == "13.0以上":
+                elif values[0] == "13.0以上" or "13.0m以上":
+                    widths.append(13.0)
                     widths.append(13.0)
                 else:
                     widths.append(float(values[0].replace("m", "")))
