@@ -31,10 +31,13 @@ def main() -> GeoDataFrame:
     # latitude_end = 34.317817, 133.556762
     # longitude_end = 133.556762
 
-    latitude_start = 35.5394475699293
-    longitude_start = 130.77163012638954
-    latitude_end = 34.09641028769427
-    longitude_end = 134.68825588550826
+    # # 中部
+    # point_st = (37.53627194869022, 135.79398402003446)
+    # point_ed = (34.53413423069011, 138.5625385699785)
+
+    # 愛知
+    point_st = (35.604645, 136.466557)
+    point_ed = (34.807973103481125, 137.7162513989135)
 
     # latitude_start = 34.898635
     # longitude_start = 133.030126
@@ -45,7 +48,7 @@ def main() -> GeoDataFrame:
 
     excution_timer_ins.start("load openstreetmap data")
     graph = graph_feather.fetch_graph(
-        latitude_start, longitude_start, latitude_end, longitude_end
+        point_st[0], point_st[1], point_ed[0], point_ed[1]
     )
     excution_timer_ins.stop()
 
@@ -69,7 +72,7 @@ def main() -> GeoDataFrame:
     # エッジ内のnodeから分岐数を取得する
     excution_timer_ins.start("calc connection_node_cnt")
     gdf_edges["connection_node_cnt"] = column_generater.connection_node_cnt.generate(
-        gdf_edges, latitude_start, longitude_start, latitude_end, longitude_end
+        gdf_edges, point_st[0], point_st[1], point_ed[0], point_ed[1]
     )
     excution_timer_ins.stop()
 
@@ -95,7 +98,7 @@ def main() -> GeoDataFrame:
     # 座標間の標高の変化量を求める
 
     # ./tyugoku.tifのフルパスを取得する
-    tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/../tyugoku.tif"
+    tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/../elavation.tif"
     print(tif_path)
     excution_timer_ins.start("calc elevation_change_amount")
     gdf_edges["elevation_change_amount"] = (
