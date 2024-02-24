@@ -23,10 +23,10 @@ def generate(gdf: GeoDataFrame, tif_path: str) -> Series:
             elevation_abs = abs(
                 elevations[i]["elevation"] - elevations[i - 1]["elevation"]
             )
-            # 標高の変化量が30m以上の場合はtif範囲外を見ている可能性があるため、無視する
-            if elevation_abs > 30:
+            # 標高の変化量が40m以上の場合はtif範囲外を見ている可能性があるため、無視する
+            if elevation_abs > 40:
                 print(
-                    f'The change in elevation is over 30 meters. st: {elevations[i]["location"]}, ed: {elevations[i-1]["location"]}'
+                    f'The change in elevation is over 40 meters. st: {elevations[i]["location"]}, ed: {elevations[i-1]["location"]}'
                 )
                 continue
             elevetion_change_amount += elevation_abs
