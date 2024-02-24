@@ -16,9 +16,9 @@ class ElevationService:
         # 座標がデータセットの範囲内にあるか確認
         cols = self.dataset.RasterXSize
         rows = self.dataset.RasterYSize
+        # tifのbounds外かどうかを判定しているだけので、bounds内に標高データが存在しない場合がある。その場合は0がかえる
         if x < 0 or y < 0 or x >= cols or y >= rows:
             return None  # または適切なエラー値
-
         # ピクセル座標から標高を取得
         band = self.dataset.GetRasterBand(1)
         elevation = band.ReadAsArray(x, y, 1, 1)[0, 0]
