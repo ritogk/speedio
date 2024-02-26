@@ -1,9 +1,12 @@
 from geopandas import GeoDataFrame
 from pandas import Series
+import numpy as np
 
 
 # エッジの幅を求める
 def generate(gdf: GeoDataFrame) -> tuple[Series, Series]:
+    if "yh:WIDTH" not in gdf.columns:
+        return Series(), Series()
     # アルプスマップのデータを含む行に1を立てる
     # エッジが結合していると「YahooJapan/ALPSMAP;GSI ortorectified」のようなデータが含まれるが「YahooJapan/ALPSMAP」以外の道幅はタグから取得できないので、除外する
     avg_series, min_series = generate_from_alpsmap(gdf[gdf["is_alpsmap"] == 1])
