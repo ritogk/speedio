@@ -1,11 +1,12 @@
 import target from "./target.json" assert { type: "json" };
 import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
 
-const latitude = 35.338218;
-const longitude = 137.005638;
 export const draw = () => {
   // 地図を初期化し、指定位置を中心にする
-  const map = L.map("map").setView([latitude, longitude], 13);
+  const map = L.map("map").setView(
+    [target[0].geometry_list[0][0], target[0].geometry_list[0][1]],
+    13
+  );
   // OpenStreetMapのタイルレイヤーを追加
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution:
@@ -17,15 +18,18 @@ export const draw = () => {
   //   (x) => x.geometory_angle_rate > 0.25 && x.geometory_angle_rate < 0.6
   // );
 
-  // // 上位10件を抽出
-  // target = target.sort((a, b) => b.score - a.score).slice(0, 10);
-
   // targetのscore_normalizationを大きい順に並び替える
   target.sort((a, b) => a.score_normalization - b.score_normalization);
 
-  target.forEach((x) => {
+  const target_ = target;
+
+  // // 上位10件を抽出
+  // const target_ = target
+  //   .sort((a, b) => b.score_normalization - a.score_normalization)
+  //   .slice(0, 10);
+
+  target_.forEach((x) => {
     const polyline = x.geometry_list;
-    debugger;
     const scoreNormalization = x.score_normalization;
     const ed = polyline[polyline.length - 1];
     const center = polyline[Math.floor(polyline.length / 2)];
