@@ -6,7 +6,7 @@ import numpy as np
 
 # エッジの幅を求める
 def generate(gdf: GeoDataFrame) -> Series:
+    if "yh:WIDTH" not in gdf.columns:
+        return np.zeros(len(gdf), dtype=int)
     # アルプスマップのデータを含む行に1を立てる
-    return np.where(
-        (gdf["source"] == "YahooJapan/ALPSMAP") & pd.notna(gdf["yh:WIDTH"]), 1, 0
-    )
+    return gdf["yh:WIDTH"].apply(lambda x: 1 if "YahooJapan/ALPSMAP" in x else 0)
