@@ -4,34 +4,41 @@ from .core import elevetion_service
 
 
 # 標高の変化量を取得する
-def generate(gdf: GeoDataFrame, tif_path: str) -> Series:
+def generate(gdf: GeoDataFrame, tif_path: str) -> tuple[Series, Series]:
     elevetion_service_ins = elevetion_service.ElevationService(tif_path)
 
     def func(row):
         locations = list(row.geometry.coords)
         elevations = []
-        # ジオメトリーの座標から標高を取得する
+        elevation_change_amount = 0
+        prev_elevation = None
+
+        # ジオメトリーの座標から標高を取得し、標高の変化量も計算する
         for location in locations:
             elevation = elevetion_service_ins.get_elevation(location[1], location[0])
             if elevation is None:
                 print("elevation is None")
                 continue
+
             elevations.append({"elevation": elevation, "location": location})
 
-        elevetion_change_amount = 0
-        for i in range(1, len(elevations)):
-            elevation_abs = abs(
-                elevations[i]["elevation"] - elevations[i - 1]["elevation"]
-            )
-            # 標高の変化量が40m以上の場合はtif範囲外を見ている可能性があるため、無視する
-            if elevation_abs > 40:
-                print(
-                    f'The change in elevation is over 40 meters. st: {elevations[i]["location"]}, ed: {elevations[i-1]["location"]}'
-                )
-                continue
-            elevetion_change_amount += elevation_abs
-        return elevetion_change_amount
+            # 標高変化量の計算
+            if prev_elevation is not None:
+                elevation_abs = abs(elevation - prev_elevation)
+                # 標高の変化量が40m以上の場合はtif範囲外を見ている可能性があるため、無視する
+                if elevation_abs <= 40:
+                    elevation_change_amount += elevation_abs
+                else:
+                    print(
+                        f"The change in elevation is over 40 meters. st: {location}, ed: {prev_location}"
+                    )
+            prev_elevation = elevation
+            prev_location = location
 
-    series = gdf.apply(func, axis=1)
+        return elevation_change_amount, elevations
 
-    return series
+    results = gdf.apply(func, axis=1)
+    series_change_amount = results.apply(lambda x: x[0])
+    series_elevations = results.apply(lambda x: x[1])
+
+    return series_change_amount, series_elevations
