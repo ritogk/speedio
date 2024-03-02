@@ -51,10 +51,8 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 座標間の角度の変化量を求める
-    excution_timer_ins.start("calc angle_change_amount")
-    gdf_edges["angle_change_amount"] = column_generater.angle_change_amount.generate(
-        gdf_edges
-    )
+    excution_timer_ins.start("calc angle_deltas")
+    gdf_edges["angle_deltas"] = column_generater.angle_deltas.generate(gdf_edges)
     excution_timer_ins.stop()
 
     # 基準に満たないエッジを削除する
@@ -63,9 +61,9 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 座標間の角度の変化量を求める
-    excution_timer_ins.start("calc angle_change_amount")
-    gdf_edges["angle_change_rate"] = (
-        gdf_edges["angle_change_amount"] / gdf_edges["length"]
+    excution_timer_ins.start("calc angle_deltas")
+    gdf_edges["angle_and_length_radio"] = (
+        gdf_edges["angle_deltas"] / gdf_edges["length"]
     )
     excution_timer_ins.stop()
 
@@ -74,11 +72,11 @@ def main() -> GeoDataFrame:
     # ./tyugoku.tifのフルパスを取得する
     tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/../elavation.tif"
     print(tif_path)
-    excution_timer_ins.start("calc elevation_change_amount")
-    elevation_change_amount_serice, elevation_serice = (
-        column_generater.elevation_change_amount.generate(gdf_edges, tif_path)
+    excution_timer_ins.start("calc elevation_deltas")
+    elevation_deltas_serice, elevation_serice = (
+        column_generater.elevation_deltas.generate(gdf_edges, tif_path)
     )
-    gdf_edges["elevation_change_amount"] = elevation_change_amount_serice
+    gdf_edges["elevation_deltas"] = elevation_deltas_serice
     gdf_edges["elevations"] = elevation_serice
     excution_timer_ins.stop()
 
@@ -119,9 +117,9 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 標高と距離の比率を求める
-    excution_timer_ins.start("calc elevation_change_rate")
-    gdf_edges["elevation_change_rate"] = (
-        gdf_edges["elevation_change_amount"] / gdf_edges["length"]
+    excution_timer_ins.start("calc elevation_and_length_radio")
+    gdf_edges["elevation_and_length_radio"] = (
+        gdf_edges["elevation_deltas"] / gdf_edges["length"]
     )
     excution_timer_ins.stop()
 
@@ -184,10 +182,10 @@ def main() -> GeoDataFrame:
             "geometry_list",
             "score_normalization",
             "length",
-            "elevation_change_amount",
-            "elevation_change_rate",
-            "angle_change_amount",
-            "angle_change_rate",
+            "elevation_deltas",
+            "elevation_and_length_radio",
+            "angle_deltas",
+            "angle_and_length_radio",
             "score",
             "google_map_url",
             "google_earth_url",

@@ -15,7 +15,7 @@ def remove(gdf: GeoDataFrame) -> GeoDataFrame:
     gdf["is_target"] = np.where(
         (gdf["length"] >= lower_bound_meter)
         & (gdf["length"] < max_bound_meter)
-        & (gdf["angle_change_amount"] > 120)
+        & (gdf["angle_deltas"] > 120)
         & (gdf["connection_node_cnt"] / gdf["length"] <= branch_meter_rate),
         1,
         0,

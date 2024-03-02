@@ -53,10 +53,10 @@ export const draw = () => {
             center: <a href="${x.google_earth_url}" target="_blank">googleEarthCenter</a><br><br>
             score_nomalization: ${scoreNormalization}<br><br>
             score: ${x.score}<br><br>
-            elevation_change_rate: ${x.elevation_change_rate}<br><br>
-            elevation_change_rate: ${x.elevation_change_amount}<br><br>
-            angle_change_amount: ${x.angle_change_amount}<br><br>
-            angle_change_rate: ${x.angle_change_rate}<br><br>
+            elevation_and_length_radio: ${x.elevation_and_length_radio}<br><br>
+            elevation_deltas: ${x.elevation_deltas}<br><br>
+            angle_deltas: ${x.angle_deltas}<br><br>
+            angle_and_length_radio: ${x.angle_and_length_radio}<br><br>
             length: ${x.length}<br><br>
             lanes: ${x.lanes}<br><br>
             gsi_min_width: ${x.gsi_min_width}<br><br>
