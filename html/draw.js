@@ -1,6 +1,11 @@
 import target from "./target.json" assert { type: "json" };
 import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
 
+// 数値を小数点2桁で丸める
+export const truncateToTwoDecimals = (value) => {
+  return Math.floor(value * 100) / 100;
+};
+
 export const draw = () => {
   // 地図を初期化し、指定位置を中心にする
   const map = L.map("map").setView(
@@ -47,24 +52,90 @@ export const draw = () => {
       opacity: 0.3 + 0.2 * scoreNormalization,
     })
       .bindPopup(
-        `
-        center: <a href="${x.google_map_url}" target="_blank">mapRouteUrl</a><br><br>
-            center: <a href="${x.street_view_url}" target="_blank">streetViewCenter</a><br><br>
-            center: <a href="${x.google_earth_url}" target="_blank">googleEarthCenter</a><br><br>
-            score_nomalization: ${scoreNormalization}<br><br>
-            score: ${x.score}<br><br>
-            elevation_and_length_radio: ${x.elevation_and_length_radio}<br><br>
-            elevation_deltas: ${x.elevation_deltas}<br><br>
-            angle_deltas: ${x.angle_deltas}<br><br>
-            angle_and_length_radio: ${x.angle_and_length_radio}<br><br>
-            length: ${x.length}<br><br>
-            lanes: ${x.lanes}<br><br>
-            gsi_min_width: ${x.gsi_min_width}<br><br>
-            gsi_avg_width: ${x.gsi_avg_width}<br><br>
-            is_alpsmap: ${x.is_alpsmap}<br><br>
-            alpsmap_min_width: ${x.alpsmap_min_width}<br><br>
-            alpsmap_avg_width: ${x.alpsmap_avg_width}<br><br>
-            `,
+        `<table style="width:100%;" border="1">
+        <tr>
+          <th>name</th>
+          <th>value</th>
+        </tr>
+          <tr>
+              <td>googlemap</td>
+              <td><a href="${
+                x.google_map_url
+              }" target="_blank">mapRouteUrl</a></td>
+          </tr>
+          <tr>
+              <td>street_viewer</td>
+              <td><a href="${
+                x.street_view_url
+              }" target="_blank">streetViewCenter</a></td>
+          </tr>
+          <tr>
+              <td>google_earth</td>
+              <td><a href="${
+                x.google_earth_url
+              }" target="_blank">googleEarthCenter</a></td>
+          </tr>
+          <tr>
+              <td>score_normalization</td>
+              <td>${truncateToTwoDecimals(scoreNormalization)}</td>
+          </tr>
+          <tr>
+              <td>score</td>
+              <td>${truncateToTwoDecimals(x.score)}</td>
+          </tr>
+          <tr>
+              <td>score_angle</td>
+              <td>${truncateToTwoDecimals(x.score_angle)}</td>
+          </tr>
+          <tr>
+              <td>score_elevation</td>
+              <td>${truncateToTwoDecimals(x.score_elevation)}</td>
+          </tr>
+          <tr>
+              <td>elevation_and_length_ratio</td>
+              <td>${truncateToTwoDecimals(x.elevation_and_length_radio)}</td>
+          </tr>
+          <tr>
+              <td>elevation_deltas</td>
+              <td>${truncateToTwoDecimals(x.elevation_deltas)}</td>
+          </tr>
+          <tr>
+              <td>angle_deltas</td>
+              <td>${truncateToTwoDecimals(x.angle_deltas)}</td>
+          </tr>
+          <tr>
+              <td>angle_and_length_ratio</td>
+              <td>${truncateToTwoDecimals(x.angle_and_length_radio)}</td>
+          </tr>
+          <tr>
+              <td>length</td>
+              <td>${truncateToTwoDecimals(x.length)}</td>
+          </tr>
+          <tr>
+              <td>lanes</td>
+              <td>${x.lanes}</td>
+          </tr>
+          <tr>
+              <td>gsi_min_width</td>
+              <td>${x.gsi_min_width}</td>
+          </tr>
+          <tr>
+              <td>gsi_avg_width</td>
+              <td>${x.gsi_avg_width}</td>
+          </tr>
+          <tr>
+              <td>is_alpsmap</td>
+              <td>${x.is_alpsmap}</td>
+          </tr>
+          <tr>
+              <td>alpsmap_min_width</td>
+              <td>${x.alpsmap_min_width}</td>
+          </tr>
+          <tr>
+              <td>alpsmap_avg_width</td>
+              <td>${x.alpsmap_avg_width}</td>
+          </tr>
+      </table>`,
         { maxWidth: 400 }
       )
       .addTo(map);
