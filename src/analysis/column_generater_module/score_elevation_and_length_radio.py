@@ -3,5 +3,5 @@ from pandas import Series
 
 
 def generate(gdf: GeoDataFrame) -> Series:
-    series = gdf["elevation_and_length_radio"] * gdf["angle_and_length_radio"]
+    series = gdf["score"] / gdf["score"].max()
     return series

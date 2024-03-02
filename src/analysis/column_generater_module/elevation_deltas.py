@@ -10,7 +10,7 @@ def generate(gdf: GeoDataFrame, tif_path: str) -> tuple[Series, Series]:
     def func(row):
         locations = list(row.geometry.coords)
         elevations = []
-        elevation_change_amount = 0
+        elevation_deltas = 0
         prev_elevation = None
 
         # ジオメトリーの座標から標高を取得し、標高の変化量も計算する
@@ -27,7 +27,7 @@ def generate(gdf: GeoDataFrame, tif_path: str) -> tuple[Series, Series]:
                 elevation_abs = abs(elevation - prev_elevation)
                 # 標高の変化量が40m以上の場合はtif範囲外を見ている可能性があるため、無視する
                 if elevation_abs <= 40:
-                    elevation_change_amount += elevation_abs
+                    elevation_deltas += elevation_abs
                 else:
                     print(
                         f"The change in elevation is over 40 meters. st: {location}, ed: {prev_location}"
@@ -35,10 +35,10 @@ def generate(gdf: GeoDataFrame, tif_path: str) -> tuple[Series, Series]:
             prev_elevation = elevation
             prev_location = location
 
-        return elevation_change_amount, elevations
+        return elevation_deltas, elevations
 
     results = gdf.apply(func, axis=1)
-    series_change_amount = results.apply(lambda x: x[0])
+    series_deltas = results.apply(lambda x: x[0])
     series_elevations = results.apply(lambda x: x[1])
 
-    return series_change_amount, series_elevations
+    return series_deltas, series_elevations

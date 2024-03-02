@@ -61,10 +61,8 @@ def short_search() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 座標間の角度の変化量を求める
-    excution_timer_ins.start("calc angle_change_amount")
-    gdf_edges["angle_change_amount"] = column_generater.angle_change_amount.generate(
-        gdf_edges
-    )
+    excution_timer_ins.start("calc angle_deltas")
+    gdf_edges["angle_deltas"] = column_generater.angle_deltas.generate(gdf_edges)
     excution_timer_ins.stop()
 
     # 基準に満たないエッジを削除する
@@ -73,25 +71,23 @@ def short_search() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 座標間の角度の変化量を求める
-    excution_timer_ins.start("calc angle_change_amount")
-    gdf_edges["angle_change_rate"] = (
-        gdf_edges["angle_change_amount"] / gdf_edges["length"]
+    excution_timer_ins.start("calc angle_and_length_radio")
+    gdf_edges["angle_and_length_radio"] = (
+        gdf_edges["angle_deltas"] / gdf_edges["length"]
     )
     excution_timer_ins.stop()
 
     # 座標間の標高の変化量を求める
-    excution_timer_ins.start("calc elevation_change_amount")
-    gdf_edges[
-        "elevation_change_amount"
-    ] = column_generater.elevation_change_amount.generate(
+    excution_timer_ins.start("calc elevation_deltas")
+    gdf_edges["elevation_deltas"] = column_generater.elevation_deltas.generate(
         gdf_edges, "./merge-chubu-tokuriku-kanto3-tohoku.tif"
     )
     excution_timer_ins.stop()
 
     # 標高と距離の比率を求める
-    excution_timer_ins.start("calc elevation_change_rate")
-    gdf_edges["elevation_change_rate"] = (
-        gdf_edges["elevation_change_amount"] / gdf_edges["length"]
+    excution_timer_ins.start("calc elevation_and_length_radio")
+    gdf_edges["elevation_and_length_radio"] = (
+        gdf_edges["elevation_deltas"] / gdf_edges["length"]
     )
     excution_timer_ins.stop()
 
@@ -308,9 +304,9 @@ def short_search() -> GeoDataFrame:
             "score_normalization",
             "length",
             "elevation_change_amount",
-            "elevation_change_rate",
+            "elevation_and_length_radio",
             "angle_change_amount",
-            "angle_change_rate",
+            "angle_and_length_radio",
             "score",
             "google_map_url",
             "google_earth_url",
