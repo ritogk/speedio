@@ -5,38 +5,13 @@ from .analysis import remover
 import osmnx as ox
 from geopandas import GeoDataFrame
 import os
-from .core import shortest_navi_generater
 
 
 def main() -> GeoDataFrame:
-    # # 自宅周辺の軽いデータ
-    # latitude_start = 35.330878
-    # longitude_start = 136.951774
-    # latitude_end = 35.402261
-    # longitude_end = 137.072889
+    consider_width = False
 
-    # # 自宅 ~ 豊橋方面
-    # latitude_start = 35.371642
-    # longitude_start = 136.967037
-    # latitude_end = 34.833082
-    # longitude_end = 137.672158
-
-    # latitude_start = 35.962525
-    # longitude_start = 136.718364
-    # latitude_end = 33.610539
-    # longitude_end = 135.151121
-
-    # latitude_start = 35.602175
-    # longitude_start = 132.134046
-    # latitude_end = 34.317817, 133.556762
-    # longitude_end = 133.556762
-
-    # # 中部
-    # point_st = (37.53627194869022, 135.79398402003446)
-    # point_ed = (34.53413423069011, 138.5625385699785)
-
-    point_st = (37.49467562789999, 135.88247503110705)
-    point_ed = (34.549759, 139.128935)
+    point_st = (34.96993444329437, 137.3649884327475)
+    point_ed = (34.89343982454937, 137.48223336530324)
 
     # latitude_start = 34.898635
     # longitude_start = 133.030126
@@ -100,36 +75,47 @@ def main() -> GeoDataFrame:
     tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/../elavation.tif"
     print(tif_path)
     excution_timer_ins.start("calc elevation_change_amount")
-    gdf_edges["elevation_change_amount"] = (
+    elevation_change_amount_serice, elevation_serice = (
         column_generater.elevation_change_amount.generate(gdf_edges, tif_path)
     )
+    gdf_edges["elevation_change_amount"] = elevation_change_amount_serice
+    gdf_edges["elevations"] = elevation_serice
     excution_timer_ins.stop()
 
-    # gsiの道幅を取得する
     excution_timer_ins.start("calc gsi width")
-    avg_width, min_width = column_generater.width_gsi.generate(gdf_edges)
-    gdf_edges["gsi_min_width"] = min_width
-    gdf_edges["gsi_avg_width"] = avg_width
-    excution_timer_ins.stop()
+    if consider_width:
+        # gsiの道幅を取得する
+        avg_width, min_width = column_generater.width_gsi.generate(gdf_edges)
+        gdf_edges["gsi_min_width"] = min_width
+        gdf_edges["gsi_avg_width"] = avg_width
+        excution_timer_ins.stop()
 
-    # gsiの道幅が6m未満のエッジを削除する. 酷道は4~5m程度の道幅があり、地元の峠道は道幅が6.3mの道幅があるため。
-    excution_timer_ins.start("remove gsi_min_width edge")
-    gdf_edges = gdf_edges[gdf_edges["gsi_min_width"] >= 6]
-    excution_timer_ins.stop()
+        # gsiの道幅が6m未満のエッジを削除する. 酷道は4~5m程度の道幅があり、地元の峠道は道幅が6.3mの道幅があるため。
+        excution_timer_ins.start("remove gsi_min_width edge")
+        gdf_edges = gdf_edges[gdf_edges["gsi_min_width"] >= 6]
+        excution_timer_ins.stop()
 
-    # alpsmapの道幅を取得する
-    excution_timer_ins.start("calc alpsmap width")
-    gdf_edges["is_alpsmap"] = column_generater.is_alpsmap.generate(gdf_edges)
-    avg_width, min_width = column_generater.width_alpsmap.generate(gdf_edges)
-    gdf_edges["alpsmap_min_width"] = min_width
-    gdf_edges["alpsmap_avg_width"] = avg_width
-    excution_timer_ins.stop()
+        # alpsmapの道幅を取得する
+        excution_timer_ins.start("calc alpsmap width")
+        gdf_edges["is_alpsmap"] = column_generater.is_alpsmap.generate(gdf_edges)
+        avg_width, min_width = column_generater.width_alpsmap.generate(gdf_edges)
+        gdf_edges["alpsmap_min_width"] = min_width
+        gdf_edges["alpsmap_avg_width"] = avg_width
+        excution_timer_ins.stop()
 
-    # alpsmapの道幅が3m以下のエッジを削除する
-    excution_timer_ins.start("remove alpsmap_min_width edge")
-    gdf_edges = gdf_edges[
-        ~((gdf_edges["is_alpsmap"] == 1) & (gdf_edges["alpsmap_min_width"] <= 3))
-    ]
+        # alpsmapの道幅が3m以下のエッジを削除する
+        excution_timer_ins.start("remove alpsmap_min_width edge")
+        gdf_edges = gdf_edges[
+            ~((gdf_edges["is_alpsmap"] == 1) & (gdf_edges["alpsmap_min_width"] <= 3))
+        ]
+    else:
+        gdf_edges["gsi_min_width"] = 0
+        gdf_edges["gsi_avg_width"] = 0
+        gdf_edges["is_alpsmap"] = 1
+        gdf_edges["alpsmap_min_width"] = 0
+        gdf_edges["alpsmap_avg_width"] = 0
+        gdf_edges["lanes"] = 2
+
     excution_timer_ins.stop()
 
     # 標高と距離の比率を求める
