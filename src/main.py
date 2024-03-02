@@ -80,7 +80,7 @@ def main() -> GeoDataFrame:
     gdf_edges["elevations"] = elevation_serice
     excution_timer_ins.stop()
 
-    excution_timer_ins.start("calc gsi width")
+    excution_timer_ins.start("calc width")
     if consider_width:
         # gsiの道幅を取得する
         avg_width, min_width = column_generater.width_gsi.generate(gdf_edges)
