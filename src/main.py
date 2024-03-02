@@ -125,6 +125,8 @@ def main() -> GeoDataFrame:
 
     # スコアを求める
     excution_timer_ins.start("calc score")
+    gdf_edges["score_elevation"] = column_generater.score_elevation.generate(gdf_edges)
+    gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
     gdf_edges["score"] = column_generater.score.generate(gdf_edges)
     excution_timer_ins.stop()
 
@@ -187,6 +189,8 @@ def main() -> GeoDataFrame:
             "angle_deltas",
             "angle_and_length_radio",
             "score",
+            "score_elevation",
+            "score_angle",
             "google_map_url",
             "google_earth_url",
             "street_view_url",
