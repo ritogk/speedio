@@ -5,6 +5,7 @@ from .column_generater_module import angle_deltas
 from .column_generater_module import elevation
 from .column_generater_module import elevation_smooth
 from .column_generater_module import elevation_deltas
+from .column_generater_module import elavation_height
 from .column_generater_module import score
 from .column_generater_module import score_normalization
 from .column_generater_module import google_map_url

@@ -96,6 +96,10 @@ export const draw = () => {
               <td>${truncateToTwoDecimals(x.elevation_and_length_radio)}</td>
           </tr>
           <tr>
+              <td>elevation_height</td>
+              <td>${truncateToTwoDecimals(x.elevation_height)}</td>
+          </tr>
+          <tr>
               <td>elevation_deltas</td>
               <td>${truncateToTwoDecimals(x.elevation_deltas)}</td>
           </tr>
