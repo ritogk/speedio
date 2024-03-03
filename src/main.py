@@ -75,6 +75,13 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 標高の変化量を求める
+    excution_timer_ins.start("calc elevation_smooth")
+    gdf_edges["elevation_smooth"] = column_generater.elevation_smooth.generate(
+        gdf_edges
+    )
+    excution_timer_ins.stop()
+
+    # 標高の変化量を求める
     excution_timer_ins.start("calc elevation_deltas")
     elevation_deltas_serice = column_generater.elevation_deltas.generate(gdf_edges)
     gdf_edges["elevation_deltas"] = elevation_deltas_serice

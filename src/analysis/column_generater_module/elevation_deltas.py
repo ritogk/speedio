@@ -7,7 +7,7 @@ import pandas as pd
 # 標高の変化量を取得する
 def generate(gdf: GeoDataFrame) -> tuple[Series, Series]:
     def func(row):
-        elevations = row.elevations
+        elevations = row.elevation_smooth
         elevation_deltas = 0
         prev_elevation = None
         # ジオメトリーの座標から標高を取得し、標高の変化量も計算する
