@@ -73,9 +73,16 @@ def main() -> GeoDataFrame:
     gdf_edges["elevation"] = column_generater.elevation.generate(gdf_edges, tif_path)
     excution_timer_ins.stop()
 
-    # 標高の変化量を求める
+    # 標高の平準化を行う
     excution_timer_ins.start("calc elevation_smooth")
     gdf_edges["elevation_smooth"] = column_generater.elevation_smooth.generate(
+        gdf_edges
+    )
+    excution_timer_ins.stop()
+
+    # 標高の高さ(最小値と最大値の差)を求める
+    excution_timer_ins.start("calc elevation_height")
+    gdf_edges["elevation_height"] = column_generater.elavation_height.generate(
         gdf_edges
     )
     excution_timer_ins.stop()
@@ -191,6 +198,7 @@ def main() -> GeoDataFrame:
             "geometry_list",
             "score_normalization",
             "length",
+            "elevation_height",
             "elevation_deltas",
             "elevation_and_length_radio",
             "angle_deltas",
