@@ -94,6 +94,12 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
+    excution_timer_ins.start("calc elavation_height_and_length_ratio")
+    gdf_edges["elavation_height_and_length_ratio"] = (
+        gdf_edges["elevation_height"] / gdf_edges["length"]
+    )
+    excution_timer_ins.stop()
+
     excution_timer_ins.start("calc width")
     if consider_width:
         # gsiの道幅を取得する
@@ -201,6 +207,7 @@ def main() -> GeoDataFrame:
             "elevation_height",
             "elevation_deltas",
             "elevation_and_length_radio",
+            "elavation_height_and_length_ratio",
             "angle_deltas",
             "angle_and_length_radio",
             "score",
