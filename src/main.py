@@ -71,7 +71,7 @@ def main() -> GeoDataFrame:
     tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/../elavation.tif"
     excution_timer_ins.start("calc elevation")
     elevation_serice = column_generater.elevation.generate(gdf_edges, tif_path)
-    gdf_edges["elevations"] = elevation_serice
+    gdf_edges["elevation"] = elevation_serice
     excution_timer_ins.stop()
 
     # 標高の変化量を求める
