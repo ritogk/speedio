@@ -70,8 +70,7 @@ def main() -> GeoDataFrame:
     # 座標間の標高の変化量を求める
     tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/../elavation.tif"
     excution_timer_ins.start("calc elevation")
-    elevation_serice = column_generater.elevation.generate(gdf_edges, tif_path)
-    gdf_edges["elevation"] = elevation_serice
+    gdf_edges["elevation"] = column_generater.elevation.generate(gdf_edges, tif_path)
     excution_timer_ins.stop()
 
     # 標高の変化量を求める
@@ -83,8 +82,9 @@ def main() -> GeoDataFrame:
 
     # 標高の変化量を求める
     excution_timer_ins.start("calc elevation_deltas")
-    elevation_deltas_serice = column_generater.elevation_deltas.generate(gdf_edges)
-    gdf_edges["elevation_deltas"] = elevation_deltas_serice
+    gdf_edges["elevation_deltas"] = column_generater.elevation_deltas.generate(
+        gdf_edges
+    )
     excution_timer_ins.stop()
 
     excution_timer_ins.start("calc width")
