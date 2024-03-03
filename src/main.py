@@ -10,8 +10,8 @@ import os
 def main() -> GeoDataFrame:
     consider_width = False
 
-    point_st = (34.96993444329437, 137.3649884327475)
-    point_ed = (34.89343982454937, 137.48223336530324)
+    point_st = (35.365832149502936, 136.97318842437872)
+    point_ed = (35.3565359893366, 136.99099425113795)
 
     # latitude_start = 34.898635
     # longitude_start = 133.030126
@@ -68,16 +68,16 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 座標間の標高の変化量を求める
-
-    # ./tyugoku.tifのフルパスを取得する
     tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/../elavation.tif"
-    print(tif_path)
-    excution_timer_ins.start("calc elevation_deltas")
-    elevation_deltas_serice, elevation_serice = (
-        column_generater.elevation_deltas.generate(gdf_edges, tif_path)
-    )
-    gdf_edges["elevation_deltas"] = elevation_deltas_serice
+    excution_timer_ins.start("calc elevation")
+    elevation_serice = column_generater.elevation.generate(gdf_edges, tif_path)
     gdf_edges["elevations"] = elevation_serice
+    excution_timer_ins.stop()
+
+    # 標高の変化量を求める
+    excution_timer_ins.start("calc elevation_deltas")
+    elevation_deltas_serice = column_generater.elevation_deltas.generate(gdf_edges)
+    gdf_edges["elevation_deltas"] = elevation_deltas_serice
     excution_timer_ins.stop()
 
     excution_timer_ins.start("calc width")
