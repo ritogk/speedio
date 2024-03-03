@@ -3,7 +3,7 @@ import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
 
 // 数値を小数点2桁で丸める
 export const truncateToTwoDecimals = (value) => {
-  return Math.floor(value * 100) / 100;
+  return Math.floor(value * 1000) / 1000;
 };
 
 export const draw = () => {
