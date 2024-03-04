@@ -154,6 +154,9 @@ def main() -> GeoDataFrame:
 
     # スコアを求める
     excution_timer_ins.start("calc score")
+    gdf_edges["score_elevation_over_heiht"] = (
+        column_generater.score_elevation_over_heiht.generate(gdf_edges)
+    )
     gdf_edges["score_elevation"] = column_generater.score_elevation.generate(gdf_edges)
     gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
     gdf_edges["score"] = column_generater.score.generate(gdf_edges)
@@ -222,6 +225,7 @@ def main() -> GeoDataFrame:
             "score",
             "score_elevation",
             "score_angle",
+            "score_elevation_over_heiht",
             "google_map_url",
             "google_earth_url",
             "street_view_url",
