@@ -21,4 +21,5 @@ def fetch_graph(
         retain_all=True,
         custom_filter='["highway"~"secondary|secondary_link|primary|primary_link|trunk|trunk_link|tertiary"]["lanes"!=1]',
     )
+
     return graph

@@ -8,21 +8,15 @@ import os
 
 
 def main() -> GeoDataFrame:
-    consider_width = False
+    consider_width = True
 
-    # point_st = (35.365832149502936, 136.97318842437872)
-    # point_ed = (35.3565359893366, 136.99099425113795)
+    # # 静岡県
+    # point_st = (35.65866473371344, 137.35012447834407)
+    # point_ed = (34.48983608970132, 139.1463890199297)
 
-    # point_st = (35.386127911507195, 136.89516871332725)
-    # point_ed = (34.83257396794433, 137.499947269429)
-
-    point_st = (35.37086375353072, 136.96607055730195)
-    point_ed = (35.26461117577675, 137.14468391961833)
-
-    # latitude_start = 34.898635
-    # longitude_start = 133.030126
-    # latitude_end = 34.635895
-    # longitude_end = 133.575308
+    # 入鹿池周辺
+    point_st = (35.366589302543076, 136.96912189107263)
+    point_ed = (35.328698287818376, 137.0170255402175)
 
     excution_timer_ins = excution_timer.ExcutionTimer()
 
@@ -34,10 +28,13 @@ def main() -> GeoDataFrame:
 
     excution_timer_ins.start("convert graph to GeoDataFrame")
     gdf_edges = ox.graph_to_gdfs(graph, nodes=False, edges=True)
+    print(f"  row: {len(gdf_edges)}")
     excution_timer_ins.stop()
 
     excution_timer_ins.start("remove reverse edge")
+    count = len(gdf_edges)
     gdf_edges = remover.reverse_edge.remove(gdf_edges)
+    print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
 
     # 開始位置列を追加する
@@ -63,8 +60,14 @@ def main() -> GeoDataFrame:
 
     # 基準に満たないエッジを削除する
     excution_timer_ins.start("remove below standard edge")
+    count = len(gdf_edges)
     gdf_edges = remover.filter_edge.remove(gdf_edges)
+    print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
+
+    # gdf_edgesがemptyの場合は終了する
+    if gdf_edges.empty:
+        return gdf_edges
 
     # 座標間の角度の変化量を求める
     excution_timer_ins.start("calc angle_deltas")
@@ -128,7 +131,10 @@ def main() -> GeoDataFrame:
         excution_timer_ins.stop()
 
         # alpsmapの道幅が3m以下のエッジを削除する
+        count = len(gdf_edges)
         excution_timer_ins.start("remove alpsmap_min_width edge")
+        print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
+
         gdf_edges = gdf_edges[
             ~((gdf_edges["is_alpsmap"] == 1) & (gdf_edges["alpsmap_min_width"] <= 3))
         ]
@@ -150,7 +156,10 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 標高と距離の比率が0.02未満のエッジを削除する
+    count = len(gdf_edges)
     gdf_edges = remover.elevation_min_height.remove(gdf_edges)
+    # 元のデータの長さと削除後のデータの長さを表示する
+    print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
 
     # スコアを求める
     excution_timer_ins.start("calc score")
@@ -162,10 +171,12 @@ def main() -> GeoDataFrame:
     gdf_edges["score"] = column_generater.score.generate(gdf_edges)
     excution_timer_ins.stop()
 
-    # スコアが低いエッジを削除する
-    excution_timer_ins.start("remoce low score edge")
-    gdf_edges = remover.score.remove(gdf_edges)
-    excution_timer_ins.stop()
+    # # スコアが低いエッジを削除する
+    # excution_timer_ins.start("remoce low score edge")
+    # count = len(gdf_edges)
+    # gdf_edges = remover.score.remove(gdf_edges)
+    # print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
+    # excution_timer_ins.stop()
 
     # スコアを正規化
     excution_timer_ins.start("calc score_nomalization")
