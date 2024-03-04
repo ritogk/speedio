@@ -10,8 +10,11 @@ import os
 def main() -> GeoDataFrame:
     consider_width = False
 
-    point_st = (35.365832149502936, 136.97318842437872)
-    point_ed = (35.3565359893366, 136.99099425113795)
+    # point_st = (35.365832149502936, 136.97318842437872)
+    # point_ed = (35.3565359893366, 136.99099425113795)
+
+    point_st = (35.386127911507195, 136.89516871332725)
+    point_ed = (34.83257396794433, 137.499947269429)
 
     # latitude_start = 34.898635
     # longitude_start = 133.030126
@@ -142,6 +145,9 @@ def main() -> GeoDataFrame:
         gdf_edges["elevation_deltas"] / gdf_edges["length"]
     )
     excution_timer_ins.stop()
+
+    # 標高と距離の比率が0.02未満のエッジを削除する
+    gdf_edges = remover.elevation_min_height.remove(gdf_edges)
 
     # スコアを求める
     excution_timer_ins.start("calc score")
