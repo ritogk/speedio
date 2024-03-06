@@ -8,15 +8,15 @@ import os
 
 
 def main() -> GeoDataFrame:
-    consider_width = True
+    consider_width = False
 
-    # # 静岡県
-    # point_st = (35.65866473371344, 137.35012447834407)
-    # point_ed = (34.48983608970132, 139.1463890199297)
+    # 静岡県
+    point_st = (34.923119880806, 137.92288290975824)
+    point_ed = (34.9089510271917, 137.9440970553176)
 
-    # 入鹿池周辺
-    point_st = (35.366589302543076, 136.96912189107263)
-    point_ed = (35.328698287818376, 137.0170255402175)
+    # # 入鹿池周辺
+    # point_st = (35.366589302543076, 136.96912189107263)
+    # point_ed = (35.328698287818376, 137.0170255402175)
 
     excution_timer_ins = excution_timer.ExcutionTimer()
 
@@ -149,8 +149,8 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 標高と距離の比率を求める
-    excution_timer_ins.start("calc elevation_and_length_radio")
-    gdf_edges["elevation_and_length_radio"] = (
+    excution_timer_ins.start("calc elevation_deltas_and_length_radio")
+    gdf_edges["elevation_deltas_and_length_radio"] = (
         gdf_edges["elevation_deltas"] / gdf_edges["length"]
     )
     excution_timer_ins.stop()
@@ -229,7 +229,7 @@ def main() -> GeoDataFrame:
             "length",
             "elevation_height",
             "elevation_deltas",
-            "elevation_and_length_radio",
+            "elevation_deltas_and_length_radio",
             "elavation_height_and_length_ratio",
             "angle_deltas",
             "angle_and_length_radio",
