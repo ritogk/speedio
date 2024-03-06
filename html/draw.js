@@ -80,22 +80,24 @@ export const draw = () => {
         <span style="font-weight:bold;">Created</span>
         <table style="width:100%;" border="1">
           <tr>
-              <td>elevation_and_length_ratio</td>
-              <td>${truncateToTwoDecimals(x.elevation_and_length_radio)}</td>
+              <td>elevation_deltas</td>
+              <td>${truncateToTwoDecimals(x.elevation_deltas)}</td>
           </tr>
           <tr>
               <td>elevation_height</td>
               <td>${truncateToTwoDecimals(x.elevation_height)}</td>
           </tr>
           <tr>
+              <td>elevation_deltas_and_length_radio</td>
+              <td>${truncateToTwoDecimals(
+                x.elevation_deltas_and_length_radio
+              )}</td>
+          </tr>
+          <tr>
               <td>elavation_height_and_length_ratio</td>
               <td>${truncateToTwoDecimals(
                 x.elavation_height_and_length_ratio
               )}</td>
-          </tr>
-          <tr>
-              <td>elevation_deltas</td>
-              <td>${truncateToTwoDecimals(x.elevation_deltas)}</td>
           </tr>
           <tr>
               <td>angle_deltas</td>
