@@ -140,6 +140,10 @@ export const draw = () => {
               <td>lanes</td>
               <td>${x.lanes}</td>
           </tr>
+          <tr>
+              <td>highway</td>
+              <td>${x.highway}</td>
+          </tr>
         </table>
 
 

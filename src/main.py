@@ -8,15 +8,15 @@ import os
 
 
 def main() -> GeoDataFrame:
-    consider_width = True
+    consider_width = False
 
-    # 静岡県
-    point_st = (35.65866473371344, 137.35012447834407)
-    point_ed = (34.48983608970132, 139.1463890199297)
+    # # 静岡県
+    # point_st = (35.65866473371344, 137.35012447834407)
+    # point_ed = (34.48983608970132, 139.1463890199297)
 
-    # # 入鹿池周辺
-    # point_st = (35.366589302543076, 136.96912189107263)
-    # point_ed = (35.328698287818376, 137.0170255402175)
+    # 入鹿池周辺
+    point_st = (35.366589302543076, 136.96912189107263)
+    point_ed = (35.328698287818376, 137.0170255402175)
 
     excution_timer_ins = excution_timer.ExcutionTimer()
 
@@ -224,9 +224,10 @@ def main() -> GeoDataFrame:
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[
         [
+            "length",
+            "highway",
             "geometry_list",
             "score_normalization",
-            "length",
             "elevation_height",
             "elevation_deltas",
             "elevation_deltas_and_length_radio",
