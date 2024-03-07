@@ -1,14 +1,19 @@
 import target from "./target.json" assert { type: "json" };
 import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
 
+document.getElementById("filter").addEventListener("change", function (e) {
+  draw(e.target.value);
+});
+
 // 数値を小数点2桁で丸める
 export const truncateToTwoDecimals = (value) => {
   return Math.floor(value * 1000) / 1000;
 };
 
-export const draw = () => {
+let map;
+export const init = () => {
   // 地図を初期化し、指定位置を中心にする
-  const map = L.map("map").setView(
+  map = L.map("map").setView(
     [target[0].geometry_list[0][0], target[0].geometry_list[0][1]],
     13
   );
@@ -17,23 +22,24 @@ export const draw = () => {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
+};
 
-  // // geometory_angle_rateが0.3~0.6のレコードを取得
-  // polylines = polylines.filter(
-  //   (x) => x.geometory_angle_rate > 0.25 && x.geometory_angle_rate < 0.6
-  // );
+let polylines = [];
+const clearPolylines = () => {
+  for (let polyline of polylines) {
+    polyline.remove(); // 地図からポリラインを削除
+  }
+  polylines = []; // 配列を空にする
+};
 
-  // targetのscore_normalizationを大きい順に並び替える
-  target.sort((a, b) => a.score_normalization - b.score_normalization);
+export const draw = (filterType) => {
+  clearPolylines();
+  let filteredTargets =
+    filterType === "all"
+      ? target
+      : target.filter((x) => x.is_alpsmap === Number(filterType));
 
-  const target_ = target;
-
-  // // 上位10件を抽出
-  // const target_ = target
-  //   .sort((a, b) => b.score_normalization - a.score_normalization)
-  //   .slice(0, 10);
-
-  target_.forEach((x) => {
+  filteredTargets.forEach((x) => {
     const polyline = x.geometry_list;
     const scoreNormalization = x.score_normalization;
     const ed = polyline[polyline.length - 1];
@@ -46,7 +52,7 @@ export const draw = () => {
     var b = 255 * (1 - scoreNormalization);
     color = "rgb(" + r + " ," + g + "," + b + ")";
 
-    L.polyline(polyline, {
+    const line = L.polyline(polyline, {
       color: color,
       weight: 20,
       opacity: 0.3 + 0.2 * scoreNormalization,
@@ -171,5 +177,6 @@ export const draw = () => {
         { maxWidth: 400 }
       )
       .addTo(map);
+    polylines.push(line);
   });
 };
