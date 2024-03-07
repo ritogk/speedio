@@ -3,7 +3,7 @@ from pandas import Series
 
 WEIGHTS = {
     "elevation": 1,
-    "elvation_over_height": 0.8,  # 負の評価なので逆転して使う事。
+    "elvation_over_height": 1,  # 負の評価なので逆転して使う事。
     "angle": 1,
 }
 
