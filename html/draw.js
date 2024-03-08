@@ -1,10 +1,6 @@
 import target from "./target.json" assert { type: "json" };
 import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
 
-document.getElementById("filter").addEventListener("change", function (e) {
-  draw(e.target.value);
-});
-
 // 数値を小数点2桁で丸める
 export const truncateToTwoDecimals = (value) => {
   return Math.floor(value * 1000) / 1000;
@@ -32,12 +28,27 @@ const clearPolylines = () => {
   polylines = []; // 配列を空にする
 };
 
-export const draw = (filterType) => {
+export const draw = () => {
   clearPolylines();
+
+  const filterKey1 = document.getElementById("filterKey1").value;
+  const filterValue = document.getElementById("filterValue").value;
+  const filterKey2 = document.getElementById("filterKey2").value;
+  const minValue = document.getElementById("minValue").value;
+  const maxValue = document.getElementById("maxValue").value;
+
   let filteredTargets =
-    filterType === "all"
+    filterValue === "" || filterKey1 === ""
       ? target
-      : target.filter((x) => x.is_alpsmap === Number(filterType));
+      : target.filter((x) => x[filterKey1] == filterValue);
+  filteredTargets =
+    filterKey2 === "" || minValue === ""
+      ? filteredTargets
+      : filteredTargets.filter((x) => x[filterKey2] >= Number(minValue));
+  filteredTargets =
+    filterKey2 === "" || maxValue === ""
+      ? filteredTargets
+      : filteredTargets.filter((x) => x[filterKey2] <= Number(maxValue));
 
   filteredTargets.forEach((x) => {
     const polyline = x.geometry_list;

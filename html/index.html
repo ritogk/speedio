@@ -16,7 +16,7 @@
         right: 0;
       }
 
-      #filter {
+      #filterArea {
         position: absolute;
         top: 10px;
         left: 50px;
@@ -25,14 +25,53 @@
     </style>
   </head>
   <body>
-    <div style="z-index: 10"><input type="text" id="filter" /></div>
+    <div id="filterArea">
+      <div>
+        <input
+          type="text"
+          id="filterKey1"
+          placeholder="filterKey"
+          style="width: 100px"
+        />
+        <input
+          type="text"
+          id="filterValue"
+          placeholder="filterValue"
+          style="width: 100px"
+        />
+      </div>
+      <div>
+        <input
+          type="text"
+          id="filterKey2"
+          placeholder="filterKey"
+          style="width: 100px"
+        />
+        <input
+          type="text"
+          id="minValue"
+          placeholder="&lt;="
+          style="width: 100px"
+        />
+        <input
+          type="text"
+          id="maxValue"
+          placeholder="&gt;="
+          style="width: 100px"
+        />
+      </div>
+      <button id="searchButton" style="width: 335px">Search</button>
+    </div>
     <div id="map"></div>
     <script src="./draw.js" type="module"></script>
     <!-- Leaflet JavaScriptのリンク -->
     <script type="module">
       import { draw, init } from "./draw.js";
       init();
-      draw("all");
+      draw();
+      document.getElementById("searchButton").addEventListener("click", () => {
+        draw();
+      });
     </script>
   </body>
 </html>
