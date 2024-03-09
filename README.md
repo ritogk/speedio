@@ -10,7 +10,6 @@
 [] 左コーナーの重みを上げる  
 [] みてい
 
-
 ## 抽出したワインディング
 
 青 = 候補  
@@ -24,6 +23,7 @@
 ## setup
 
 ```
+cp .base.env .env
 conda env create -f environment.yml
 ```
 
