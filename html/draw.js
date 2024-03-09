@@ -33,14 +33,14 @@ export const draw = () => {
 
   const filterKey1 = document.getElementById("filterKey1").value;
   const filterValue = document.getElementById("filterValue").value;
-  const filterKey2 = document.getElementById("filterKey2").value;
-  const minValue = document.getElementById("minValue").value;
-  const maxValue = document.getElementById("maxValue").value;
-
   let filteredTargets =
     filterValue === "" || filterKey1 === ""
       ? target
       : target.filter((x) => x[filterKey1] == filterValue);
+
+  const filterKey2 = document.getElementById("filterKey2").value;
+  const minValue = document.getElementById("minValue").value;
+  const maxValue = document.getElementById("maxValue").value;
   filteredTargets =
     filterKey2 === "" || minValue === ""
       ? filteredTargets
@@ -109,9 +109,9 @@ export const draw = () => {
               <td>${truncateToTwoDecimals(x.elevation_height)}</td>
           </tr>
           <tr>
-              <td>elevation_deltas_and_length_radio</td>
+              <td>elevation_deltas_and_length_ratio</td>
               <td>${truncateToTwoDecimals(
-                x.elevation_deltas_and_length_radio
+                x.elevation_deltas_and_length_ratio
               )}</td>
           </tr>
           <tr>
@@ -126,7 +126,7 @@ export const draw = () => {
           </tr>
           <tr>
               <td>angle_and_length_ratio</td>
-              <td>${truncateToTwoDecimals(x.angle_and_length_radio)}</td>
+              <td>${truncateToTwoDecimals(x.angle_and_length_ratio)}</td>
           </tr>
           <tr>
               <td>gsi_min_width</td>
