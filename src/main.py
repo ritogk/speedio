@@ -9,9 +9,8 @@ from .core.env import getEnv
 
 
 def main() -> GeoDataFrame:
-    consider_width = False
-
     env = getEnv()
+    consider_width = env["CONSIDER_WIDTH"]
     point_st = env["POINT_ST"]
     point_ed = env["POINT_ED"]
 
