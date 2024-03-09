@@ -5,18 +5,15 @@ from .analysis import remover
 import osmnx as ox
 from geopandas import GeoDataFrame
 import os
+from .core.env import getEnv
 
 
 def main() -> GeoDataFrame:
     consider_width = False
 
-    # # 静岡県
-    # point_st = (34.98335962852113, 138.44419173929737)
-    # point_ed = (34.96289317226805, 138.4703700977255)
-
-    # 入鹿池周辺
-    point_st = (35.366589302543076, 136.96912189107263)
-    point_ed = (35.328698287818376, 137.0170255402175)
+    env = getEnv()
+    point_st = env["POINT_ST"]
+    point_ed = env["POINT_ED"]
 
     excution_timer_ins = excution_timer.ExcutionTimer()
 
