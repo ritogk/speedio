@@ -71,8 +71,8 @@ def short_search() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 座標間の角度の変化量を求める
-    excution_timer_ins.start("calc angle_and_length_radio")
-    gdf_edges["angle_and_length_radio"] = (
+    excution_timer_ins.start("calc angle_and_length_ratio")
+    gdf_edges["angle_and_length_ratio"] = (
         gdf_edges["angle_deltas"] / gdf_edges["length"]
     )
     excution_timer_ins.stop()
@@ -85,8 +85,8 @@ def short_search() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 標高と距離の比率を求める
-    excution_timer_ins.start("calc elevation_deltas_and_length_radio")
-    gdf_edges["elevation_deltas_and_length_radio"] = (
+    excution_timer_ins.start("calc elevation_deltas_and_length_ratio")
+    gdf_edges["elevation_deltas_and_length_ratio"] = (
         gdf_edges["elevation_deltas"] / gdf_edges["length"]
     )
     excution_timer_ins.stop()
@@ -304,9 +304,9 @@ def short_search() -> GeoDataFrame:
             "score_normalization",
             "length",
             "elevation_change_amount",
-            "elevation_deltas_and_length_radio",
+            "elevation_deltas_and_length_ratio",
             "angle_change_amount",
-            "angle_and_length_radio",
+            "angle_and_length_ratio",
             "score",
             "google_map_url",
             "google_earth_url",

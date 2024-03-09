@@ -67,7 +67,7 @@ def main() -> GeoDataFrame:
 
     # 座標間の角度の変化量を求める
     excution_timer_ins.start("calc angle_deltas")
-    gdf_edges["angle_and_length_radio"] = (
+    gdf_edges["angle_and_length_ratio"] = (
         gdf_edges["angle_deltas"] / gdf_edges["length"]
     )
     excution_timer_ins.stop()
@@ -145,8 +145,8 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 標高と距離の比率を求める
-    excution_timer_ins.start("calc elevation_deltas_and_length_radio")
-    gdf_edges["elevation_deltas_and_length_radio"] = (
+    excution_timer_ins.start("calc elevation_deltas_and_length_ratio")
+    gdf_edges["elevation_deltas_and_length_ratio"] = (
         gdf_edges["elevation_deltas"] / gdf_edges["length"]
     )
     excution_timer_ins.stop()
@@ -226,10 +226,10 @@ def main() -> GeoDataFrame:
             "geometry_list",
             "elevation_height",
             "elevation_deltas",
-            "elevation_deltas_and_length_radio",
+            "elevation_deltas_and_length_ratio",
             "elavation_height_and_length_ratio",
             "angle_deltas",
-            "angle_and_length_radio",
+            "angle_and_length_ratio",
             "score_elevation",
             "score_elevation_over_heiht",
             "score_angle",
