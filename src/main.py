@@ -11,8 +11,8 @@ def main() -> GeoDataFrame:
     consider_width = False
 
     # # 静岡県
-    # point_st = (35.65866473371344, 137.35012447834407)
-    # point_ed = (34.48983608970132, 139.1463890199297)
+    # point_st = (34.98335962852113, 138.44419173929737)
+    # point_ed = (34.96289317226805, 138.4703700977255)
 
     # 入鹿池周辺
     point_st = (35.366589302543076, 136.96912189107263)
@@ -168,6 +168,7 @@ def main() -> GeoDataFrame:
     )
     gdf_edges["score_elevation"] = column_generater.score_elevation.generate(gdf_edges)
     gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
+    gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
     gdf_edges["score"] = column_generater.score.generate(gdf_edges)
     excution_timer_ins.stop()
 
@@ -227,17 +228,18 @@ def main() -> GeoDataFrame:
             "length",
             "highway",
             "geometry_list",
-            "score_normalization",
             "elevation_height",
             "elevation_deltas",
             "elevation_deltas_and_length_radio",
             "elavation_height_and_length_ratio",
             "angle_deltas",
             "angle_and_length_radio",
-            "score",
             "score_elevation",
-            "score_angle",
             "score_elevation_over_heiht",
+            "score_angle",
+            "score_width",
+            "score",
+            "score_normalization",
             "google_map_url",
             "google_earth_url",
             "street_view_url",
