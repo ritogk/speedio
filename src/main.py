@@ -93,6 +93,16 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
+    # 標高のアップダウン量を求める
+    excution_timer_ins.start("calc elevation_fluctuation")
+    fluctuation_up, fluctuation_down = column_generater.elevation_fluctuation.generate(
+        gdf_edges
+    )
+    gdf_edges["elevation_fluctuation"] = list(
+        zip(fluctuation_up.round(2), fluctuation_down.round(2))
+    )
+    excution_timer_ins.stop()
+
     # 標高の変化量を求める
     excution_timer_ins.start("calc elevation_deltas")
     gdf_edges["elevation_deltas"] = column_generater.elevation_deltas.generate(
