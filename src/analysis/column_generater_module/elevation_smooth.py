@@ -6,7 +6,7 @@ import pandas as pd
 
 # 標高を平準化する
 def generate(gdf: GeoDataFrame) -> Series:
-    window_size = 4
+    window_size = 5
 
     def func(row):
         series = pd.Series(row.elevation)
