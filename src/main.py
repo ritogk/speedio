@@ -6,6 +6,7 @@ import osmnx as ox
 from geopandas import GeoDataFrame
 import os
 from .core.env import getEnv
+from datetime import datetime
 
 
 def main() -> GeoDataFrame:
@@ -218,35 +219,36 @@ def main() -> GeoDataFrame:
     )
 
     # jsonに変換して出力する
+    output_columns = [
+        "length",
+        "highway",
+        "geometry_list",
+        "elevation_height",
+        "elevation_deltas",
+        "elevation_deltas_and_length_ratio",
+        "elavation_height_and_length_ratio",
+        "angle_deltas",
+        "angle_and_length_ratio",
+        "score_elevation",
+        "score_elevation_over_heiht",
+        "score_angle",
+        "score_width",
+        "score",
+        "score_normalization",
+        "google_map_url",
+        "google_earth_url",
+        "street_view_url",
+        "lanes",
+        "gsi_min_width",
+        "gsi_avg_width",
+        "is_alpsmap",
+        "alpsmap_min_width",
+        "alpsmap_avg_width",
+    ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
-    gdf_edges[
-        [
-            "length",
-            "highway",
-            "geometry_list",
-            "elevation_height",
-            "elevation_deltas",
-            "elevation_deltas_and_length_ratio",
-            "elavation_height_and_length_ratio",
-            "angle_deltas",
-            "angle_and_length_ratio",
-            "score_elevation",
-            "score_elevation_over_heiht",
-            "score_angle",
-            "score_width",
-            "score",
-            "score_normalization",
-            "google_map_url",
-            "google_earth_url",
-            "street_view_url",
-            "lanes",
-            "gsi_min_width",
-            "gsi_avg_width",
-            "is_alpsmap",
-            "alpsmap_min_width",
-            "alpsmap_avg_width",
-        ]
-    ].to_json(output_dir, orient="records")
+    gdf_edges[output_columns].to_json(output_dir, orient="records")
+    output_dir_bk = f"{os.path.dirname(os.path.abspath(__file__))}/../html/json_bk/{datetime.now().strftime('%Y-%m-%d-%H-%M')}.json"
+    gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
 
     excution_timer_ins.finish()
 
