@@ -45,9 +45,14 @@ export const draw = () => {
     const st = polyline[0];
 
     var color;
-    var r = 255 * scoreNormalization;
-    var g = 255 * (1 - scoreNormalization);
-    var b = 255 * (1 - scoreNormalization);
+    var r = scoreNormalization > 0.75 ? 255 * scoreNormalization : 0;
+
+    var g =
+      scoreNormalization <= 0.5 ? 150 - (scoreNormalization / 0.5) * 50 : 0;
+    var b =
+      scoreNormalization > 0.5 && scoreNormalization <= 0.75
+        ? 150 - ((scoreNormalization - 0.5) / 0.25) * 50
+        : 0;
     color = "rgb(" + r + " ," + g + "," + b + ")";
 
     const line = L.polyline(polyline, {
