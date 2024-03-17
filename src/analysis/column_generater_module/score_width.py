@@ -7,11 +7,11 @@ from pandas import Series
 def generate(gdf: GeoDataFrame) -> Series:
 
     def func(row):
-        score = 0.5
+        score = 0.4
         if row["lanes"] == "2":
-            score += 0.25
+            score += 0.3
         if row["is_alpsmap"] and row["alpsmap_min_width"] >= 5.5:
-            score += 0.25
+            score += 0.3
         return score
 
     series = gdf.apply(func, axis=1)
