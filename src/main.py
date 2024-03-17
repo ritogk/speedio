@@ -188,21 +188,6 @@ def main() -> GeoDataFrame:
     gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
     gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
-    gdf_edges["score"] = column_generater.score.generate(gdf_edges)
-    excution_timer_ins.stop()
-
-    # # スコアが低いエッジを削除する
-    # excution_timer_ins.start("remoce low score edge")
-    # count = len(gdf_edges)
-    # gdf_edges = remover.score.remove(gdf_edges)
-    # print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
-    # excution_timer_ins.stop()
-
-    # スコアを正規化
-    excution_timer_ins.start("calc score_nomalization")
-    gdf_edges["score_normalization"] = column_generater.score_normalization.generate(
-        gdf_edges
-    )
     excution_timer_ins.stop()
 
     # google map urlを生成する
@@ -258,8 +243,6 @@ def main() -> GeoDataFrame:
         "score_angle",
         "score_width",
         "score_length",
-        "score",
-        "score_normalization",
         "google_map_url",
         "google_earth_url",
         "street_view_url",
