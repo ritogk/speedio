@@ -132,8 +132,10 @@ def main() -> GeoDataFrame:
         excution_timer_ins.stop()
 
         # gsiの道幅が6m未満のエッジを削除する. 酷道は4~5m程度の道幅があり、地元の峠道は道幅が6.3mの道幅があるため。
-        excution_timer_ins.start("remove gsi_min_width edge")
-        gdf_edges = gdf_edges[gdf_edges["gsi_min_width"] >= 6]
+        excution_timer_ins.start("remove gsi_avg_width edge")
+        count = len(gdf_edges)
+        gdf_edges = gdf_edges[gdf_edges["gsi_avg_width"] >= 6]
+        print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
         excution_timer_ins.stop()
 
         # alpsmapの道幅を取得する
@@ -147,11 +149,10 @@ def main() -> GeoDataFrame:
         # alpsmapの道幅が3m以下のエッジを削除する
         count = len(gdf_edges)
         excution_timer_ins.start("remove alpsmap_min_width edge")
-        print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
-
         gdf_edges = gdf_edges[
             ~((gdf_edges["is_alpsmap"] == 1) & (gdf_edges["alpsmap_min_width"] <= 3))
         ]
+        print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
     else:
         gdf_edges["gsi_min_width"] = 0
         gdf_edges["gsi_avg_width"] = 0
@@ -169,11 +170,11 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
-    # 標高と距離の比率が0.02未満のエッジを削除する
-    count = len(gdf_edges)
-    gdf_edges = remover.elevation_min_height.remove(gdf_edges)
-    # 元のデータの長さと削除後のデータの長さを表示する
-    print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
+    # # 標高と距離の比率が0.02未満のエッジを削除する
+    # count = len(gdf_edges)
+    # gdf_edges = remover.elevation_min_height.remove(gdf_edges)
+    # # 元のデータの長さと削除後のデータの長さを表示する
+    # print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
 
     # スコアを求める
     excution_timer_ins.start("calc score")
