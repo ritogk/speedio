@@ -16,6 +16,15 @@
         right: 0;
       }
 
+      #pinArea {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        z-index: 1000;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 4px;
+        margin-bottom: 98px;
+      }
       #filterArea {
         position: absolute;
         bottom: 0;
@@ -28,6 +37,17 @@
     </style>
   </head>
   <body>
+    <div id="pinArea">
+      <div>
+        <input
+          type="text"
+          id="address"
+          placeholder="latitude,longitude"
+          style="width: 300px"
+        />
+      </div>
+      <button id="addButton" style="width: 335px">Add</button>
+    </div>
     <div id="filterArea">
       <div>
         <input
@@ -69,11 +89,18 @@
     <script src="./draw.js" type="module"></script>
     <!-- Leaflet JavaScriptのリンク -->
     <script type="module">
-      import { draw, init } from "./draw.js";
+      import { draw, init, addPin } from "./draw.js";
       init();
       draw();
       document.getElementById("searchButton").addEventListener("click", () => {
         draw();
+      });
+      document.getElementById("addButton").addEventListener("click", () => {
+        const address = document
+          .getElementById("address")
+          .value.replace(" ", "")
+          .split(",");
+        addPin(address[0], address[1]);
       });
     </script>
   </body>
