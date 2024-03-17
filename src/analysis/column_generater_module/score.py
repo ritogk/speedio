@@ -16,8 +16,7 @@ def generate(gdf: GeoDataFrame) -> Series:
     series = (
         (gdf["score_elevation"] * WEIGHTS["elevation"])
         * (1 - (gdf["score_elevation_over_heiht"] * WEIGHTS["elvation_over_height"]))
-        * gdf["elevation_u_shape"]
-        * WEIGHTS["elevation_u_shape"]
+        * (gdf["score_elevation_u_shape"] * WEIGHTS["elevation_u_shape"])
         * (gdf["score_angle"] * WEIGHTS["angle"])
         * (gdf["score_width"] * WEIGHTS["width"])
         * (gdf["score_length"] * WEIGHTS["length"])
