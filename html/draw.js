@@ -207,3 +207,7 @@ export const draw = () => {
     polylines.push(line);
   });
 };
+
+export const addPin = (lat, lng) => {
+  L.marker([lat, lng]).addTo(map);
+};
