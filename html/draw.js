@@ -31,26 +31,13 @@ const clearPolylines = () => {
 export const draw = () => {
   clearPolylines();
 
-  const filterKey1 = document.getElementById("filterKey1").value;
-  const filterValue = document.getElementById("filterValue").value;
-  let filteredTargets =
-    filterValue === "" || filterKey1 === ""
-      ? target
-      : target.filter((x) => x[filterKey1] == filterValue);
+  // スコア計算
+  let targets = calcScore([...target]);
 
-  const filterKey2 = document.getElementById("filterKey2").value;
-  const minValue = document.getElementById("minValue").value;
-  const maxValue = document.getElementById("maxValue").value;
-  filteredTargets =
-    filterKey2 === "" || minValue === ""
-      ? filteredTargets
-      : filteredTargets.filter((x) => x[filterKey2] >= Number(minValue));
-  filteredTargets =
-    filterKey2 === "" || maxValue === ""
-      ? filteredTargets
-      : filteredTargets.filter((x) => x[filterKey2] <= Number(maxValue));
+  // フィルタリング
+  targets = filter([...targets]);
 
-  filteredTargets.forEach((x) => {
+  targets.forEach((x) => {
     const polyline = x.geometry_list;
     const scoreNormalization = x.score_normalization;
     const ed = polyline[polyline.length - 1];
@@ -59,7 +46,7 @@ export const draw = () => {
 
     var color;
     var r = 255 * scoreNormalization;
-    var g = 0;
+    var g = 255 * (1 - scoreNormalization);
     var b = 255 * (1 - scoreNormalization);
     color = "rgb(" + r + " ," + g + "," + b + ")";
 
@@ -210,4 +197,63 @@ export const draw = () => {
 
 export const addPin = (lat, lng) => {
   L.marker([lat, lng]).addTo(map);
+};
+
+const filter = (targets) => {
+  const filterKey1 = document.getElementById("filterKey1").value;
+  const filterValue = document.getElementById("filterValue").value;
+  targets =
+    filterValue === "" || filterKey1 === ""
+      ? target
+      : target.filter((x) => x[filterKey1] == filterValue);
+
+  const filterKey2 = document.getElementById("filterKey2").value;
+  const minValue = document.getElementById("minValue").value;
+  const maxValue = document.getElementById("maxValue").value;
+  targets =
+    filterKey2 === "" || minValue === ""
+      ? targets
+      : targets.filter((x) => x[filterKey2] >= Number(minValue));
+  targets =
+    filterKey2 === "" || maxValue === ""
+      ? targets
+      : targets.filter((x) => x[filterKey2] <= Number(maxValue));
+  return targets;
+};
+
+const calcScore = (targets) => {
+  // 重み
+  const WEIGHTS = {
+    elevation: Number(document.getElementById("weightElevation").value),
+    elvation_over_height: Number(
+      document.getElementById("weightElvationOverHeight").value
+    ),
+    elevation_u_shape: Number(
+      document.getElementById("weightElevationUShape").value
+    ),
+    angle: Number(document.getElementById("weightAngle").value),
+    width: Number(document.getElementById("weightWidth").value),
+    length: Number(document.getElementById("weightLength").value),
+  };
+
+  // スコア計算
+  targets = targets.map((x) => {
+    x.score =
+      (x.score_elevation * WEIGHTS["elevation"] +
+        (1 - x.score_elevation_over_heiht * WEIGHTS["elvation_over_height"]) +
+        x.score_elevation_u_shape * WEIGHTS["elevation_u_shape"] +
+        x.score_angle * WEIGHTS["angle"] +
+        x.score_width * WEIGHTS["width"] +
+        x.score_length * WEIGHTS["length"]) /
+      Object.keys(WEIGHTS).length;
+    return x;
+  });
+
+  // 正規化
+  const maxScore = Math.max(...targets.map((x) => x.score));
+  const minScore = Math.min(...targets.map((x) => x.score));
+  return targets.map((x) => {
+    x.score_normalization = (x.score - minScore) / (maxScore - minScore);
+    return x;
+  });
 };

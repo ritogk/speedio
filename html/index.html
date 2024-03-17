@@ -16,16 +16,7 @@
         right: 0;
       }
 
-      #pinArea {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        z-index: 1000;
-        background-color: rgba(0, 0, 0, 0.5);
-        padding: 4px;
-        margin-bottom: 98px;
-      }
-      #filterArea {
+      #SubArea {
         position: absolute;
         bottom: 0;
         right: 0;
@@ -34,74 +25,159 @@
         padding: 4px;
         margin-bottom: 18px;
       }
+      #SubArea button {
+        background: lightblue;
+      }
+      #SubArea span {
+        color: white;
+        font-size: 13px;
+      }
     </style>
   </head>
   <body>
-    <div id="pinArea">
-      <div>
-        <input
-          type="text"
-          id="address"
-          placeholder="latitude,longitude"
-          style="width: 300px"
-        />
+    <div id="SubArea">
+      <div id="weightArea" style="padding-bottom: 5px">
+        <div style="text-align: right">
+          <div>
+            <span>elevation:</span>
+            <input
+              type="text"
+              id="weightElevation"
+              placeholder="weight_elevation"
+              style="width: 100px"
+              value="0.8"
+            />
+          </div>
+          <div>
+            <span>elvation_over_height:</span>
+            <input
+              type="text"
+              id="weightElvationOverHeight"
+              placeholder="weight_elvation_over_height"
+              style="width: 100px"
+              value="1"
+            />
+          </div>
+          <div>
+            <span>elevation_u_shape:</span>
+            <input
+              type="text"
+              id="weightElevationUShape"
+              placeholder="weight_elevation_u_shape"
+              style="width: 100px"
+              value="1"
+            />
+          </div>
+          <div>
+            <span>angle:</span>
+            <input
+              type="text"
+              id="weightAngle"
+              placeholder="weight_angle"
+              style="width: 100px"
+              value="1"
+            />
+          </div>
+          <div>
+            <span>width:</span>
+            <input
+              type="text"
+              id="weightWidth"
+              placeholder="weight_width"
+              style="width: 100px"
+              value="1"
+            />
+          </div>
+          <div>
+            <span>length:</span>
+            <input
+              type="text"
+              id="weightLength"
+              placeholder="weight_length"
+              style="width: 100px"
+              value="0.5"
+            />
+          </div>
+          <button id="weightButton" style="width: 335px">Change Weights</button>
+        </div>
       </div>
-      <button id="addButton" style="width: 335px">Add</button>
-    </div>
-    <div id="filterArea">
-      <div>
-        <input
-          type="text"
-          id="filterKey1"
-          placeholder="filterKey"
-          style="width: 100px"
-        />
-        <input
-          type="text"
-          id="filterValue"
-          placeholder="filterValue"
-          style="width: 100px"
-        />
+      <!-- ピン追加 -->
+      <div id="pinArea" style="padding-bottom: 5px">
+        <div>
+          <input
+            type="text"
+            id="address"
+            placeholder="latitude,longitude"
+            style="width: 327px"
+          />
+        </div>
+        <button id="addButton" style="width: 335px">Add</button>
       </div>
-      <div>
-        <input
-          type="text"
-          id="filterKey2"
-          placeholder="filterKey"
-          style="width: 100px"
-        />
-        <input
-          type="text"
-          id="minValue"
-          placeholder="&lt;="
-          style="width: 100px"
-        />
-        <input
-          type="text"
-          id="maxValue"
-          placeholder="&gt;="
-          style="width: 100px"
-        />
+      <!-- 検索エリア -->
+      <div id="searchArea">
+        <div>
+          <input
+            type="text"
+            id="filterKey1"
+            placeholder="filterKey"
+            style="width: 100px"
+          />
+          <input
+            type="text"
+            id="filterValue"
+            placeholder="filterValue"
+            style="width: 100px"
+          />
+        </div>
+        <div>
+          <input
+            type="text"
+            id="filterKey2"
+            placeholder="filterKey"
+            style="width: 100px"
+          />
+          <input
+            type="text"
+            id="minValue"
+            placeholder="&lt;="
+            style="width: 100px"
+          />
+          <input
+            type="text"
+            id="maxValue"
+            placeholder="&gt;="
+            style="width: 100px"
+          />
+        </div>
+        <button id="searchButton" style="width: 335px">Search</button>
       </div>
-      <button id="searchButton" style="width: 335px">Search</button>
     </div>
     <div id="map"></div>
     <script src="./draw.js" type="module"></script>
     <!-- Leaflet JavaScriptのリンク -->
     <script type="module">
       import { draw, init, addPin } from "./draw.js";
-      init();
-      draw();
-      document.getElementById("searchButton").addEventListener("click", () => {
+      window.onload = () => {
+        init();
         draw();
-      });
-      document.getElementById("addButton").addEventListener("click", () => {
-        const address = document
-          .getElementById("address")
-          .value.replace(" ", "")
-          .split(",");
-        addPin(address[0], address[1]);
-      });
+        document
+          .getElementById("searchButton")
+          .addEventListener("click", () => {
+            draw();
+          });
+        document.getElementById("addButton").addEventListener("click", () => {
+          const address = document
+            .getElementById("address")
+            .value.replace(" ", "")
+            .split(",");
+          addPin(address[0], address[1]);
+        });
+        document
+          .getElementById("weightButton")
+          .addEventListener("click", () => {
+            draw();
+          });
+      };
     </script>
   </body>
 </html>
