@@ -103,6 +103,13 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
+    # 標高のU字型の特徴量を求める
+    excution_timer_ins.start("calc elevation_u_shape")
+    gdf_edges["elevation_u_shape"] = column_generater.elevation_u_shape.generate(
+        gdf_edges
+    )
+    excution_timer_ins.stop()
+
     # 標高の変化量を求める
     excution_timer_ins.start("calc elevation_deltas")
     gdf_edges["elevation_deltas"] = column_generater.elevation_deltas.generate(
@@ -237,6 +244,7 @@ def main() -> GeoDataFrame:
         "elevation_deltas",
         "elevation_deltas_and_length_ratio",
         "elavation_height_and_length_ratio",
+        "elevation_u_shape",
         "angle_deltas",
         "angle_and_length_ratio",
         "score_elevation",

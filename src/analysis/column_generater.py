@@ -7,6 +7,7 @@ from .column_generater_module import elevation_smooth
 from .column_generater_module import elevation_deltas
 from .column_generater_module import elavation_height
 from .column_generater_module import elevation_fluctuation
+from .column_generater_module import elevation_u_shape
 from .column_generater_module import score
 from .column_generater_module import score_normalization
 from .column_generater_module import score_width
