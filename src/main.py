@@ -185,6 +185,7 @@ def main() -> GeoDataFrame:
     )
     gdf_edges["score_elevation"] = column_generater.score_elevation.generate(gdf_edges)
     gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
+    gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
     gdf_edges["score"] = column_generater.score.generate(gdf_edges)
     excution_timer_ins.stop()
@@ -255,6 +256,7 @@ def main() -> GeoDataFrame:
         "score_elevation_u_shape",
         "score_angle",
         "score_width",
+        "score_length",
         "score",
         "score_normalization",
         "google_map_url",

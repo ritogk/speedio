@@ -99,6 +99,10 @@ export const draw = () => {
               <td>score_width</td>
               <td>${truncateToTwoDecimals(x.score_width)}</td>
           </tr>
+          <tr>
+              <td>score_length</td>
+              <td>${truncateToTwoDecimals(x.score_length)}</td>
+          </tr>
         </table>
 
 
