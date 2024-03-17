@@ -121,6 +121,10 @@ export const draw = () => {
               )}</td>
           </tr>
           <tr>
+              <td>elevation_u_shape</td>
+              <td>${truncateToTwoDecimals(x.elevation_u_shape)}</td>
+          </tr>
+          <tr>
               <td>angle_deltas</td>
               <td>${truncateToTwoDecimals(x.angle_deltas)}</td>
           </tr>
