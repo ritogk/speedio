@@ -21,3 +21,4 @@ from .column_generater_module import score_angle
 from .column_generater_module import score_elevation
 from .column_generater_module import score_elevation_over_heiht
 from .column_generater_module import score_elevation_u_shape
+from .column_generater_module import score_length

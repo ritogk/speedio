@@ -7,6 +7,7 @@ WEIGHTS = {
     "elevation_u_shape": 0.8,
     "angle": 1,
     "width": 1,
+    "length": 0.5,
 }
 
 
@@ -19,5 +20,6 @@ def generate(gdf: GeoDataFrame) -> Series:
         * WEIGHTS["elevation_u_shape"]
         * (gdf["score_angle"] * WEIGHTS["angle"])
         * (gdf["score_width"] * WEIGHTS["width"])
+        * (gdf["score_length"] * WEIGHTS["length"])
     )
     return series
