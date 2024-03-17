@@ -3,6 +3,7 @@ from pandas import Series
 
 
 # 標高のU字型の特徴量を求める
+# = (標高の増加の総和と標高の減少の総和の比率 ) * (標高の増加の総和 + 標高の減少の総和)
 def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
         fluctuation_up = row.elevation_fluctuation[0]
