@@ -92,6 +92,10 @@ export const draw = () => {
               <td>${truncateToTwoDecimals(x.score_elevation_over_heiht)}</td>
           </tr>
           <tr>
+              <td>score_elevation_u_shape</td>
+              <td>${truncateToTwoDecimals(x.score_elevation_u_shape)}</td>
+          </tr>
+          <tr>
               <td>score_width</td>
               <td>${truncateToTwoDecimals(x.score_width)}</td>
           </tr>
