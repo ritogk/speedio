@@ -24,8 +24,17 @@ const clearPolylines = () => {
   polylines = []; // 配列を空にする
 };
 
+let markers = [];
+const clearMarkers = () => {
+  for (let marker of markers) {
+    marker.remove();
+  }
+  markers = []; // 配列を空にする
+};
+
 export const draw = () => {
   clearPolylines();
+  clearMarkers();
 
   // スコア計算
   let targets = calcScore([...target]);
@@ -49,9 +58,10 @@ export const draw = () => {
     .slice(0, 10);
   top10.forEach((x, index) => {
     const center = Math.ceil(x.geometry_list.length / 2);
-    L.marker(x.geometry_list[center], {
+    const marker = L.marker(x.geometry_list[center], {
       icon: generateLabelIcon(index + 1),
     }).addTo(map);
+    polylines.push(marker);
   });
 };
 
