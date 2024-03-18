@@ -44,22 +44,9 @@ export const draw = () => {
     const center = polyline[Math.floor(polyline.length / 2)];
     const st = polyline[0];
 
-    var color;
-    var r = scoreNormalization > 0.75 ? 255 * scoreNormalization : 0;
+    const style = generateStyle(scoreNormalization);
 
-    var g =
-      scoreNormalization <= 0.5 ? 150 - (scoreNormalization / 0.5) * 50 : 0;
-    var b =
-      scoreNormalization > 0.5 && scoreNormalization <= 0.75
-        ? 150 - ((scoreNormalization - 0.5) / 0.25) * 50
-        : 0;
-    color = "rgb(" + r + " ," + g + "," + b + ")";
-
-    const line = L.polyline(polyline, {
-      color: color,
-      weight: 20,
-      opacity: 0.3 + 0.2 * scoreNormalization,
-    })
+    const line = L.polyline(polyline, style)
       .bindPopup(
         `<span style="font-weight:bold;">Score</span>
         <table style="width:100%;" border="1">
@@ -261,4 +248,44 @@ const calcScore = (targets) => {
     x.score_normalization = (x.score - minScore) / (maxScore - minScore);
     return x;
   });
+};
+
+const generateStyle = (value) => {
+  let r = 0,
+    g = 0,
+    b = 0;
+
+  if (value < 0.5) {
+    // 0.0から0.5の範囲では、青から緑へ
+    g = 2 * value * 255;
+    b = (1 - 2 * value) * 255;
+  } else {
+    // 0.5から1.0の範囲では、緑から赤へ
+    r = 2 * (value - 0.5) * 255;
+    g = (1.0 - value) * 2 * 255;
+  }
+
+  g = 0;
+  b = Math.round(255 * (1 - value));
+  r = Math.round(255 * value);
+
+  const generateWeight = (value) => {
+    if (value < 0.3) return 3;
+    if (value < 0.5) return 5;
+    if (value < 0.7) return 7;
+    if (value < 0.9) return 10;
+    if (value < 0.999) return 15;
+    return 25;
+  };
+
+  const generateOpacity = (value) => {
+    return 0.5;
+  };
+
+  return {
+    color:
+      "rgb(" + Math.round(r) + " ," + Math.round(g) + "," + Math.round(b) + ")",
+    weight: generateWeight(value),
+    opacity: generateOpacity(value),
+  };
 };
