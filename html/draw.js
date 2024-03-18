@@ -42,6 +42,17 @@ export const draw = () => {
       .addTo(map);
     polylines.push(line);
   });
+
+  // 上位10件の中心座標にランクを表示
+  const top10 = targets
+    .sort((a, b) => b.score_normalization - a.score_normalization)
+    .slice(0, 10);
+  top10.forEach((x, index) => {
+    const center = Math.ceil(x.geometry_list.length / 2);
+    L.marker(x.geometry_list[center], {
+      icon: generateLabelIcon(index + 1),
+    }).addTo(map);
+  });
 };
 
 export const addPin = (lat, lng) => {
@@ -145,4 +156,15 @@ const generateStyle = (value) => {
     weight: generateWeight(value),
     opacity: generateOpacity(value),
   };
+};
+
+const generateLabelIcon = (value) => {
+  const iconSize = [20, 20];
+  const myCustomIcon = L.divIcon({
+    className: "my-custom-icon", // カスタムスタイルのクラス名
+    html: `<div style="background-color: darkslateblue; border-radius: 50%; color: white;text-align: center;">${value}</div>`, // 表示したい数値
+    iconSize: iconSize, // アイコンのサイズ
+    iconAnchor: [iconSize[0] / 2, iconSize[1] / 2], // アイコンのアンカーポイント
+  });
+  return myCustomIcon;
 };
