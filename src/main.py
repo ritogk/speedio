@@ -1,5 +1,6 @@
 from .core import excution_timer
 from .analysis import graph_feather
+from .analysis import graph_all_feather
 from .analysis import column_generater
 from .analysis import remover
 import osmnx as ox
@@ -43,10 +44,15 @@ def main() -> GeoDataFrame:
     gdf_edges["end_point"] = column_generater.end_point.generate(gdf_edges)
     excution_timer_ins.stop()
 
+    # 全graphを取得する
+    g_all = graph_all_feather.fetch_graph(
+        point_st[0], point_st[1], point_ed[0], point_ed[1]
+    )
+
     # エッジ内のnodeから分岐数を取得する
     excution_timer_ins.start("calc connection_node_cnt")
     gdf_edges["connection_node_cnt"] = column_generater.connection_node_cnt.generate(
-        gdf_edges, point_st[0], point_st[1], point_ed[0], point_ed[1]
+        gdf_edges, g_all
     )
     excution_timer_ins.stop()
 
