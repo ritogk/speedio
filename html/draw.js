@@ -122,6 +122,13 @@ const calcScore = (targets) => {
   // 正規化
   const maxScore = Math.max(...targets.map((x) => x.score));
   const minScore = Math.min(...targets.map((x) => x.score));
+  // 1件のみの場合は正規化しない
+  if (maxScore === minScore) {
+    return targets.map((x) => {
+      x.score_normalization = 1;
+      return x;
+    });
+  }
   return targets.map((x) => {
     x.score_normalization = (x.score - minScore) / (maxScore - minScore);
     return x;
@@ -132,7 +139,6 @@ const generateStyle = (value) => {
   let r = 0,
     g = 0,
     b = 0;
-
   if (value < 0.5) {
     // 0.0から0.5の範囲では、青から緑へ
     g = 2 * value * 255;
