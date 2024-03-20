@@ -62,6 +62,11 @@ def main() -> GeoDataFrame:
     print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
 
+    # turn check
+    excution_timer_ins.start("turn check")
+    column_generater.turn_check.generate(gdf_edges)
+    excution_timer_ins.stop()
+
     # gdf_edgesがemptyの場合は終了する
     if gdf_edges.empty:
         return gdf_edges
