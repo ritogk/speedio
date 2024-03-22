@@ -67,6 +67,7 @@ export const draw = () => {
 
 export const addPin = (lat, lng) => {
   L.marker([lat, lng]).addTo(map);
+  map.setView([lat, lng], 13);
 };
 
 const filter = (targets) => {
