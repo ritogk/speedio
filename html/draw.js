@@ -111,6 +111,12 @@ export const draw = () => {
 };
 
 export const addPin = (lat, lng) => {
+  if (lat >= 24 && lat <= 46 && lng >= 122 && lng <= 153) {
+  } else {
+    const temp = lat;
+    lat = lng;
+    lng = temp;
+  }
   L.marker([lat, lng]).addTo(map);
   map.setView([lat, lng], 13);
 };

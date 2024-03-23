@@ -176,6 +176,8 @@
           const address = document
             .getElementById("address")
             .value.replace(" ", "")
+            .replace("(", "")
+            .replace(")", "")
             .split(",");
           addPin(address[0], address[1]);
         });
