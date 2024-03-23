@@ -45,9 +45,16 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 全graphを取得する
+    excution_timer_ins.start("load openstreetmap all data")
     g_all = graph_all_feather.fetch_graph(
         point_st[0], point_st[1], point_ed[0], point_ed[1]
     )
+    excution_timer_ins.stop()
+    # # ノードの色を設定（デフォルトは全て青）
+    # node_colors = ["b" if node != 1270270074 else "r" for node in g_all.nodes()]
+
+    # # g_allのグラフを描画する（特定のノードにだけ色を付ける）
+    # ox.plot_graph(g_all, node_color=node_colors)
 
     # エッジ内のnodeから分岐数を取得する
     excution_timer_ins.start("calc connection_node_cnt")
@@ -70,7 +77,7 @@ def main() -> GeoDataFrame:
 
     # turn check
     excution_timer_ins.start("turn check")
-    column_generater.turn_check.generate(gdf_edges)
+    column_generater.turn_check.generate(gdf_edges, g_all)
     excution_timer_ins.stop()
 
     # gdf_edgesがemptyの場合は終了する
