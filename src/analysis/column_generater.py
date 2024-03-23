@@ -20,4 +20,5 @@ from .column_generater_module import score_elevation
 from .column_generater_module import score_elevation_over_heiht
 from .column_generater_module import score_elevation_u_shape
 from .column_generater_module import score_length
-from .column_generater_module import turn_check
+from .column_generater_module import turn_candidate_points
+from .column_generater_module import turn

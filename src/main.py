@@ -75,9 +75,16 @@ def main() -> GeoDataFrame:
     print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
 
-    # turn check
-    excution_timer_ins.start("turn check")
-    column_generater.turn_check.generate(gdf_edges, g_all)
+    # 曲がり角の候補を取得する
+    excution_timer_ins.start("calc turn_candidate_points")
+    gdf_edges["turn_candidate_points"] = (
+        column_generater.turn_candidate_points.generate(gdf_edges)
+    )
+    excution_timer_ins.stop()
+
+    # 曲がり角を取得する
+    excution_timer_ins.start("calc turn")
+    gdf_edges["turn_points"] = column_generater.turn.generate(gdf_edges, g_all)
     excution_timer_ins.stop()
 
     # gdf_edgesがemptyの場合は終了する
@@ -270,6 +277,8 @@ def main() -> GeoDataFrame:
         "is_alpsmap",
         "alpsmap_min_width",
         "alpsmap_avg_width",
+        "turn_candidate_points",
+        "turn_points",
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[output_columns].to_json(output_dir, orient="records")
