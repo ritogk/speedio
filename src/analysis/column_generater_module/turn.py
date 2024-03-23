@@ -19,7 +19,7 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
             b = turn_candidate["b"]
             c = turn_candidate["c"]
             angle_ab_bc = turn_candidate["angle_ab_bc"]
-            # print(b)
+            # ここで時間食ってそう。高速化できないか？
             node_id, distance = ox.nearest_nodes(graph, b[0], b[1], True)
             # ノードIDと距離がリストで返された場合、最小距離のものを選択
             if isinstance(distance, list):
@@ -34,7 +34,7 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
 
             # 指定座標周辺10m以内にノードがなければ曲がり角ではない。
             if min_distance > 10:
-                print("周辺にノードが存在しない。")
+                # print("周辺にノードが存在しない。")
                 continue
 
             # bに連結するエッジを取得
@@ -53,7 +53,6 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
             b_connected_edge_values = []
             for b_connected_edge in b_connected_edges:
                 # print(b_connected_edge)
-
                 key = b_connected_edge["key"]
                 data = b_connected_edge["data"]
 
@@ -71,8 +70,6 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                 if not edge_geometry.intersects(
                     Point(a)
                 ) and not edge_geometry.intersects(Point(c)):
-                    # print("★こいつが分岐した道")
-                    # print(edge_geometry)
                     b_connected_edge_keys.append(b_connected_edge["key"])
                     b_connected_edge_values.append(
                         [key[0], key[1], data["geometry"], data["highway"]]
@@ -96,7 +93,7 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
             for index_, row_ in gdf_branch_edges.iterrows():
                 # geometryの頭と尾でbに最も近い点を取得
                 st_point = Point(row_["geometry"].coords[1])
-                ed_point = Point(row_["geometry"].coords[-1])
+                ed_point = Point(row_["geometry"].coords[-2])
                 if Point(a).distance(st_point) < Point(a).distance(ed_point):
                     nearest_point = st_point
                 else:
@@ -107,13 +104,15 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                     b,
                     (nearest_point.x, nearest_point.y),
                 )
-                # print("★★★★★★★")
-                # print(f"angle_ab_bx: {angle_ab_bx}, angle_ab_bc: {angle_ab_bc}")
-                # print(f"highway: x:{row_['highway']}, base:{row.highway}")
-                # angle_ab_bcの角度より大きい、かつhighwayが同じ場合は、曲がり角ではない判定。
-                if angle_ab_bc > angle_ab_bx:
+
+                # angle_ab_bcの方が角度大きい場合は曲がり角として登録
+                # residentialは薄いので対象外にする。
+                if angle_ab_bc > angle_ab_bx and row_["highway"] != "residential":
                     # print(row_)
-                    print("曲がり角発見!")
+                    # print("曲がり角発見!")
+                    print(f"discoved turn point: {b}")
+                    print(f"highway: x:{row_['highway']}, base:{row.highway}")
+                    print(f"angle_ab_bx: {angle_ab_bx}, angle_ab_bc: {angle_ab_bc}")
                     turn_points.append(b)
                     break
         return turn_points
