@@ -52,6 +52,51 @@ export const draw = () => {
     polylines.push(line);
   });
 
+  // 曲がり角にマーカーを表示
+  targets.forEach((x) => {
+    // // 曲がり角
+    // const turn_candidate_points = x.turn_candidate_points;
+    // turn_candidate_points.forEach((turn_candidate_point) => {
+    //   const lat = turn_candidate_point.b[1];
+    //   const lng = turn_candidate_point.b[0];
+
+    //   const iconSize = [20, 20];
+    //   const value = "角";
+    //   const myCustomIcon = L.divIcon({
+    //     className: "my-custom-icon", // カスタムスタイルのクラス名
+    //     html: `<div style="background-color: seagreen; border-radius: 50%; color: white;text-align: center;">${value}</div>`, // 表示したい数値
+    //     iconSize: iconSize, // アイコンのサイズ
+    //     iconAnchor: [iconSize[0] / 2, iconSize[1] / 2], // アイコンのアンカーポイント
+    //   });
+
+    //   const marker = L.marker([lat, lng], {
+    //     icon: myCustomIcon,
+    //   }).addTo(map);
+    //   polylines.push(marker);
+    // });
+
+    // 曲がり角
+    const turn_points = x.turn_points;
+    turn_points.forEach((turn_point) => {
+      const lat = turn_point[1];
+      const lng = turn_point[0];
+
+      const iconSize = [20, 20];
+      const value = "角";
+      const myCustomIcon = L.divIcon({
+        className: "my-custom-icon", // カスタムスタイルのクラス名
+        html: `<div style="background-color: mediumvioletred; border-radius: 50%; color: white;text-align: center;">${value}</div>`, // 表示したい数値
+        iconSize: iconSize, // アイコンのサイズ
+        iconAnchor: [iconSize[0] / 2, iconSize[1] / 2], // アイコンのアンカーポイント
+      });
+
+      const marker = L.marker([lat, lng], {
+        icon: myCustomIcon,
+      }).addTo(map);
+      polylines.push(marker);
+    });
+  });
+
   // 上位10件の中心座標にランクを表示
   const top10 = targets
     .sort((a, b) => b.score_normalization - a.score_normalization)
