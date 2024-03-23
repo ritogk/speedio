@@ -45,7 +45,6 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph):
                     pass
 
                 # bに連結するエッジを取得
-                # b_connected_edges = graph.edges(node_id, data=True, keys=True)
                 b_connected_edges = []
                 for u, v, k, data in graph.edges(keys=True, data=True):
                     if u == node_id or v == node_id:
@@ -56,47 +55,39 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph):
                             }
                         )
 
-                # ベースエッジに繋がるエッジを抽出
-                branch_edges = []
+                # エッジからabとbcを除いてdataframe用のリストを作成
+                b_connected_edge_keys = []
+                b_connected_edge_values = []
                 for b_connected_edge in b_connected_edges:
-                    # edge_info = graph.edges[edge]
-                    edge = b_connected_edge["data"]
+                    key = b_connected_edge["key"]
+                    data = b_connected_edge["data"]
                     # aとcにかさならないedgesを抽出
-                    edge_geometry = edge["geometry"]
+                    edge_geometry = data["geometry"]
                     if not edge_geometry.intersects(
                         Point(a)
                     ) and not edge_geometry.intersects(Point(c)):
                         print("★こいつが分岐した道")
                         print(edge_geometry)
-                        branch_edges.append(b_connected_edge["key"])
-
-                # 逆方向のエッジを削除
+                        b_connected_edge_keys.append(b_connected_edge["key"])
+                        b_connected_edge_values.append(
+                            [key[0], key[1], data["geometry"]]
+                        )
+                # データフレームを作成
                 multi_index = pd.MultiIndex.from_tuples(
-                    branch_edges, names=["u", "v", "k"]
+                    b_connected_edge_keys, names=["u", "v", "k"]
                 )
                 gdf_branch_edges = pd.DataFrame(
-                    branch_edges,
+                    b_connected_edge_values,
                     index=multi_index,
-                    columns=["start_node", "end_node", "attribute"],
+                    columns=["start_node", "end_node", "geometry"],
                 )
+                # 逆方向のエッジを削除
                 print(f"before: {len(gdf_branch_edges)}")
                 gdf_branch_edges = reverse_edge.remove(gdf_branch_edges)
                 print(f"after: {len(gdf_branch_edges)}")
+                print(gdf_branch_edges)
 
                 for index_, row_ in gdf_branch_edges.iterrows():
                     edge_info = graph.edges[index_]
                     edge_geometry = edge_info["geometry"]
                     print(edge_geometry)
-
-                # bc = LineString([b, c])
-                # # abにかさなるedgesを抽出
-                # for edge in edges:
-                #     edge_info = graph.edges[edge]
-                #     edge_geometry = edge_info["geometry"]
-                #     edge_target = edge_geometry.intersection(bc)
-                #     if edge_target:
-                #         print("★一致")
-                #         print(edge_target)
-
-        # 座標間の角度の変化の合計値を求める
-        # print(f"diff_total: {diff_total}")
