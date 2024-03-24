@@ -27,7 +27,6 @@ def generate_from_alpsmap(gdf: GeoDataFrame) -> tuple[Series, Series] | None:
             return float(x.split("〜")[0].replace("m", ""))
         elif isinstance(x, list):
             widths = []
-            print(x)
             for item in x:
                 values = item.split("〜")
                 if values[0] == "1.5m未満":

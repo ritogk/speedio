@@ -9,6 +9,8 @@ import os
 from .core.env import getEnv
 from datetime import datetime
 
+from .analysis.turn_edge_spliter import split
+
 
 def main() -> GeoDataFrame:
     env = getEnv()
@@ -50,11 +52,6 @@ def main() -> GeoDataFrame:
         point_st[0], point_st[1], point_ed[0], point_ed[1]
     )
     excution_timer_ins.stop()
-    # # ノードの色を設定（デフォルトは全て青）
-    # node_colors = ["b" if node != 1270270074 else "r" for node in g_all.nodes()]
-
-    # # g_allのグラフを描画する（特定のノードにだけ色を付ける）
-    # ox.plot_graph(g_all, node_color=node_colors)
 
     # エッジ内のnodeから分岐数を取得する
     excution_timer_ins.start("calc connection_node_cnt")
@@ -75,6 +72,10 @@ def main() -> GeoDataFrame:
     print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
 
+    # gdf_edgesがemptyの場合は終了する
+    if gdf_edges.empty:
+        return gdf_edges
+
     # 曲がり角の候補を取得する
     excution_timer_ins.start("calc turn_candidate_points")
     gdf_edges["turn_candidate_points"] = (
@@ -87,9 +88,22 @@ def main() -> GeoDataFrame:
     gdf_edges["turn_points"] = column_generater.turn.generate(gdf_edges, g_all)
     excution_timer_ins.stop()
 
-    # gdf_edgesがemptyの場合は終了する
-    if gdf_edges.empty:
-        return gdf_edges
+    # 曲がり角を含むエッジを分割する
+    excution_timer_ins.start("split edge in turn")
+    gdf_edges = split(gdf_edges)
+    excution_timer_ins.stop()
+
+    # 座標間の角度の変化量を求める(分割したのでもう一回実行)
+    excution_timer_ins.start("calc angle_deltas")
+    gdf_edges["angle_deltas"] = column_generater.angle_deltas.generate(gdf_edges)
+    excution_timer_ins.stop()
+
+    # 基準に満たないエッジを削除する(分割したのでもう一回実行)
+    excution_timer_ins.start("remove below standard edge")
+    count = len(gdf_edges)
+    gdf_edges = remover.filter_edge.remove(gdf_edges)
+    print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
+    excution_timer_ins.stop()
 
     # 座標間の角度の変化量を求める
     excution_timer_ins.start("calc angle_deltas")

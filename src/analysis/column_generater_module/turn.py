@@ -108,11 +108,9 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                 # angle_ab_bcの方が角度大きい場合は曲がり角として登録
                 # residentialは薄いので対象外にする。
                 if angle_ab_bc > angle_ab_bx and row_["highway"] != "residential":
-                    # print(row_)
-                    # print("曲がり角発見!")
-                    print(f"discoved turn point: {b}")
-                    print(f"highway: x:{row_['highway']}, base:{row.highway}")
-                    print(f"angle_ab_bx: {angle_ab_bx}, angle_ab_bc: {angle_ab_bc}")
+                    # print(f"discoved turn point: {b}")
+                    # print(f"highway: x:{row_['highway']}, base:{row.highway}")
+                    # print(f"angle_ab_bx: {angle_ab_bx}, angle_ab_bc: {angle_ab_bc}")
                     turn_points.append(b)
                     break
         return turn_points
