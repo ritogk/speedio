@@ -91,13 +91,22 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
 
             # 各エッジのabとbxの角度を計算し、angle_ab_bcより小さい値があればab_bcを曲がり角として登録
             for index_, row_ in gdf_branch_edges.iterrows():
-                # geometryの頭と尾でbに最も近い点を取得
-                st_point = Point(row_["geometry"].coords[1])
-                ed_point = Point(row_["geometry"].coords[-2])
-                if Point(a).distance(st_point) < Point(a).distance(ed_point):
-                    nearest_point = st_point
+                # エッジの座標が2つしかない場合は、bと開始位置が被ってしまうのでいい感じに調整する
+                if len(list(row_["geometry"].coords)) < 3:
+                    st_point = Point(row_["geometry"].coords[0])
+                    ed_point = Point(row_["geometry"].coords[1])
+                    if st_point == Point(b):
+                        nearest_point = ed_point
+                    else:
+                        nearest_point = st_point
                 else:
-                    nearest_point = ed_point
+                    st_point = Point(row_["geometry"].coords[1])
+                    ed_point = Point(row_["geometry"].coords[-2])
+                    # geometryの頭と尾でbに最も近い点を取得.
+                    if Point(b).distance(st_point) < Point(b).distance(ed_point):
+                        nearest_point = st_point
+                    else:
+                        nearest_point = ed_point
                 # print(f"nearest_point: {nearest_point}")
                 angle_ab_bx = calculate_angle_between_vectors(
                     a,
