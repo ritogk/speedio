@@ -9,6 +9,10 @@ def generate(gdf: GeoDataFrame) -> Series:
         fluctuation_up = row.elevation_fluctuation[0]
         fluctuation_down = row.elevation_fluctuation[1]
         ratio = 0
+
+        if fluctuation_up == 0 or fluctuation_down == 0:
+            return 0
+
         if fluctuation_up > fluctuation_down:
             ratio = fluctuation_down / fluctuation_up
         else:
