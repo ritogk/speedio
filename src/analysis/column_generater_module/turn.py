@@ -115,5 +115,5 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                     break
         return turn_points
 
-    series = gdf.apply(func, axis=1)
+    series = gdf.progress_apply(func, axis=1)
     return series
