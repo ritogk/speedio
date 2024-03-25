@@ -126,7 +126,7 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                     x_angles.append(angle_ab_bx)
                     continue
             # angle_ab_bcが１番小さい値出ない場合は曲がり角として登録
-            if min(x_angles) <= angle_ab_bc:
+            if len(x_angles) != 0 and min(x_angles) <= angle_ab_bc:
                 turn_points.append(b)
         return turn_points
 
