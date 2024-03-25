@@ -1,4 +1,4 @@
-from geopandas import GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
 from pandas import Series
 import pandas as pd
 import osmnx as ox
@@ -7,9 +7,12 @@ from shapely.geometry import Point, LineString
 from .core.calculate_angle_between_vectors import calculate_angle_between_vectors
 
 from ..remover import reverse_edge
+from geopy.distance import geodesic
 
 
 def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
+    all_nodes, all_edges = ox.graph_to_gdfs(graph, nodes=True, edges=True)
+
     def func(row):
         turn_points = []
         turn_candidates = row["turn_candidate_points"]
@@ -19,28 +22,29 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
             b = turn_candidate["b"]
             c = turn_candidate["c"]
             angle_ab_bc = turn_candidate["angle_ab_bc"]
-            # ここで時間食ってそう。高速化できないか？
-            node_id, distance = ox.nearest_nodes(graph, b[0], b[1], True)
-            # ノードIDと距離がリストで返された場合、最小距離のものを選択
-            if isinstance(distance, list):
-                min_distance = min(distance)
-                min_index = distance.index(min_distance)
-                min_node_id = node_id[min_index]
-            else:
-                min_node_id = node_id
-                min_distance = distance
-            # print(f"center_node_id: {min_node_id}")
-            # print(f"center_distance: {min_distance}")
+            b_point = Point(b)
+            b_node_indexs = all_nodes.sindex.nearest(b_point).tolist()
+            # 入れ子のリストをフラットにする
+            b_node_indexs = [item for sublist in b_node_indexs for item in sublist]
+            b_node_index = b_node_indexs[1:]
+            b_node = all_nodes.iloc[b_node_index]
+
+            b_node_id = b_node.index[0]
+            node_geometry = b_node.iloc[0].geometry
+            distance = geodesic((b[1], b[0]), (node_geometry.y, node_geometry.x)).meters
+            # print(f"center_node_id: {b_node_id}")
+            # print(f"center_geometry: {node_geometry}")
+            # print(f"center_distance: {distance}")
 
             # 指定座標周辺10m以内にノードがなければ曲がり角ではない。
-            if min_distance > 10:
-                # print("周辺にノードが存在しない。")
+            if distance > 10:
+                # print("指定座標の周辺にノードが存在ませんでした。")
                 continue
 
             # bに連結するエッジを取得
             b_connected_edges = []
             for u, v, k, data in graph.edges(keys=True, data=True):
-                if u == min_node_id or v == min_node_id:
+                if u == b_node_id or v == b_node_id:
                     b_connected_edges.append(
                         {
                             "key": (u, v, k),
@@ -84,10 +88,9 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                 columns=["start_node", "end_node", "geometry", "highway"],
             )
             # 逆方向のエッジを削除
-            # print(f"before: {len(gdf_branch_edges)}")
+            print(f"before: {len(gdf_branch_edges)}")
             gdf_branch_edges = reverse_edge.remove(gdf_branch_edges)
-            # print(f"after: {len(gdf_branch_edges)}")
-            # print(gdf_branch_edges)
+            print(f"after: {len(gdf_branch_edges)}")
 
             # 各エッジのabとbxの角度を計算し、angle_ab_bcより小さい値があればab_bcを曲がり角として登録
             for index_, row_ in gdf_branch_edges.iterrows():
@@ -95,7 +98,7 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                 if len(list(row_["geometry"].coords)) < 3:
                     st_point = Point(row_["geometry"].coords[0])
                     ed_point = Point(row_["geometry"].coords[1])
-                    if st_point == Point(b):
+                    if st_point == b_point:
                         nearest_point = ed_point
                     else:
                         nearest_point = st_point
@@ -103,7 +106,7 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                     st_point = Point(row_["geometry"].coords[1])
                     ed_point = Point(row_["geometry"].coords[-2])
                     # geometryの頭と尾でbに最も近い点を取得.
-                    if Point(b).distance(st_point) < Point(b).distance(ed_point):
+                    if b_point.distance(st_point) < b_point.distance(ed_point):
                         nearest_point = st_point
                     else:
                         nearest_point = ed_point
@@ -114,15 +117,21 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                     (nearest_point.x, nearest_point.y),
                 )
 
+                print(f"discoved turn point: {b}")
+                print(f"highway: x:{row_['highway']}, base:{row.highway}")
+                print(f"angle_ab_bx: {angle_ab_bx}, angle_ab_bc: {angle_ab_bc}")
                 # angle_ab_bcの方が角度大きい場合は曲がり角として登録
                 # residentialは薄いので対象外にする。
                 if angle_ab_bc > angle_ab_bx and row_["highway"] != "residential":
                     # print(f"discoved turn point: {b}")
                     # print(f"highway: x:{row_['highway']}, base:{row.highway}")
                     # print(f"angle_ab_bx: {angle_ab_bx}, angle_ab_bc: {angle_ab_bc}")
+
+                    # ★★★ここの計算がおかしい。ab_bcより大きい値があったら曲がり角として登録しないのが正しいはず。
                     turn_points.append(b)
-                    break
+                    continue
         return turn_points
 
-    series = gdf.progress_apply(func, axis=1)
+    # series = gdf.progress_apply(func, axis=1)
+    series = gdf.apply(func, axis=1)
     return series
