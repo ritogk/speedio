@@ -93,6 +93,7 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
             print(f"after: {len(gdf_branch_edges)}")
 
             # 各エッジのabとbxの角度を計算し、angle_ab_bcより小さい値があればab_bcを曲がり角として登録
+            x_angles = []
             for index_, row_ in gdf_branch_edges.iterrows():
                 # エッジの座標が2つしかない場合は、bと開始位置が被ってしまうのでいい感じに調整する
                 if len(list(row_["geometry"].coords)) < 3:
@@ -117,21 +118,18 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                     (nearest_point.x, nearest_point.y),
                 )
 
-                print(f"discoved turn point: {b}")
-                print(f"highway: x:{row_['highway']}, base:{row.highway}")
-                print(f"angle_ab_bx: {angle_ab_bx}, angle_ab_bc: {angle_ab_bc}")
-                # angle_ab_bcの方が角度大きい場合は曲がり角として登録
+                # print(f"discoved turn point: {b}")
+                # print(f"highway: x:{row_['highway']}, base:{row.highway}")
+                # print(f"angle_ab_bx: {angle_ab_bx}, angle_ab_bc: {angle_ab_bc}")
                 # residentialは薄いので対象外にする。
-                if angle_ab_bc > angle_ab_bx and row_["highway"] != "residential":
-                    # print(f"discoved turn point: {b}")
-                    # print(f"highway: x:{row_['highway']}, base:{row.highway}")
-                    # print(f"angle_ab_bx: {angle_ab_bx}, angle_ab_bc: {angle_ab_bc}")
-
-                    # ★★★ここの計算がおかしい。ab_bcより大きい値があったら曲がり角として登録しないのが正しいはず。
-                    turn_points.append(b)
+                if row_["highway"] != "residential":
+                    x_angles.append(angle_ab_bx)
                     continue
+            # angle_ab_bcが１番小さい値出ない場合は曲がり角として登録
+            if min(x_angles) <= angle_ab_bc:
+                turn_points.append(b)
         return turn_points
 
-    # series = gdf.progress_apply(func, axis=1)
-    series = gdf.apply(func, axis=1)
+    series = gdf.progress_apply(func, axis=1)
+    # series = gdf.apply(func, axis=1)
     return series
