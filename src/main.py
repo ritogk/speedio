@@ -37,15 +37,6 @@ def main() -> GeoDataFrame:
     print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
 
-    # 開始位置列を追加する
-    excution_timer_ins.start("calc start_point")
-    gdf_edges["start_point"] = column_generater.start_point.generate(gdf_edges)
-    excution_timer_ins.stop()
-
-    excution_timer_ins.start("calc end_point")
-    gdf_edges["end_point"] = column_generater.end_point.generate(gdf_edges)
-    excution_timer_ins.stop()
-
     # 全graphを取得する
     excution_timer_ins.start("load openstreetmap all data")
     g_all = graph_all_feather.fetch_graph(
@@ -227,6 +218,15 @@ def main() -> GeoDataFrame:
     gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
     gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
+    excution_timer_ins.stop()
+
+    # 開始位置列を追加する
+    excution_timer_ins.start("calc start_point")
+    gdf_edges["start_point"] = column_generater.start_point.generate(gdf_edges)
+    excution_timer_ins.stop()
+
+    excution_timer_ins.start("calc end_point")
+    gdf_edges["end_point"] = column_generater.end_point.generate(gdf_edges)
     excution_timer_ins.stop()
 
     # google map urlを生成する
