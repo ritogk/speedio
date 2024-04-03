@@ -125,6 +125,10 @@ export const generateHtml = (x) => {
               }" target="_blank">streetViewCenter</a></td>
           </tr>
           <tr>
+              <td>street_viewer_url_list</td>
+              <td>${x.google_map_url_list}"</td>
+          </tr>
+          <tr>
               <td>google_earth</td>
               <td><a href="${
                 x.google_earth_url

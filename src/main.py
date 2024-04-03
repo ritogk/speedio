@@ -234,6 +234,13 @@ def main() -> GeoDataFrame:
     gdf_edges["google_map_url"] = column_generater.google_map_url.generate(gdf_edges)
     excution_timer_ins.stop()
 
+    # street_view_url_list
+    excution_timer_ins.start("test")
+    gdf_edges["street_view_url_list"] = column_generater.street_view_url_list.generate(
+        gdf_edges
+    )
+    excution_timer_ins.stop()
+
     # google earth urlを生成する
     excution_timer_ins.start("create google_earth_url")
     gdf_edges["google_earth_url"] = column_generater.google_earth_url.generate(
@@ -284,6 +291,7 @@ def main() -> GeoDataFrame:
         "score_length",
         "google_map_url",
         "google_earth_url",
+        "street_view_url_list",
         "street_view_url",
         "lanes",
         "gsi_min_width",
@@ -298,6 +306,10 @@ def main() -> GeoDataFrame:
     gdf_edges[output_columns].to_json(output_dir, orient="records")
     output_dir_bk = f"{os.path.dirname(os.path.abspath(__file__))}/../html/json_bk/{datetime.now().strftime('%Y-%m-%d-%H-%M')}.json"
     gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
+
+    # csvに変換して出力する
+    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.csv"
+    gdf_edges[output_columns].to_csv(output_dir, index=False)
 
     excution_timer_ins.finish()
 
