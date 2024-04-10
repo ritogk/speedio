@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      textarea {
+        width: 1000px; /* 横幅 */
+        height: 300px; /* 縦幅 */
+      }
+    </style>
+    <script>
+      var urls = [];
+      window.onload = () => {
+        const btnReader = document.getElementById("btnReader");
+        btnReader.addEventListener("click", function () {
+          const streetViewUrls = document.getElementById("streetViewUrls");
+          urls = streetViewUrls.value.replace(/"/g, "").split("\n");
+          document.getElementById(
+            "labelInfo"
+          ).innerText = `Remaining: ${urls.length} items`;
+        });
+
+        const btnOpen = document.getElementById("btnOpen");
+        btnOpen.addEventListener("click", function () {
+          let target = urls.splice(0, 5);
+          // それぞれの行に対してループ処理
+          target.forEach((line, index) => {
+            window.open(line, "_blank");
+          });
+          document.getElementById(
+            "labelInfo"
+          ).innerText = `Remaining: ${urls.length} items`;
+        });
+      };
+    </script>
+  </head>
+  <body>
+    <div>
+      <p>street_view_list</p>
+      <div><textarea row="10" id="streetViewUrls"></textarea></div>
+      <button id="btnReader">read</button>
+      <button id="btnOpen">open</button>
+      <p id="labelInfo">Remaining: 0 items</p>
+    </div>
+  </body>
+</html>
