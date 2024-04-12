@@ -14,7 +14,7 @@ from .analysis.turn_edge_spliter import split
 
 def main() -> GeoDataFrame:
     env = getEnv()
-    consider_width = env["CONSIDER_WIDTH"]
+    consider_gsi_width = env["CONSIDER_GSI_WIDTH"]
     point_st = env["POINT_ST"]
     point_ed = env["POINT_ED"]
 
@@ -163,7 +163,7 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     excution_timer_ins.start("calc width")
-    if consider_width:
+    if consider_gsi_width:
         # gsiの道幅を取得する
         avg_width, min_width = column_generater.width_gsi.generate(gdf_edges)
         gdf_edges["gsi_min_width"] = min_width
@@ -176,30 +176,24 @@ def main() -> GeoDataFrame:
         gdf_edges = gdf_edges[gdf_edges["gsi_avg_width"] >= 6]
         print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
         excution_timer_ins.stop()
-
-        # alpsmapの道幅を取得する
-        excution_timer_ins.start("calc alpsmap width")
-        gdf_edges["is_alpsmap"] = column_generater.is_alpsmap.generate(gdf_edges)
-        avg_width, min_width = column_generater.width_alpsmap.generate(gdf_edges)
-        gdf_edges["alpsmap_min_width"] = min_width
-        gdf_edges["alpsmap_avg_width"] = avg_width
-        excution_timer_ins.stop()
-
-        # alpsmapの道幅が3m以下のエッジを削除する
-        count = len(gdf_edges)
-        excution_timer_ins.start("remove alpsmap_min_width edge")
-        gdf_edges = gdf_edges[
-            ~((gdf_edges["is_alpsmap"] == 1) & (gdf_edges["alpsmap_min_width"] <= 3))
-        ]
-        print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
     else:
         gdf_edges["gsi_min_width"] = 0
         gdf_edges["gsi_avg_width"] = 0
-        gdf_edges["is_alpsmap"] = 1
-        gdf_edges["alpsmap_min_width"] = 0
-        gdf_edges["alpsmap_avg_width"] = 0
-        # gdf_edges["lanes"] = 2
+    # alpsmapの道幅を取得する
+    excution_timer_ins.start("calc alpsmap width")
+    gdf_edges["is_alpsmap"] = column_generater.is_alpsmap.generate(gdf_edges)
+    avg_width, min_width = column_generater.width_alpsmap.generate(gdf_edges)
+    gdf_edges["alpsmap_min_width"] = min_width
+    gdf_edges["alpsmap_avg_width"] = avg_width
+    excution_timer_ins.stop()
 
+    # alpsmapの道幅が3m以下のエッジを削除する
+    count = len(gdf_edges)
+    excution_timer_ins.start("remove alpsmap_min_width edge")
+    gdf_edges = gdf_edges[
+        ~((gdf_edges["is_alpsmap"] == 1) & (gdf_edges["alpsmap_min_width"] <= 3))
+    ]
+    print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
 
     # 標高と距離の比率を求める
