@@ -14,6 +14,18 @@ export const init = () => {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
+
+  // attributionを削除(リリースするときは表示させる。)
+  document
+    .querySelector(
+      "#map > div.leaflet-control-container > div.leaflet-bottom.leaflet-right"
+    )
+    .remove();
+
+  map.on("contextmenu", function (e) {
+    const coord = e.latlng;
+    document.getElementById("coordinates").value = coord.lat + "," + coord.lng;
+  });
 };
 
 let polylines = [];
