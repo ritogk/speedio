@@ -4,7 +4,6 @@ from .eye_measured_width import RoadCondition
 
 
 # 道幅を評価する
-# 道幅で信頼できる情報源がlanesとalpsmapしかないのでその情報をもとに評価する
 def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
         eye_measured_width = row["eye_measured_width"]
