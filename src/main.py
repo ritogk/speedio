@@ -239,6 +239,7 @@ def main() -> GeoDataFrame:
     gdf_edges["street_view_url_list"] = column_generater.street_view_url_list.generate(
         gdf_edges
     )
+    gdf_edges["score"] = column_generater.score.generate(gdf_edges)
     excution_timer_ins.stop()
 
     # google earth urlを生成する
@@ -308,6 +309,22 @@ def main() -> GeoDataFrame:
     gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
 
     # csvに変換して出力する
+    output_columns = [
+        "length",
+        "highway",
+        "street_view_url_list",
+        "geometry_list",
+        "google_map_url",
+        "score",
+        "lanes",
+        "gsi_min_width",
+        "gsi_avg_width",
+        "is_alpsmap",
+        "alpsmap_min_width",
+        "alpsmap_avg_width",
+    ]
+    # gdf_edges.scoreの上位100件を取得する
+    gdf_edges = gdf_edges.sort_values("score", ascending=False).head(100)
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.csv"
     gdf_edges[output_columns].to_csv(output_dir, index=False)
 
