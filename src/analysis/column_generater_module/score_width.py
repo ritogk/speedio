@@ -9,9 +9,9 @@ def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
         score = 0.4
         if row["lanes"] == "2":
-            score += 0.3
+            score += 0.2
         if row["is_alpsmap"] and row["alpsmap_min_width"] >= 5.5:
-            score += 0.3
+            score += 0.4
         return score
 
     series = gdf.apply(func, axis=1)
