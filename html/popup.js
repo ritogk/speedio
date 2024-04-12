@@ -90,6 +90,10 @@ export const generateHtml = (x) => {
               <td>alpsmap_avg_width</td>
               <td>${x.alpsmap_avg_width}</td>
           </tr>
+          <tr>
+            <td>eye_measured_width</td>
+            <td>${x.eye_measured_width}</td>
+          </tr>
         </table>
 
         

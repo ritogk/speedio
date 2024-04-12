@@ -37,6 +37,15 @@ def main() -> GeoDataFrame:
     print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
 
+    # 開始位置列を追加する
+    excution_timer_ins.start("calc start_point")
+    gdf_edges["start_point"] = column_generater.start_point.generate(gdf_edges)
+    excution_timer_ins.stop()
+
+    excution_timer_ins.start("calc end_point")
+    gdf_edges["end_point"] = column_generater.end_point.generate(gdf_edges)
+    excution_timer_ins.stop()
+
     # 全graphを取得する
     excution_timer_ins.start("load openstreetmap all data")
     g_all = graph_all_feather.fetch_graph(
@@ -206,6 +215,21 @@ def main() -> GeoDataFrame:
     # # 元のデータの長さと削除後のデータの長さを表示する
     # print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
 
+    # # LINESTRINGを緯度と経度のリストに変換する.coords[0]とcoords[1]を入り変えたリストを返す
+    gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
+        lambda x: list(map(lambda y: [y[1], y[0]], x.coords))
+    )
+
+    # 目視チェックした道幅をセットする
+    eye_meadured_width_path = (
+        f"{os.path.dirname(os.path.abspath(__file__))}/../eye_meadured_width.csv"
+    )
+    excution_timer_ins.start("")
+    gdf_edges["eye_measured_width"] = column_generater.eye_measured_width.generate(
+        gdf_edges, eye_meadured_width_path
+    )
+    excution_timer_ins.stop()
+
     # スコアを求める
     excution_timer_ins.start("calc score")
     gdf_edges["score_elevation_over_heiht"] = (
@@ -218,15 +242,6 @@ def main() -> GeoDataFrame:
     gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
     gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
-    excution_timer_ins.stop()
-
-    # 開始位置列を追加する
-    excution_timer_ins.start("calc start_point")
-    gdf_edges["start_point"] = column_generater.start_point.generate(gdf_edges)
-    excution_timer_ins.stop()
-
-    excution_timer_ins.start("calc end_point")
-    gdf_edges["end_point"] = column_generater.end_point.generate(gdf_edges)
     excution_timer_ins.stop()
 
     # google map urlを生成する
@@ -267,11 +282,6 @@ def main() -> GeoDataFrame:
     # )
     # excution_timer_ins.stop()
 
-    # # LINESTRINGを緯度と経度のリストに変換する.coords[0]とcoords[1]を入り変えたリストを返す
-    gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
-        lambda x: list(map(lambda y: [y[1], y[0]], x.coords))
-    )
-
     # jsonに変換して出力する
     output_columns = [
         "length",
@@ -302,6 +312,7 @@ def main() -> GeoDataFrame:
         "alpsmap_avg_width",
         "turn_candidate_points",
         "turn_points",
+        "eye_measured_width",
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[output_columns].to_json(output_dir, orient="records")

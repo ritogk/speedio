@@ -5,6 +5,8 @@
 .env
 key_store
 /html/target.json
+/html/target.csv
+eye_meadured_width.csv
 
 *.tif
 *.geojson
