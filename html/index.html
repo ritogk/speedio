@@ -16,6 +16,18 @@
         right: 0;
       }
 
+      #InfoArea {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        z-index: 50000;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 4px;
+        width: 400px;
+        color: white;
+        font-size: 13px;
+      }
+
       #SubArea {
         position: absolute;
         bottom: 0;
@@ -23,7 +35,6 @@
         z-index: 1000;
         background-color: rgba(0, 0, 0, 0.5);
         padding: 4px;
-        margin-bottom: 18px;
       }
       #SubArea button {
         background: lightblue;
@@ -35,6 +46,16 @@
     </style>
   </head>
   <body>
+    <div id="InfoArea">
+      <div>
+        <span>coordinates:</span
+        ><input
+          type="text"
+          style="width: 280px; opacity: 0.6"
+          id="coordinates"
+        />
+      </div>
+    </div>
     <div id="SubArea">
       <div style="text-align: right">
         <button id="toggleButton">Close or Open</button>
