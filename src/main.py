@@ -198,7 +198,7 @@ def main() -> GeoDataFrame:
         gdf_edges["is_alpsmap"] = 1
         gdf_edges["alpsmap_min_width"] = 0
         gdf_edges["alpsmap_avg_width"] = 0
-        gdf_edges["lanes"] = 2
+        # gdf_edges["lanes"] = 2
 
     excution_timer_ins.stop()
 
