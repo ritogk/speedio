@@ -23,3 +23,4 @@ from .column_generater_module import score_length
 from .column_generater_module import turn_candidate_points
 from .column_generater_module import turn
 from .column_generater_module import street_view_url_list
+from .column_generater_module import score
