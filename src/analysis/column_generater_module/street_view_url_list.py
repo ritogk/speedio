@@ -31,7 +31,7 @@ def interpolate_points(line: LineString, interval: int) -> list[list[Point, Poin
         dist = (dist + interval) if (dist + interval) < length else length
         point = line.interpolate(dist)
         points.append(point)
-    print(points)
+    # print(points)
     # 平面直角座標系から緯度経度系に変換
     transformer = Transformer.from_crs(6677, 4326, always_xy=True)
     points = [Point(transformer.transform(p.x, p.y)) for p in points]
