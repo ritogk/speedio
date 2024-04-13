@@ -218,7 +218,7 @@ def main() -> GeoDataFrame:
     eye_meadured_width_path = (
         f"{os.path.dirname(os.path.abspath(__file__))}/../eye_meadured_width.csv"
     )
-    excution_timer_ins.start("")
+    excution_timer_ins.start("calc eye_measured_width")
     gdf_edges["eye_measured_width"] = column_generater.eye_measured_width.generate(
         gdf_edges, eye_meadured_width_path
     )
