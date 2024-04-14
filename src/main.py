@@ -1,4 +1,4 @@
-from .core import excution_timer
+from .core.excution_timer import ExcutionTimer, ExcutionType
 from .analysis import graph_feather
 from .analysis import graph_all_feather
 from .analysis import column_generater
@@ -18,9 +18,9 @@ def main() -> GeoDataFrame:
     point_st = env["POINT_ST"]
     point_ed = env["POINT_ED"]
 
-    excution_timer_ins = excution_timer.ExcutionTimer()
+    excution_timer_ins = ExcutionTimer()
 
-    excution_timer_ins.start("load openstreetmap data")
+    excution_timer_ins.start("load openstreetmap data", ExcutionType.FETCH)
     graph = graph_feather.fetch_graph(
         point_st[0], point_st[1], point_ed[0], point_ed[1]
     )
@@ -47,7 +47,7 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 全graphを取得する
-    excution_timer_ins.start("load openstreetmap all data")
+    excution_timer_ins.start("load openstreetmap all data", ExcutionType.FETCH)
     g_all = graph_all_feather.fetch_graph(
         point_st[0], point_st[1], point_ed[0], point_ed[1]
     )
