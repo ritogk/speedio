@@ -1,17 +1,22 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity({ name: 'locations' })
 export class Location {
   @PrimaryGeneratedColumn()
+  @ApiProperty({ description: 'id' })
   id: number;
 
   @Column()
+  @ApiProperty({ description: '緯度' })
   latitude: number;
 
   @Column()
+  @ApiProperty({ description: '経度' })
   longitude: number;
 
   @Column({ default: true })
+  @ApiProperty({ description: '路面状況' })
   roadCondition: RoadCondition;
 }
 
