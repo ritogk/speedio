@@ -1,19 +1,22 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsEnum } from 'class-validator';
 import { RoadCondition } from '../entities/location.entity';
 export class CreateLocationDto {
-  @ApiProperty()
+  @ApiProperty({ description: '緯度' })
   @IsNumber()
   @IsNotEmpty()
   latitude: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: '経度' })
   @IsNumber()
   @IsNotEmpty()
   longitude: number;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: '路面状況',
+    enum: RoadCondition,
+  })
   @IsNotEmpty()
-  @IsString()
+  @IsEnum(RoadCondition)
   roadCondition: RoadCondition;
 }
