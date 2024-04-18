@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum RoadCondition {
@@ -32,4 +38,12 @@ export class Location {
     enum: RoadCondition,
   })
   roadCondition: RoadCondition;
+
+  @CreateDateColumn()
+  @ApiProperty({ description: '経度' })
+  created_at: Date;
+
+  @UpdateDateColumn()
+  @ApiProperty({ description: '経度' })
+  updated_at: Date;
 }
