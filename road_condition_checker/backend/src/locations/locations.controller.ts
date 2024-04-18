@@ -16,7 +16,7 @@ import {
   ApiBody,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { LocationDto } from './dto/location.dto';
+import { Location } from './entities/location.entity';
 
 @ApiTags('locations')
 @Controller('locations')
@@ -24,19 +24,19 @@ export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
   @ApiOkResponse({
-    type: [LocationDto],
+    type: [Location],
   })
   @Get()
-  findAll(): LocationDto[] {
+  findAll(): Location[] {
     // return this.locationsService.findAll();
     return [];
   }
 
   @ApiOkResponse({
-    type: LocationDto,
+    type: Location,
   })
   @Get(':id')
-  findOne(@Param('id') id: string): LocationDto {
+  findOne(@Param('id') id: string): Location {
     return this.locationsService.findOne(+id) as any;
   }
 
@@ -46,7 +46,7 @@ export class LocationsController {
     type: CreateLocationDto,
   })
   @ApiCreatedResponse({
-    type: LocationDto,
+    type: Location,
   })
   create(@Body() createLocationDto: CreateLocationDto) {
     return this.locationsService.create(createLocationDto);
@@ -57,7 +57,7 @@ export class LocationsController {
     type: UpdateLocationDto,
   })
   @ApiOkResponse({
-    type: LocationDto,
+    type: Location,
   })
   @Patch(':id')
   update(
