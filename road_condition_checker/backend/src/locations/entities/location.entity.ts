@@ -40,10 +40,10 @@ export class Location {
   roadCondition: RoadCondition;
 
   @CreateDateColumn()
-  @ApiProperty({ description: '経度' })
+  @ApiProperty({ description: '作成日時' })
   created_at: Date;
 
   @UpdateDateColumn()
-  @ApiProperty({ description: '経度' })
+  @ApiProperty({ description: '更新日時' })
   updated_at: Date;
 }
