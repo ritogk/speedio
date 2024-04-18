@@ -27,17 +27,16 @@ export class LocationsController {
     type: [Location],
   })
   @Get()
-  findAll(): Location[] {
-    // return this.locationsService.findAll();
-    return [];
+  async findAll(): Promise<Location[]> {
+    return this.locationsService.findAll();
   }
 
   @ApiOkResponse({
     type: Location,
   })
   @Get(':id')
-  findOne(@Param('id') id: string): Location {
-    return this.locationsService.findOne(+id) as any;
+  async findOne(@Param('id') id: string): Promise<Location> {
+    return this.locationsService.findOne(+id);
   }
 
   @Post()
@@ -48,7 +47,9 @@ export class LocationsController {
   @ApiCreatedResponse({
     type: Location,
   })
-  create(@Body() createLocationDto: CreateLocationDto) {
+  async create(
+    @Body() createLocationDto: CreateLocationDto,
+  ): Promise<Location> {
     return this.locationsService.create(createLocationDto);
   }
 
@@ -60,16 +61,17 @@ export class LocationsController {
     type: Location,
   })
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateLocationDto: UpdateLocationDto,
-  ) {
-    return this.locationsService.update(+id, updateLocationDto);
+  ): Promise<Location> {
+    await this.locationsService.update(+id, updateLocationDto);
+    return this.locationsService.findOne(+id);
   }
 
   @ApiOkResponse()
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string): Promise<void> {
     return this.locationsService.remove(+id);
   }
 }
