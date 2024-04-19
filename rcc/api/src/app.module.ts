@@ -5,6 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Location } from './locations/entities/location.entity';
 import { LocationsModule } from './locations/locations.module';
 
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -16,6 +19,11 @@ import { LocationsModule } from './locations/locations.module';
       database: 'speedia',
       entities: [Location],
       synchronize: true,
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'), // ここで静的ファイルが置かれるディレクトリを指定
+      serveRoot: '/public', // URLパスのプレフィックス（任意）
+      renderPath: '*', // 任意のファイルパスやファイル名にアクセス可能にする
     }),
     LocationsModule,
   ],
