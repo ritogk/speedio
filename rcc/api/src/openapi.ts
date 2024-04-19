@@ -18,6 +18,6 @@ export const setup = async (app: INestApplication) => {
     skipInvalid: true,
     noRefs: true,
   });
-  const yamlPath = path.join(__dirname, '../../', 'openapi.yml');
+  const yamlPath = path.join(__dirname, '../public', 'openapi.yml');
   await fs.writeFile(yamlPath, yamlDocument);
 };
