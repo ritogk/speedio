@@ -4,14 +4,15 @@ import router from './router'
 import OpenAPIClientAxios from 'openapi-client-axios'
 import type { Client as ApiClient } from '@/types/openapi'
 
+const apiPrefix = import.meta.env.VITE_API_PREFIX
 const api = new OpenAPIClientAxios({
-  definition: '/api/public/openapi.yml'
+  definition: `/${apiPrefix}/public/openapi.yml`
 })
 api.init()
 
 const test = async () => {
   const client = await api.getClient<ApiClient>()
-  client.defaults.baseURL = 'https://localhost:5173/api'
+  client.defaults.baseURL = apiPrefix
   await client.LocationsController_findAll()
 }
 test()
