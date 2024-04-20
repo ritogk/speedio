@@ -8,6 +8,7 @@ export const setup = async (app: INestApplication) => {
   const documentBuilder = new DocumentBuilder()
     .setDescription('The cats API description')
     .setVersion('1.0')
+    .addServer('https://localhost:5173/api', 'Development server')
     .build();
   const document = SwaggerModule.createDocument(app, documentBuilder);
   // swagger-viewerの起動
