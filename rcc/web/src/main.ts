@@ -11,6 +11,7 @@ api.init()
 
 const test = async () => {
   const client = await api.getClient<ApiClient>()
+  client.defaults.baseURL = 'https://localhost:5173/api'
   await client.LocationsController_findAll()
 }
 test()
