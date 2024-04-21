@@ -18,12 +18,3 @@ conda env create -f environment.yml
 ```
 conda activate touge-searcher
 ```
-
-# rcc
-
-```
-cp rcc/web/.base.env rcc/web/.env
-cd rcc/web/.cert
-mkcert install
-mkcert localhost
-```
