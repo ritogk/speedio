@@ -24,6 +24,6 @@ conda activate touge-searcher
 ```
 cp rcc/web/.base.env rcc/web/.env
 cd rcc/web/.cert
-mkcer install
+mkcert install
 mkcert localhost
 ```
