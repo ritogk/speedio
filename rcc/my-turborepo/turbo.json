@@ -1,13 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local"],
   "pipeline": {
-    "build": {
-      "dependsOn": ["^lint"],
-      "outputs": [".next/**", "!.next/cache/**"]
+    "api#openapi:generate": {
+      "outputs": ["public/openapi.yml"]
     },
-    "lint": {},
+    "web#openapi-d:generate": {
+      "dependsOn": ["api#openapi:generate"],
+      "outputs": ["src/types/openapi.d.ts"]
+    },
     "dev": {
+      "dependsOn": ["web#openapi-d:generate"],
       "cache": false,
       "persistent": true
     }
