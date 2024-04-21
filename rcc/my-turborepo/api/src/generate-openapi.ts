@@ -1,10 +1,12 @@
-import { INestApplication } from '@nestjs/common';
+import { AppModule } from './app.module';
+import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 
-export const setup = async (app: INestApplication) => {
+export const generate = async () => {
+  const app = await NestFactory.create(AppModule);
   const documentBuilder = new DocumentBuilder()
     .setDescription('The cats API description')
     .setVersion('1.0')
@@ -22,3 +24,5 @@ export const setup = async (app: INestApplication) => {
   const yamlPath = path.join(__dirname, '../public', 'openapi.yml');
   await fs.writeFile(yamlPath, yamlDocument);
 };
+
+(async () => await generate())();

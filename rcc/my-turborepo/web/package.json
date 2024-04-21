@@ -1,10 +1,10 @@
 {
-  "name": "rcc",
+  "name": "web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "run-s generate-openapi vite",
+    "dev": "run-s openapi-d:generate vite",
     "vite": "npx vite",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
@@ -12,7 +12,7 @@
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "format": "prettier --write src/",
-    "generate-openapi": "npx openapicmd typegen ../openapi.yml > ./src/types/openapi.d.ts"
+    "openapi-d:generate": "npx openapicmd typegen ../api/public/openapi.yml > ./src/types/openapi.d.ts"
   },
   "dependencies": {
     "axios": "^1.6.8",
