@@ -15,6 +15,7 @@
     "openapi-d:generate": "npx openapicmd typegen ../api/public/openapi.yml > ./src/types/openapi.d.ts"
   },
   "dependencies": {
+    "@googlemaps/js-api-loader": "^1.16.6",
     "axios": "^1.6.8",
     "openapi-client-axios": "^7.5.4",
     "vue": "^3.4.21",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.8.0",
     "@tsconfig/node20": "^20.1.4",
+    "@types/google.maps": "^3.55.7",
     "@types/node": "^20.12.5",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vue/eslint-config-prettier": "^9.0.0",
