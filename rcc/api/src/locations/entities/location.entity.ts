@@ -8,9 +8,10 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum RoadCondition {
-  COMFORTABLE = 'COMFORTABLE', // 快適に走れる道
-  PASSABLE = 'PASSABLE', // 狭い道と快適に走れる道の中間
-  UNPLEASANT = 'UNPLEASANT', // 狭くて走りたくない道
+  TWO_LANE_SHOULDER = 'TWO_LANE_SHOULDER', // ２車線かつ路肩あり
+  TWO_LANE = 'TWO_LANE', // 2車線かつ路肩なし
+  ONE_LANE_SPACIOUS = 'ONE_LANE_SPACIOUS', // 1車線かつ2台が余裕を持って通行できる
+  ONE_LANE = 'ONE_LANE', // 1車線かつ1台のみ通行可能
   UNCONFIRMED = 'UNCONFIRMED', // 未確認
 }
 
