@@ -6,13 +6,14 @@ from pyproj import Transformer
 
 def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
-        segments = interpolate_points(row.geometry, 500)
-        return "\n".join(
-            [
-                f"https://www.google.com/maps/@{segment.y},{segment.x},20?layer=c&cbll={segment.y},{segment.x}&cbp=12,0,0,0,0"
-                for segment in segments
-            ],
-        )
+        segments = interpolate_points(row.geometry, 250)
+        # return "\n".join(
+        #     [
+        #         f"https://www.google.com/maps/@{segment.y},{segment.x},20?layer=c&cbll={segment.y},{segment.x}&cbp=12,0,0,0,0"
+        #         for segment in segments
+        #     ],
+        # )
+        return [[segment.y, segment.x] for segment in segments]   
 
     series = gdf.apply(func, axis=1)
     return series
