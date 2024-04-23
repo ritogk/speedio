@@ -1,5 +1,5 @@
 import type { Components } from '@/types/openapi'
-import { ref, shallowReadonly, type Ref } from 'vue'
+import { ref, shallowReadonly, type Ref, type InjectionKey } from 'vue'
 import PaPa, { type ParseResult } from 'papaparse'
 
 type Location = Components.Schemas.Location
@@ -10,7 +10,7 @@ export type RoadConditionType = {
   roadCondition: Location['roadCondition']
 }
 
-type HomeStateType = {
+type UseHomeStateType = {
   loadGeometries: (value: any) => void
   getGeometries: () => Readonly<Ref<RoadConditionType[][]>>
   changeSelectedGeometry: (value: [RoadConditionType]) => void
@@ -19,7 +19,7 @@ type HomeStateType = {
   getSelectedGeometryPoint: () => Readonly<Ref<RoadConditionType>>
 }
 
-export const useHomeState = (): HomeStateType => {
+const useHomeState = (): UseHomeStateType => {
   const geometries: Ref<RoadConditionType[][]> = ref([[]])
   const selectedGeometry: Ref<RoadConditionType[]> = ref([])
   const selectedGeometryPoint: Ref<RoadConditionType> = ref({
@@ -87,3 +87,6 @@ export const useHomeState = (): HomeStateType => {
     getSelectedGeometryPoint
   }
 }
+
+const UseHomeStateKey: InjectionKey<UseHomeStateType> = Symbol('HomeStateType')
+export { useHomeState, UseHomeStateKey, type UseHomeStateType }
