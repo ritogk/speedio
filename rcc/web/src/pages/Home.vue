@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch, markRaw } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
-import { useHomeState } from '@/pages/home-parts/home-state'
+import { useHomeState, type RoadConditionType } from '@/pages/home-parts/home-state'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
@@ -30,7 +30,12 @@ onMounted(() => {
   })
 })
 
-const { loadGeometries, getSelectedGeometry } = useHomeState()
+const {
+  loadGeometries,
+  getSelectedGeometry,
+  getSelectedGeometryPoint,
+  changeSelectedGeometryPoint
+} = useHomeState()
 const selectedGeometry = getSelectedGeometry()
 const uploadCsv = (e: Event) => {
   const target = e.target as HTMLInputElement
@@ -38,6 +43,11 @@ const uploadCsv = (e: Event) => {
   if (!fileList.length) return
   const file = target.files?.[0]
   loadGeometries(file)
+}
+
+const selectedGeometryPoint = getSelectedGeometryPoint()
+const handlePointSelect = (value: RoadConditionType) => {
+  changeSelectedGeometryPoint(value)
 }
 </script>
 
@@ -86,129 +96,24 @@ const uploadCsv = (e: Event) => {
       <table border="1" style="height: 750px; overflow-y: auto; display: block">
         <thead>
           <tr>
-            <th>DB登録</th>
+            <th>登録</th>
             <th>地理座標</th>
             <th>路面状態</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(roadCondition, index) in selectedGeometry" :key="`geometry-${index}`">
+          <tr
+            v-for="(point, index) in selectedGeometry"
+            :key="`geometry-${index}`"
+            @click="handlePointSelect(point)"
+            style="font-size: 12px"
+            :style="{
+              backgroundColor: selectedGeometryPoint === point ? 'greenyellow' : 'transparent'
+            }"
+          >
             <td scope="row">済</td>
-            <td>
-              {{ roadCondition.latitude.toFixed(2) }}, {{ roadCondition.longitude.toFixed(2) }}
-            </td>
-            <td>{{ roadCondition.roadCondition }}</td>
-          </tr>
-          <tr></tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
-          </tr>
-          <tr>
-            <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
+            <td>{{ point.latitude.toFixed(5) }}, {{ point.longitude.toFixed(5) }}</td>
+            <td>{{ point.roadCondition }}</td>
           </tr>
         </tbody>
       </table>
