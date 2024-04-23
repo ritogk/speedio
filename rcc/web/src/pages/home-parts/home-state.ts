@@ -13,7 +13,7 @@ export type RoadConditionType = {
 type UseHomeStateType = {
   loadGeometries: (value: any) => void
   getGeometries: () => Readonly<Ref<RoadConditionType[][]>>
-  changeSelectedGeometry: (value: [RoadConditionType]) => void
+  changeSelectedGeometry: (value: RoadConditionType[]) => void
   getSelectedGeometry: () => Readonly<Ref<RoadConditionType[]>>
   changeSelectedGeometryPoint: (value: RoadConditionType) => void
   getSelectedGeometryPoint: () => Readonly<Ref<RoadConditionType>>
@@ -62,7 +62,7 @@ const useHomeState = (): UseHomeStateType => {
     return shallowReadonly(geometries)
   }
 
-  const changeSelectedGeometry = (value: [RoadConditionType]) => {
+  const changeSelectedGeometry = (value: RoadConditionType[]) => {
     selectedGeometry.value = value
   }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, provide } from 'vue'
+import { onMounted, provide, ref } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
 import {
   useHomeState,
@@ -38,11 +38,22 @@ provide(UseHomeStateKey, homeState)
 
 const {
   loadGeometries,
+  getGeometries,
   getSelectedGeometry,
   getSelectedGeometryPoint,
-  changeSelectedGeometryPoint
+  changeSelectedGeometryPoint,
+  changeSelectedGeometry
 } = homeState
+
+const geometries = getGeometries()
+const selectedGeometryIndex = ref(0)
 const selectedGeometry = getSelectedGeometry()
+const handleGeometryMove = (index: number) => {
+  selectedGeometryIndex.value = index
+  changeSelectedGeometry(geometries.value[index])
+  selectedGeometryPointIndex.value = 0
+  changeSelectedGeometryPoint(geometries.value[index][0])
+}
 const uploadCsv = (e: Event) => {
   const target = e.target as HTMLInputElement
   const fileList = target.files as FileList
@@ -51,9 +62,15 @@ const uploadCsv = (e: Event) => {
   loadGeometries(file)
 }
 
+const selectedGeometryPointIndex = ref(0)
 const selectedGeometryPoint = getSelectedGeometryPoint()
-const handlePointSelect = (value: RoadConditionType) => {
-  changeSelectedGeometryPoint(value)
+const handlePointSelect = (index: number) => {
+  selectedGeometryPointIndex.value = index
+  changeSelectedGeometryPoint(selectedGeometry.value[index])
+}
+const handlePointMove = (index: number) => {
+  selectedGeometryPointIndex.value = index
+  changeSelectedGeometryPoint(selectedGeometry.value[index])
 }
 </script>
 
@@ -63,7 +80,6 @@ const handlePointSelect = (value: RoadConditionType) => {
       <div id="pano" style="flex: 5; background-color: aqua; height: 750px">street_view_area</div>
       <div style="width: 100%">
         <div class="button-container">
-          <button class="button-style" data-tooltip="戻る">◀</button>
           <button
             class="button-style"
             data-tooltip="2車線かつ路肩あり"
@@ -92,8 +108,25 @@ const handlePointSelect = (value: RoadConditionType) => {
           >
             4
           </button>
-          <button class="button-style" data-tooltip="進む">▶</button>
-          <span style="margin-left: 10px">1/10</span>
+          <button
+            class="button-style"
+            data-tooltip="戻る"
+            @click="handlePointMove(selectedGeometryPointIndex - 1)"
+            :disabled="selectedGeometryPointIndex == 0"
+          >
+            ◀
+          </button>
+          <button
+            class="button-style"
+            data-tooltip="進む"
+            @click="handlePointMove(selectedGeometryPointIndex + 1)"
+            :disabled="selectedGeometryPointIndex + 1 == selectedGeometry.length"
+          >
+            ▶
+          </button>
+          <span style="margin-left: 10px"
+            >{{ selectedGeometryPointIndex + 1 }}/{{ selectedGeometry.length }}</span
+          >
         </div>
       </div>
     </div>
@@ -111,7 +144,7 @@ const handlePointSelect = (value: RoadConditionType) => {
           <tr
             v-for="(point, index) in selectedGeometry"
             :key="`geometry-${index}`"
-            @click="handlePointSelect(point)"
+            @click="handlePointSelect(index)"
             style="font-size: 12px"
             :style="{
               backgroundColor: selectedGeometryPoint === point ? 'greenyellow' : 'transparent'
@@ -124,10 +157,21 @@ const handlePointSelect = (value: RoadConditionType) => {
         </tbody>
       </table>
       <div>
-        <button>◀</button>
-        <button>▶</button>
-        <span style="margin-right: 20px">1/10</span>
-        <button>csv読込</button>
+        <button
+          @click="handleGeometryMove(selectedGeometryIndex - 1)"
+          :disabled="selectedGeometryIndex == 0"
+        >
+          ◀
+        </button>
+        <button
+          @click="handleGeometryMove(selectedGeometryIndex + 1)"
+          :disabled="selectedGeometryIndex + 1 == geometries.length"
+        >
+          ▶
+        </button>
+        <span style="margin-right: 20px"
+          >{{ selectedGeometryIndex + 1 }}/{{ geometries.length }}</span
+        >
         <input type="file" @change="uploadCsv" />
       </div>
     </div>
