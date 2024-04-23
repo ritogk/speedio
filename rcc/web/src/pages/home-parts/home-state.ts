@@ -4,7 +4,7 @@ import PaPa, { type ParseResult } from 'papaparse'
 
 type Location = Components.Schemas.Location
 
-type RoadConditionType = {
+export type RoadConditionType = {
   latitude: number
   longitude: number
   roadCondition: Location['roadCondition']
