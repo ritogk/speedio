@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref, watch, markRaw } from 'vue'
+import { onMounted, provide } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
-import { useHomeState, type RoadConditionType } from '@/pages/home-parts/home-state'
+import {
+  useHomeState,
+  type RoadConditionType,
+  UseHomeStateKey
+} from '@/pages/home-parts/home-state'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
@@ -30,12 +34,15 @@ onMounted(() => {
   })
 })
 
+const homeState = useHomeState()
+provide(UseHomeStateKey, homeState)
+
 const {
   loadGeometries,
   getSelectedGeometry,
   getSelectedGeometryPoint,
   changeSelectedGeometryPoint
-} = useHomeState()
+} = homeState
 const selectedGeometry = getSelectedGeometry()
 const uploadCsv = (e: Event) => {
   const target = e.target as HTMLInputElement
