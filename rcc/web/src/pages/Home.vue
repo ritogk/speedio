@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch, markRaw } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
-
+import { useHomeState } from '@/pages/home-parts/home-state'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
@@ -29,6 +29,16 @@ onMounted(() => {
     })
   })
 })
+
+const { loadGeometries, getSelectedGeometry } = useHomeState()
+const selectedGeometry = getSelectedGeometry()
+const uploadCsv = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const fileList = target.files as FileList
+  if (!fileList.length) return
+  const file = target.files?.[0]
+  loadGeometries(file)
+}
 </script>
 
 <template>
@@ -82,11 +92,14 @@ onMounted(() => {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr v-for="(roadCondition, index) in selectedGeometry" :key="`geometry-${index}`">
             <td scope="row">済</td>
-            <td>34.397,150.644</td>
-            <td>1</td>
+            <td>
+              {{ roadCondition.latitude.toFixed(2) }}, {{ roadCondition.longitude.toFixed(2) }}
+            </td>
+            <td>{{ roadCondition.roadCondition }}</td>
           </tr>
+          <tr></tr>
           <tr>
             <td scope="row">済</td>
             <td>34.397,150.644</td>
@@ -204,6 +217,7 @@ onMounted(() => {
         <button>▶</button>
         <span style="margin-right: 20px">1/10</span>
         <button>csv読込</button>
+        <input type="file" @change="uploadCsv" />
       </div>
     </div>
   </div>
