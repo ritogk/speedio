@@ -11,7 +11,6 @@ const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 let map: google.maps.Map | null = null
 
 onMounted(() => {
-  console.log(apiKey)
   const loader = new Loader({
     apiKey: apiKey,
     version: 'weekly',
