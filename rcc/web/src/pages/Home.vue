@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { onMounted, provide, ref } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
-import {
-  useHomeState,
-  type RoadConditionType,
-  UseHomeStateKey
-} from '@/pages/home-parts/home-state'
+import { useHomeState, UseHomeStateKey } from '@/pages/home-parts/home-state'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
 let polyline: google.maps.Polyline | null = null
+let panorama: google.maps.StreetViewPanorama | null = null
 
 onMounted(() => {
   const loader = new Loader({
@@ -24,7 +21,7 @@ onMounted(() => {
     })
   })
   loader.importLibrary('streetView').then((google) => {
-    const panorama = new google.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
+    panorama = new google.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
       position: { lat: 35.334261616547465, lng: 136.99613190333835 },
       pov: {
         heading: 34,
@@ -69,6 +66,17 @@ const handleGeometryMove = (index: number) => {
     lat: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].latitude,
     lng: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].longitude
   })
+  panorama = new google.maps.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
+    position: {
+      lat: selectedGeometryPoint.value.latitude,
+      lng: selectedGeometryPoint.value.longitude
+    },
+    // TASK: 向きの調整をする
+    pov: {
+      heading: 34,
+      pitch: 10
+    }
+  })
 }
 const uploadCsv = async (e: Event) => {
   const target = e.target as HTMLInputElement
@@ -101,6 +109,17 @@ const handlePointSelect = (index: number) => {
 const handlePointMove = (index: number) => {
   selectedGeometryPointIndex.value = index
   changeSelectedGeometryPoint(selectedGeometry.value[index])
+  panorama = new google.maps.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
+    position: {
+      lat: selectedGeometryPoint.value.latitude,
+      lng: selectedGeometryPoint.value.longitude
+    },
+    // TASK: 向きの調整をする
+    pov: {
+      heading: 34,
+      pitch: 10
+    }
+  })
 }
 </script>
 
