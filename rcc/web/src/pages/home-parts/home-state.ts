@@ -11,7 +11,7 @@ export type RoadConditionType = {
 }
 
 type UseHomeStateType = {
-  loadGeometries: (value: any) => void
+  loadGeometries: (value: any) => Promise<void>
   getGeometries: () => Readonly<Ref<RoadConditionType[][]>>
   changeSelectedGeometry: (value: RoadConditionType[]) => void
   getSelectedGeometry: () => Readonly<Ref<RoadConditionType[]>>
@@ -28,33 +28,37 @@ const useHomeState = (): UseHomeStateType => {
     roadCondition: 'ONE_LANE'
   })
 
-  const loadGeometries = (file: File) => {
-    PaPa.parse(file, {
-      complete: (
-        results: ParseResult<{
-          geometry_list: string //[number, number][]
-          highway: string
-          length: string
-        }>
-      ) => {
-        geometries.value = results.data.map((geometry) => {
-          const geometry_list = JSON.parse(geometry.geometry_list)
-          return geometry_list.map((point: any) => {
-            return {
-              latitude: point[0],
-              longitude: point[1],
-              roadCondition: 'UNCONFIRMED'
-            }
+  const loadGeometries = async (file: File): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      PaPa.parse(file, {
+        complete: (
+          results: ParseResult<{
+            geometry_list: string //[number, number][]
+            highway: string
+            length: string
+          }>
+        ) => {
+          geometries.value = results.data.map((geometry) => {
+            const geometry_list = JSON.parse(geometry.geometry_list)
+            return geometry_list.map((point: any) => {
+              return {
+                latitude: point[0],
+                longitude: point[1],
+                roadCondition: 'UNCONFIRMED'
+              }
+            })
           })
-        })
-        selectedGeometry.value = geometries.value[0]
-        selectedGeometryPoint.value = selectedGeometry.value[0]
-      },
-      header: true,
-      dynamicTyping: true,
-      error: () => {
-        alert('エラーが発生しました')
-      }
+          selectedGeometry.value = geometries.value[0]
+          selectedGeometryPoint.value = selectedGeometry.value[0]
+          resolve()
+        },
+        header: true,
+        dynamicTyping: true,
+        error: () => {
+          alert('エラーが発生しました')
+          reject()
+        }
+      })
     })
   }
 
