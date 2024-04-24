@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, provide, ref } from 'vue'
+import { provide } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
 import {
   useHomeState,
@@ -13,28 +13,32 @@ let marker: google.maps.Marker | null = null
 let polyline: google.maps.Polyline | null = null
 let panorama: google.maps.StreetViewPanorama | null = null
 
-onMounted(() => {
+const initGoogleService = async (
+  polyline: RoadConditionType[],
+  point: RoadConditionType
+): Promise<void> => {
   const loader = new Loader({
     apiKey: apiKey,
     version: 'weekly',
     libraries: ['places']
   })
-  loader.importLibrary('maps').then((google) => {
-    map = new google.Map(document.getElementById('map') as HTMLElement, {
-      center: { lat: 35.334261616547465, lng: 136.99613190333835 },
-      zoom: 13
-    })
+  // このへんの処理で初期値をセットしているが先の処理で更新しているので消したい。
+  const MapsLibrary = await loader.importLibrary('maps')
+  map = new MapsLibrary.Map(document.getElementById('map') as HTMLElement, {
+    center: { lat: point.latitude, lng: point.longitude },
+    zoom: 13
   })
-  loader.importLibrary('streetView').then((google) => {
-    panorama = new google.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
-      position: { lat: 35.334261616547465, lng: 136.99613190333835 },
-      pov: {
-        heading: 34,
-        pitch: 10
-      }
-    })
+  const resultPanorama = await loader.importLibrary('streetView')
+  const nextIndex = findClosestPointIndex(polyline, point) + 1
+  const nextPoint = originalGeometries.value[selectedGeometryIndex.value][nextIndex]
+  panorama = new resultPanorama.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
+    position: { lat: point.latitude, lng: point.longitude },
+    pov: {
+      heading: calculateHeading(selectedGeometryPoint, nextPoint),
+      pitch: 10
+    }
   })
-})
+}
 
 const homeState = useHomeState()
 provide(UseHomeStateKey, homeState)
@@ -52,45 +56,80 @@ const {
   changeSelectedGeometry
 } = homeState
 
-const handleGeometryMove = (index: number) => {
-  console.log(index)
-  changeSelectedGeometry(index)
-  changeSelectedGeometryPoint(0)
-  polyline?.setMap(null)
-  polyline = new google.maps.Polyline({
-    path: originalGeometries.value[selectedGeometryIndex.value].map((point) => {
-      return { lat: point.latitude, lng: point.longitude }
-    }),
-    geodesic: true,
-    strokeColor: '#FF0000',
-    strokeOpacity: 1.0,
-    strokeWeight: 2
-  })
-  polyline.setMap(map)
-  map?.setCenter({
-    lat: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].latitude,
-    lng: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].longitude
-  })
-  panorama = new google.maps.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
-    position: {
-      lat: selectedGeometryPoint.value.latitude,
-      lng: selectedGeometryPoint.value.longitude
-    },
-    // TASK: 向きの調整をする
-    pov: {
-      heading: 34,
-      pitch: 10
-    }
-  })
-}
-const uploadCsv = async (e: Event) => {
+/**
+ * csv読込
+ * @param e
+ */
+const loadCsv = async (e: Event) => {
   const target = e.target as HTMLInputElement
   const fileList = target.files as FileList
   if (!fileList.length) return
   const file = target.files?.[0]
   await loadGeometries(file)
+
+  if (map === null && panorama === null && polyline === null) {
+    await initGoogleService(
+      originalGeometries.value[selectedGeometryIndex.value],
+      selectedGeometryPoint.value
+    )
+  }
+  updatePanorama(selectedGeometryPoint.value)
+  updateMap(originalGeometries.value[selectedGeometryIndex.value])
+  updateMapMarker(selectedGeometryPoint.value)
+}
+
+/**
+ * ジオメトリーの切替
+ * @param index
+ */
+const handleGeometryMove = (index: number) => {
+  changeSelectedGeometry(index)
+  changeSelectedGeometryPoint(0)
+  updatePanorama(selectedGeometryPoint.value)
+  updateMap(originalGeometries.value[selectedGeometryIndex.value])
+  updateMapMarker(selectedGeometryPoint.value)
+}
+
+/**
+ * ポイント選択
+ * @param index
+ */
+const handlePointMove = (index: number) => {
+  changeSelectedGeometryPoint(index)
+  updatePanorama(selectedGeometryPoint.value)
+  updateMapMarker(selectedGeometryPoint.value)
+}
+
+/**
+ * street-viewの更新
+ */
+const updatePanorama = (selectedGeometryPoint: RoadConditionType) => {
+  const nextIndex =
+    findClosestPointIndex(
+      originalGeometries.value[selectedGeometryIndex.value],
+      selectedGeometryPoint
+    ) + 1
+  const nextPoint = originalGeometries.value[selectedGeometryIndex.value][nextIndex]
+  panorama = new google.maps.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
+    position: {
+      lat: selectedGeometryPoint.latitude,
+      lng: selectedGeometryPoint.longitude
+    },
+    pov: {
+      heading: calculateHeading(selectedGeometryPoint, nextPoint),
+      pitch: 10
+    }
+  })
+}
+
+/**
+ * ポリラインの更新
+ */
+const updateMap = (geometry: RoadConditionType[]) => {
+  // ポリライン更新
+  polyline?.setMap(null)
   polyline = new google.maps.Polyline({
-    path: selectedGeometry.value.map((point) => {
+    path: geometry.map((point) => {
       return { lat: point.latitude, lng: point.longitude }
     }),
     geodesic: true,
@@ -99,50 +138,35 @@ const uploadCsv = async (e: Event) => {
     strokeWeight: 2
   })
   polyline.setMap(map)
+
+  // 中央座標の更新
   map?.setCenter({
     lat: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].latitude,
     lng: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].longitude
   })
 }
 
-const handlePointSelect = (index: number) => {
-  changeSelectedGeometryPoint(index)
-  updatePanorama()
-}
-const handlePointMove = (index: number) => {
-  changeSelectedGeometryPoint(index)
-  updatePanorama()
-}
-
-const updatePanorama = () => {
-  const nextIndex =
-    findClosestPoint(
-      originalGeometries.value[selectedGeometryIndex.value],
-      selectedGeometryPoint.value
-    ) + 1
-  const nextPoint = originalGeometries.value[selectedGeometryIndex.value][nextIndex]
-  panorama = new google.maps.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
-    position: {
-      lat: selectedGeometryPoint.value.latitude,
-      lng: selectedGeometryPoint.value.longitude
-    },
-    pov: {
-      // TASK: 絵師度の高いGeometryを渡して向きを調整する
-      heading: calculateHeading(selectedGeometryPoint.value, nextPoint),
-      pitch: 10
-    }
-  })
+/**
+ * マーカーの更新
+ * @param point
+ */
+const updateMapMarker = (point: RoadConditionType) => {
   marker?.setMap(null)
   marker = new google.maps.Marker({
     position: {
-      lat: selectedGeometryPoint.value.latitude,
-      lng: selectedGeometryPoint.value.longitude
+      lat: point.latitude,
+      lng: point.longitude
     },
     map: map,
     title: 'Hello World!'
   })
 }
 
+/**
+ * 座標間の視点を計算
+ * @param point1
+ * @param point2
+ */
 const calculateHeading = (point1: any, point2: any): number => {
   if (!point1 || !point2) return 0
   const lat1 = (point1.latitude * Math.PI) / 180
@@ -155,15 +179,21 @@ const calculateHeading = (point1: any, point2: any): number => {
   return ((Math.atan2(x, y) * 180) / Math.PI + 360) % 360
 }
 
-const findClosestPoint = (points: RoadConditionType[], targetXY: RoadConditionType): number => {
+/**
+ * 指定座標に最も近いポイントのインデックスを取得
+ * @param points
+ * @param targetXY
+ */
+const findClosestPointIndex = (
+  points: RoadConditionType[],
+  targetXY: RoadConditionType
+): number => {
   let closestPoint = points[0]
   let minDistance = Number.MAX_VALUE
-
   for (const point of points) {
     const distance = Math.sqrt(
       (point.latitude - targetXY.latitude) ** 2 + (point.longitude - targetXY.longitude) ** 2
     )
-
     if (distance < minDistance) {
       minDistance = distance
       closestPoint = point
@@ -244,7 +274,7 @@ const findClosestPoint = (points: RoadConditionType[], targetXY: RoadConditionTy
           <tr
             v-for="(point, index) in selectedGeometry"
             :key="`geometry-${index}`"
-            @click="handlePointSelect(index)"
+            @click="handlePointMove(index)"
             style="font-size: 11px"
             :style="{
               backgroundColor: index === selectedGeometryPointIndex ? 'greenyellow' : 'transparent'
@@ -284,7 +314,7 @@ const findClosestPoint = (points: RoadConditionType[], targetXY: RoadConditionTy
         <span style="margin-right: 20px"
           >{{ selectedGeometryIndex + 1 }}/{{ geometries.length }}</span
         >
-        <input type="file" @change="uploadCsv" />
+        <input type="file" @change="loadCsv" />
       </div>
     </div>
   </div>
