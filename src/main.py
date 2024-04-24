@@ -250,7 +250,7 @@ def main() -> GeoDataFrame:
     )
     gdf_edges["score"] = column_generater.score.generate(gdf_edges)
     excution_timer_ins.stop()
-    gdf_edges["geometry_list"] = gdf_edges["street_view_url_list"]
+    gdf_edges["geometry_check_list"] = gdf_edges["street_view_url_list"]
 
     # google earth urlを生成する
     excution_timer_ins.start("create google_earth_url")
@@ -282,6 +282,7 @@ def main() -> GeoDataFrame:
         "length",
         "highway",
         "geometry_list",
+        "geometry_check_list",
         "elevation_height",
         "elevation_deltas",
         "elevation_deltas_and_length_ratio",
@@ -320,6 +321,7 @@ def main() -> GeoDataFrame:
         "highway",
         "street_view_url_list",
         "geometry_list",
+        "geometry_check_list",
         "google_map_url",
         "score",
         "lanes",
