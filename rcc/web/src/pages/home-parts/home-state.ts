@@ -14,6 +14,7 @@ type UseHomeStateType = {
   loadGeometries: (value: any) => Promise<void>
   changeSelectedGeometry: (index: number) => void
   changeSelectedGeometryPoint: (index: number) => void
+  isLoaded: Readonly<Ref<boolean>>
   originalGeometries: Readonly<Ref<RoadConditionType[][]>>
   geometries: Readonly<Ref<RoadConditionType[][]>>
   selectedGeometryIndex: Readonly<Ref<number>>
@@ -23,6 +24,7 @@ type UseHomeStateType = {
 }
 
 const useHomeState = (): UseHomeStateType => {
+  const isLoaded = ref(false)
   const originalGeometries: Ref<RoadConditionType[][]> = ref([[]])
   const geometries: Ref<RoadConditionType[][]> = ref([[]])
   const selectedGeometryIndex: Ref<number> = ref(0)
@@ -60,6 +62,7 @@ const useHomeState = (): UseHomeStateType => {
               }
             })
           })
+          isLoaded.value = true
           selectedGeometryIndex.value = 0
           selectedGeometryPointIndex.value = 0
           resolve()
@@ -84,6 +87,7 @@ const useHomeState = (): UseHomeStateType => {
 
   return {
     loadGeometries,
+    isLoaded: shallowReadonly(isLoaded),
     originalGeometries: shallowReadonly(originalGeometries),
     geometries: shallowReadonly(geometries),
     changeSelectedGeometry,

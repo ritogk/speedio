@@ -41,6 +41,7 @@ provide(UseHomeStateKey, homeState)
 
 const {
   loadGeometries,
+  isLoaded,
   originalGeometries,
   geometries,
   selectedGeometry,
@@ -52,6 +53,7 @@ const {
 } = homeState
 
 const handleGeometryMove = (index: number) => {
+  console.log(index)
   changeSelectedGeometry(index)
   changeSelectedGeometryPoint(0)
   polyline?.setMap(null)
@@ -229,12 +231,11 @@ const findClosestPoint = (points: RoadConditionType[], targetXY: RoadConditionTy
       </div>
     </div>
     <div id="map" style="flex: 2; background-color: blueviolet; height: 750px">google_map_area</div>
-
     <div style="flex: 2; background-color: white">
       <table border="1" style="height: 750px; overflow-y: auto; display: block">
         <thead>
-          <tr>
-            <th>登録</th>
+          <tr style="background: lightblue">
+            <th>DB</th>
             <th>地理座標</th>
             <th>路面状態</th>
           </tr>
@@ -244,7 +245,7 @@ const findClosestPoint = (points: RoadConditionType[], targetXY: RoadConditionTy
             v-for="(point, index) in selectedGeometry"
             :key="`geometry-${index}`"
             @click="handlePointSelect(index)"
-            style="font-size: 12px"
+            style="font-size: 11px"
             :style="{
               backgroundColor: index === selectedGeometryPointIndex ? 'greenyellow' : 'transparent'
             }"
@@ -257,16 +258,28 @@ const findClosestPoint = (points: RoadConditionType[], targetXY: RoadConditionTy
       </table>
       <div>
         <button
+          @click="handleGeometryMove(selectedGeometryIndex - 2)"
+          :disabled="selectedGeometryIndex < 2 || isLoaded === false"
+        >
+          ◀◀
+        </button>
+        <button
           @click="handleGeometryMove(selectedGeometryIndex - 1)"
-          :disabled="selectedGeometryIndex == 0"
+          :disabled="selectedGeometryIndex < 1 || isLoaded === false"
         >
           ◀
         </button>
         <button
           @click="handleGeometryMove(selectedGeometryIndex + 1)"
-          :disabled="selectedGeometryIndex + 1 == geometries.length"
+          :disabled="selectedGeometryIndex + 2 > geometries.length || isLoaded === false"
         >
           ▶
+        </button>
+        <button
+          @click="handleGeometryMove(selectedGeometryIndex + 2)"
+          :disabled="selectedGeometryIndex + 3 > geometries.length || isLoaded === false"
+        >
+          ▶▶
         </button>
         <span style="margin-right: 20px"
           >{{ selectedGeometryIndex + 1 }}/{{ geometries.length }}</span
