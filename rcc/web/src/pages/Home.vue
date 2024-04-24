@@ -38,20 +38,18 @@ provide(UseHomeStateKey, homeState)
 const {
   loadGeometries,
   getGeometries,
-  getSelectedGeometry,
-  getSelectedGeometryPoint,
+  selectedGeometry,
+  selectedGeometryIndex,
+  selectedGeometryPoint,
+  selectedGeometryPointIndex,
   changeSelectedGeometryPoint,
   changeSelectedGeometry
 } = homeState
 
 const geometries = getGeometries()
-const selectedGeometryIndex = ref(0)
-const selectedGeometry = getSelectedGeometry()
 const handleGeometryMove = (index: number) => {
-  selectedGeometryIndex.value = index
-  changeSelectedGeometry(geometries.value[index])
-  selectedGeometryPointIndex.value = 0
-  changeSelectedGeometryPoint(geometries.value[index][0])
+  changeSelectedGeometry(index)
+  changeSelectedGeometryPoint(0)
   polyline?.setMap(null)
   polyline = new google.maps.Polyline({
     path: selectedGeometry.value.map((point) => {
@@ -101,15 +99,11 @@ const uploadCsv = async (e: Event) => {
   })
 }
 
-const selectedGeometryPointIndex = ref(0)
-const selectedGeometryPoint = getSelectedGeometryPoint()
 const handlePointSelect = (index: number) => {
-  selectedGeometryPointIndex.value = index
-  changeSelectedGeometryPoint(selectedGeometry.value[index])
+  changeSelectedGeometryPoint(index)
 }
 const handlePointMove = (index: number) => {
-  selectedGeometryPointIndex.value = index
-  changeSelectedGeometryPoint(selectedGeometry.value[index])
+  changeSelectedGeometryPoint(index)
   panorama = new google.maps.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
     position: {
       lat: selectedGeometryPoint.value.latitude,
@@ -202,6 +196,7 @@ const calculateHeading = (point1: any, point2: any): number => {
       </div>
     </div>
     <div id="map" style="flex: 2; background-color: blueviolet; height: 750px">google_map_area</div>
+
     <div style="flex: 2; background-color: white">
       <table border="1" style="height: 750px; overflow-y: auto; display: block">
         <thead>
@@ -218,7 +213,7 @@ const calculateHeading = (point1: any, point2: any): number => {
             @click="handlePointSelect(index)"
             style="font-size: 12px"
             :style="{
-              backgroundColor: selectedGeometryPoint === point ? 'greenyellow' : 'transparent'
+              backgroundColor: index === selectedGeometryPointIndex ? 'greenyellow' : 'transparent'
             }"
           >
             <td scope="row">済</td>
