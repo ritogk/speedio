@@ -21,10 +21,12 @@ def generate(gdf: GeoDataFrame, csv_path: str) -> Series:
 
     # 一致するgeometryのcheck値を返す。
     def func(x) -> int:
-        match = df["geometry_list"].apply(lambda y: y == x["geometry_list"])
-        filtered_df = df[match]
-        if not filtered_df.empty:
-            return RoadCondition(int(filtered_df["check"].to_list()[0])).value
         return RoadCondition.UNCONFIRMED.value
+        # 検証用の一時的なコメントアウト
+        # match = df["geometry_list"].apply(lambda y: y == x["geometry_list"])
+        # filtered_df = df[match]
+        # if not filtered_df.empty:
+        #     return RoadCondition(int(filtered_df["check"].to_list()[0])).value
+        # return RoadCondition.UNCONFIRMED.value
 
     return gdf.apply(func, axis=1)
