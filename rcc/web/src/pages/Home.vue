@@ -56,7 +56,7 @@ const handleGeometryMove = (index: number) => {
   changeSelectedGeometryPoint(0)
   polyline?.setMap(null)
   polyline = new google.maps.Polyline({
-    path: selectedGeometry.value.map((point) => {
+    path: originalGeometries.value[selectedGeometryIndex.value].map((point) => {
       return { lat: point.latitude, lng: point.longitude }
     }),
     geodesic: true,
