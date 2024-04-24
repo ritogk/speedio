@@ -1,5 +1,5 @@
 import type { Components } from '@/types/openapi'
-import { ref, shallowReadonly, type Ref, type InjectionKey } from 'vue'
+import { ref, shallowReadonly, type Ref, type InjectionKey, computed } from 'vue'
 import PaPa, { type ParseResult } from 'papaparse'
 
 type Location = Components.Schemas.Location
@@ -13,20 +13,20 @@ export type RoadConditionType = {
 type UseHomeStateType = {
   loadGeometries: (value: any) => Promise<void>
   getGeometries: () => Readonly<Ref<RoadConditionType[][]>>
-  changeSelectedGeometry: (value: RoadConditionType[]) => void
-  getSelectedGeometry: () => Readonly<Ref<RoadConditionType[]>>
-  changeSelectedGeometryPoint: (value: RoadConditionType) => void
-  getSelectedGeometryPoint: () => Readonly<Ref<RoadConditionType>>
+  getOriginalGeometris: () => Readonly<Ref<RoadConditionType[][]>>
+  changeSelectedGeometry: (index: number) => void
+  changeSelectedGeometryPoint: (index: number) => void
+  selectedGeometryIndex: Readonly<Ref<number>>
+  selectedGeometry: Readonly<Ref<RoadConditionType[]>>
+  selectedGeometryPointIndex: Readonly<Ref<number>>
+  selectedGeometryPoint: Readonly<Ref<RoadConditionType>>
 }
 
 const useHomeState = (): UseHomeStateType => {
+  const originalGeometries: Ref<RoadConditionType[][]> = ref([[]])
   const geometries: Ref<RoadConditionType[][]> = ref([[]])
-  const selectedGeometry: Ref<RoadConditionType[]> = ref([])
-  const selectedGeometryPoint: Ref<RoadConditionType> = ref({
-    latitude: 0,
-    longitude: 0,
-    roadCondition: 'ONE_LANE'
-  })
+  const selectedGeometryIndex: Ref<number> = ref(0)
+  const selectedGeometryPointIndex: Ref<number> = ref(0)
 
   const loadGeometries = async (file: File): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -34,11 +34,12 @@ const useHomeState = (): UseHomeStateType => {
         complete: (
           results: ParseResult<{
             geometry_list: string //[number, number][]
+            geometry_check_list: string //[number, number][]
             highway: string
             length: string
           }>
         ) => {
-          geometries.value = results.data.map((geometry) => {
+          originalGeometries.value = results.data.map((geometry) => {
             const geometry_list = JSON.parse(geometry.geometry_list)
             return geometry_list.map((point: any) => {
               return {
@@ -48,8 +49,18 @@ const useHomeState = (): UseHomeStateType => {
               }
             })
           })
-          selectedGeometry.value = geometries.value[0]
-          selectedGeometryPoint.value = selectedGeometry.value[0]
+          geometries.value = results.data.map((geometry) => {
+            const geometry_list = JSON.parse(geometry.geometry_check_list)
+            return geometry_list.map((point: any) => {
+              return {
+                latitude: point[0],
+                longitude: point[1],
+                roadCondition: 'UNCONFIRMED'
+              }
+            })
+          })
+          selectedGeometryIndex.value = 0
+          selectedGeometryPointIndex.value = 0
           resolve()
         },
         header: true,
@@ -66,29 +77,34 @@ const useHomeState = (): UseHomeStateType => {
     return shallowReadonly(geometries)
   }
 
-  const changeSelectedGeometry = (value: RoadConditionType[]) => {
-    selectedGeometry.value = value
+  const getOriginalGeometris = (): Readonly<Ref<RoadConditionType[][]>> => {
+    return shallowReadonly(originalGeometries)
   }
 
-  const getSelectedGeometry = (): Readonly<Ref<RoadConditionType[]>> => {
-    return shallowReadonly(selectedGeometry)
+  const changeSelectedGeometry = (index: number) => {
+    selectedGeometryIndex.value = index
   }
 
-  const changeSelectedGeometryPoint = (value: RoadConditionType) => {
-    selectedGeometryPoint.value = value
-  }
-
-  const getSelectedGeometryPoint = (): Readonly<Ref<RoadConditionType>> => {
-    return shallowReadonly(selectedGeometryPoint)
+  const changeSelectedGeometryPoint = (index: number) => {
+    selectedGeometryPointIndex.value = index
   }
 
   return {
     loadGeometries,
     getGeometries,
+    getOriginalGeometris,
     changeSelectedGeometry,
-    getSelectedGeometry,
     changeSelectedGeometryPoint,
-    getSelectedGeometryPoint
+    selectedGeometry: shallowReadonly(
+      computed(() => geometries.value[selectedGeometryIndex.value])
+    ),
+    selectedGeometryIndex: shallowReadonly(selectedGeometryIndex),
+    selectedGeometryPoint: shallowReadonly(
+      computed(
+        () => geometries.value[selectedGeometryIndex.value][selectedGeometryPointIndex.value]
+      )
+    ),
+    selectedGeometryPointIndex: shallowReadonly(selectedGeometryPointIndex)
   }
 }
 
