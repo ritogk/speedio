@@ -41,27 +41,39 @@ const useHomeState = (): UseHomeStateType => {
             length: string
           }>
         ) => {
-          originalGeometries.value = results.data.map((geometry) => {
-            const geometry_list = JSON.parse(geometry.geometry_list)
-            return geometry_list.map((point: any) => {
-              return {
-                latitude: point[0],
-                longitude: point[1],
-                roadCondition: 'UNCONFIRMED'
-              }
+          originalGeometries.value = results.data
+            .filter((geometry) => {
+              // pythonで生成したcsvの末尾にundefindがはいってくるので除外
+              if (geometry.geometry_list === undefined) return false
+              return true
             })
-          })
+            .map((geometry) => {
+              const geometry_list = JSON.parse(geometry.geometry_list)
+              return geometry_list.map((point: any) => {
+                return {
+                  latitude: point[0],
+                  longitude: point[1],
+                  roadCondition: 'UNCONFIRMED'
+                }
+              })
+            })
 
-          geometries.value = results.data.map((geometry) => {
-            const geometry_list = JSON.parse(geometry.geometry_check_list)
-            return geometry_list.map((point: any) => {
-              return {
-                latitude: point[0],
-                longitude: point[1],
-                roadCondition: 'UNCONFIRMED'
-              }
+          geometries.value = results.data
+            .filter((geometry) => {
+              // pythonで生成したcsvの末尾にundefindがはいってくるので除外
+              if (geometry.geometry_check_list === undefined) return false
+              return true
             })
-          })
+            .map((geometry) => {
+              const geometry_list = JSON.parse(geometry.geometry_check_list)
+              return geometry_list.map((point: any) => {
+                return {
+                  latitude: point[0],
+                  longitude: point[1],
+                  roadCondition: 'UNCONFIRMED'
+                }
+              })
+            })
           isLoaded.value = true
           selectedGeometryIndex.value = 0
           selectedGeometryPointIndex.value = 0
