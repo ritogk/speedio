@@ -5,6 +5,7 @@ import { useHomeState, UseHomeStateKey } from '@/pages/home-parts/home-state'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
+let marker: google.maps.Marker | null = null
 let polyline: google.maps.Polyline | null = null
 let panorama: google.maps.StreetViewPanorama | null = null
 
@@ -119,6 +120,15 @@ const handlePointMove = (index: number) => {
       heading: 34,
       pitch: 10
     }
+  })
+  marker?.setMap(null)
+  marker = new google.maps.Marker({
+    position: {
+      lat: selectedGeometryPoint.value.latitude,
+      lng: selectedGeometryPoint.value.longitude
+    },
+    map: map,
+    title: 'Hello World!'
   })
 }
 </script>
