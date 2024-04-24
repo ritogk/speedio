@@ -115,9 +115,9 @@ const handlePointMove = (index: number) => {
       lat: selectedGeometryPoint.value.latitude,
       lng: selectedGeometryPoint.value.longitude
     },
-    // TASK: 向きの調整をする
     pov: {
-      heading: 34,
+      // TASK: 絵師度の高いGeometryを渡して向きを調整する
+      heading: calculateHeading(selectedGeometryPoint.value, selectedGeometry.value[index + 1]),
       pitch: 10
     }
   })
@@ -130,6 +130,18 @@ const handlePointMove = (index: number) => {
     map: map,
     title: 'Hello World!'
   })
+}
+
+const calculateHeading = (point1: any, point2: any): number => {
+  if (!point1 || !point2) return 0
+  const lat1 = (point1.latitude * Math.PI) / 180
+  const lat2 = (point2.latitude * Math.PI) / 180
+  const diffLong = ((point2.longitude - point1.longitude) * Math.PI) / 180
+
+  const x = Math.sin(diffLong) * Math.cos(lat2)
+  const y = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(diffLong)
+
+  return ((Math.atan2(x, y) * 180) / Math.PI + 360) % 360
 }
 </script>
 
