@@ -9,6 +9,7 @@ import {
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
+let polyline: google.maps.Polyline | null = null
 
 onMounted(() => {
   const loader = new Loader({
@@ -18,8 +19,8 @@ onMounted(() => {
   })
   loader.importLibrary('maps').then((google) => {
     map = new google.Map(document.getElementById('map') as HTMLElement, {
-      center: { lat: -34.397, lng: 150.644 },
-      zoom: 8
+      center: { lat: 35.334261616547465, lng: 136.99613190333835 },
+      zoom: 13
     })
   })
   loader.importLibrary('streetView').then((google) => {
@@ -53,13 +54,42 @@ const handleGeometryMove = (index: number) => {
   changeSelectedGeometry(geometries.value[index])
   selectedGeometryPointIndex.value = 0
   changeSelectedGeometryPoint(geometries.value[index][0])
+  polyline?.setMap(null)
+  polyline = new google.maps.Polyline({
+    path: selectedGeometry.value.map((point) => {
+      return { lat: point.latitude, lng: point.longitude }
+    }),
+    geodesic: true,
+    strokeColor: '#FF0000',
+    strokeOpacity: 1.0,
+    strokeWeight: 2
+  })
+  polyline.setMap(map)
+  map?.setCenter({
+    lat: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].latitude,
+    lng: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].longitude
+  })
 }
-const uploadCsv = (e: Event) => {
+const uploadCsv = async (e: Event) => {
   const target = e.target as HTMLInputElement
   const fileList = target.files as FileList
   if (!fileList.length) return
   const file = target.files?.[0]
-  loadGeometries(file)
+  await loadGeometries(file)
+  polyline = new google.maps.Polyline({
+    path: selectedGeometry.value.map((point) => {
+      return { lat: point.latitude, lng: point.longitude }
+    }),
+    geodesic: true,
+    strokeColor: '#FF0000',
+    strokeOpacity: 1.0,
+    strokeWeight: 2
+  })
+  polyline.setMap(map)
+  map?.setCenter({
+    lat: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].latitude,
+    lng: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].longitude
+  })
 }
 
 const selectedGeometryPointIndex = ref(0)
@@ -130,7 +160,7 @@ const handlePointMove = (index: number) => {
         </div>
       </div>
     </div>
-    <div id="map" style="flex: 1; background-color: blueviolet; height: 750px">google_map_area</div>
+    <div id="map" style="flex: 2; background-color: blueviolet; height: 750px">google_map_area</div>
     <div style="flex: 2; background-color: white">
       <table border="1" style="height: 750px; overflow-y: auto; display: block">
         <thead>
