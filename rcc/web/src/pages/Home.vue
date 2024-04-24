@@ -105,9 +105,14 @@ const uploadCsv = async (e: Event) => {
 
 const handlePointSelect = (index: number) => {
   changeSelectedGeometryPoint(index)
+  updatePanorama()
 }
 const handlePointMove = (index: number) => {
   changeSelectedGeometryPoint(index)
+  updatePanorama()
+}
+
+const updatePanorama = () => {
   const nextIndex =
     findClosestPoint(
       originalGeometries.value[selectedGeometryIndex.value],
