@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { onMounted, provide, ref } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
-import { useHomeState, UseHomeStateKey } from '@/pages/home-parts/home-state'
+import {
+  useHomeState,
+  UseHomeStateKey,
+  type RoadConditionType
+} from '@/pages/home-parts/home-state'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
@@ -37,7 +41,8 @@ provide(UseHomeStateKey, homeState)
 
 const {
   loadGeometries,
-  getGeometries,
+  originalGeometries,
+  geometries,
   selectedGeometry,
   selectedGeometryIndex,
   selectedGeometryPoint,
@@ -46,7 +51,6 @@ const {
   changeSelectedGeometry
 } = homeState
 
-const geometries = getGeometries()
 const handleGeometryMove = (index: number) => {
   changeSelectedGeometry(index)
   changeSelectedGeometryPoint(0)
@@ -104,6 +108,12 @@ const handlePointSelect = (index: number) => {
 }
 const handlePointMove = (index: number) => {
   changeSelectedGeometryPoint(index)
+  const nextIndex =
+    findClosestPoint(
+      originalGeometries.value[selectedGeometryIndex.value],
+      selectedGeometryPoint.value
+    ) + 1
+  const nextPoint = originalGeometries.value[selectedGeometryIndex.value][nextIndex]
   panorama = new google.maps.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
     position: {
       lat: selectedGeometryPoint.value.latitude,
@@ -111,7 +121,7 @@ const handlePointMove = (index: number) => {
     },
     pov: {
       // TASK: 絵師度の高いGeometryを渡して向きを調整する
-      heading: calculateHeading(selectedGeometryPoint.value, selectedGeometry.value[index + 1]),
+      heading: calculateHeading(selectedGeometryPoint.value, nextPoint),
       pitch: 10
     }
   })
@@ -136,6 +146,24 @@ const calculateHeading = (point1: any, point2: any): number => {
   const y = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(diffLong)
 
   return ((Math.atan2(x, y) * 180) / Math.PI + 360) % 360
+}
+
+const findClosestPoint = (points: RoadConditionType[], targetXY: RoadConditionType): number => {
+  let closestPoint = points[0]
+  let minDistance = Number.MAX_VALUE
+
+  for (const point of points) {
+    const distance = Math.sqrt(
+      (point.latitude - targetXY.latitude) ** 2 + (point.longitude - targetXY.longitude) ** 2
+    )
+
+    if (distance < minDistance) {
+      minDistance = distance
+      closestPoint = point
+    }
+  }
+
+  return points.indexOf(closestPoint)
 }
 </script>
 

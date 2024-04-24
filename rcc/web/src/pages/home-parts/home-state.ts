@@ -12,10 +12,10 @@ export type RoadConditionType = {
 
 type UseHomeStateType = {
   loadGeometries: (value: any) => Promise<void>
-  getGeometries: () => Readonly<Ref<RoadConditionType[][]>>
-  getOriginalGeometris: () => Readonly<Ref<RoadConditionType[][]>>
   changeSelectedGeometry: (index: number) => void
   changeSelectedGeometryPoint: (index: number) => void
+  originalGeometries: Readonly<Ref<RoadConditionType[][]>>
+  geometries: Readonly<Ref<RoadConditionType[][]>>
   selectedGeometryIndex: Readonly<Ref<number>>
   selectedGeometry: Readonly<Ref<RoadConditionType[]>>
   selectedGeometryPointIndex: Readonly<Ref<number>>
@@ -49,6 +49,7 @@ const useHomeState = (): UseHomeStateType => {
               }
             })
           })
+
           geometries.value = results.data.map((geometry) => {
             const geometry_list = JSON.parse(geometry.geometry_check_list)
             return geometry_list.map((point: any) => {
@@ -73,14 +74,6 @@ const useHomeState = (): UseHomeStateType => {
     })
   }
 
-  const getGeometries = (): Readonly<Ref<RoadConditionType[][]>> => {
-    return shallowReadonly(geometries)
-  }
-
-  const getOriginalGeometris = (): Readonly<Ref<RoadConditionType[][]>> => {
-    return shallowReadonly(originalGeometries)
-  }
-
   const changeSelectedGeometry = (index: number) => {
     selectedGeometryIndex.value = index
   }
@@ -91,8 +84,8 @@ const useHomeState = (): UseHomeStateType => {
 
   return {
     loadGeometries,
-    getGeometries,
-    getOriginalGeometris,
+    originalGeometries: shallowReadonly(originalGeometries),
+    geometries: shallowReadonly(geometries),
     changeSelectedGeometry,
     changeSelectedGeometryPoint,
     selectedGeometry: shallowReadonly(
