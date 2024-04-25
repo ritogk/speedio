@@ -3,11 +3,12 @@ import { ref, shallowReadonly, type Ref, type InjectionKey, computed } from 'vue
 import PaPa, { type ParseResult } from 'papaparse'
 
 type Location = Components.Schemas.Location
+export type RoadConditionType = Location['roadCondition']
 
-export type RoadConditionType = {
+export type PointType = {
   latitude: number
   longitude: number
-  roadCondition: Location['roadCondition']
+  roadCondition: RoadConditionType
 }
 
 type UseHomeStateType = {
@@ -15,18 +16,18 @@ type UseHomeStateType = {
   changeSelectedGeometry: (index: number) => void
   changeSelectedGeometryPoint: (index: number) => void
   isLoaded: Readonly<Ref<boolean>>
-  originalGeometries: Readonly<Ref<RoadConditionType[][]>>
-  geometries: Readonly<Ref<RoadConditionType[][]>>
+  originalGeometries: Readonly<Ref<PointType[][]>>
+  geometries: Readonly<Ref<PointType[][]>>
   selectedGeometryIndex: Readonly<Ref<number>>
-  selectedGeometry: Readonly<Ref<RoadConditionType[]>>
+  selectedGeometry: Readonly<Ref<PointType[]>>
   selectedGeometryPointIndex: Readonly<Ref<number>>
-  selectedGeometryPoint: Readonly<Ref<RoadConditionType>>
+  selectedGeometryPoint: Readonly<Ref<PointType>>
 }
 
 const useHomeState = (): UseHomeStateType => {
   const isLoaded = ref(false)
-  const originalGeometries: Ref<RoadConditionType[][]> = ref([[]])
-  const geometries: Ref<RoadConditionType[][]> = ref([[]])
+  const originalGeometries: Ref<PointType[][]> = ref([[]])
+  const geometries: Ref<PointType[][]> = ref([[]])
   const selectedGeometryIndex: Ref<number> = ref(0)
   const selectedGeometryPointIndex: Ref<number> = ref(0)
 

@@ -4,6 +4,7 @@ import { Loader } from '@googlemaps/js-api-loader'
 import {
   useHomeState,
   UseHomeStateKey,
+  type PointType,
   type RoadConditionType
 } from '@/pages/home-parts/home-state'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
@@ -13,10 +14,7 @@ let marker: google.maps.Marker | null = null
 let polyline: google.maps.Polyline | null = null
 let panorama: google.maps.StreetViewPanorama | null = null
 
-const initGoogleService = async (
-  polyline: RoadConditionType[],
-  point: RoadConditionType
-): Promise<void> => {
+const initGoogleService = async (polyline: PointType[], point: PointType): Promise<void> => {
   const loader = new Loader({
     apiKey: apiKey,
     version: 'weekly',
@@ -103,7 +101,7 @@ const handlePointMove = (index: number) => {
 /**
  * street-viewの更新
  */
-const updatePanorama = (selectedGeometryPoint: RoadConditionType) => {
+const updatePanorama = (selectedGeometryPoint: PointType) => {
   const nextIndex =
     findClosestPointIndex(
       originalGeometries.value[selectedGeometryIndex.value],
@@ -125,7 +123,7 @@ const updatePanorama = (selectedGeometryPoint: RoadConditionType) => {
 /**
  * ポリラインの更新
  */
-const updateMap = (geometry: RoadConditionType[]) => {
+const updateMap = (geometry: PointType[]) => {
   // ポリライン更新
   polyline?.setMap(null)
   polyline = new google.maps.Polyline({
@@ -150,7 +148,7 @@ const updateMap = (geometry: RoadConditionType[]) => {
  * マーカーの更新
  * @param point
  */
-const updateMapMarker = (point: RoadConditionType) => {
+const updateMapMarker = (point: PointType) => {
   marker?.setMap(null)
   marker = new google.maps.Marker({
     position: {
@@ -184,10 +182,7 @@ const calculateHeading = (point1: any, point2: any): number => {
  * @param points
  * @param targetXY
  */
-const findClosestPointIndex = (
-  points: RoadConditionType[],
-  targetXY: RoadConditionType
-): number => {
+const findClosestPointIndex = (points: PointType[], targetXY: PointType): number => {
   const nextIndex = points.findIndex((point) => {
     if (point.latitude === targetXY.latitude && point.longitude === targetXY.longitude) {
       return true
@@ -196,12 +191,14 @@ const findClosestPointIndex = (
   })
   return nextIndex
 }
+
+const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {}
 </script>
 
 <template>
   <div style="display: flex; width: 100%">
-    <div style="flex: 7; background-color: aqua; height: 750px">
-      <div id="pano" style="flex: 5; background-color: aqua; height: 750px">street_view_area</div>
+    <div style="flex: 7; height: 750px">
+      <div id="pano" style="flex: 5; background-color: gray; height: 750px">street_view_area</div>
       <div style="width: 100%">
         <div class="button-container">
           <button
@@ -254,7 +251,7 @@ const findClosestPointIndex = (
         </div>
       </div>
     </div>
-    <div id="map" style="flex: 2; background-color: blueviolet; height: 750px">google_map_area</div>
+    <div id="map" style="flex: 2; background-color: darkgray; height: 750px">google_map_area</div>
     <div style="flex: 2; background-color: white">
       <table border="1" style="height: 750px; overflow-y: auto; display: block">
         <thead>
