@@ -188,19 +188,13 @@ const findClosestPointIndex = (
   points: RoadConditionType[],
   targetXY: RoadConditionType
 ): number => {
-  let closestPoint = points[0]
-  let minDistance = Number.MAX_VALUE
-  for (const point of points) {
-    const distance = Math.sqrt(
-      (point.latitude - targetXY.latitude) ** 2 + (point.longitude - targetXY.longitude) ** 2
-    )
-    if (distance < minDistance) {
-      minDistance = distance
-      closestPoint = point
+  const nextIndex = points.findIndex((point) => {
+    if (point.latitude === targetXY.latitude && point.longitude === targetXY.longitude) {
+      return true
     }
-  }
-
-  return points.indexOf(closestPoint)
+    return false
+  })
+  return nextIndex
 }
 </script>
 
