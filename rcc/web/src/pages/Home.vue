@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide } from 'vue'
+import { provide, inject } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
 import {
   useHomeState,
@@ -7,12 +7,16 @@ import {
   type PointType,
   type RoadConditionType
 } from '@/pages/home-parts/home-state'
+import { type UseApiClientType, UseApiClientKey } from '@/core/api-client'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
 let marker: google.maps.Marker | null = null
 let polyline: google.maps.Polyline | null = null
 let panorama: google.maps.StreetViewPanorama | null = null
+
+const useApiClinet = inject(UseApiClientKey) as UseApiClientType
+useApiClinet.getClient().LocationsController_findAll()
 
 const initGoogleService = async (polyline: PointType[], point: PointType): Promise<void> => {
   const loader = new Loader({
