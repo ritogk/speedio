@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide, inject } from 'vue'
+import { provide } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
 import {
   useHomeState,
@@ -7,7 +7,7 @@ import {
   type PointType,
   type RoadConditionType
 } from '@/pages/home-parts/home-state'
-import { type UseApiClientType, UseApiClientKey } from '@/core/api-client'
+import { useGetLocations } from '@/core/api/use-get-locations'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
@@ -15,8 +15,7 @@ let marker: google.maps.Marker | null = null
 let polyline: google.maps.Polyline | null = null
 let panorama: google.maps.StreetViewPanorama | null = null
 
-const useApiClinet = inject(UseApiClientKey) as UseApiClientType
-useApiClinet.getClient().LocationsController_findAll()
+const { data } = useGetLocations()
 
 const initGoogleService = async (polyline: PointType[], point: PointType): Promise<void> => {
   const loader = new Loader({
@@ -200,6 +199,7 @@ const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {}
 </script>
 
 <template>
+  {{ data }}<br />
   <div style="display: flex; width: 100%">
     <div style="flex: 7; height: 750px">
       <div id="pano" style="flex: 5; background-color: gray; height: 750px">street_view_area</div>
