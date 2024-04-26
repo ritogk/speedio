@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.6",
+    "@tanstack/vue-query": "^5.32.0",
     "axios": "^1.6.8",
     "openapi-client-axios": "^7.5.4",
     "papaparse": "^5.4.1",

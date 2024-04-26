@@ -1,7 +1,8 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
-import { useApiClient, UseApiClientKey } from './core/api-client'
+import { VueQueryPlugin } from '@tanstack/vue-query'
+import { useApiClient, UseApiClientKey } from './core/api/api-client'
 
 const test = async () => {
   const app = createApp(App)
@@ -9,6 +10,7 @@ const test = async () => {
   const apiClient = useApiClient()
   await apiClient.setup()
   app.provide(UseApiClientKey, apiClient)
+  app.use(VueQueryPlugin)
   app.use(router)
 
   app.mount('#app')
