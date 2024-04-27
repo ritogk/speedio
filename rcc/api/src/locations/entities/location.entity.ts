@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Point,
+  Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -43,6 +44,7 @@ export class Location {
     spatialFeatureType: 'Point',
     srid: 4612,
   })
+  @Index({ spatial: true })
   geometry: Point;
 
   @Column({
