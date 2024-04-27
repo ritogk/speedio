@@ -23,6 +23,21 @@ export class LocationsService {
   }
 
   async findAll(): Promise<Location[]> {
+    // # boundgingboxを指定して抽出するサンプル
+    // const locations = await this.locationRepository
+    //   .createQueryBuilder('location')
+    //   .where(
+    //     'ST_Intersects(ST_MakeEnvelope(:minLongitude, :minLatitude, :maxLongitude, :maxLatitude, :srid), location.geometry)',
+    //     {
+    //       minLongitude: 133,
+    //       minLatitude: 34,
+    //       maxLongitude: 135,
+    //       maxLatitude: 35,
+    //       srid: 4612,
+    //     },
+    //   )
+    //   .getMany();
+    // return locations;
     return this.locationRepository.find();
   }
 
