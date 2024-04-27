@@ -19,6 +19,7 @@ import { join } from 'path';
       database: 'speedia',
       entities: [Location],
       synchronize: true,
+      // logging: true,
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'), // ここで静的ファイルが置かれるディレクトリを指定
