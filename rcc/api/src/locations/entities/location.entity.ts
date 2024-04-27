@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Point,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -21,13 +22,28 @@ export class Location {
   @ApiProperty({ description: 'id' })
   id: number;
 
-  @Column()
+  @Column({
+    type: 'decimal',
+    precision: 13,
+    scale: 10,
+  })
   @ApiProperty({ description: '緯度' })
   latitude: number;
 
-  @Column()
+  @Column({
+    type: 'decimal',
+    precision: 13,
+    scale: 10,
+  })
   @ApiProperty({ description: '経度' })
   longitude: number;
+
+  @Column({
+    type: 'geometry',
+    spatialFeatureType: 'Point',
+    srid: 4612,
+  })
+  geometry: Point;
 
   @Column({
     type: 'enum',
