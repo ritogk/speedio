@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsEnum, IsBoolean } from 'class-validator';
 import { RoadCondition } from '../entities/location.entity';
 export class CreateLocationDto {
   @ApiProperty({ description: '緯度' })
@@ -19,4 +19,9 @@ export class CreateLocationDto {
   @IsNotEmpty()
   @IsEnum(RoadCondition)
   roadCondition: RoadCondition;
+
+  @ApiProperty({ description: 'ブラインドありを表すフラグ' })
+  @IsNotEmpty()
+  @IsBoolean()
+  isBlind: boolean;
 }
