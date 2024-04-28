@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide } from 'vue'
+import { provide, computed } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
 import {
   useHomeState,
@@ -15,7 +15,7 @@ let marker: google.maps.Marker | null = null
 let polyline: google.maps.Polyline | null = null
 let panorama: google.maps.StreetViewPanorama | null = null
 
-const { data } = useGetLocations()
+const { data: locations } = useGetLocations()
 
 const initGoogleService = async (polyline: PointType[], point: PointType): Promise<void> => {
   const loader = new Loader({
@@ -195,11 +195,34 @@ const findClosestPointIndex = (points: PointType[], targetXY: PointType): number
   return nextIndex
 }
 
+const points = computed(() => {
+  // selectedGeometryとdata.valueをもとに生成
+  return selectedGeometry.value.map((point) => {
+    const check =
+      locations.value?.some((location) => {
+        if (
+          location.point.coordinates[1] === point.latitude &&
+          location.point.coordinates[0] === point.longitude
+        ) {
+          point.roadCondition = location.roadCondition
+          return true
+        }
+        return false
+      }) ?? false
+    return {
+      check: check,
+      label: check ? '済' : '未',
+      latitude: point.latitude,
+      longitude: point.longitude,
+      roadCondition: point.roadCondition
+    }
+  })
+})
+
 const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {}
 </script>
 
 <template>
-  {{ data }}<br />
   <div style="display: flex; width: 100%">
     <div style="flex: 7; height: 750px">
       <div id="pano" style="flex: 5; background-color: gray; height: 750px">street_view_area</div>
@@ -267,7 +290,7 @@ const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {}
         </thead>
         <tbody>
           <tr
-            v-for="(point, index) in selectedGeometry"
+            v-for="(point, index) in points"
             :key="`geometry-${index}`"
             @click="handlePointMove(index)"
             style="font-size: 11px"
@@ -275,8 +298,15 @@ const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {}
               backgroundColor: index === selectedGeometryPointIndex ? 'greenyellow' : 'transparent'
             }"
           >
-            <td scope="row">済</td>
-            <td>{{ point.latitude.toFixed(5) }}, {{ point.longitude.toFixed(5) }}</td>
+            <td
+              scope="row"
+              :style="{
+                color: point.check ? 'red' : 'black'
+              }"
+            >
+              {{ point.label }}
+            </td>
+            <td>{{ point.latitude }}, {{ point.longitude }}</td>
             <td>{{ point.roadCondition }}</td>
           </tr>
         </tbody>
