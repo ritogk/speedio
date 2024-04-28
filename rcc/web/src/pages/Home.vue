@@ -305,7 +305,7 @@ const handleBlindClick = async (blind: boolean) => {
   selectedBeforeRoadCondition.value = selectedRoadCondition.value
   selectedBeforeBlind.value = selectedBlind.value
   selectedRoadCondition.value = 'ONE_LANE'
-  selectedBlind.value = false
+  selectedBlind.value = true
 }
 
 onKeyStroke(['z'], (e) => {
