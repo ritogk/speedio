@@ -254,8 +254,6 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
   }
 
   // 最後のポイントの場合はジオメトリーを切り替える
-  console.log(selectedGeometryPointIndex.value)
-  console.log(selectedGeometry.value.length)
   if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
     handleGeometryMove(selectedGeometryIndex.value + 1)
   } else {
