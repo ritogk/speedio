@@ -8,6 +8,7 @@ import {
   type RoadConditionType
 } from '@/pages/home-parts/home-state'
 import { useGetLocations } from '@/core/api/use-get-locations'
+import { usePostLocations } from '@/core/api/use-post-locations'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
@@ -16,6 +17,7 @@ let polyline: google.maps.Polyline | null = null
 let panorama: google.maps.StreetViewPanorama | null = null
 
 const { data: locations } = useGetLocations()
+const postLocations = usePostLocations()
 
 const initGoogleService = async (polyline: PointType[], point: PointType): Promise<void> => {
   const loader = new Loader({
@@ -223,7 +225,7 @@ const points = computed(() => {
  * 路面状態更新ハンドラー
  * @param roadCondition
  */
-const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {
+const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
   if (!locations.value) return
   // locationsに含まれる座標の場合は更新
   const location = locations.value.find((location) => {
@@ -238,7 +240,11 @@ const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {
     console.log(location)
   } else {
     // 新規
-    console.log('新規')
+    await postLocations.mutateAsync({
+      latitude: selectedGeometryPoint.value.latitude,
+      longitude: selectedGeometryPoint.value.longitude,
+      roadCondition: roadCondition
+    })
   }
 }
 </script>
