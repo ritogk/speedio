@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Point,
   Index,
+  Unique,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -18,6 +19,7 @@ export enum RoadCondition {
 }
 
 @Entity({ name: 'locations' })
+@Unique(['point'])
 export class Location {
   @PrimaryGeneratedColumn()
   @ApiProperty({ description: 'id' })
