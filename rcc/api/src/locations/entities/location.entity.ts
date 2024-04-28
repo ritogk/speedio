@@ -24,28 +24,13 @@ export class Location {
   id: number;
 
   @Column({
-    type: 'decimal',
-    precision: 13,
-    scale: 10,
-  })
-  @ApiProperty({ description: '緯度' })
-  latitude: number;
-
-  @Column({
-    type: 'decimal',
-    precision: 13,
-    scale: 10,
-  })
-  @ApiProperty({ description: '経度' })
-  longitude: number;
-
-  @Column({
     type: 'geometry',
     spatialFeatureType: 'Point',
     srid: 4612,
   })
   @Index({ spatial: true })
-  geometry: Point;
+  @ApiProperty({ description: 'ポイント' })
+  point: Point;
 
   @Column({
     type: 'enum',
