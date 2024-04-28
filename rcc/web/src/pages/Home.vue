@@ -10,6 +10,8 @@ import {
 import { useGetLocations } from '@/core/api/use-get-locations'
 import { usePostLocations } from '@/core/api/use-post-locations'
 import { usePatchLocations } from '@/core/api/use-patch-locations'
+
+import { onKeyStroke } from '@vueuse/core'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
@@ -250,44 +252,15 @@ const points = computed(() => {
 })
 
 const selectedRoadCondition = ref<RoadConditionType>('ONE_LANE')
+const selectedBeforeRoadCondition = ref<RoadConditionType>('ONE_LANE')
 const selectedBlind = ref(false)
+const selectedBeforeBlind = ref(false)
 /**
  * 路面状態更新ハンドラー
  * @param roadCondition
  */
 const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
   selectedRoadCondition.value = roadCondition
-  // if (!locations.value) return
-  // // locationsに含まれる座標の場合は更新
-  // const location = locations.value.find((location) => {
-  //   return (
-  //     location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
-  //     location.point.coordinates[0] === selectedGeometryPoint.value.longitude
-  //   )
-  // })
-  // if (location) {
-  //   // 更新
-  //   await patchLocations.mutateAsync({
-  //     id: location.id,
-  //     location: {
-  //       roadCondition: roadCondition
-  //     }
-  //   })
-  // } else {
-  //   // 新規
-  //   await postLocations.mutateAsync({
-  //     latitude: selectedGeometryPoint.value.latitude,
-  //     longitude: selectedGeometryPoint.value.longitude,
-  //     roadCondition: roadCondition
-  //   })
-  // }
-
-  // // 最後のポイントの場合はジオメトリーを切り替える
-  // if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
-  //   handleGeometryMove(selectedGeometryIndex.value + 1)
-  // } else {
-  //   handlePointMove(selectedGeometryPointIndex.value + 1)
-  // }
 }
 
 /**
@@ -329,9 +302,44 @@ const handleBlindClick = async (blind: boolean) => {
   } else {
     handlePointMove(selectedGeometryPointIndex.value + 1)
   }
+  selectedBeforeRoadCondition.value = selectedRoadCondition.value
+  selectedBeforeBlind.value = selectedBlind.value
   selectedRoadCondition.value = 'ONE_LANE'
   selectedBlind.value = false
 }
+
+onKeyStroke(['z'], (e) => {
+  handleRoadCondtionClick('TWO_LANE_SHOULDER')
+  e.preventDefault()
+})
+onKeyStroke(['x'], (e) => {
+  handleRoadCondtionClick('TWO_LANE')
+  e.preventDefault()
+})
+onKeyStroke(['c'], (e) => {
+  handleRoadCondtionClick('ONE_LANE_SPACIOUS')
+  e.preventDefault()
+})
+onKeyStroke(['v'], (e) => {
+  handleRoadCondtionClick('ONE_LANE')
+  e.preventDefault()
+})
+
+onKeyStroke(['n'], (e) => {
+  handleBlindClick(true)
+  e.preventDefault()
+})
+onKeyStroke(['m'], (e) => {
+  handleBlindClick(false)
+  e.preventDefault()
+})
+
+// 前回と同じ設定を使う。
+onKeyStroke([','], (e) => {
+  handleRoadCondtionClick(selectedBeforeRoadCondition.value)
+  handleBlindClick(selectedBeforeBlind.value)
+  e.preventDefault()
+})
 </script>
 
 <template>
