@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide, computed } from 'vue'
+import { provide, computed, ref } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
 import {
   useHomeState,
@@ -231,25 +231,71 @@ const points = computed(() => {
           location.point.coordinates[0] === point.longitude
         ) {
           point.roadCondition = location.roadCondition
+          point.isBlind = location.isBlind
           return true
         }
         return false
       }) ?? false
+
     return {
       check: check,
       label: check ? '済' : '未',
       latitude: point.latitude,
       longitude: point.longitude,
-      roadCondition: point.roadCondition
+      roadCondition: point.roadCondition,
+      isBlind: point.isBlind,
+      labelBlind: point.isBlind ? 'Y' : 'N'
     }
   })
 })
 
+const selectedRoadCondition = ref<RoadConditionType>('ONE_LANE')
+const selectedBlind = ref(false)
 /**
  * 路面状態更新ハンドラー
  * @param roadCondition
  */
 const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
+  selectedRoadCondition.value = roadCondition
+  // if (!locations.value) return
+  // // locationsに含まれる座標の場合は更新
+  // const location = locations.value.find((location) => {
+  //   return (
+  //     location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
+  //     location.point.coordinates[0] === selectedGeometryPoint.value.longitude
+  //   )
+  // })
+  // if (location) {
+  //   // 更新
+  //   await patchLocations.mutateAsync({
+  //     id: location.id,
+  //     location: {
+  //       roadCondition: roadCondition
+  //     }
+  //   })
+  // } else {
+  //   // 新規
+  //   await postLocations.mutateAsync({
+  //     latitude: selectedGeometryPoint.value.latitude,
+  //     longitude: selectedGeometryPoint.value.longitude,
+  //     roadCondition: roadCondition
+  //   })
+  // }
+
+  // // 最後のポイントの場合はジオメトリーを切り替える
+  // if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
+  //   handleGeometryMove(selectedGeometryIndex.value + 1)
+  // } else {
+  //   handlePointMove(selectedGeometryPointIndex.value + 1)
+  // }
+}
+
+/**
+ *
+ * @param blind
+ */
+const handleBlindClick = async (blind: boolean) => {
+  selectedBlind.value = blind
   if (!locations.value) return
   // locationsに含まれる座標の場合は更新
   const location = locations.value.find((location) => {
@@ -263,7 +309,8 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
     await patchLocations.mutateAsync({
       id: location.id,
       location: {
-        roadCondition: roadCondition
+        roadCondition: selectedRoadCondition.value,
+        isBlind: selectedBlind.value
       }
     })
   } else {
@@ -271,7 +318,8 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
     await postLocations.mutateAsync({
       latitude: selectedGeometryPoint.value.latitude,
       longitude: selectedGeometryPoint.value.longitude,
-      roadCondition: roadCondition
+      roadCondition: selectedRoadCondition.value,
+      isBlind: selectedBlind.value
     })
   }
 
@@ -281,6 +329,8 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
   } else {
     handlePointMove(selectedGeometryPointIndex.value + 1)
   }
+  selectedRoadCondition.value = 'ONE_LANE'
+  selectedBlind.value = false
 }
 </script>
 
@@ -296,6 +346,7 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
             style="background: palegreen"
             @click="handleRoadCondtionClick('TWO_LANE_SHOULDER')"
           >
+            <span v-show="selectedRoadCondition === 'TWO_LANE_SHOULDER'" style="color: red">★</span>
             1
           </button>
           <button
@@ -304,6 +355,7 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
             style="background: palegreen"
             @click="handleRoadCondtionClick('TWO_LANE')"
           >
+            <span v-show="selectedRoadCondition === 'TWO_LANE'" style="color: red">★</span>
             2
           </button>
           <button
@@ -312,6 +364,7 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
             style="background: bisque"
             @click="handleRoadCondtionClick('ONE_LANE_SPACIOUS')"
           >
+            <span v-show="selectedRoadCondition === 'ONE_LANE_SPACIOUS'" style="color: red">★</span>
             3
           </button>
           <button
@@ -320,8 +373,29 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
             style="background: bisque"
             @click="handleRoadCondtionClick('ONE_LANE')"
           >
+            <span v-show="selectedRoadCondition === 'ONE_LANE'" style="color: red">★</span>
             4
           </button>
+          -
+          <button
+            class="button-style"
+            data-tooltip="ブラインドあり"
+            style="background: pink"
+            @click="handleBlindClick(true)"
+          >
+            <span v-show="selectedBlind" style="color: red">★</span>
+            B-Y
+          </button>
+          <button
+            class="button-style"
+            data-tooltip="ブラインドなし"
+            style="background: pink"
+            @click="handleBlindClick(false)"
+          >
+            <span v-show="!selectedBlind" style="color: red">★</span>
+            B-N
+          </button>
+          -
           <button
             class="button-style"
             data-tooltip="戻る"
@@ -352,6 +426,7 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
             <th>DB</th>
             <th>地理座標</th>
             <th>路面状態</th>
+            <th>B</th>
           </tr>
         </thead>
         <tbody>
@@ -374,6 +449,7 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
             </td>
             <td>{{ point.latitude }}, {{ point.longitude }}</td>
             <td>{{ point.roadCondition }}</td>
+            <td>{{ point.labelBlind }}</td>
           </tr>
         </tbody>
       </table>
@@ -414,7 +490,7 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
 <style scoped>
 .button-container .button-style {
   position: relative;
-  width: 50px; /* ボタンの横幅を50pxに設定 */
+  width: 70px; /* ボタンの横幅を50pxに設定 */
   height: 50px; /* ボタンの高さを50pxに設定 */
   margin: 5px; /* ボタンの間に少し余白を設ける */
   font-size: 16px; /* テキストのサイズを調整 */
@@ -436,7 +512,7 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
   color: #fff;
   background-color: #333;
   border-radius: 6px;
-  z-index: 1000;
+  z-index: 10000;
 }
 
 .button-container button:hover::after {

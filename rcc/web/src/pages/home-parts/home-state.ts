@@ -9,6 +9,7 @@ export type PointType = {
   latitude: number
   longitude: number
   roadCondition: RoadConditionType
+  isBlind: boolean
 }
 
 type UseHomeStateType = {
