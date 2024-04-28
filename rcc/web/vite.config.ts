@@ -18,7 +18,7 @@ export default ({ mode }: { mode: string }) => {
       }
     },
     server: {
-      open: true, // 起動時にブラウザを開く
+      open: false, // 起動時にブラウザを開く
       port: 5173,
       https: {
         key: fs.readFileSync('./.cert/localhost-key.pem'),
