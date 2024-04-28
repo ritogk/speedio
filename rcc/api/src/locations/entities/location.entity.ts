@@ -45,6 +45,15 @@ export class Location {
   })
   roadCondition: RoadCondition;
 
+  @Column({
+    type: 'boolean',
+    default: false,
+  })
+  @ApiProperty({
+    description: '見通しが悪い事を表すフラグ',
+  })
+  isBlind: boolean;
+
   @CreateDateColumn()
   @ApiProperty({ description: '作成日時' })
   created_at: Date;
