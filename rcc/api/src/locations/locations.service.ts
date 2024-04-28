@@ -15,7 +15,7 @@ export class LocationsService {
 
   async create(createLocationDto: CreateLocationDto): Promise<Location> {
     const location = plainToClass(Location, createLocationDto);
-    location.geometry = {
+    location.point = {
       type: 'Point',
       coordinates: [createLocationDto.longitude, createLocationDto.latitude],
     };
