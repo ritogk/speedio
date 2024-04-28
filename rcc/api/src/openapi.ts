@@ -18,6 +18,11 @@ export const setup = async (app: INestApplication) => {
     skipInvalid: true,
     noRefs: true,
   });
-  const yamlPath = path.join(__dirname, '../public', 'openapi.yml');
+  // const yamlPath = path.join(__dirname, '../public', 'openapi.yml');
+  // あとで直す。
+  const yamlPath = path.join(
+    '/home/ubuntu/speedio/rcc/api/public',
+    'openapi.yml',
+  );
   await fs.writeFile(yamlPath, yamlDocument);
 };
