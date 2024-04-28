@@ -17,7 +17,7 @@ let marker: google.maps.Marker | null = null
 let polyline: google.maps.Polyline | null = null
 let panorama: google.maps.StreetViewPanorama | null = null
 
-const { data: locations } = useGetLocations()
+const { data: locations, setQueryParams } = useGetLocations()
 const postLocations = usePostLocations()
 const patchLocations = usePatchLocations()
 
@@ -93,6 +93,28 @@ const handleGeometryMove = (index: number) => {
   updatePanorama(selectedGeometryPoint.value)
   updateMap(originalGeometries.value[selectedGeometryIndex.value])
   updateMapMarker(selectedGeometryPoint.value)
+
+  // geometryからバウンディングボックス生成
+  const lineString = selectedGeometry.value.map((point) => {
+    return [point.longitude, point.latitude]
+  })
+  let minLongitude = lineString[0][0]
+  let maxLongitude = lineString[0][0]
+  let minLatitude = lineString[0][1]
+  let maxLatitude = lineString[0][1]
+  lineString.forEach((point) => {
+    if (point[0] < minLongitude) minLongitude = point[0]
+    if (point[0] > maxLongitude) maxLongitude = point[0]
+    if (point[1] < minLatitude) minLatitude = point[1]
+    if (point[1] > maxLatitude) maxLatitude = point[1]
+  })
+  // apiを呼び出す。
+  setQueryParams({
+    maxLatitude: maxLatitude,
+    minLatitude: minLatitude,
+    maxLongitude: maxLongitude,
+    minLongitude: minLongitude
+  })
 }
 
 /**

@@ -33,25 +33,25 @@ export class LocationsController {
   })
   @ApiQuery({
     name: 'minLatitude',
-    required: true,
+    required: false,
     type: Number,
     description: 'Minimum latitude of the bounding box',
   })
   @ApiQuery({
     name: 'minLongitude',
-    required: true,
+    required: false,
     type: Number,
     description: 'Minimum longitude of the bounding box',
   })
   @ApiQuery({
     name: 'maxLatitude',
-    required: true,
+    required: false,
     type: Number,
     description: 'Maximum latitude of the bounding box',
   })
   @ApiQuery({
     name: 'maxLongitude',
-    required: true,
+    required: false,
     type: Number,
     description: 'Maximum longitude of the bounding box',
   })
