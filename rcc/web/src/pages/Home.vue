@@ -9,6 +9,7 @@ import {
 } from '@/pages/home-parts/home-state'
 import { useGetLocations } from '@/core/api/use-get-locations'
 import { usePostLocations } from '@/core/api/use-post-locations'
+import { usePatchLocations } from '@/core/api/use-patch-locations'
 const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 
 let map: google.maps.Map | null = null
@@ -18,6 +19,7 @@ let panorama: google.maps.StreetViewPanorama | null = null
 
 const { data: locations } = useGetLocations()
 const postLocations = usePostLocations()
+const patchLocations = usePatchLocations()
 
 const initGoogleService = async (polyline: PointType[], point: PointType): Promise<void> => {
   const loader = new Loader({
@@ -236,8 +238,12 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
   })
   if (location) {
     // 更新
-    console.log('更新')
-    console.log(location)
+    await patchLocations.mutateAsync({
+      id: location.id,
+      location: {
+        roadCondition: roadCondition
+      }
+    })
   } else {
     // 新規
     await postLocations.mutateAsync({
@@ -245,6 +251,15 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
       longitude: selectedGeometryPoint.value.longitude,
       roadCondition: roadCondition
     })
+  }
+
+  // 最後のポイントの場合はジオメトリーを切り替える
+  console.log(selectedGeometryPointIndex.value)
+  console.log(selectedGeometry.value.length)
+  if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
+    handleGeometryMove(selectedGeometryIndex.value + 1)
+  } else {
+    handlePointMove(selectedGeometryPointIndex.value + 1)
   }
 }
 </script>
