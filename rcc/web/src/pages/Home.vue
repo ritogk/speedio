@@ -219,7 +219,28 @@ const points = computed(() => {
   })
 })
 
-const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {}
+/**
+ * 路面状態更新ハンドラー
+ * @param roadCondition
+ */
+const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {
+  if (!locations.value) return
+  // locationsに含まれる座標の場合は更新
+  const location = locations.value.find((location) => {
+    return (
+      location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
+      location.point.coordinates[0] === selectedGeometryPoint.value.longitude
+    )
+  })
+  if (location) {
+    // 更新
+    console.log('更新')
+    console.log(location)
+  } else {
+    // 新規
+    console.log('新規')
+  }
+}
 </script>
 
 <template>
@@ -232,6 +253,7 @@ const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {}
             class="button-style"
             data-tooltip="2車線かつ路肩あり"
             style="background: palegreen"
+            @click="handleRoadCondtionClick('TWO_LANE_SHOULDER')"
           >
             1
           </button>
@@ -239,6 +261,7 @@ const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {}
             class="button-style"
             data-tooltip="2車線かつ路肩なし"
             style="background: palegreen"
+            @click="handleRoadCondtionClick('TWO_LANE')"
           >
             2
           </button>
@@ -246,6 +269,7 @@ const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {}
             class="button-style"
             data-tooltip="1車線かつ2台が余裕を持って通行可能"
             style="background: bisque"
+            @click="handleRoadCondtionClick('ONE_LANE_SPACIOUS')"
           >
             3
           </button>
@@ -253,6 +277,7 @@ const handleRoadCondtionClick = (roadCondition: RoadConditionType) => {}
             class="button-style"
             data-tooltip="1車線かつ1台のみ通行可能"
             style="background: bisque"
+            @click="handleRoadCondtionClick('ONE_LANE')"
           >
             4
           </button>
