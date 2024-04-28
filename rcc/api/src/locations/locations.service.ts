@@ -22,22 +22,29 @@ export class LocationsService {
     return await this.locationRepository.save(location);
   }
 
-  async findAll(): Promise<Location[]> {
-    // # boundgingboxを指定して抽出するサンプル
-    // const locations = await this.locationRepository
-    //   .createQueryBuilder('location')
-    //   .where(
-    //     'ST_Intersects(ST_MakeEnvelope(:minLongitude, :minLatitude, :maxLongitude, :maxLatitude, :srid), location.geometry)',
-    //     {
-    //       minLongitude: 133,
-    //       minLatitude: 34,
-    //       maxLongitude: 135,
-    //       maxLatitude: 35,
-    //       srid: 4612,
-    //     },
-    //   )
-    //   .getMany();
-    // return locations;
+  async findAll(
+    minLatitude: number,
+    minLongitude: number,
+    maxLatitude: number,
+    maxLongitude: number,
+  ): Promise<Location[]> {
+    if (minLatitude && minLongitude && maxLatitude && maxLongitude) {
+      const locations = await this.locationRepository
+        .createQueryBuilder('location')
+        .where(
+          'ST_Intersects(ST_MakeEnvelope(:minLongitude, :minLatitude, :maxLongitude, :maxLatitude, :srid), location.point)',
+          {
+            minLongitude: minLongitude,
+            minLatitude: minLatitude,
+            maxLongitude: maxLongitude,
+            maxLatitude: maxLatitude,
+            srid: 4612,
+          },
+        )
+        .getMany();
+      return locations;
+    }
+
     return this.locationRepository.find();
   }
 

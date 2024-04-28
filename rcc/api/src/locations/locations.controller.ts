@@ -6,15 +6,18 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { LocationsService } from './locations.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import {
   ApiTags,
+  ApiQuery,
   ApiCreatedResponse,
   ApiBody,
   ApiOkResponse,
+  ApiOperation,
 } from '@nestjs/swagger';
 import { Location } from './entities/location.entity';
 
@@ -23,12 +26,51 @@ import { Location } from './entities/location.entity';
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
+  @ApiOperation({
+    summary: '位置情報の取得',
+    description:
+      'バウンディングボックスを指定している場合はその範囲内の位置情報を取得。',
+  })
+  @ApiQuery({
+    name: 'minLatitude',
+    required: true,
+    type: Number,
+    description: 'Minimum latitude of the bounding box',
+  })
+  @ApiQuery({
+    name: 'minLongitude',
+    required: true,
+    type: Number,
+    description: 'Minimum longitude of the bounding box',
+  })
+  @ApiQuery({
+    name: 'maxLatitude',
+    required: true,
+    type: Number,
+    description: 'Maximum latitude of the bounding box',
+  })
+  @ApiQuery({
+    name: 'maxLongitude',
+    required: true,
+    type: Number,
+    description: 'Maximum longitude of the bounding box',
+  })
   @ApiOkResponse({
     type: [Location],
   })
   @Get()
-  async findAll(): Promise<Location[]> {
-    return this.locationsService.findAll();
+  async findAll(
+    @Query('minLatitude') minLatitude: number,
+    @Query('minLongitude') minLongitude: number,
+    @Query('maxLatitude') maxLatitude: number,
+    @Query('maxLongitude') maxLongitude: number,
+  ): Promise<Location[]> {
+    return this.locationsService.findAll(
+      minLatitude,
+      minLongitude,
+      maxLatitude,
+      maxLongitude,
+    );
   }
 
   @ApiOkResponse({
