@@ -253,7 +253,7 @@ const points = computed(() => {
 
 const selectedRoadCondition = ref<RoadConditionType>('ONE_LANE')
 const selectedBeforeRoadCondition = ref<RoadConditionType>('ONE_LANE')
-const selectedBlind = ref(false)
+const selectedBlind = ref(true)
 const selectedBeforeBlind = ref(false)
 /**
  * 路面状態更新ハンドラー
@@ -326,11 +326,11 @@ onKeyStroke(['v'], (e) => {
 })
 
 onKeyStroke(['n'], (e) => {
-  handleBlindClick(true)
+  handleBlindClick(false)
   e.preventDefault()
 })
 onKeyStroke(['m'], (e) => {
-  handleBlindClick(false)
+  handleBlindClick(true)
   e.preventDefault()
 })
 
@@ -387,21 +387,21 @@ onKeyStroke([','], (e) => {
           -
           <button
             class="button-style"
-            data-tooltip="ブラインドあり"
-            style="background: pink"
-            @click="handleBlindClick(true)"
-          >
-            <span v-show="selectedBlind" style="color: red">★</span>
-            B-Y
-          </button>
-          <button
-            class="button-style"
             data-tooltip="ブラインドなし"
             style="background: pink"
             @click="handleBlindClick(false)"
           >
             <span v-show="!selectedBlind" style="color: red">★</span>
             B-N
+          </button>
+          <button
+            class="button-style"
+            data-tooltip="ブラインドあり"
+            style="background: pink"
+            @click="handleBlindClick(true)"
+          >
+            <span v-show="selectedBlind" style="color: red">★</span>
+            B-Y
           </button>
           -
           <button
