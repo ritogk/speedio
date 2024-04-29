@@ -28,7 +28,7 @@ export class Location {
   @Column({
     type: 'geometry',
     spatialFeatureType: 'Point',
-    srid: 4612,
+    srid: 4326,
   })
   @Index({ spatial: true })
   @ApiProperty({ description: 'ポイント' })

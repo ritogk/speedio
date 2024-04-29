@@ -38,7 +38,7 @@ export class LocationsService {
             minLatitude: minLatitude,
             maxLongitude: maxLongitude,
             maxLatitude: maxLatitude,
-            srid: 4612,
+            srid: 4326,
           },
         )
         .getMany();
