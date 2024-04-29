@@ -90,6 +90,7 @@ const loadCsv = async (e: Event) => {
  * @param index
  */
 const handleGeometryMove = (index: number) => {
+  console.log(index)
   changeSelectedGeometry(index)
   changeSelectedGeometryPoint(0)
   updatePanorama(selectedGeometryPoint.value)
@@ -325,21 +326,31 @@ onKeyStroke(['v'], (e) => {
   e.preventDefault()
 })
 
-onKeyStroke(['n'], (e) => {
+onKeyStroke(['.'], (e) => {
   handleBlindClick(false)
   e.preventDefault()
 })
-onKeyStroke(['m'], (e) => {
+onKeyStroke(['/'], (e) => {
   handleBlindClick(true)
   e.preventDefault()
 })
 
-// 前回と同じ設定を使う。
-onKeyStroke([','], (e) => {
-  handleRoadCondtionClick(selectedBeforeRoadCondition.value)
-  handleBlindClick(selectedBeforeBlind.value)
+// スキップ
+onKeyStroke(['\\'], (e) => {
+  // 最後のポイントの場合はジオメトリーを切り替える
+  if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
+    handleGeometryMove(selectedGeometryIndex.value + 1)
+  } else {
+    handlePointMove(selectedGeometryPointIndex.value + 1)
+  }
+  selectedBeforeRoadCondition.value = selectedRoadCondition.value
+  selectedBeforeBlind.value = selectedBlind.value
+  selectedRoadCondition.value = 'ONE_LANE'
+  selectedBlind.value = true
   e.preventDefault()
 })
+
+const geometryPointPageNoJump = ref(1)
 </script>
 
 <template>
@@ -484,11 +495,15 @@ onKeyStroke([','], (e) => {
           @click="handleGeometryMove(selectedGeometryIndex + 2)"
           :disabled="selectedGeometryIndex + 3 > geometries.length || isLoaded === false"
         >
-          ▶▶
-        </button>
-        <span style="margin-right: 20px"
-          >{{ selectedGeometryIndex + 1 }}/{{ geometries.length }}</span
+          ▶▶</button
+        ><span style="margin-right: 20px"
+          >{{ selectedGeometryIndex + 1 }}/{{ geometries.length - 1 }}</span
+        ><br />
+        <input type="number" style="width: 50px" v-model="geometryPointPageNoJump" /><button
+          @click="handleGeometryMove(Number(geometryPointPageNoJump - 1))"
         >
+          change
+        </button>
         <input type="file" @change="loadCsv" />
       </div>
     </div>
