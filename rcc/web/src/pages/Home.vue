@@ -497,7 +497,7 @@ const geometryPointPageNoJump = ref(1)
         >
           ▶▶</button
         ><span style="margin-right: 20px"
-          >{{ selectedGeometryIndex + 1 }}/{{ geometries.length - 1 }}</span
+          >{{ selectedGeometryIndex + 1 }}/{{ geometries.length }}</span
         ><br />
         <input type="number" style="width: 50px" v-model="geometryPointPageNoJump" /><button
           @click="handleGeometryMove(Number(geometryPointPageNoJump - 1))"
