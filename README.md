@@ -18,3 +18,9 @@ conda env create -f environment.yml
 ```
 conda activate touge-searcher
 ```
+
+## conda env update
+
+```
+conda env export -n touge-searcher > environment.yml
+```
