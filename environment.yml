@@ -59,6 +59,7 @@ dependencies:
   - glib=2.78.1=hfc55251_0
   - glib-tools=2.78.1=hfc55251_0
   - googlemaps=2.5.1=py_0
+  - greenlet=3.0.3=py311hb755f60_0
   - hdf4=4.2.15=h9772cbc_5
   - hdf5=1.12.2=nompi_h4df4325_101
   - icu=70.1=h27087fc_0
@@ -95,6 +96,7 @@ dependencies:
   - libffi=3.4.4=h6a678d5_0
   - libgcc-ng=13.2.0=h807b86a_3
   - libgdal=3.6.2=h6c674c2_9
+  - libgfortran=3.0.0=1
   - libgfortran-ng=11.2.0=h00389a5_1
   - libgfortran5=11.2.0=h1234567_1
   - libglib=2.78.1=hebfc3b9_0
@@ -142,6 +144,7 @@ dependencies:
   - nss=3.89.1=h6a678d5_0
   - numpy=1.25.2=py311h24aa872_0
   - numpy-base=1.25.2=py311hbfb1bba_0
+  - openblas=0.3.4=ha44fe06_0
   - openjpeg=2.5.0=hfec8fc6_2
   - openssl=3.1.5=hd590300_0
   - osmnx=1.8.0=pyhd8ed1ab_0
@@ -162,6 +165,7 @@ dependencies:
   - proj=9.1.1=h8ffa02c_2
   - prompt-toolkit=3.0.42=pyha770c72_0
   - psutil=5.9.5=py311h459d7ec_1
+  - psycopg2=2.9.3=py311h968e94b_2
   - ptyprocess=0.7.0=pyhd3deb0d_0
   - pure_eval=0.2.2=pyhd8ed1ab_0
   - pygments=2.17.2=pyhd8ed1ab_0
@@ -186,6 +190,7 @@ dependencies:
   - shapely=2.0.1=py311h0f577a2_0
   - six=1.16.0=pyh6c4a22f_0
   - snuggs=1.4.7=py_0
+  - sqlalchemy=2.0.29=py311h459d7ec_0
   - sqlite=3.41.2=h5eee18b_0
   - stack_data=0.6.2=pyhd8ed1ab_0
   - tbb=2021.8.0=hdb19cb5_0
@@ -195,6 +200,7 @@ dependencies:
   - tornado=6.3.3=py311h459d7ec_1
   - tqdm=4.66.2=pyhd8ed1ab_0
   - traitlets=5.14.0=pyhd8ed1ab_0
+  - typing-extensions=4.9.0=hd8ed1ab_0
   - typing_extensions=4.9.0=pyha770c72_0
   - tzcode=2023c=h0b41bf4_0
   - tzdata=2023c=h04d1e81_0
@@ -209,4 +215,4 @@ dependencies:
   - zipp=3.17.0=pyhd8ed1ab_0
   - zlib=1.2.13=hd590300_5
   - zstd=1.5.5=hc292b87_0
-prefix: /home/ubuntu/miniconda3/envs/touge-searcher
+prefix: /home/ubuntu/anaconda3/envs/touge-searcher
