@@ -30,6 +30,9 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.score_width)}</td>
           </tr>
           <tr>
+                <td>score_visually_verified_width</td>
+                <td>${x.score_visually_verified_width}</td>
+          <tr>
               <td>score_length</td>
               <td>${truncateToTwoDecimals(x.score_length)}</td>
           </tr>
