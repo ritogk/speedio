@@ -234,7 +234,6 @@ const points = computed(() => {
           location.point.coordinates[0] === point.longitude
         ) {
           point.roadCondition = location.roadCondition
-          point.isBlind = location.isBlind
           return true
         }
         return false
@@ -245,31 +244,19 @@ const points = computed(() => {
       label: check ? '済' : '未',
       latitude: point.latitude,
       longitude: point.longitude,
-      roadCondition: point.roadCondition,
-      isBlind: point.isBlind,
-      labelBlind: point.isBlind ? 'Y' : 'N'
+      roadCondition: point.roadCondition
     }
   })
 })
 
 const selectedRoadCondition = ref<RoadConditionType>('ONE_LANE')
 const selectedBeforeRoadCondition = ref<RoadConditionType>('ONE_LANE')
-const selectedBlind = ref(true)
-const selectedBeforeBlind = ref(false)
 /**
  * 路面状態更新ハンドラー
  * @param roadCondition
  */
 const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
   selectedRoadCondition.value = roadCondition
-}
-
-/**
- *
- * @param blind
- */
-const handleBlindClick = async (blind: boolean) => {
-  selectedBlind.value = blind
   if (!locations.value) return
   // locationsに含まれる座標の場合は更新
   const location = locations.value.find((location) => {
@@ -284,7 +271,7 @@ const handleBlindClick = async (blind: boolean) => {
       id: location.id,
       location: {
         roadCondition: selectedRoadCondition.value,
-        isBlind: selectedBlind.value
+        isBlind: false
       }
     })
   } else {
@@ -293,7 +280,7 @@ const handleBlindClick = async (blind: boolean) => {
       latitude: selectedGeometryPoint.value.latitude,
       longitude: selectedGeometryPoint.value.longitude,
       roadCondition: selectedRoadCondition.value,
-      isBlind: selectedBlind.value
+      isBlind: false
     })
   }
 
@@ -304,9 +291,7 @@ const handleBlindClick = async (blind: boolean) => {
     handlePointMove(selectedGeometryPointIndex.value + 1)
   }
   selectedBeforeRoadCondition.value = selectedRoadCondition.value
-  selectedBeforeBlind.value = selectedBlind.value
   selectedRoadCondition.value = 'ONE_LANE'
-  selectedBlind.value = true
 }
 
 onKeyStroke(['z'], (e) => {
@@ -326,15 +311,6 @@ onKeyStroke(['v'], (e) => {
   e.preventDefault()
 })
 
-onKeyStroke(['.'], (e) => {
-  handleBlindClick(false)
-  e.preventDefault()
-})
-onKeyStroke(['/'], (e) => {
-  handleBlindClick(true)
-  e.preventDefault()
-})
-
 // スキップ
 onKeyStroke(['\\'], (e) => {
   // 最後のポイントの場合はジオメトリーを切り替える
@@ -344,9 +320,7 @@ onKeyStroke(['\\'], (e) => {
     handlePointMove(selectedGeometryPointIndex.value + 1)
   }
   selectedBeforeRoadCondition.value = selectedRoadCondition.value
-  selectedBeforeBlind.value = selectedBlind.value
   selectedRoadCondition.value = 'ONE_LANE'
-  selectedBlind.value = true
   e.preventDefault()
 })
 
@@ -394,25 +368,6 @@ const geometryPointPageNoJump = ref(1)
           >
             <span v-show="selectedRoadCondition === 'ONE_LANE'" style="color: red">★</span>
             4
-          </button>
-          -
-          <button
-            class="button-style"
-            data-tooltip="ブラインドなし"
-            style="background: pink"
-            @click="handleBlindClick(false)"
-          >
-            <span v-show="!selectedBlind" style="color: red">★</span>
-            B-N
-          </button>
-          <button
-            class="button-style"
-            data-tooltip="ブラインドあり"
-            style="background: pink"
-            @click="handleBlindClick(true)"
-          >
-            <span v-show="selectedBlind" style="color: red">★</span>
-            B-Y
           </button>
           -
           <button
@@ -468,7 +423,6 @@ const geometryPointPageNoJump = ref(1)
             </td>
             <td>{{ point.latitude }}, {{ point.longitude }}</td>
             <td>{{ point.roadCondition }}</td>
-            <td>{{ point.labelBlind }}</td>
           </tr>
         </tbody>
       </table>
