@@ -8,6 +8,7 @@ WEIGHTS = {
     "elevation_u_shape": 1.0,  # 例として1.0を使用
     "angle": 1.0,  # 例として1.0を使用
     "width": 1.0,  # 例として1.0を使用
+    "visually_verified_width": 1.0,
     "length": 0.5,  # 例として1.0を使用
 }
 
@@ -23,6 +24,7 @@ def generate(gdf: GeoDataFrame) -> Series:
             + x["score_elevation_u_shape"] * WEIGHTS["elevation_u_shape"]
             + x["score_angle"] * WEIGHTS["angle"]
             + x["score_width"] * WEIGHTS["width"]
+            + x["score_visually_verified_width"] * WEIGHTS["visually_verified_width"]
             + x["score_length"] * WEIGHTS["length"]
         ) / len(WEIGHTS)
 

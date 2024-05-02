@@ -167,6 +167,9 @@ const calcScore = (targets) => {
     ),
     angle: Number(document.getElementById("weightAngle").value),
     width: Number(document.getElementById("weightWidth").value),
+    visually_verified_width: Number(
+      document.getElementById("weightVisuallyVerifiedWidth").value
+    ),
     length: Number(document.getElementById("weightLength").value),
   };
 
@@ -178,6 +181,7 @@ const calcScore = (targets) => {
         x.score_elevation_u_shape * WEIGHTS["elevation_u_shape"] +
         x.score_angle * WEIGHTS["angle"] +
         x.score_width * WEIGHTS["width"] +
+        x.score_visually_verified_width * WEIGHTS["visually_verified_width"] +
         x.score_length * WEIGHTS["length"]) /
       Object.keys(WEIGHTS).length;
     return x;
