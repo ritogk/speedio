@@ -236,6 +236,7 @@ def main() -> GeoDataFrame:
     gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
     gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
+    gdf_edges["score_visually_verified_width"] = column_generater.score_visually_verified_width.generate(gdf_edges)
     excution_timer_ins.stop()
 
     # google map urlを生成する
@@ -309,6 +310,7 @@ def main() -> GeoDataFrame:
         "turn_candidate_points",
         "turn_points",
         "eye_measured_width",
+        "score_visually_verified_width"
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[output_columns].to_json(output_dir, orient="records")
@@ -330,6 +332,7 @@ def main() -> GeoDataFrame:
         "is_alpsmap",
         "alpsmap_min_width",
         "alpsmap_avg_width",
+        "score_visually_verified_width"
     ]
     # gdf_edges.scoreの上位100件を取得する
     gdf_edges = gdf_edges.sort_values("score", ascending=False).head(100)
