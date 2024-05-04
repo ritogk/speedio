@@ -250,14 +250,14 @@ const points = computed(() => {
   })
 })
 
-const selectedRoadCondition = ref<RoadWidthType>('ONE_LANE')
-const selectedBeforeRoadCondition = ref<RoadWidthType>('ONE_LANE')
+const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
+const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
 /**
  * 路面状態更新ハンドラー
  * @param roadWidthType
  */
-const handleRoadCondtionClick = async (roadWidthType: RoadWidthType) => {
-  selectedRoadCondition.value = roadWidthType
+const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
+  selectedRoadType.value = roadWidthType
   if (!locations.value) return
   // locationsに含まれる座標の場合は更新
   const location = locations.value.find((location) => {
@@ -271,7 +271,7 @@ const handleRoadCondtionClick = async (roadWidthType: RoadWidthType) => {
     await patchLocations.mutateAsync({
       id: location.id,
       location: {
-        road_width_type: selectedRoadCondition.value,
+        road_width_type: selectedRoadType.value,
         is_blind: false
       }
     })
@@ -280,7 +280,7 @@ const handleRoadCondtionClick = async (roadWidthType: RoadWidthType) => {
     await postLocations.mutateAsync({
       latitude: selectedGeometryPoint.value.latitude,
       longitude: selectedGeometryPoint.value.longitude,
-      road_width_type: selectedRoadCondition.value,
+      road_width_type: selectedRoadType.value,
       is_blind: false
     })
   }
@@ -291,24 +291,24 @@ const handleRoadCondtionClick = async (roadWidthType: RoadWidthType) => {
   } else {
     handlePointMove(selectedGeometryPointIndex.value + 1)
   }
-  selectedBeforeRoadCondition.value = selectedRoadCondition.value
-  selectedRoadCondition.value = 'ONE_LANE'
+  selectedBeforeRoadType.value = selectedRoadType.value
+  selectedRoadType.value = 'ONE_LANE'
 }
 
 onKeyStroke(['z'], (e) => {
-  handleRoadCondtionClick('TWO_LANE_SHOULDER')
+  handleRoadTypeClick('TWO_LANE_SHOULDER')
   e.preventDefault()
 })
 onKeyStroke(['x'], (e) => {
-  handleRoadCondtionClick('TWO_LANE')
+  handleRoadTypeClick('TWO_LANE')
   e.preventDefault()
 })
 onKeyStroke(['c'], (e) => {
-  handleRoadCondtionClick('ONE_LANE_SPACIOUS')
+  handleRoadTypeClick('ONE_LANE_SPACIOUS')
   e.preventDefault()
 })
 onKeyStroke(['v'], (e) => {
-  handleRoadCondtionClick('ONE_LANE')
+  handleRoadTypeClick('ONE_LANE')
   e.preventDefault()
 })
 
@@ -320,8 +320,8 @@ onKeyStroke(['\\'], (e) => {
   } else {
     handlePointMove(selectedGeometryPointIndex.value + 1)
   }
-  selectedBeforeRoadCondition.value = selectedRoadCondition.value
-  selectedRoadCondition.value = 'ONE_LANE'
+  selectedBeforeRoadType.value = selectedRoadType.value
+  selectedRoadType.value = 'ONE_LANE'
   e.preventDefault()
 })
 
@@ -338,36 +338,36 @@ const geometryPointPageNoJump = ref(1)
             class="button-style"
             data-tooltip="2車線かつ路肩あり"
             style="background: palegreen"
-            @click="handleRoadCondtionClick('TWO_LANE_SHOULDER')"
+            @click="handleRoadTypeClick('TWO_LANE_SHOULDER')"
           >
-            <span v-show="selectedRoadCondition === 'TWO_LANE_SHOULDER'" style="color: red">★</span>
+            <span v-show="selectedRoadType === 'TWO_LANE_SHOULDER'" style="color: red">★</span>
             1
           </button>
           <button
             class="button-style"
             data-tooltip="2車線かつ路肩なし"
             style="background: palegreen"
-            @click="handleRoadCondtionClick('TWO_LANE')"
+            @click="handleRoadTypeClick('TWO_LANE')"
           >
-            <span v-show="selectedRoadCondition === 'TWO_LANE'" style="color: red">★</span>
+            <span v-show="selectedRoadType === 'TWO_LANE'" style="color: red">★</span>
             2
           </button>
           <button
             class="button-style"
             data-tooltip="1車線かつ2台が余裕を持って通行可能"
             style="background: bisque"
-            @click="handleRoadCondtionClick('ONE_LANE_SPACIOUS')"
+            @click="handleRoadTypeClick('ONE_LANE_SPACIOUS')"
           >
-            <span v-show="selectedRoadCondition === 'ONE_LANE_SPACIOUS'" style="color: red">★</span>
+            <span v-show="selectedRoadType === 'ONE_LANE_SPACIOUS'" style="color: red">★</span>
             3
           </button>
           <button
             class="button-style"
             data-tooltip="1車線かつ1台のみ通行可能"
             style="background: bisque"
-            @click="handleRoadCondtionClick('ONE_LANE')"
+            @click="handleRoadTypeClick('ONE_LANE')"
           >
-            <span v-show="selectedRoadCondition === 'ONE_LANE'" style="color: red">★</span>
+            <span v-show="selectedRoadType === 'ONE_LANE'" style="color: red">★</span>
             4
           </button>
           -
