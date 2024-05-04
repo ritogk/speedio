@@ -3,12 +3,12 @@ import { ref, shallowReadonly, type Ref, type InjectionKey, computed } from 'vue
 import PaPa, { type ParseResult } from 'papaparse'
 
 type Location = Components.Schemas.Location
-export type RoadConditionType = Location['roadCondition']
+export type RoadWidthType = Location['road_width_type']
 
 export type PointType = {
   latitude: number
   longitude: number
-  roadCondition: RoadConditionType
+  roadWidthType: RoadWidthType
   isBlind: boolean
 }
 

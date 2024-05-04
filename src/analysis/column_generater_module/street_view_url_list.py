@@ -6,7 +6,7 @@ from geopy.distance import geodesic
 
 def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
-        segments = interpolate_points(row.geometry, 250, row.length)
+        segments = interpolate_points(row.geometry, 500, row.length)
         return [[segment[1], segment[0]] for segment in segments]   
 
     series = gdf.apply(func, axis=1)

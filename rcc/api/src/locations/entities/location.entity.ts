@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
-export enum RoadCondition {
+export enum RoadWidthType {
   TWO_LANE_SHOULDER = 'TWO_LANE_SHOULDER', // ２車線かつ路肩あり
   TWO_LANE = 'TWO_LANE', // 2車線かつ路肩なし
   ONE_LANE_SPACIOUS = 'ONE_LANE_SPACIOUS', // 1車線かつ2台が余裕を持って通行できる
@@ -36,14 +36,14 @@ export class Location {
 
   @Column({
     type: 'enum',
-    enum: RoadCondition,
-    default: RoadCondition.UNCONFIRMED,
+    enum: RoadWidthType,
+    default: RoadWidthType.UNCONFIRMED,
   })
   @ApiProperty({
     description: '路面状況',
-    enum: RoadCondition,
+    enum: RoadWidthType,
   })
-  roadCondition: RoadCondition;
+  road_width_type: RoadWidthType;
 
   @Column({
     type: 'boolean',
