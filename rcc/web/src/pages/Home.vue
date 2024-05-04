@@ -339,6 +339,7 @@ const geometryPointPageNoJump = ref(1)
             data-tooltip="2車線かつ路肩あり"
             style="background: palegreen"
             @click="handleRoadTypeClick('TWO_LANE_SHOULDER')"
+            hidden
           >
             <span v-show="selectedRoadType === 'TWO_LANE_SHOULDER'" style="color: red">★</span>
             1
