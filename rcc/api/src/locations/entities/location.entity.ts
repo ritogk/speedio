@@ -52,7 +52,7 @@ export class Location {
   @ApiProperty({
     description: '見通しが悪い事を表すフラグ',
   })
-  isBlind: boolean;
+  is_blind: boolean;
 
   @CreateDateColumn()
   @ApiProperty({ description: '作成日時' })
