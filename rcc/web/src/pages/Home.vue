@@ -90,7 +90,6 @@ const loadCsv = async (e: Event) => {
  * @param index
  */
 const handleGeometryMove = (index: number) => {
-  console.log(index)
   changeSelectedGeometry(index)
   changeSelectedGeometryPoint(0)
   updatePanorama(selectedGeometryPoint.value)
@@ -224,6 +223,7 @@ const findClosestPointIndex = (points: PointType[], targetXY: PointType): number
   return nextIndex
 }
 
+// 一覧に表示するデータ
 const points = computed(() => {
   // selectedGeometryとdata.valueをもとに生成
   return selectedGeometry.value.map((point) => {
@@ -248,6 +248,19 @@ const points = computed(() => {
       isBlind: false
     }
   })
+})
+
+// 対象ジオメトリの評価済の座標数数
+const selectedGeometryCheckCount = computed(() => {
+  return originalGeometries.value[selectedGeometryIndex.value].filter((point) => {
+    if (!locations.value) return false
+    return locations.value.some((location) => {
+      return (
+        point.latitude === location.point.coordinates[1] &&
+        point.longitude === location.point.coordinates[0]
+      )
+    })
+  }).length
 })
 
 const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
@@ -391,6 +404,9 @@ const geometryPointPageNoJump = ref(1)
           <span style="margin-left: 10px"
             >{{ selectedGeometryPointIndex + 1 }}/{{ selectedGeometry.length }}</span
           >
+          <span style="margin-left: 30px"
+            >checked:<span style="color: red">{{ selectedGeometryCheckCount }}</span></span
+          >
         </div>
       </div>
     </div>
@@ -453,7 +469,8 @@ const geometryPointPageNoJump = ref(1)
           ▶▶</button
         ><span style="margin-right: 20px"
           >{{ selectedGeometryIndex + 1 }}/{{ geometries.length }}</span
-        ><br />
+        >
+        <br />
         <input type="number" style="width: 50px" v-model="geometryPointPageNoJump" /><button
           @click="handleGeometryMove(Number(geometryPointPageNoJump - 1))"
         >
