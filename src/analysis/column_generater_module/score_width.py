@@ -33,7 +33,7 @@ def generate(gdf: GeoDataFrame) -> Series:
         locations = []
         with Session() as session:
             # SQLクエリを実行
-            result = session.execute(text(f"SELECT ST_X(point) AS longitude, ST_Y(point) AS latitude, \"roadCondition\"  FROM locations WHERE ST_Intersects(ST_MakeEnvelope({min_longitude}, {min_latitude}, {max_longitude}, {max_latitude}, {srid}), locations.point)"))
+            result = session.execute(text(f"SELECT ST_X(point) AS longitude, ST_Y(point) AS latitude, road_width_type  FROM locations WHERE ST_Intersects(ST_MakeEnvelope({min_longitude}, {min_latitude}, {max_longitude}, {max_latitude}, {srid}), locations.point)"))
             result = result.fetchall()
             # print(f"coords: {len(coords)}")
             # print(f"db_result: {len(rows)}")
@@ -48,11 +48,11 @@ def generate(gdf: GeoDataFrame) -> Series:
         if (len(locations) / (row.length / 500)) >= 0.5:
             # ここに入ってこれるって事は十分なデータがあるって事
             for location in locations:
-                if location.roadCondition == "TWO_LANE" or location.roadCondition == "TWO_LANE_SHOULDER":
+                if location.road_width_type == "TWO_LANE" or location.road_width_type == "TWO_LANE_SHOULDER":
                     score += 1
-                elif location.roadCondition == "ONE_LANE_SPACIOUS":
+                elif location.road_width_type == "ONE_LANE_SPACIOUS":
                     score += 0.5
-                elif location.roadCondition == "ONE_LANE":
+                elif location.road_width_type == "ONE_LANE":
                     score += 0.01
             # print(f"count: {len(locations)} score: {score/len(locations)}")
             return score/len(locations)

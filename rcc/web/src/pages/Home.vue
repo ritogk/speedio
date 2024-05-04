@@ -5,7 +5,7 @@ import {
   useHomeState,
   UseHomeStateKey,
   type PointType,
-  type RoadConditionType
+  type RoadWidthType
 } from '@/pages/home-parts/home-state'
 import { useGetLocations } from '@/core/api/use-get-locations'
 import { usePostLocations } from '@/core/api/use-post-locations'
@@ -233,7 +233,7 @@ const points = computed(() => {
           location.point.coordinates[1] === point.latitude &&
           location.point.coordinates[0] === point.longitude
         ) {
-          point.roadCondition = location.roadCondition
+          point.roadWidthType = location.road_width_type
           return true
         }
         return false
@@ -244,19 +244,20 @@ const points = computed(() => {
       label: check ? '済' : '未',
       latitude: point.latitude,
       longitude: point.longitude,
-      roadCondition: point.roadCondition
+      roadWidthType: point.roadWidthType,
+      isBlind: false
     }
   })
 })
 
-const selectedRoadCondition = ref<RoadConditionType>('ONE_LANE')
-const selectedBeforeRoadCondition = ref<RoadConditionType>('ONE_LANE')
+const selectedRoadCondition = ref<RoadWidthType>('ONE_LANE')
+const selectedBeforeRoadCondition = ref<RoadWidthType>('ONE_LANE')
 /**
  * 路面状態更新ハンドラー
- * @param roadCondition
+ * @param roadWidthType
  */
-const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
-  selectedRoadCondition.value = roadCondition
+const handleRoadCondtionClick = async (roadWidthType: RoadWidthType) => {
+  selectedRoadCondition.value = roadWidthType
   if (!locations.value) return
   // locationsに含まれる座標の場合は更新
   const location = locations.value.find((location) => {
@@ -270,7 +271,7 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
     await patchLocations.mutateAsync({
       id: location.id,
       location: {
-        roadCondition: selectedRoadCondition.value,
+        road_width_type: selectedRoadCondition.value,
         isBlind: false
       }
     })
@@ -279,7 +280,7 @@ const handleRoadCondtionClick = async (roadCondition: RoadConditionType) => {
     await postLocations.mutateAsync({
       latitude: selectedGeometryPoint.value.latitude,
       longitude: selectedGeometryPoint.value.longitude,
-      roadCondition: selectedRoadCondition.value,
+      road_width_type: selectedRoadCondition.value,
       isBlind: false
     })
   }
@@ -422,7 +423,7 @@ const geometryPointPageNoJump = ref(1)
               {{ point.label }}
             </td>
             <td>{{ point.latitude }}, {{ point.longitude }}</td>
-            <td>{{ point.roadCondition }}</td>
+            <td>{{ point.roadWidthType }}</td>
           </tr>
         </tbody>
       </table>
