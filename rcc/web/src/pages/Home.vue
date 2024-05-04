@@ -272,7 +272,7 @@ const handleRoadCondtionClick = async (roadWidthType: RoadWidthType) => {
       id: location.id,
       location: {
         road_width_type: selectedRoadCondition.value,
-        isBlind: false
+        is_blind: false
       }
     })
   } else {
@@ -281,7 +281,7 @@ const handleRoadCondtionClick = async (roadWidthType: RoadWidthType) => {
       latitude: selectedGeometryPoint.value.latitude,
       longitude: selectedGeometryPoint.value.longitude,
       road_width_type: selectedRoadCondition.value,
-      isBlind: false
+      is_blind: false
     })
   }
 
@@ -401,7 +401,6 @@ const geometryPointPageNoJump = ref(1)
             <th>DB</th>
             <th>地理座標</th>
             <th>路面状態</th>
-            <th>B</th>
           </tr>
         </thead>
         <tbody>

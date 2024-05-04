@@ -23,5 +23,5 @@ export class CreateLocationDto {
   @ApiProperty({ description: 'ブラインドありを表すフラグ' })
   @IsNotEmpty()
   @IsBoolean()
-  isBlind: boolean;
+  is_blind: boolean;
 }
