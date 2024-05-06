@@ -121,6 +121,8 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                     b,
                     (nearest_point.x, nearest_point.y),
                 )
+                if(angle_ab_bx == None):
+                    continue
 
                 # print(f"discoved turn point: {b}")
                 # print(f"highway: x:{row_['highway']}, base:{row.highway}")
