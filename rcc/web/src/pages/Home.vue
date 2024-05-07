@@ -308,19 +308,19 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
   selectedRoadType.value = 'ONE_LANE'
 }
 
+// onKeyStroke(['z'], (e) => {
+//   handleRoadTypeClick('TWO_LANE_SHOULDER')
+//   e.preventDefault()
+// })
 onKeyStroke(['z'], (e) => {
-  handleRoadTypeClick('TWO_LANE_SHOULDER')
-  e.preventDefault()
-})
-onKeyStroke(['x'], (e) => {
   handleRoadTypeClick('TWO_LANE')
   e.preventDefault()
 })
-onKeyStroke(['c'], (e) => {
+onKeyStroke(['x'], (e) => {
   handleRoadTypeClick('ONE_LANE_SPACIOUS')
   e.preventDefault()
 })
-onKeyStroke(['v'], (e) => {
+onKeyStroke(['c'], (e) => {
   handleRoadTypeClick('ONE_LANE')
   e.preventDefault()
 })
