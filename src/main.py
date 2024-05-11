@@ -213,6 +213,9 @@ def main() -> GeoDataFrame:
     gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
         lambda x: list(map(lambda y: [y[1], y[0]], x.coords))
     )
+    gdf_edges["geometry_meter_list"] = (
+        column_generater.geometry_meter_list.generate(gdf_edges)
+    )
 
     # # 目視チェックした道幅をセットする
     # eye_meadured_width_path = (
@@ -282,12 +285,15 @@ def main() -> GeoDataFrame:
         "length",
         "highway",
         "geometry_list",
+        "geometry_meter_list",
         "geometry_check_list",
         "elevation_height",
         "elevation_deltas",
         "elevation_deltas_and_length_ratio",
         "elavation_height_and_length_ratio",
         "elevation_u_shape",
+        "elevation_smooth",
+        "elevation",
         "angle_deltas",
         "angle_and_length_ratio",
         "score_elevation",
