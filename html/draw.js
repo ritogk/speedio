@@ -113,6 +113,9 @@ export const draw = () => {
   const top10 = targets
     .sort((a, b) => b.score_normalization - a.score_normalization)
     .slice(0, 10);
+  console.log(JSON.stringify(top10[0].elevation));
+  console.log(JSON.stringify(top10[0].geometry_meter_list));
+  console.log(JSON.stringify(top10[0].score_normalization));
   top10.forEach((x, index) => {
     const center = Math.ceil(x.geometry_list.length / 2);
     const marker = L.marker(x.geometry_list[center], {
