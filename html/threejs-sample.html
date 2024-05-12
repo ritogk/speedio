@@ -70,7 +70,6 @@
       for (let i = 0; i < points.length - 1; i++) {
         let p1 = points[i];
         let p2 = points[i + 1];
-        debugger;
         let direction = new THREE.Vector3().subVectors(p2, p1).normalize();
         let normal = new THREE.Vector3(-direction.y, direction.x, 0);
         normalVectors.push(normal);
@@ -86,13 +85,43 @@
         );
       });
 
-      const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-      const geometry = new THREE.BufferGeometry().setFromPoints([
-        ...points,
-        ...offsetPoints.reverse(),
-      ]);
-      const line = new THREE.Line(geometry, material);
-      scene.add(line);
+      // 平面を生成する
+      const vertices = [];
+      points.forEach((point, index) =>
+        vertices.push(point.x, point.y, point.z)
+      );
+      offsetPoints.forEach((point, index) =>
+        vertices.push(point.x, point.y, point.z)
+      );
+
+      const faces = [];
+      for (let i = 0; i < points.length - 1; i++) {
+        const n = points.length;
+        // 下面の三角形
+        faces.push(i, i + n, i + 1);
+        // 上面の三角形
+        faces.push(i + 1, i + n, i + n + 1);
+      }
+
+      // 平面ジオメトリの作成
+      const geometry = new THREE.BufferGeometry();
+
+      const verticesFloat32 = new Float32Array(vertices);
+      geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(verticesFloat32, 3)
+      );
+      const indicesUint16 = new Uint16Array(faces);
+      geometry.setIndex(new THREE.BufferAttribute(indicesUint16, 1));
+
+      const loader = new THREE.TextureLoader();
+      const texture = loader.load("./road.jpg"); // ここにテクスチャのパ
+      const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide,
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
 
       // Render loop
       function animate() {
