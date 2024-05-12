@@ -114,14 +114,22 @@
       const indicesUint16 = new Uint16Array(faces);
       geometry.setIndex(new THREE.BufferAttribute(indicesUint16, 1));
 
-      const loader = new THREE.TextureLoader();
-      const texture = loader.load("./road.jpg"); // ここにテクスチャのパ
       const material = new THREE.MeshBasicMaterial({
-        map: texture,
         side: THREE.DoubleSide,
+        color: 0xdbdcdc,
       });
       const mesh = new THREE.Mesh(geometry, material);
       scene.add(mesh);
+
+      // エッジの描画
+      const edges = new THREE.EdgesGeometry(geometry);
+      const line = new THREE.LineSegments(
+        edges,
+        new THREE.LineBasicMaterial({ color: 0xaaacaa })
+      );
+
+      // シーンへの追加
+      scene.add(line);
 
       // Render loop
       function animate() {
