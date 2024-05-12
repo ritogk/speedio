@@ -2,8 +2,8 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.m
 import { OrbitControls } from "https://unpkg.com/three@0.164.1/examples/jsm/controls/OrbitControls.js";
 
 export const draw3D = (coordinates, elevations) => {
-  const width = 1000;
-  const height = 1000;
+  const width = 1400;
+  const height = 1400;
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
 
@@ -25,13 +25,14 @@ export const draw3D = (coordinates, elevations) => {
   // 描画処理
   const minX = Math.min(...coordinates.map((coord) => coord[0]));
   const minY = Math.min(...coordinates.map((coord) => coord[1]));
+  const minZ = Math.min(...elevations);
 
   const points = coordinates.map((coord, index) => {
     // const x = (coord[0] - minX) / 10;
     // const y = (coord[1] - minY) / 10;
     const x = (coord[1] - minY) / 10; // XとYを入れ替える
     const y = (coord[0] - minX) / 10; // XとYを入れ替える
-    const z = elevations[index] / 7;
+    const z = (elevations[index] - minZ) / 5;
     return new THREE.Vector3(x, y, z);
   });
 
