@@ -35,7 +35,7 @@
       document.getElementById("three-area").appendChild(renderer.domElement);
       // Z軸が上になるようにカメラの向きを設定
       camera.up.set(0, 0, 1);
-      camera.position.set(0, 0, 10); // Z軸を真上から見る。
+      camera.position.set(0, 0, 200); // Z軸を真上から見る。
       camera.lookAt(0, 0, 0); // 原点を見る
 
       const axesHelper = new THREE.AxesHelper(100); // 軸の長さを指定
@@ -58,21 +58,40 @@
       const points = coordinates.map((coord, index) => {
         // const x = point[0];
         // const y = point[1];
-        const x = (coord[0] - minX) / 100;
-        const y = (coord[1] - minY) / 100;
-        const z = elevations[index] / 100;
+        const x = (coord[0] - minX) / 10;
+        const y = (coord[1] - minY) / 10;
+        const z = elevations[index] / 10;
         return new THREE.Vector3(x, y, z);
       });
-      console.log(points);
 
-      // Create a basic material
+      const offsetDistance = 1; // オフセット距離
+      let normalVectors = [];
+
+      for (let i = 0; i < points.length - 1; i++) {
+        let p1 = points[i];
+        let p2 = points[i + 1];
+        debugger;
+        let direction = new THREE.Vector3().subVectors(p2, p1).normalize();
+        let normal = new THREE.Vector3(-direction.y, direction.x, 0);
+        normalVectors.push(normal);
+      }
+
+      // 最後の法線ベクトルは一つ前のものを使用
+      normalVectors.push(normalVectors[normalVectors.length - 1]);
+
+      const offsetPoints = points.map((point, index) => {
+        return new THREE.Vector3().addVectors(
+          point,
+          normalVectors[index].multiplyScalar(offsetDistance)
+        );
+      });
+
       const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-
-      // Create the geometry and line
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        ...points,
+        ...offsetPoints.reverse(),
+      ]);
       const line = new THREE.Line(geometry, material);
-
-      // Add line to the scene
       scene.add(line);
 
       // Render loop
