@@ -1,6 +1,7 @@
 import target from "./target.json" assert { type: "json" };
 import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
 import { generateHtml } from "./popup.js";
+import { draw3D } from "./3d.js";
 
 let map;
 export const init = () => {
@@ -59,8 +60,11 @@ export const draw = () => {
     const scoreNormalization = x.score_normalization;
     const style = generateStyle(scoreNormalization);
     const line = L.polyline(polyline, style)
-      .bindPopup(generateHtml(x), { maxWidth: 400 })
+      .bindPopup(generateHtml(x), { maxWidth: 1100 })
       .addTo(map);
+    line.on("popupopen", (e) => {
+      draw3D(x.geometry_meter_list, x.elevation);
+    });
     polylines.push(line);
   });
 

@@ -34,7 +34,10 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.score_length)}</td>
           </tr>
         </table>
-
+        <button onclick="document.getElementById('road3DArea').hidden=false;">3D</button>
+        <div id="road3DArea" style="height:300px" hidden>
+            <span style="font-weight:bold;">3D</span>
+        </div>
 
         <span style="font-weight:bold;">Created</span>
         <table style="width:100%;" border="1">
