@@ -23,16 +23,13 @@ export const draw3D = (coordinates, elevations) => {
   controls.dampingFactor = 0.25;
 
   // 描画処理
-  const minX = Math.min(...coordinates.map((coord) => coord[0]));
-  const minY = Math.min(...coordinates.map((coord) => coord[1]));
-  const minZ = Math.min(...elevations);
-
+  const baseX = coordinates[0][0]; // 0番目の座標を基準に
+  const baseY = coordinates[0][1]; // 0番目の座標を基準に
+  const baseZ = elevations[0]; // 0番目の座標を基準に
   const points = coordinates.map((coord, index) => {
-    // const x = (coord[0] - minX) / 10;
-    // const y = (coord[1] - minY) / 10;
-    const x = (coord[1] - minY) / 10; // XとYを入れ替える
-    const y = (coord[0] - minX) / 10; // XとYを入れ替える
-    const z = (elevations[index] - minZ) / 5;
+    const x = (coord[1] - baseY) / 10; // coordinates[0]のX座標を基準に
+    const y = (coord[0] - baseX) / 10; // coordinates[0]のY座標を基準に
+    const z = (elevations[index] - baseZ) / 6;
     return new THREE.Vector3(x, y, z);
   });
 
