@@ -19,7 +19,7 @@ def generate(gdf: GeoDataFrame) -> Series:
                 a,
                 b,
                 c,
-            )
+            )[0]
             if angle_ab_bc is None:
                 continue
             if angle_ab_bc > 80:

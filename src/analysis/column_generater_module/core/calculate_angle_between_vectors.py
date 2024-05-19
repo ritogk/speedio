@@ -1,9 +1,9 @@
 import numpy as np
-from typing import Optional
+from typing import Optional, Tuple
 
 
 # ベクトル間の角度を計算する
-def calculate_angle_between_vectors(A, B, C) -> Optional[float]:
+def calculate_angle_between_vectors(A, B, C) -> Optional[Tuple[float, str]]:
     vector_AB = np.array(B) - np.array(A)
     vector_BC = np.array(C) - np.array(B)
 
@@ -16,4 +16,11 @@ def calculate_angle_between_vectors(A, B, C) -> Optional[float]:
     cosine_theta = dot_product / (norm_AB * norm_BC)
     angle_rad = np.arccos(cosine_theta)
     angle_deg = np.degrees(angle_rad)
-    return angle_deg
+
+    horizontalVector = "left"
+    cross_product = np.cross(vector_AB, vector_BC)
+    if cross_product > 0:
+        horizontalVector = "left"
+    else:
+        horizontalVector = "right"
+    return angle_deg, horizontalVector
