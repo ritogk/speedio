@@ -120,7 +120,7 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
                     a,
                     b,
                     (nearest_point.x, nearest_point.y),
-                )
+                )[0]
                 if(angle_ab_bx == None):
                     continue
 

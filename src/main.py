@@ -31,6 +31,10 @@ def main() -> GeoDataFrame:
     print(f"  row: {len(gdf_edges)}")
     excution_timer_ins.stop()
 
+    # gdf_edgesにlanes列がない場合は追加する
+    if "lanes" not in gdf_edges.columns:
+        gdf_edges["lanes"] = 1
+
     excution_timer_ins.start("remove reverse edge")
     count = len(gdf_edges)
     gdf_edges = remover.reverse_edge.remove(gdf_edges)

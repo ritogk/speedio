@@ -13,7 +13,7 @@ def generate(gdf: GeoDataFrame) -> Series:
             [
                 calculate_angle_between_vectors(
                     x.coords[i - 1], x.coords[i], x.coords[i + 1]
-                )
+                )[0]
                 or 0
                 for i in range(1, len(x.coords) - 1)
             ]
