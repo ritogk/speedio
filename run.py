@@ -2,8 +2,9 @@ from src.main import main
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
-
+from pprint import pprint
 from src.analysis.column_generater_module.core.calculate_angle_between_vectors import calculate_angle_between_vectors
+from geopy.distance import geodesic
 
 def run():
     gdf = main()
@@ -66,24 +67,83 @@ def run():
             turn = [target[i]]
             old_horizontal_vector = target[i]['horizontalVector']
     turns.append(turn)
+
     
-    # turnの始点と最大角度の座標と終点の間の角度を求める。
+    datas = []
     for turn in turns:
         max_angle = 0
+        # ★ここがおかしいような気がする。
         max_angle_point = max(turn, key=lambda x: x['angle'])
-        # ここでmに変換する必要はなにのか・・？
-        angle, direction = calculate_angle_between_vectors(
+        # print(max_angle_point['center'])
+        # turnの始点と最大角度の座標と終点の間の角度を求める。
+        angle_abc, direction_abc = calculate_angle_between_vectors(
                 (turn[0]['start']['lng'], turn[0]['start']['lat']),
                 (max_angle_point['center']['lng'], max_angle_point['center']['lat']),
                 (turn[-1]['end']['lng'], turn[-1]['end']['lat'])
             )
-        print(angle, direction, (max_angle_point['center']['lng'], max_angle_point['center']['lat']))
+        if max_angle_point['center'] == {'lat': 35.3799484, 'lng': 136.9993582}:
+            print(angle_abc, direction_abc)
+            print(turn[0]['start']['lng'], turn[0]['start']['lat'])
+            print(max_angle_point['center']['lng'], max_angle_point['center']['lat'])
+            print(turn[-1]['end']['lng'], turn[-1]['end']['lat'])
+        # 角度用の座標から１コーナーのpointsを作成
+        points = []
+        for angle in turn:
+            points.append(angle['start'])
+            points.append(angle['center'])
+            points.append(angle['end'])
+        # points内の重複値を削除
+        points = list({(d['lat'], d['lng']): d for d in points}.values())
+        
+        # pointsから距離(m)を計算
+        distance = 0
+        for i in range(len(points) - 1):
+            start = (points[i]['lat'], points[i]['lng'])
+            end = (points[i+1]['lat'], points[i+1]['lng'])
+            distance = geodesic(start, end).meters
+            distance += distance
+        datas.append({
+            'angle': angle_abc,
+            'direction': direction_abc,
+            'points': points,
+            'distance': distance
+        })
+        # print('turn:')
+        # print(turn)
+        # print('distance: ')
+        # print(distance)
 
-    # print(turns)
+        # print(angle, direction, (max_angle_point['center']['lng'], max_angle_point['center']['lat']))
+        # print('turn: ')
+        # print(turn)
+    
+    print(datas)
+    
     # matplotlibを使用して描画
     fig, ax = plt.subplots()
-    gpd.GeoSeries(first_geometry).plot(ax=ax)
-    ax.set_title("First Geometry Plot")
+    
+    # first_geometryを背面に表示
+    gpd.GeoSeries(first_geometry).plot(ax=ax, color='black', alpha=0.01)
+    
+     # カラーマップと正規化
+    cmap_right = plt.get_cmap('Reds')
+    cmap_left = plt.get_cmap('Blues')
+    norm = plt.Normalize(vmin=min(data['angle'] for data in datas),
+                         vmax=max(data['angle'] for data in datas))
+
+    # turnsのpointsを表示する
+    for data in datas:
+        points = data['points']
+        if data['direction'] == 'right':
+            color = cmap_right(norm(data['angle']))
+        elif data['direction'] == 'left':
+            color = cmap_left(norm(data['angle']))
+        else:
+            color = 'grey'  # その他の方向の場合はグレー
+        lat, lng = zip(*[(point['lat'], point['lng']) for point in points])
+        ax.plot(lng, lat, color=color, linewidth=2)  # sはマーカーのサイズ
+
+    plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap_right), ax=ax, label='Angle (degrees)')
     plt.show()
 
     return gdf
