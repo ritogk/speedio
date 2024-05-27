@@ -2,8 +2,8 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.m
 import { OrbitControls } from "https://unpkg.com/three@0.164.1/examples/jsm/controls/OrbitControls.js";
 
 export const draw3D = (coordinates, elevations) => {
-  const width = 1400;
-  const height = 1400;
+  const width = 1800;
+  const height = 1100;
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
 
@@ -12,7 +12,7 @@ export const draw3D = (coordinates, elevations) => {
   document.getElementById("road3DArea").appendChild(renderer.domElement);
   // Z軸が上になるようにカメラの向きを設定
   camera.up.set(0, 0, 1);
-  camera.position.set(200, 200, 200); // Z軸を真上から見る。
+  camera.position.set(200, 200, 100); // Z軸を真上から見る。
   camera.lookAt(0, 0, 0); // 原点を見る
 
   const axesHelper = new THREE.AxesHelper(100); // 軸の長さを指定
@@ -23,9 +23,10 @@ export const draw3D = (coordinates, elevations) => {
   controls.dampingFactor = 0.25;
 
   // 描画処理
-  const baseX = coordinates[0][0]; // 0番目の座標を基準に
-  const baseY = coordinates[0][1]; // 0番目の座標を基準に
-  const baseZ = elevations[0]; // 0番目の座標を基準に
+  const centerIndex = Math.floor(coordinates.length / 2 - 1);
+  const baseX = coordinates[centerIndex][0]; // 0番目の座標を基準に
+  const baseY = coordinates[centerIndex][1]; // 0番目の座標を基準に
+  const baseZ = elevations[centerIndex]; // 0番目の座標を基準に
   const points = coordinates.map((coord, index) => {
     const x = (coord[1] - baseY) / 10; // coordinates[0]のX座標を基準に
     const y = (coord[0] - baseX) / 10; // coordinates[0]のY座標を基準に
@@ -98,10 +99,43 @@ export const draw3D = (coordinates, elevations) => {
   // シーンへの追加
   scene.add(line);
 
+  const maxZIndex = elevations.indexOf(Math.max(...elevations));
+  const minZIndex = elevations.indexOf(Math.min(...elevations));
+  const maxZPoint = points[maxZIndex];
+  const minZPoint = points[minZIndex];
+  function addVerticalLineToZero(point, scene, color) {
+    const material = new THREE.LineBasicMaterial({ color: color });
+    const points = [];
+    points.push(new THREE.Vector3(point.x, point.y, point.z));
+    points.push(new THREE.Vector3(point.x, point.y, 0));
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const line = new THREE.Line(geometry, material);
+    scene.add(line);
+  }
+
+  function addLineToOriginFromZero(point, scene, color) {
+    const material = new THREE.LineBasicMaterial({ color: color });
+    const points = [];
+    points.push(new THREE.Vector3(point.x, point.y, 0));
+    points.push(new THREE.Vector3(0, 0, 0));
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const line = new THREE.Line(geometry, material);
+    scene.add(line);
+  }
+
+  addVerticalLineToZero(maxZPoint, scene, 0xff00ff);
+  // addLineToOriginFromZero(maxZPoint, scene, 0x00ff00);
+  addVerticalLineToZero(minZPoint, scene, 0xffff00);
+  // addLineToOriginFromZero(minZPoint, scene, 0x00ff00); // 緑色
+
   // Render loop
   function animate() {
     requestAnimationFrame(animate);
     controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+    // x座標に対して回転
+    scene.rotation.z += 0.01;
     renderer.render(scene, camera);
   }
 
