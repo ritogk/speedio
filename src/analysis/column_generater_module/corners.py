@@ -5,12 +5,12 @@ from geopy.distance import geodesic
 def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
         coords = row['geometry'].coords
+        # 3点の座標から角度とベクトル(左右)を計算
         results = []
         for i in range(1, len(coords) - 1):
             angle, direction = calculate_angle_between_vectors(
                 coords[i - 1], coords[i], coords[i + 1]
             )
-            ## ここstartとかendとかなくてもよいか・・・？
             result = {
                 'start': {'lat': coords[i - 1][1], 'lng': coords[i - 1][0]},
                 'center': {'lat': coords[i][1], 'lng': coords[i][0]},
@@ -19,55 +19,34 @@ def generate(gdf: GeoDataFrame) -> Series:
                 'horizontalVector': direction
             }
             results.append(result)
-
-        # 同angleのデータが3つ以上連続していないデータを削除する
-        filtered_results = []
-        count = 1
-        for i in range(1, len(results)):
-            if results[i]['horizontalVector'] == results[i - 1]['horizontalVector']:
-                count += 1
-            else:
-                if count >= 3:
-                    filtered_results.extend(results[i - count:i])
-                count = 1
-        # 最後のグループをチェック
-        if count >= 3:
-            filtered_results.extend(results[-count:])
         
-        target = filtered_results
-        turns = []
+        # 先頭からベクトル毎にグループ化
+        target = results
+        corners = []
         old_horizontal_vector = target[0]['horizontalVector']
-        turn = [target[0]]
+        corner = [target[0]]
         for i in range(1, len(target)):
             if target[i]['horizontalVector'] == old_horizontal_vector:
-                turn.append(target[i])
+                corner.append(target[i])
             else:
-                turns.append(turn)
-                turn = [target[i]]
+                corners.append(corner)
+                corner = [target[i]]
                 old_horizontal_vector = target[i]['horizontalVector']
-        turns.append(turn)
-
+        corners.append(corner)
         
         datas = []
-        for turn in turns:
-            max_angle = 0
-            # ★ここがおかしいような気がする。
-            max_angle_point = max(turn, key=lambda x: x['angle'])
-            # print(max_angle_point['center'])
-            # turnの始点と最大角度の座標と終点の間の角度を求める。
+        for corner in corners:
+            max_angle_point = max(corner, key=lambda x: x['angle'])
+
+            # cornerの「始点」と「最大角度の座標」と「終点」間の角度を求める。
             angle_abc, direction_abc = calculate_angle_between_vectors(
-                    (turn[0]['start']['lng'], turn[0]['start']['lat']),
+                    (corner[0]['start']['lng'], corner[0]['start']['lat']),
                     (max_angle_point['center']['lng'], max_angle_point['center']['lat']),
-                    (turn[-1]['end']['lng'], turn[-1]['end']['lat'])
+                    (corner[-1]['end']['lng'], corner[-1]['end']['lat'])
                 )
-            if max_angle_point['center'] == {'lat': 35.3799484, 'lng': 136.9993582}:
-                print(angle_abc, direction_abc)
-                print(turn[0]['start']['lng'], turn[0]['start']['lat'])
-                print(max_angle_point['center']['lng'], max_angle_point['center']['lat'])
-                print(turn[-1]['end']['lng'], turn[-1]['end']['lat'])
-            # 角度用の座標から１コーナーのpointsを作成
+            # コーナー内の座標をつなげる。
             points = []
-            for angle in turn:
+            for angle in corner:
                 points.append(angle['start'])
                 points.append(angle['center'])
                 points.append(angle['end'])
@@ -86,6 +65,9 @@ def generate(gdf: GeoDataFrame) -> Series:
                 'points': points,
                 'distance': distance
             })
+
+            # angleが25以下のデータを削除
+            datas = [data for data in datas if data['angle'] > 20]
         return datas
 
     series = gdf.apply(func, axis=1)
