@@ -33,6 +33,18 @@ export const generateHtml = (x) => {
               <td>score_length</td>
               <td>${truncateToTwoDecimals(x.score_length)}</td>
           </tr>
+          <tr>
+              <td>score_high_speed_corner</td>
+              <td>${truncateToTwoDecimals(x.score_high_speed_corner)}</td>
+          </tr>
+          <tr>
+              <td>score_medium_speed_corner</td>
+              <td>${truncateToTwoDecimals(x.score_medium_speed_corner)}</td>
+          </tr>
+          <tr>
+              <td>score_low_speed_corner</td>
+              <td>${truncateToTwoDecimals(x.score_low_speed_corner)}</td>
+          </tr>
         </table>
         <button onclick="document.getElementById('road3DArea').hidden=false;">3D</button>
         <div id="road3DArea" style="height:300px" hidden>

@@ -117,9 +117,9 @@ export const draw = () => {
   const top10 = targets
     .sort((a, b) => b.score_normalization - a.score_normalization)
     .slice(0, 10);
-  console.log(JSON.stringify(top10[0].elevation));
-  console.log(JSON.stringify(top10[0].geometry_meter_list));
-  console.log(JSON.stringify(top10[0].score_normalization));
+  // console.log(JSON.stringify(top10[0].elevation));
+  // console.log(JSON.stringify(top10[0].geometry_meter_list));
+  // console.log(JSON.stringify(top10[0].score_normalization));
   top10.forEach((x, index) => {
     const center = Math.ceil(x.geometry_list.length / 2);
     const marker = L.marker(x.geometry_list[center], {
@@ -175,17 +175,47 @@ const calcScore = (targets) => {
     angle: Number(document.getElementById("weightAngle").value),
     width: Number(document.getElementById("weightWidth").value),
     length: Number(document.getElementById("weightLength").value),
+    high_speed_corner: Number(
+      document.getElementById("wightHighSpeedCorner").value
+    ),
+    medium_speed_corner: Number(
+      document.getElementById("wightMediumSpeedCorner").value
+    ),
+    low_speed_corner: Number(
+      document.getElementById("wightLowSpeedCorner").value
+    ),
   };
 
   // スコア計算
   targets = targets.map((x) => {
+    // 高速コーナー、中速コーナー、低速コーナーのスコアを計算
+
+    x.score_high_speed_corner =
+      x.corners
+        .filter((corner) => corner.angle >= 25 && corner.angle <= 45)
+        .reduce((accumulator, item) => accumulator + item.distance, 0) /
+      x.length;
+    x.score_medium_speed_corner =
+      x.corners
+        .filter((corner) => corner.angle >= 46 && corner.angle <= 60)
+        .reduce((accumulator, item) => accumulator + item.distance, 0) /
+      x.length;
+    x.score_low_speed_corner =
+      x.corners
+        .filter((corner) => corner.angle >= 61)
+        .reduce((accumulator, item) => accumulator + item.distance, 0) /
+      x.length;
+
     x.score =
       (x.score_elevation * WEIGHTS["elevation"] +
         (1 - x.score_elevation_over_heiht * WEIGHTS["elvation_over_height"]) +
         x.score_elevation_u_shape * WEIGHTS["elevation_u_shape"] +
         x.score_angle * WEIGHTS["angle"] +
         x.score_width * WEIGHTS["width"] +
-        x.score_length * WEIGHTS["length"]) /
+        x.score_length * WEIGHTS["length"] +
+        x.score_high_speed_corner * WEIGHTS["high_speed_corner"] +
+        x.score_medium_speed_corner * WEIGHTS["medium_speed_corner"] +
+        x.score_low_speed_corner * WEIGHTS["low_speed_corner"]) /
       Object.keys(WEIGHTS).length;
     return x;
   });
