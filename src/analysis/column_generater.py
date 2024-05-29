@@ -26,3 +26,4 @@ from .column_generater_module import street_view_url_list
 from .column_generater_module import score
 from .column_generater_module import eye_measured_width
 from .column_generater_module import geometry_meter_list
+from .column_generater_module import corners
