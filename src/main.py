@@ -231,6 +231,13 @@ def main() -> GeoDataFrame:
     # )
     # excution_timer_ins.stop()
 
+    # コーナーの情報を取得する
+    excution_timer_ins.start("calc corners")
+    gdf_edges["corners"] = column_generater.corners.generate(
+        gdf_edges
+    )
+    excution_timer_ins.stop()
+
     # スコアを求める
     excution_timer_ins.start("calc score")
     gdf_edges["score_elevation_over_heiht"] = (
@@ -318,6 +325,7 @@ def main() -> GeoDataFrame:
         "alpsmap_avg_width",
         "turn_candidate_points",
         "turn_points",
+        "corners",
         # "eye_measured_width",
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
