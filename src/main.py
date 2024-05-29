@@ -250,6 +250,7 @@ def main() -> GeoDataFrame:
     gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
     gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
+    gdf_edges["score_corner"] = column_generater.score_corner.generate(gdf_edges)
     excution_timer_ins.stop()
 
     # google map urlを生成する
@@ -313,6 +314,7 @@ def main() -> GeoDataFrame:
         "score_angle",
         "score_width",
         "score_length",
+        "score_corner",
         "google_map_url",
         "google_earth_url",
         "street_view_url_list",

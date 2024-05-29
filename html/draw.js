@@ -188,24 +188,6 @@ const calcScore = (targets) => {
 
   // スコア計算
   targets = targets.map((x) => {
-    // 高速コーナー、中速コーナー、低速コーナーのスコアを計算
-
-    x.score_high_speed_corner =
-      x.corners
-        .filter((corner) => corner.angle >= 25 && corner.angle <= 45)
-        .reduce((accumulator, item) => accumulator + item.distance, 0) /
-      x.length;
-    x.score_medium_speed_corner =
-      x.corners
-        .filter((corner) => corner.angle >= 46 && corner.angle <= 60)
-        .reduce((accumulator, item) => accumulator + item.distance, 0) /
-      x.length;
-    x.score_low_speed_corner =
-      x.corners
-        .filter((corner) => corner.angle >= 61)
-        .reduce((accumulator, item) => accumulator + item.distance, 0) /
-      x.length;
-
     x.score =
       (x.score_elevation * WEIGHTS["elevation"] +
         (1 - x.score_elevation_over_heiht * WEIGHTS["elvation_over_height"]) +
@@ -213,9 +195,9 @@ const calcScore = (targets) => {
         x.score_angle * WEIGHTS["angle"] +
         x.score_width * WEIGHTS["width"] +
         x.score_length * WEIGHTS["length"] +
-        x.score_high_speed_corner * WEIGHTS["high_speed_corner"] +
-        x.score_medium_speed_corner * WEIGHTS["medium_speed_corner"] +
-        x.score_low_speed_corner * WEIGHTS["low_speed_corner"]) /
+        x.score_corner.high_speed_corner * WEIGHTS["high_speed_corner"] +
+        x.score_corner.medium_speed_corner * WEIGHTS["medium_speed_corner"] +
+        x.score_corner.low_speed_corner * WEIGHTS["low_speed_corner"]) /
       Object.keys(WEIGHTS).length;
     return x;
   });
