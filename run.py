@@ -100,8 +100,7 @@ def run():
         for i in range(len(points) - 1):
             start = (points[i]['lat'], points[i]['lng'])
             end = (points[i+1]['lat'], points[i+1]['lng'])
-            distance = geodesic(start, end).meters
-            distance += distance
+            distance += geodesic(start, end).meters
         datas.append({
             'angle': angle_abc,
             'direction': direction_abc,
