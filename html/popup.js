@@ -35,19 +35,15 @@ export const generateHtml = (x) => {
           </tr>
           <tr>
               <td>score_high_speed_corner</td>
-              <td>${truncateToTwoDecimals(
-                x.score_corner.high_speed_corner
-              )}</td>
+              <td>${truncateToTwoDecimals(x.score_high_speed_corner)}</td>
           </tr>
           <tr>
               <td>score_medium_speed_corner</td>
-              <td>${truncateToTwoDecimals(
-                x.score_corner.medium_speed_corner
-              )}</td>
+              <td>${truncateToTwoDecimals(x.score_medium_speed_corner)}</td>
           </tr>
           <tr>
               <td>score_low_speed_corner</td>
-              <td>${truncateToTwoDecimals(x.score_corner.low_speed_corner)}</td>
+              <td>${truncateToTwoDecimals(x.score_low_speed_corner)}</td>
           </tr>
         </table>
         <button onclick="document.getElementById('road3DArea').hidden=false;">3D</button>
