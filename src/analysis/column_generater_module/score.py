@@ -6,9 +6,12 @@ WEIGHTS = {
     "elevation": 0.8,  
     "elvation_over_height": 1.0,  
     "elevation_u_shape": 1.0,  
-    "angle": 1.0,  
-    "width": 1.0,
-    "length": 0.5,  
+    "angle": 0,  
+    "width": 0,
+    "length": 0.5, 
+    "high_speed_corner": 0,
+    "medium_speed_corner": 1,
+    "low_speed_corner": 0,
 }
 
 
@@ -24,6 +27,9 @@ def generate(gdf: GeoDataFrame) -> Series:
             + x["score_angle"] * WEIGHTS["angle"]
             + x["score_width"] * WEIGHTS["width"]
             + x["score_length"] * WEIGHTS["length"]
+            + x["score_high_speed_corner"] * WEIGHTS["high_speed_corner"]
+            + x["score_medium_speed_corner"] * WEIGHTS["medium_speed_corner"]
+            + x["score_low_speed_corner"] * WEIGHTS["low_speed_corner"]
         ) / len(WEIGHTS)
 
     series = gdf.apply(func, axis=1)

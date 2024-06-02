@@ -195,9 +195,9 @@ const calcScore = (targets) => {
         x.score_angle * WEIGHTS["angle"] +
         x.score_width * WEIGHTS["width"] +
         x.score_length * WEIGHTS["length"] +
-        x.score_corner.high_speed_corner * WEIGHTS["high_speed_corner"] +
-        x.score_corner.medium_speed_corner * WEIGHTS["medium_speed_corner"] +
-        x.score_corner.low_speed_corner * WEIGHTS["low_speed_corner"]) /
+        x.score_high_speed_corner * WEIGHTS["high_speed_corner"] +
+        x.score_medium_speed_corner * WEIGHTS["medium_speed_corner"] +
+        x.score_low_speed_corner * WEIGHTS["low_speed_corner"]) /
       Object.keys(WEIGHTS).length;
     return x;
   });
