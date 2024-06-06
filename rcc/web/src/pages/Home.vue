@@ -129,6 +129,7 @@ const handlePointMove = (index: number) => {
   updateMapMarker(selectedGeometryPoint.value)
 }
 
+let oldPano = ''
 /**
  * street-viewの更新
  */
@@ -139,16 +140,24 @@ const updatePanorama = (selectedGeometryPoint: PointType) => {
       selectedGeometryPoint
     ) + 1
   const nextPoint = originalGeometries.value[selectedGeometryIndex.value][nextIndex]
-  panorama = new google.maps.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
-    position: {
+  if (panorama) {
+    panorama.setPosition({
       lat: selectedGeometryPoint.latitude,
       lng: selectedGeometryPoint.longitude
-    },
-    pov: {
+    })
+
+    // 直前の画像と変わったかどうかを判定
+    if (oldPano === panorama.getLocation().pano) {
+      alert('画像がありません。')
+      return
+    }
+    oldPano = panorama.getLocation().pano
+
+    panorama.setPov({
       heading: calculateHeading(selectedGeometryPoint, nextPoint),
       pitch: 10
-    }
-  })
+    })
+  }
 }
 
 /**
