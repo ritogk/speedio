@@ -7,11 +7,11 @@ WEIGHTS = {
     "elvation_over_height": 1.0,  
     "elevation_u_shape": 1.0,  
     "angle": 0,  
-    "width": 0,
+    "width": 1,
     "length": 0.5, 
-    "high_speed_corner": 0,
-    "medium_speed_corner": 1,
-    "low_speed_corner": 0,
+    "high_speed_corner": 0.5,
+    "medium_speed_corner": 0.5,
+    "low_speed_corner": 0.5,
 }
 
 
