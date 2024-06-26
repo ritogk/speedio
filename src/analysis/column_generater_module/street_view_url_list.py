@@ -3,10 +3,11 @@ from pandas import Series
 from shapely.geometry import LineString, Point
 from geopy.distance import geodesic
 
-
+# 愛知は250m間隔で計測。ほかは500m間隔で計測
+INTERVAL = 500
 def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
-        segments = interpolate_points(row.geometry, 500, row.length)
+        segments = interpolate_points(row.geometry, INTERVAL, row.length)
         return [[segment[1], segment[0]] for segment in segments]   
 
     series = gdf.apply(func, axis=1)
