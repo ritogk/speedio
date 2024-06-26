@@ -1,6 +1,7 @@
 from .core.excution_timer import ExcutionTimer, ExcutionType
 from .analysis import graph_feather
 from .analysis import graph_all_feather
+from .analysis import graph_tunnel_feather
 from .analysis import column_generater
 from .analysis import remover
 import osmnx as ox
@@ -8,6 +9,8 @@ from geopandas import GeoDataFrame
 import os
 from .core.env import getEnv
 from datetime import datetime
+
+import matplotlib.pyplot as plt
 
 from .analysis.turn_edge_spliter import split
 
@@ -120,6 +123,33 @@ def main() -> GeoDataFrame:
     excution_timer_ins.start("calc elevation")
     gdf_edges["elevation"] = column_generater.elevation.generate(gdf_edges, tif_path)
     excution_timer_ins.stop()
+
+    # トンネルのデータを取得する
+    excution_timer_ins.start("load osm tunnel data", ExcutionType.FETCH)
+    graph_tunnel = graph_tunnel_feather.fetch_graph(
+        point_st[0], point_st[1], point_ed[0], point_ed[1]
+    )
+    gdf_tunnel_edges = ox.graph_to_gdfs(graph_tunnel, nodes=False, edges=True)
+    excution_timer_ins.stop()
+
+    excution_timer_ins.start("remove reverse edge")
+    count = len(gdf_tunnel_edges)
+    gdf_tunnel_edges = remover.reverse_edge.remove(gdf_tunnel_edges)
+    print(f"  row: {count}, deleted: {count - len(gdf_tunnel_edges)}")
+    excution_timer_ins.stop()
+
+    # トンネル内の標高を調整する
+    excution_timer_ins.start("calc elevation_tunnel_regulator")
+    gdf_edges["elevation"] = column_generater.elevation_tunnel_regulator.generate(
+        gdf_edges, gdf_tunnel_edges, tif_path
+    )
+    excution_timer_ins.stop()
+
+    # fig, ax = plt.subplots(figsize=(10, 10))
+    # ax.set_facecolor('black')  # 背景色を黒に設定
+    # ox.plot_graph(graph_tunnel, ax=ax, bgcolor='black', edge_color='red', node_size=5, show=False, close=False, edge_linewidth=5) 
+    # ox.plot_graph(graph, ax=ax, bgcolor='black', edge_color='blue', node_size=0, show=False, close=False)
+    # plt.show()
 
     # 標高の平準化を行う
     excution_timer_ins.start("calc elevation_smooth")
@@ -249,8 +279,8 @@ def main() -> GeoDataFrame:
     # gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
     gdf_edges["score_angle"] = 1
     gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
-    # gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
-    gdf_edges["score_width"] = 1
+    gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
+    # gdf_edges["score_width"] = 1
     score_high_speed_corner, score_medium_speed_corner, score_low_speed_corner = column_generater.score_corner.generate(gdf_edges)
     gdf_edges["score_high_speed_corner"] = score_high_speed_corner
     gdf_edges["score_medium_speed_corner"] = score_medium_speed_corner
