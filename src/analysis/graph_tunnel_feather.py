@@ -1,15 +1,15 @@
 import osmnx as ox
 import networkx as nx
 
-
+# トンネルの情報を取得する
 def fetch_graph(
     latitude_start, longitude_start, latitude_end, longitude_end
 ) -> nx.Graph:
     # キャッシュを使う
     ox.settings.use_cache = True
     ox.settings.log_console = False
-    # 道幅用のタグを追加
-    ox.settings.useful_tags_way += ["yh:WIDTH"] + ["source"] + ["tunnel"]
+    # # 道幅用のタグを追加
+    # ox.settings.useful_tags_way += ["yh:WIDTH"] + ["source"] + ["tunnel"]
 
     graph = ox.graph_from_bbox(
         north=max(latitude_start, latitude_end),
@@ -19,7 +19,7 @@ def fetch_graph(
         network_type="drive",
         simplify=True,
         retain_all=True,
-        custom_filter='["highway"~"secondary|secondary_link|primary|primary_link|trunk|trunk_link|tertiary"]["lanes"!=1]',
+        custom_filter='["highway"~"secondary|secondary_link|primary|primary_link|trunk|trunk_link|tertiary"]["lanes"!=1]["tunnel"="yes"]',
     )
 
     return graph
