@@ -1,4 +1,4 @@
-import target from "./target.json" assert { type: "json" };
+import target from "./target.json" with { type: "json" };
 import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
 import { generateHtml } from "./popup.js";
 import { draw3D } from "./3d.js";
