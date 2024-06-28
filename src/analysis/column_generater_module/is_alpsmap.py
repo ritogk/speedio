@@ -8,6 +8,8 @@ import numpy as np
 def generate(gdf: GeoDataFrame) -> Series:
     if "source" not in gdf.columns:
         return np.zeros(len(gdf), dtype=int)
+    if "yh:WIDTH" not in gdf.columns:
+        return np.zeros(len(gdf), dtype=int)
 
     # yh:WIDTHタグが存在していて、YahooJapan/ALPSMAPのデータを含む場合は、alpsmapの道幅を持っている。
     def format(x) -> int:
