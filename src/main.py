@@ -364,6 +364,7 @@ def main() -> GeoDataFrame:
         "turn_candidate_points",
         "turn_points",
         "corners",
+        "tunnel"
         # "eye_measured_width",
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
