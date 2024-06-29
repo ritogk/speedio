@@ -1,10 +1,8 @@
 from geopandas import GeoDataFrame, GeoSeries
 from pandas import Series
 import numpy as np
-from shapely.geometry import Point, LineString, MultiLineString
+from shapely.geometry import Point
 from typing import List, Tuple
-from shapely import get_parts
-from shapely.ops import nearest_points
 
 # トンネル内の標高を調整する
 # 問題: 現状標高は地球表面の形状の値なためトンネル区間の標高値が道の値ではなく山の値になってしまっている。
@@ -28,9 +26,8 @@ def generate(gdf: GeoDataFrame, tunnel_edges: GeoDataFrame, tif_path: str) -> Se
             num_match_coords = sum([1 for coord in tunnel_edge.geometry.coords if coord in base_edge_coords])
             if num_match_coords >= 2:
                 target_tunnels_index_list.append(idx)
-        # 本来ありえないと思うが対象のトンネルがない場合はそのまま返す
         if len(target_tunnels_index_list) == 0:
-            print("★ 対象のトンネルがみつかりませんでした。")
+            # print("★ 対象のトンネルなし。多分対象のエッジ外のトンネルしかない状態だと思う。")
             return row['elevation']
         target_tunnels_edges = tunnels_edges_in_bbox.loc[target_tunnels_index_list]
 
@@ -56,18 +53,15 @@ def generate(gdf: GeoDataFrame, tunnel_edges: GeoDataFrame, tif_path: str) -> Se
                 end_value = arr[end_idx]
                 # linspaceで保管する点数を決定
                 num_points = end_idx - start_idx + 1
-                print(f'start_value: {start_value} end_value: {end_value} num_points: {num_points}')
+                # print(f'start_value: {start_value} end_value: {end_value} num_points: {num_points}')
                 interpolated_values = np.linspace(start_value, end_value, num_points)
                 # 元の配列に線形補間した値を代入 ★ここでデータが増えちゃってておかしくなってるっぽい。(2024/06/28)
                 interpolated_values_list = list(interpolated_values)
                 for i, value in enumerate(interpolated_values_list):
                     arr[start_idx + i] = value
                 return arr
-            print("★★調整したよ")
             # トンネルの始点と終点が線形になるように標高を調整
-            # ★ここでデータが増えちゃってておかしくなってるっぽい。(2024/06/28)
             elevation_adjusted = linear_interpolation(elevation_adjusted, start_idx, end_idx)
-            # print(elevation_adjusted)
         return elevation_adjusted
 
     results = gdf.apply(func, axis=1)
