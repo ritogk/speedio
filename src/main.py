@@ -36,6 +36,9 @@ def main() -> GeoDataFrame:
     # gdf_edgesにlanes列がない場合は追加する
     if "lanes" not in gdf_edges.columns:
         gdf_edges["lanes"] = 1
+    # gdf_edgesにtunnel列がない場合は追加する
+    if "tunnel" not in gdf_edges.columns:
+        gdf_edges["tunnel"] = None
 
     excution_timer_ins.start("remove reverse edge")
     count = len(gdf_edges)
@@ -129,21 +132,23 @@ def main() -> GeoDataFrame:
     graph_tunnel = graph_tunnel_feather.fetch_graph(
         point_st[0], point_st[1], point_ed[0], point_ed[1]
     )
-    gdf_tunnel_edges = ox.graph_to_gdfs(graph_tunnel, nodes=False, edges=True)
+    if graph_tunnel is not None:
+        gdf_tunnel_edges = ox.graph_to_gdfs(graph_tunnel, nodes=False, edges=True)
     excution_timer_ins.stop()
 
-    excution_timer_ins.start("remove reverse edge")
-    count = len(gdf_tunnel_edges)
-    gdf_tunnel_edges = remover.reverse_edge.remove(gdf_tunnel_edges)
-    print(f"  row: {count}, deleted: {count - len(gdf_tunnel_edges)}")
-    excution_timer_ins.stop()
+    if graph_tunnel is not None:
+        excution_timer_ins.start("remove reverse edge")
+        count = len(gdf_tunnel_edges)
+        gdf_tunnel_edges = remover.reverse_edge.remove(gdf_tunnel_edges)
+        print(f"  row: {count}, deleted: {count - len(gdf_tunnel_edges)}")
+        excution_timer_ins.stop()
 
-    # トンネル内の標高を調整する
-    excution_timer_ins.start("calc elevation_tunnel_regulator")
-    gdf_edges["elevation"] = column_generater.elevation_tunnel_regulator.generate(
-        gdf_edges, gdf_tunnel_edges, tif_path
-    )
-    excution_timer_ins.stop()
+        # トンネル内の標高を調整する
+        excution_timer_ins.start("calc elevation_tunnel_regulator")
+        gdf_edges["elevation"] = column_generater.elevation_tunnel_regulator.generate(
+            gdf_edges, gdf_tunnel_edges, tif_path
+        )
+        excution_timer_ins.stop()
 
     # fig, ax = plt.subplots(figsize=(10, 10))
     # ax.set_facecolor('black')  # 背景色を黒に設定
