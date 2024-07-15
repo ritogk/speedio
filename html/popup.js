@@ -126,6 +126,10 @@ export const generateHtml = (x) => {
               <td>tunnel</td>
               <td>${x.tunnel}</td>
           </tr>
+          <tr>
+              <td>bridge</td>
+              <td>${x.bridge}</td>
+          </tr>
         </table>
 
 

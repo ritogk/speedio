@@ -2,6 +2,7 @@ from .core.excution_timer import ExcutionTimer, ExcutionType
 from .analysis import graph_feather
 from .analysis import graph_all_feather
 from .analysis import graph_tunnel_feather
+from .analysis import graph_bridge_feather
 from .analysis import column_generater
 from .analysis import remover
 import osmnx as ox
@@ -149,6 +150,30 @@ def main() -> GeoDataFrame:
             gdf_edges, gdf_tunnel_edges, tif_path
         )
         excution_timer_ins.stop()
+    
+    # 橋のデータを取得する
+    excution_timer_ins.start("load osm bridge data", ExcutionType.FETCH) 
+    graph_bridge = graph_bridge_feather.fetch_graph(
+        point_st[0], point_st[1], point_ed[0], point_ed[1]
+    )
+    if graph_bridge is not None:
+        gdf_bridge_edges = ox.graph_to_gdfs(graph_bridge, nodes=False, edges=True)
+    excution_timer_ins.stop()
+
+    if graph_bridge is not None:
+        excution_timer_ins.start("remove reverse edge")
+        count = len(gdf_bridge_edges)
+        gdf_bridge_edges = remover.reverse_edge.remove(gdf_bridge_edges)
+        print(f"  row: {count}, deleted: {count - len(gdf_bridge_edges)}")
+        excution_timer_ins.stop()
+
+        # 橋の標高を調整する
+        excution_timer_ins.start("calc elevation_bridge_regulator")
+        gdf_edges["elevation"] = column_generater.elevation_bridge_regulator.generate(
+            gdf_edges, gdf_bridge_edges
+        )
+        excution_timer_ins.stop()
+    
 
     # fig, ax = plt.subplots(figsize=(10, 10))
     # ax.set_facecolor('black')  # 背景色を黒に設定
@@ -369,7 +394,8 @@ def main() -> GeoDataFrame:
         "turn_candidate_points",
         "turn_points",
         "corners",
-        "tunnel"
+        "tunnel",
+        "bridge"
         # "eye_measured_width",
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
