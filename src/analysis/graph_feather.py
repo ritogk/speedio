@@ -9,7 +9,7 @@ def fetch_graph(
     ox.settings.use_cache = True
     ox.settings.log_console = False
     # 道幅用のタグを追加
-    ox.settings.useful_tags_way += ["yh:WIDTH"] + ["source"] + ["tunnel"]
+    ox.settings.useful_tags_way += ["yh:WIDTH"] + ["source"] + ["tunnel"] + ["bridge"]
 
     graph = ox.graph_from_bbox(
         north=max(latitude_start, latitude_end),
