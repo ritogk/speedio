@@ -9,9 +9,9 @@ WEIGHTS = {
     "angle": 0,  
     "width": 0,
     "length": 0.5, 
-    "high_speed_corner": 0.5,
-    "medium_speed_corner": 0.5,
-    "low_speed_corner": 0.5,
+    "week_corner": 0.5,
+    "medium_corner": 0.5,
+    "strong_corner": 0.5,
 }
 
 
@@ -27,9 +27,9 @@ def generate(gdf: GeoDataFrame) -> Series:
             + x["score_angle"] * WEIGHTS["angle"]
             + x["score_width"] * WEIGHTS["width"]
             + x["score_length"] * WEIGHTS["length"]
-            + x["score_high_speed_corner"] * WEIGHTS["high_speed_corner"]
-            + x["score_medium_speed_corner"] * WEIGHTS["medium_speed_corner"]
-            + x["score_low_speed_corner"] * WEIGHTS["low_speed_corner"]
+            + x["score_week_corner"] * WEIGHTS["week_corner"]
+            + x["score_medium_corner"] * WEIGHTS["medium_corner"]
+            + x["score_strong_corner"] * WEIGHTS["strong_corner"]
         ) / len(WEIGHTS)
 
     series = gdf.apply(func, axis=1)
