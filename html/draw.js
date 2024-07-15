@@ -175,14 +175,14 @@ const calcScore = (targets) => {
     angle: Number(document.getElementById("weightAngle").value),
     width: Number(document.getElementById("weightWidth").value),
     length: Number(document.getElementById("weightLength").value),
-    high_speed_corner: Number(
-      document.getElementById("wightHighSpeedCorner").value
+    week_corner: Number(
+      document.getElementById("wightWeekCorner").value
     ),
-    medium_speed_corner: Number(
-      document.getElementById("wightMediumSpeedCorner").value
+    medium_corner: Number(
+      document.getElementById("wightMediumCorner").value
     ),
-    low_speed_corner: Number(
-      document.getElementById("wightLowSpeedCorner").value
+    strong_corner: Number(
+      document.getElementById("wightStrongCorner").value
     ),
   };
 
@@ -195,9 +195,9 @@ const calcScore = (targets) => {
         x.score_angle * WEIGHTS["angle"] +
         x.score_width * WEIGHTS["width"] +
         x.score_length * WEIGHTS["length"] +
-        x.score_high_speed_corner * WEIGHTS["high_speed_corner"] +
-        x.score_medium_speed_corner * WEIGHTS["medium_speed_corner"] +
-        x.score_low_speed_corner * WEIGHTS["low_speed_corner"]) /
+        x.score_week_corner * WEIGHTS["week_corner"] +
+        x.score_medium_corner * WEIGHTS["medium_corner"] +
+        x.score_strong_corner * WEIGHTS["strong_corner"]) /
       Object.keys(WEIGHTS).length;
     return x;
   });
