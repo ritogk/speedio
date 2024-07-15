@@ -146,8 +146,8 @@ def main() -> GeoDataFrame:
 
         # トンネル内の標高を調整する
         excution_timer_ins.start("calc elevation_tunnel_regulator")
-        gdf_edges["elevation"] = column_generater.elevation_tunnel_regulator.generate(
-            gdf_edges, gdf_tunnel_edges, tif_path
+        gdf_edges["elevation"] = column_generater.elevation_infra_regulator.generate(
+            gdf_edges, gdf_tunnel_edges, column_generater.elevation_infra_regulator.InfraType.TUNNEL
         )
         excution_timer_ins.stop()
     
@@ -169,8 +169,8 @@ def main() -> GeoDataFrame:
 
         # 橋の標高を調整する
         excution_timer_ins.start("calc elevation_bridge_regulator")
-        gdf_edges["elevation"] = column_generater.elevation_bridge_regulator.generate(
-            gdf_edges, gdf_bridge_edges
+        gdf_edges["elevation"] = column_generater.elevation_infra_regulator.generate(
+            gdf_edges, gdf_bridge_edges, column_generater.elevation_infra_regulator.InfraType.BRIDGE
         )
         excution_timer_ins.stop()
     
