@@ -3,11 +3,11 @@ from pandas import Series
 
 # 定数（DOMから取得する値の代わり）
 WEIGHTS = {
-    "elevation": 0.8,  
+    "elevation": 0.5,  
     "elvation_over_height": 1.0,  
     "elevation_u_shape": 1.0,  
     "angle": 0,  
-    "width": 1,
+    "width": 0,
     "length": 0.5, 
     "high_speed_corner": 0.5,
     "medium_speed_corner": 0.5,
