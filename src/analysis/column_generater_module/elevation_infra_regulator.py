@@ -37,8 +37,8 @@ def generate(gdf: GeoDataFrame, infra_edges: GeoDataFrame, infraType: InfraType)
 
         for i, infra_edge in target_infra_edges.iterrows():
             coords = list(infra_edge.geometry.coords)
-            # 先頭と末尾の座標を表示
-            print(f'st: {coords[0]} ed: {coords[-1]}')
+            # # 先頭と末尾の座標を表示
+            # print(f'st: {coords[0]} ed: {coords[-1]}')
         
         # トンネルの始点と終点が線形になるように標高を調整
         elevation_adjusted = row.elevation.copy()
@@ -57,7 +57,7 @@ def generate(gdf: GeoDataFrame, infra_edges: GeoDataFrame, infraType: InfraType)
                 end_value = arr[end_idx]
                 # linspaceで保管する点数を決定
                 num_points = end_idx - start_idx + 1
-                print(f'start_value: {start_value} end_value: {end_value} num_points: {num_points}')
+                # print(f'start_value: {start_value} end_value: {end_value} num_points: {num_points}')
                 interpolated_values = np.linspace(start_value, end_value, num_points)
                 # 元の配列に線形補間した値を代入 ★ここでデータが増えちゃってておかしくなってるっぽい。(2024/06/28)
                 interpolated_values_list = list(interpolated_values)

@@ -181,9 +181,12 @@ def main() -> GeoDataFrame:
     # ox.plot_graph(graph, ax=ax, bgcolor='black', edge_color='blue', node_size=0, show=False, close=False)
     # plt.show()
 
-    gdf_edges["elevation"] = column_generater.sample.generate(
+    # 国の基準に合わせて傾斜を調整する
+    excution_timer_ins.start("calc elevation_adjuster")
+    gdf_edges["elevation"] = column_generater.elevation_adjuster.generate(
         gdf_edges
     )
+    excution_timer_ins.stop()
 
     # 標高の平準化を行う
     excution_timer_ins.start("calc elevation_smooth")
