@@ -7,10 +7,12 @@ from src.analysis.column_generater_module.core.calculate_angle_between_vectors i
 from geopy.distance import geodesic
 from src.core.env import getEnv
 
+import numpy as np
+
 def run():
     gdf = main()
-
     env = getEnv()
+
     if env["SHOW_HIGH_EVALUATION"]:
         # 先頭のdataframeをセットする
         first_geometry = gdf.iloc[0].geometry
@@ -31,6 +33,8 @@ def run():
         # turnsのpointsを表示する
         for data in datas:
             points = data['points']
+            if data['angle'] < 61:
+                continue
             if data['direction'] == 'right':
                 color = cmap_right(norm(data['angle']))
             elif data['direction'] == 'left':

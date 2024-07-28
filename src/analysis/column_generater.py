@@ -30,3 +30,4 @@ from .column_generater_module import geometry_meter_list
 from .column_generater_module import corners
 from .column_generater_module import elevation_infra_regulator
 from .column_generater_module import elevation_adjuster
+from .column_generater_module import steering_wheel_angle

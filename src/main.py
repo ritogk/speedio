@@ -304,6 +304,13 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
+    # ステアリングホイールの角度を計算する
+    excution_timer_ins.start("calc steering_wheel_angle")
+    gdf_edges["steering_wheel_angle"] = column_generater.steering_wheel_angle.generate(
+        gdf_edges
+    )
+    excution_timer_ins.stop()
+
     # スコアを求める
     excution_timer_ins.start("calc score")
     gdf_edges["score_elevation_over_heiht"] = (
