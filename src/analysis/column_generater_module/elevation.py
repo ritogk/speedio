@@ -17,6 +17,8 @@ def generate(gdf: GeoDataFrame, tif_path: str) -> Series:
             elevation = elevation_service_ins.get_elevation(location[1], location[0])
             if elevation is None:
                 print("elevation is None")
+                # ★ここのデータは表示させないようにさせるべきか・・・？
+                # なんかtifの境界値は0.01みたいな極小の値が帰ってきたような。
                 continue
             # elevations.append({"elevation": elevation, "location": location})
             elevations.append(elevation)
