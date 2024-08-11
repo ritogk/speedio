@@ -123,7 +123,7 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 座標間の標高の変化量を求める
-    tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/../elavation.tif"
+    tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/../elevation.tif"
     excution_timer_ins.start("calc elevation")
     gdf_edges["elevation"] = column_generater.elevation.generate(gdf_edges, tif_path)
     excution_timer_ins.stop()
@@ -197,7 +197,7 @@ def main() -> GeoDataFrame:
 
     # 標高の高さ(最小値と最大値の差)を求める
     excution_timer_ins.start("calc elevation_height")
-    gdf_edges["elevation_height"] = column_generater.elavation_height.generate(
+    gdf_edges["elevation_height"] = column_generater.elevation_height.generate(
         gdf_edges
     )
     excution_timer_ins.stop()
@@ -226,8 +226,8 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
-    excution_timer_ins.start("calc elavation_height_and_length_ratio")
-    gdf_edges["elavation_height_and_length_ratio"] = (
+    excution_timer_ins.start("calc elevation_height_and_length_ratio")
+    gdf_edges["elevation_height_and_length_ratio"] = (
         gdf_edges["elevation_height"] / gdf_edges["length"]
     )
     excution_timer_ins.stop()
@@ -304,13 +304,6 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
-    # ステアリングホイールの角度を計算する
-    excution_timer_ins.start("calc steering_wheel_angle")
-    gdf_edges["steering_wheel_angle"] = column_generater.steering_wheel_angle.generate(
-        gdf_edges
-    )
-    excution_timer_ins.stop()
-
     # スコアを求める
     excution_timer_ins.start("calc score")
     gdf_edges["score_elevation_over_heiht"] = (
@@ -380,7 +373,7 @@ def main() -> GeoDataFrame:
         "elevation_height",
         "elevation_deltas",
         "elevation_deltas_and_length_ratio",
-        "elavation_height_and_length_ratio",
+        "elevation_height_and_length_ratio",
         "elevation_u_shape",
         "elevation_smooth",
         "elevation",

@@ -17,7 +17,7 @@ def generate(gdf: GeoDataFrame) -> Series:
             return 1
 
     # カスタム関数を適用
-    series = gdf["elavation_height_and_length_ratio"].apply(func)
+    series = gdf["elevation_height_and_length_ratio"].apply(func)
     # マイナス値は0とする
     series = series.apply(lambda x: 0 if x < 0 else x)
     return series

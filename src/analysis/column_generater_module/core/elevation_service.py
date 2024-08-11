@@ -12,8 +12,9 @@ class ElevationService:
         epsg = sr.GetAttrValue("AUTHORITY", 1)
         if epsg != "4326":
             print(f"EPSG: {epsg} → EPSG: 4326")
-            warp_options = gdal.WarpOptions(format="GTiff", dstSRS="EPSG:4326")
-            gdal.Warp(tif_path, self.dataset, options=warp_options)
+            # warp_options = gdal.WarpOptions(format="GTiff", dstSRS="EPSG:4326", warpMemoryLimit=46000)
+            # gdal.Warp(tif_path, self.dataset, options=warp_options)
+            gdal.Warp(tif_path, self.dataset)
             self.dataset = gdal.Open(tif_path, gdal.GA_ReadOnly)
 
     def get_elevation(self, lat: int, lon: int) -> int | None:

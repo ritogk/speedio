@@ -68,9 +68,9 @@ export const generateHtml = (x) => {
               )}</td>
           </tr>
           <tr>
-              <td>elavation_height_and_length_ratio</td>
+              <td>elevation_height_and_length_ratio</td>
               <td>${truncateToTwoDecimals(
-                x.elavation_height_and_length_ratio
+                x.elevation_height_and_length_ratio
               )}</td>
           </tr>
           <tr>
