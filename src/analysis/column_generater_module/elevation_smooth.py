@@ -1,6 +1,5 @@
 from geopandas import GeoDataFrame
 from pandas import Series
-from .core import elevetion_service
 import pandas as pd
 
 
