@@ -16,6 +16,7 @@ def run():
     if env["SHOW_HIGH_EVALUATION"]:
         # 先頭のdataframeをセットする
         first_geometry = gdf.iloc[0].geometry
+        print(list(first_geometry.coords))
         datas = gdf.iloc[0].corners
         
         # matplotlibを使用して描画
@@ -33,8 +34,8 @@ def run():
         # turnsのpointsを表示する
         for data in datas:
             points = data['points']
-            if data['angle'] < 61:
-                continue
+            # if data['angle'] < 61:
+            #     continue
             if data['direction'] == 'right':
                 color = cmap_right(norm(data['angle']))
             elif data['direction'] == 'left':
