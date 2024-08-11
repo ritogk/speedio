@@ -13,7 +13,7 @@ def generate(gdf: GeoDataFrame) -> Series:
         # 基準となる緯度を計算（最初の点の緯度を使用）
         ref_lat = coords[0][1]
         # 座標系をメートルに変換
-        points_m = np.array([lat_lon_to_meters(lat, lon, ref_lat) for lon, lat in coords])
+        points_m = np.array([lat_lon_to_meters(lat, lon, ref_lat) for lat, lon in coords])
         for i in range(1, len(coords) - 1):
             p1 = points_m[i - 1]
             p2 = points_m[i]
@@ -22,16 +22,19 @@ def generate(gdf: GeoDataFrame) -> Series:
             try:
                 center, radius = calc_circle_center_and_radius(p1, p2, p3)
                 angle = steering_angle(wheelbase, radius, steering_ratio)
+                # p1, p2, p3の距離を求める
+                distance = np.linalg.norm(p1 - p2) + np.linalg.norm(p2 - p3)
             except ValueError as e:
                 # 3点が直線上にある場合はステアリング角を0とする
                 angle = 0
-            angles_info.append((i, coords[i], angle))
+            angles_info.append((i, coords[i], angle, radius, distance))
         # # 結果を出力
         # for i, coord, angle in angles_info:
         #     print(f"座標 {coord} でのステアリングホイールの回転角度: {angle:.2f} 度")
         return angles_info
     results = gdf.apply(func, axis=1)
     return results
+
 # 緯度経度座標系メートルに変換する
 def lat_lon_to_meters(lat, lon, ref_lat):
     lat_to_m = 111320  # 緯度1度あたりのメートル換算

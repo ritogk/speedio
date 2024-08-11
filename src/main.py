@@ -297,16 +297,16 @@ def main() -> GeoDataFrame:
     # )
     # excution_timer_ins.stop()
 
-    # コーナーの情報を取得する
-    excution_timer_ins.start("calc corners")
-    gdf_edges["corners"] = column_generater.corners.generate(
-        gdf_edges
-    )
-    excution_timer_ins.stop()
-
     # ステアリングホイールの角度を計算する
     excution_timer_ins.start("calc steering_wheel_angle")
     gdf_edges["steering_wheel_angle"] = column_generater.steering_wheel_angle.generate(
+        gdf_edges
+    )
+    excution_timer_ins.stop()
+    
+    # コーナーの情報を取得する
+    excution_timer_ins.start("calc corners")
+    gdf_edges["corners"] = column_generater.corners.generate(
         gdf_edges
     )
     excution_timer_ins.stop()
@@ -409,7 +409,8 @@ def main() -> GeoDataFrame:
         "turn_points",
         "corners",
         "tunnel",
-        "bridge"
+        "bridge",
+        "steering_wheel_angle"
         # "eye_measured_width",
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
