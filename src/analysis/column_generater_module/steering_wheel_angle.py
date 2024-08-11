@@ -22,12 +22,15 @@ def generate(gdf: GeoDataFrame) -> Series:
             try:
                 center, radius = calc_circle_center_and_radius(p1, p2, p3)
                 angle = steering_angle(wheelbase, radius, steering_ratio)
-                # p1, p2, p3の距離を求める
-                distance = np.linalg.norm(p1 - p2) + np.linalg.norm(p2 - p3)
             except ValueError as e:
                 # 3点が直線上にある場合はステアリング角を0とする
-                angle = 0
-            angles_info.append((i, coords[i], angle, radius, distance))
+                angle = 0    
+            # p1, p2, p3の距離を求める
+            distance = np.linalg.norm(p1 - p2) + np.linalg.norm(p2 - p3)
+            direction = calc_direction(p1, p2, p3)
+
+            print(coords[i])
+            angles_info.append({'p_start':coords[i-1], 'p_center': coords[i], 'p_end': coords[i+1], 'steering_angle': angle, 'radius': radius, 'distance': distance, 'direction': direction})
         # # 結果を出力
         # for i, coord, angle in angles_info:
         #     print(f"座標 {coord} でのステアリングホイールの回転角度: {angle:.2f} 度")
@@ -67,3 +70,14 @@ def steering_angle(wheelbase, radius, steering_ratio):
     tire_angle = np.arctan(wheelbase / radius) * (180 / np.pi)  # タイヤの回転角度を度に変換
     steering_wheel_angle = tire_angle * steering_ratio  # ステアリングホイールの回転角度
     return steering_wheel_angle
+
+# 3点の方向を計算
+def calc_direction(p1, p2, p3):
+    det = (p2[0] - p1[0]) * (p3[1] - p2[1]) - (p2[1] - p1[1]) * (p3[0] - p2[0])
+    if det > 0:
+        direction = "left"
+    elif det < 0:
+        direction = "right"
+    else:
+        direction = "straight"
+    return direction
