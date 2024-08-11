@@ -15,19 +15,19 @@ def generate(gdf: GeoDataFrame) -> Series:
         # 座標系をメートルに変換
         points_m = np.array([lat_lon_to_meters(lat, lon, ref_lat) for lat, lon in coords])
         for i in range(1, len(coords) - 1):
-            p1 = points_m[i - 1]
-            p2 = points_m[i]
-            p3 = points_m[i + 1]
+            pm1 = points_m[i - 1]
+            pm2 = points_m[i]
+            pm3 = points_m[i + 1]
             angle = 0
             try:
-                center, radius = calc_circle_center_and_radius(p1, p2, p3)
+                center, radius = calc_circle_center_and_radius(pm1 ,pm2, pm3)
                 angle = steering_angle(wheelbase, radius, steering_ratio)
             except ValueError as e:
                 # 3点が直線上にある場合はステアリング角を0とする
                 angle = 0    
-            # p1, p2, p3の距離を求める
-            distance = np.linalg.norm(p1 - p2) + np.linalg.norm(p2 - p3)
-            direction = calc_direction(p1, p2, p3)
+            # pm1, pm2, pm3の距離を求める
+            distance = np.linalg.norm(pm1 - pm2) + np.linalg.norm(pm2 - pm3)
+            direction = calc_direction(pm1, pm2, pm3)
 
             print(coords[i])
             angles_info.append({'p_start':coords[i-1], 'p_center': coords[i], 'p_end': coords[i+1], 'steering_angle': angle, 'radius': radius, 'distance': distance, 'direction': direction})
@@ -45,23 +45,23 @@ def lat_lon_to_meters(lat, lon, ref_lat):
     return lat * lat_to_m, lon * lon_to_m
 
 # 3点を通る円の中心の座標と半径を計算
-def calc_circle_center_and_radius(p1, p2, p3):
+def calc_circle_center_and_radius(pm1, pm2, pm3):
     # chatgptに作ってもらいました。
-    temp = p2[0]**2 + p2[1]**2
-    bc = (p1[0]**2 + p1[1]**2 - temp) / 2
-    cd = (temp - p3[0]**2 - p3[1]**2) / 2
-    det = (p1[0] - p2[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p2[1])
+    temp = pm2[0]**2 + pm2[1]**2
+    bc = (pm1[0]**2 + pm1[1]**2 - temp) / 2
+    cd = (temp - pm3[0]**2 - pm3[1]**2) / 2
+    det = (pm1[0] - pm2[0]) * (pm2[1] - pm3[1]) - (pm2[0] - pm3[0]) * (pm1[1] - pm2[1])
 
     if abs(det) < 1.0e-10:
         # 3点が直線上にある場合
         raise ValueError("Points are collinear")
 
     # 円の中心 (cx, cy)
-    cx = (bc * (p2[1] - p3[1]) - cd * (p1[1] - p2[1])) / det
-    cy = ((p1[0] - p2[0]) * cd - (p2[0] - p3[0]) * bc) / det
+    cx = (bc * (pm2[1] - pm3[1]) - cd * (pm1[1] - pm2[1])) / det
+    cy = ((pm1[0] - pm2[0]) * cd - (pm2[0] - pm3[0]) * bc) / det
 
     # 半径
-    radius = np.sqrt((cx - p1[0])**2 + (cy - p1[1])**2)
+    radius = np.sqrt((cx - pm1[0])**2 + (cy - pm1[1])**2)
 
     return (cx, cy), radius
 
@@ -72,8 +72,8 @@ def steering_angle(wheelbase, radius, steering_ratio):
     return steering_wheel_angle
 
 # 3点の方向を計算
-def calc_direction(p1, p2, p3):
-    det = (p2[0] - p1[0]) * (p3[1] - p2[1]) - (p2[1] - p1[1]) * (p3[0] - p2[0])
+def calc_direction(pm1, pm2, pm3):
+    det = (pm2[0] - pm1[0]) * (pm3[1] - pm2[1]) - (pm2[1] - pm1[1]) * (pm3[0] - pm2[0])
     if det > 0:
         direction = "left"
     elif det < 0:
