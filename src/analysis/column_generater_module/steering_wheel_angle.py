@@ -1,9 +1,6 @@
 from geopandas import GeoDataFrame
 from pandas import Series
-from .core import elevetion_service
-import pandas as pd
 import numpy as np
-
 
 # 各座標毎のステアリング角を計算する
 def generate(gdf: GeoDataFrame) -> Series:
@@ -21,12 +18,17 @@ def generate(gdf: GeoDataFrame) -> Series:
             p1 = points_m[i - 1]
             p2 = points_m[i]
             p3 = points_m[i + 1]
-            center, radius = calc_circle_center_and_radius(p1, p2, p3)
-            angle = steering_angle(wheelbase, radius, steering_ratio)
+            angle = 0
+            try:
+                center, radius = calc_circle_center_and_radius(p1, p2, p3)
+                angle = steering_angle(wheelbase, radius, steering_ratio)
+            except ValueError as e:
+                # 3点が直線上にある場合はステアリング角を0とする
+                angle = 0
             angles_info.append((i, coords[i], angle))
-        # 結果を出力
-        for i, coord, angle in angles_info:
-            print(f"座標 {coord} でのステアリングホイールの回転角度: {angle:.2f} 度")
+        # # 結果を出力
+        # for i, coord, angle in angles_info:
+        #     print(f"座標 {coord} でのステアリングホイールの回転角度: {angle:.2f} 度")
         return angles_info
     results = gdf.apply(func, axis=1)
     return results
@@ -45,6 +47,7 @@ def calc_circle_center_and_radius(p1, p2, p3):
     det = (p1[0] - p2[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p2[1])
 
     if abs(det) < 1.0e-10:
+        # 3点が直線上にある場合
         raise ValueError("Points are collinear")
 
     # 円の中心 (cx, cy)
