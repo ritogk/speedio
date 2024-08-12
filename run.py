@@ -23,27 +23,26 @@ def run():
         fig, ax = plt.subplots()
         
         # first_geometryを背面に表示
-        gpd.GeoSeries(first_geometry).plot(ax=ax, color='black', alpha=0.01)
+        gpd.GeoSeries(first_geometry).plot(ax=ax, color='black', alpha=0.03)
         
         # カラーマップと正規化
         cmap_right = plt.get_cmap('Reds')
         cmap_left = plt.get_cmap('Blues')
-        norm = plt.Normalize(vmin=min(data['angle'] for data in datas),
-                            vmax=max(data['angle'] for data in datas))
-
+        norm = plt.Normalize(vmin=min(data['max_steering_angle'] for data in datas),
+                            vmax=max(data['max_steering_angle'] for data in datas))
         # turnsのpointsを表示する
         for data in datas:
             points = data['points']
-            # if data['angle'] < 61:
+            # if data['max_steering_angle'] < 61:
             #     continue
-            if data['direction'] == 'right':
-                color = cmap_right(norm(data['angle']))
-            elif data['direction'] == 'left':
-                color = cmap_left(norm(data['angle']))
+            if data['steering_direction'] == 'right':
+                color = cmap_right(norm(data['max_steering_angle']))
+            elif data['steering_direction'] == 'left':
+                color = cmap_left(norm(data['max_steering_angle']))
             else:
                 color = 'grey'  # その他の方向の場合はグレー
-            lat, lng = zip(*[(point['lat'], point['lng']) for point in points])
-            ax.plot(lng, lat, color=color, linewidth=2)  # sはマーカーのサイズ
+            x, y = zip(*points)
+            ax.plot(x, y, color=color, linewidth=2)  # 折れ線を描画
 
         plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap_right), ax=ax, label='Angle (degrees)')
         plt.show()
