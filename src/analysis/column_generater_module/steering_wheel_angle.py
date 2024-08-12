@@ -23,17 +23,28 @@ def generate(gdf: GeoDataFrame) -> Series:
             try:
                 center, radius = calc_circle_center_and_radius(p1 ,p2, p3)
                 angle = steering_angle(wheelbase, radius, steering_ratio)
+                # 一般的はステアリングがまっすぐの状態で左右に1.7回転切れる。よって片側の回転角度の最大値は612度。
+                # osmのラインの形状がおかしいと思われるので、一旦異常値いとして扱う。
+                if angle > 500:
+                    print(f"ステアリング角が異常値です。ステアリング角: {angle}, 座標: {coords[i]}")
+                    # 一旦以上値を10度にしておく
+                    angle = 10
             except ValueError as e:
                 # 3点が直線上にある場合はステアリング角を0とする
-                angle = 0    
+                angle = 0
             # p1, p2, p3の距離を求める
             distance = np.linalg.norm(p1 - p2) + np.linalg.norm(p2 - p3)
             direction = calc_direction(p1, p2, p3)
-
-            angles_info.append({'p_start':coords[i-1], 'p_center': coords[i], 'p_end': coords[i+1], 'steering_angle': angle, 'radius': radius, 'distance': distance, 'direction': direction})
-        # 結果を出力
-        for info in angles_info:
-            print(f"座標 {info['p_center']} でのステアリングホイールの回転角度: {info['steering_angle']:.2f} 度")
+            angles_info.append({'start':coords[i-1],
+                                'center': coords[i],
+                                'end': coords[i+1],
+                                'steering_angle': angle,
+                                'radius': radius,
+                                'distance': distance,
+                                'direction': direction})
+        # # 結果を出力
+        # for info in angles_info:
+        #     print(f"座標 {info['center']} でのステアリングホイールの回転角度: {info['steering_angle']:.2f} 度")
         return angles_info
     results = gdf.apply(func, axis=1)
     return results
