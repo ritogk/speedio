@@ -76,14 +76,9 @@ for i, coord, angle in angles_info:
         color = "green"
         size = 4
     # 中速コーナー
-    elif 45 <= angle < 95:
+    elif 45 <= angle < 80:
         color="darkorange"
-        if angle <= 65:
-            size = 5
-        elif angle <= 75:
-            size = 6
-        elif angle <= 85:
-            size = 8
+        size=8
     # 低速コーナー
     else:
         print(angle)
@@ -95,7 +90,7 @@ for i, coord, angle in angles_info:
         else:
             size = 20
     # color="red"
-    plt.plot(points_m[i, 0], points_m[i, 1], 'go', markersize=size, color=color, alpha=0.3)
+    plt.plot(points_m[i, 0], points_m[i, 1], 'go', markersize=size, color=color, alpha=0.2)
         # if angle >= 45:
         #     plt.text(points_m[i, 0], points_m[i, 1], f"{angle:.2f}°", fontsize=7, ha='right')
 
