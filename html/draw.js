@@ -63,7 +63,7 @@ export const draw = () => {
       .bindPopup(generateHtml(x), { maxWidth: 1100 })
       .addTo(map);
     line.on("popupopen", (e) => {
-      // console.log(x.elevation_smooth)
+      console.log(x)
       draw3D(x.geometry_meter_list, x.elevation_smooth);
     });
     polylines.push(line);
