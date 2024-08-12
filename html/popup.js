@@ -105,6 +105,14 @@ export const generateHtml = (x) => {
               <td>alpsmap_avg_width</td>
               <td>${x.alpsmap_avg_width}</td>
           </tr>
+          <tr>
+              <td>steering_wheel_max_angle</td>
+              <td>${truncateToTwoDecimals(x.steering_wheel_max_angle)}</td>
+          </tr>
+          <tr>
+              <td>steering_wheel_avg_angle</td>
+              <td>${truncateToTwoDecimals(x.steering_wheel_avg_angle)}</td>
+          </tr>
         </table>
 
         
