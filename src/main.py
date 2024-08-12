@@ -303,6 +303,20 @@ def main() -> GeoDataFrame:
         gdf_edges
     )
     excution_timer_ins.stop()
+
+    # ステアリングホイールの最大角度を計算する
+    excution_timer_ins.start("calc steering_wheel_max_angle")
+    gdf_edges["steering_wheel_max_angle"] = gdf_edges["steering_wheel_angle_info"].apply(
+        lambda angle_info_list: max(item['steering_angle'] for item in angle_info_list) if angle_info_list else None
+    )
+    excution_timer_ins.stop()
+
+    # ステアリングホイールの平均角度を計算する
+    excution_timer_ins.start("calc steering_wheel_avg_angle")
+    gdf_edges["steering_wheel_avg_angle"] = gdf_edges["steering_wheel_angle_info"].apply(
+        lambda angle_info_list: sum(item['steering_angle'] for item in angle_info_list) / len(angle_info_list) if angle_info_list else None
+    )
+    excution_timer_ins.stop()
     
     # コーナーの情報を取得する
     excution_timer_ins.start("calc corners")
@@ -410,7 +424,9 @@ def main() -> GeoDataFrame:
         "corners",
         "tunnel",
         "bridge",
-        "steering_wheel_angle_info"
+        "steering_wheel_angle_info",
+        "steering_wheel_max_angle",
+        "steering_wheel_avg_angle"
         # "eye_measured_width",
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
