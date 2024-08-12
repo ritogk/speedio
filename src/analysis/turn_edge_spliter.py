@@ -54,6 +54,8 @@ def split(gdf: GeoDataFrame) -> GeoDataFrame:
 
 
 def get_cartesian_length_from_coordinate(line_string: sp.LineString) -> int:
+    # MEMO: 東京の平面直角座標のEPSGだが本当によいのか？値はそれっぽいが。
+    # https://lemulus.me/column/epsg-list-gis
     transformer = proj.Transformer.from_crs(4326, 6677)
     # LineString内のpyprojが扱える形式に変換(y(経度), x(緯度))する
     trans_coords = transformer.itransform(line_string.coords, switch=True)
