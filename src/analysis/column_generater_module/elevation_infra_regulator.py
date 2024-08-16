@@ -45,8 +45,17 @@ def generate(gdf: GeoDataFrame, infra_edges: GeoDataFrame, infraType: InfraType)
         for i, infra_edge in target_infra_edges.iterrows():
             infra_coords = list(infra_edge.geometry.coords)       
             # トンネルの始点と終点に最も近い道のトンネル外の座標を取得
-            nearest_outside_start = get_nearest_outside_point(row, infra_coords[0], infra_coords)
-            nearest_outside_end = get_nearest_outside_point(row, infra_coords[-1], infra_coords)
+            road_coords = list(row.geometry.coords)
+            if(road_coords != infra_coords):
+                # 通常パターン
+                nearest_outside_start = get_nearest_outside_point(road_coords, infra_coords[0], infra_coords)
+                nearest_outside_end = get_nearest_outside_point(road_coords, infra_coords[-1], infra_coords)
+            else:
+                # あんまりないパターン。
+                # ベースのエッジとトンネルのエッジが一致している場合は始点と終点を設定(例: 135.2008906, 34.6844095))
+                print('★ベースのエッジとトンネルのエッジが一致')
+                nearest_outside_start = road_coords[0]
+                nearest_outside_end = road_coords[-1]
             a_idx = base_edge_coords.index(nearest_outside_start)
             b_idx = base_edge_coords.index(nearest_outside_end)
             start_idx = min(a_idx, b_idx)
@@ -72,8 +81,7 @@ def generate(gdf: GeoDataFrame, infra_edges: GeoDataFrame, infraType: InfraType)
     return results
 
 # トンネル外で最も近い座標を取得
-def get_nearest_outside_point(road_edge: GeoSeries, point: Tuple[float, float] , infra_coords: list):
-    road_coords = list(road_edge.geometry.coords)
+def get_nearest_outside_point(road_coords: list, point: Tuple[float, float] , infra_coords: list):
     # 単純にベースのエッジ(roadからinfraの座標をすべて消して、指定のトンネルの座標に最も近い座標を取得すればいいだけ)
     # 1. road_edgeからinfra_coordsの座標をすべて消す ※1
     road_coords_without_infras = [coord for coord in road_coords if not coord in infra_coords]
