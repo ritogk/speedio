@@ -53,6 +53,7 @@ def generate(gdf: GeoDataFrame, infra_edges: GeoDataFrame, infraType: InfraType)
             else:
                 # あんまりないパターン。
                 # ベースのエッジとトンネルのエッジが一致している場合は始点と終点を設定(例: 135.2008906, 34.6844095))
+                # 開始座標と終了座標をのこすようにしたからこの処理は不要になるかも？
                 print('★ベースのエッジとトンネルのエッジが一致')
                 nearest_outside_start = road_coords[0]
                 nearest_outside_end = road_coords[-1]
@@ -84,8 +85,10 @@ def generate(gdf: GeoDataFrame, infra_edges: GeoDataFrame, infraType: InfraType)
 def get_nearest_outside_point(road_coords: list, point: Tuple[float, float] , infra_coords: list):
     # 単純にベースのエッジ(roadからinfraの座標をすべて消して、指定のトンネルの座標に最も近い座標を取得すればいいだけ)
     # 1. road_edgeからinfra_coordsの座標をすべて消す ※1
-    road_coords_without_infras = [coord for coord in road_coords if not coord in infra_coords]
+    # 先頭と末尾の座標は保持しておかないとインフラの座標が先頭と末尾の座標に含まれる時にnear_pointが計算できなくなる。例: (34.76489640673564, 135.15251373171773)
+    road_coords_without_infras = [road_coords[0]]  # 先頭を保持
+    road_coords_without_infras += [coord for coord in road_coords[1:-1] if not coord in infra_coords]  # 中間のデータをフィルタリング
+    road_coords_without_infras.append(road_coords[-1])  # 末尾を保持
     # 2. ※1から指定座標(point)に最も近い座標を取得 ※3
     nearest_point = min(road_coords_without_infras, key=lambda x: Point(x).distance(Point(point)))
-    # 3. ※3を返す
     return nearest_point
