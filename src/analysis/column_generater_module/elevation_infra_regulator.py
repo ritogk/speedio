@@ -3,7 +3,7 @@ from pandas import Series
 import numpy as np
 from shapely.geometry import Point
 from typing import List, Tuple
-from enum import ReprEnum
+from enum import Enum
 
 class InfraType(Enum):
     TUNNEL = 1
