@@ -3,7 +3,7 @@ from pandas import Series
 import numpy as np
 from shapely.geometry import Point
 from typing import List, Tuple
-from enum import Enum
+from enum import ReprEnum
 
 class InfraType(Enum):
     TUNNEL = 1
@@ -46,17 +46,8 @@ def generate(gdf: GeoDataFrame, infra_edges: GeoDataFrame, infraType: InfraType)
             infra_coords = list(infra_edge.geometry.coords)       
             # トンネルの始点と終点に最も近い道のトンネル外の座標を取得
             road_coords = list(row.geometry.coords)
-            if(road_coords != infra_coords):
-                # 通常パターン
-                nearest_outside_start = get_nearest_outside_point(road_coords, infra_coords[0], infra_coords)
-                nearest_outside_end = get_nearest_outside_point(road_coords, infra_coords[-1], infra_coords)
-            else:
-                # あんまりないパターン。
-                # ベースのエッジとトンネルのエッジが一致している場合は始点と終点を設定(例: 135.2008906, 34.6844095))
-                # 開始座標と終了座標をのこすようにしたからこの処理は不要になるかも？
-                print('★ベースのエッジとトンネルのエッジが一致')
-                nearest_outside_start = road_coords[0]
-                nearest_outside_end = road_coords[-1]
+            nearest_outside_start = get_nearest_outside_point(road_coords, infra_coords[0], infra_coords)
+            nearest_outside_end = get_nearest_outside_point(road_coords, infra_coords[-1], infra_coords)
             a_idx = base_edge_coords.index(nearest_outside_start)
             b_idx = base_edge_coords.index(nearest_outside_end)
             start_idx = min(a_idx, b_idx)
@@ -73,7 +64,7 @@ def generate(gdf: GeoDataFrame, infra_edges: GeoDataFrame, infraType: InfraType)
                 interpolated_values_list = list(interpolated_values)
                 for i, value in enumerate(interpolated_values_list):
                     arr[start_idx + i] = value
-                return arr
+                return arr 
             # トンネルの始点と終点が線形になるように標高を調整
             elevation_adjusted = linear_interpolation(elevation_adjusted, start_idx, end_idx)
         return elevation_adjusted
