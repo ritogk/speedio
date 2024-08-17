@@ -8,7 +8,7 @@ WEIGHTS = {
     "elevation_u_shape": 1.0,  
     "angle": 0,  
     "width": 0,
-    "length": 0.8,
+    "length": 0.6,
     "week_corner": 0,
     "medium_corner": 0,
     "strong_corner": 1,
@@ -27,9 +27,9 @@ def generate(gdf: GeoDataFrame, corner_type: str) -> Series:
             + x["score_angle"] * WEIGHTS["angle"]
             + x["score_width"] * WEIGHTS["width"]
             + x["score_length"] * WEIGHTS["length"]
-            + x["score_week_corner"] * (1 if corner_type == 'week_corner' else 0)
-            + x["score_medium_corner"] * (1 if corner_type == 'medium_corner' else 0)
-            + x["score_strong_corner"] * (1 if corner_type == 'strong_corner' else 0)
+            + x["score_week_corner"] * (2 if corner_type == 'week_corner' else 1)
+            + x["score_medium_corner"] * (2 if corner_type == 'medium_corner' else 1)
+            + x["score_strong_corner"] * (2 if corner_type == 'strong_corner' else 1)
         ) / len(WEIGHTS)
 
     series = gdf.apply(func, axis=1)
