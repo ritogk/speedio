@@ -325,6 +325,13 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
+    # コーナーがないエッジを削除する
+    excution_timer_ins.start("remove no corner edge")
+    count = len(gdf_edges)
+    gdf_edges = gdf_edges = gdf_edges[gdf_edges['corners'].apply(lambda x: len(x) >= 1)]
+    print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
+    excution_timer_ins.stop()
+
     # スコアを求める
     excution_timer_ins.start("calc score")
     gdf_edges["score_elevation_over_heiht"] = (
