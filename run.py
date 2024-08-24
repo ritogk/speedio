@@ -2,51 +2,63 @@ from src.main import main
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
-from pprint import pprint
-from src.analysis.column_generater_module.core.calculate_angle_between_vectors import calculate_angle_between_vectors
-from geopy.distance import geodesic
 from src.core.env import getEnv
-
-import numpy as np
+from src.analysis.column_generater_module.score_corner import WEEK_CORNER_ANGLE_MIN, WEEK_CORNER_ANGLE_MAX, MEDIUM_CORNER_ANGLE_MIN, MEDIUM_CORNER_ANGLE_MAX, STRONG_CORNER_ANGLE_MIN
+import itertools
 
 def run():
     gdf = main()
     env = getEnv()
 
-    if env["SHOW_HIGH_EVALUATION"]:
+    if env["SHOW_CORNER"]:
         # 先頭のdataframeをセットする
-        first_geometry = gdf.iloc[0].geometry
-        print(list(first_geometry.coords))
-        datas = gdf.iloc[0].corners
-        
-        # matplotlibを使用して描画
+        gdf_first = gdf.iloc[0]
+
+        corners = gdf_first.corners
+
+        week_corner = [item for item in corners if
+                       (WEEK_CORNER_ANGLE_MIN <= item['max_steering_angle'] < WEEK_CORNER_ANGLE_MAX)]
+        medium_corner = [item for item in corners if
+                       (MEDIUM_CORNER_ANGLE_MIN <= item['max_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)]
+        strong_corner = [item for item in corners if
+                          STRONG_CORNER_ANGLE_MIN <= item['max_steering_angle']]
+
+         # プロットの準備
         fig, ax = plt.subplots()
-        
-        # first_geometryを背面に表示
-        gpd.GeoSeries(first_geometry).plot(ax=ax, color='black', alpha=0.03)
-        
-        # カラーマップと正規化
-        cmap_right = plt.get_cmap('Reds')
-        cmap_left = plt.get_cmap('Blues')
-        norm = plt.Normalize(vmin=min(data['max_steering_angle'] for data in datas),
-                            vmax=max(data['max_steering_angle'] for data in datas))
-        # turnsのpointsを表示する
-        for data in datas:
-            points = data['points']
-            # if data['max_steering_angle'] < 61:
-            #     continue
-            if data['steering_direction'] == 'right':
-                color = cmap_right(norm(data['max_steering_angle']))
-            elif data['steering_direction'] == 'left':
-                color = cmap_left(norm(data['max_steering_angle']))
-            else:
-                color = 'grey'  # その他の方向の場合はグレー
-            x, y = zip(*points)
-            ax.plot(x, y, color=color, linewidth=2)  # 折れ線を描画
+        gpd.GeoSeries(gdf_first.geometry).plot(ax=ax, color='gray')
 
-        plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap_right), ax=ax, label='Angle (degrees)')
+        
+        medium_coords = list(dict.fromkeys(itertools.chain(*[item['points'] for item in medium_corner])))
+        strong_coords = list(dict.fromkeys(itertools.chain(*[item['points'] for item in strong_corner])))
+        
+        if week_corner:
+            week_coords = list(dict.fromkeys(itertools.chain(*[item['points'] for item in week_corner])))
+            ax.scatter(*zip(*week_coords), color='blue', label='week', s=10)
+        if medium_corner:
+            medium_coords = list(dict.fromkeys(itertools.chain(*[item['points'] for item in medium_corner])))
+            ax.scatter(*zip(*medium_coords), color='green', label='medium', s=10)
+        if strong_corner:
+            strong_coords = list(dict.fromkeys(itertools.chain(*[item['points'] for item in strong_corner])))
+            ax.scatter(*zip(*strong_coords), color='red', label='strong', s=10)
+        
+        week_corner_distance = sum(
+            item['distance'] for item in corners
+            if (WEEK_CORNER_ANGLE_MIN <= item['max_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
+        )
+        medium_corner_distance = sum(
+            item['distance'] for item in corners
+            if (MEDIUM_CORNER_ANGLE_MIN <= item['max_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
+        )
+        strong_corner_distance = sum(
+            item['distance'] for item in corners
+            if STRONG_CORNER_ANGLE_MIN <= item['max_steering_angle']
+        )
+        print(f"week: {week_corner_distance}m, medium: {medium_corner_distance}m, strong: {strong_corner_distance}m")
+        print(f"all: {gdf_first.length}m")
+
+
+        plt.legend()
         plt.show()
-
     return gdf
 
 
