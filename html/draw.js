@@ -2,6 +2,7 @@ import target from "./target.json" with { type: "json" };
 import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
 import { generateHtml } from "./popup.js";
 import { draw3D } from "./3d.js";
+import { drawGraph } from "./graph.js"
 
 let map;
 export const init = () => {
@@ -64,6 +65,7 @@ export const draw = () => {
       .addTo(map);
     line.on("popupopen", (e) => {
       console.log(x)
+      drawGraph(x.corners_group);
       draw3D(x.geometry_meter_list, x.elevation_smooth);
     });
     polylines.push(line);
