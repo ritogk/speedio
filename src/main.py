@@ -369,7 +369,7 @@ def main() -> GeoDataFrame:
     gdf_edges["street_view_url_list"] = column_generater.street_view_url_list.generate(
         gdf_edges
     )
-    gdf_edges["score"] = column_generater.score.generate(gdf_edges, 'week_corner')
+    gdf_edges["score"] = column_generater.score.generate(gdf_edges, 'normal')
     gdf_edges["week_corner_score"] = column_generater.score.generate(gdf_edges, 'week_corner')
     gdf_edges["medium_corner_score"] = column_generater.score.generate(gdf_edges, 'medium_corner')
     gdf_edges["strong_corner_score"] = column_generater.score.generate(gdf_edges, 'strong_corner')
@@ -467,10 +467,9 @@ def main() -> GeoDataFrame:
     gdf_edges_strong = gdf_edges.sort_values("strong_corner_score", ascending=False).head(100)
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/strong_corner.csv"
     gdf_edges_strong[output_columns].to_csv(output_dir, index=False)
-
     excution_timer_ins.finish()
 
-    # # gdf_edgesのavg_widthを小さい順に並び替える
-    # gdf_edges = gdf_edges.sort_values("avg_width")
+    # gdf_edgesをscoreの大きい順に並び替える
+    gdf_edges = gdf_edges.sort_values("score", ascending=False)
 
     return gdf_edges
