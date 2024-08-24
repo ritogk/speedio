@@ -347,6 +347,18 @@ onKeyStroke(['\\'], (e) => {
   e.preventDefault()
 })
 
+// ジオメトリ移動(進む)
+onKeyStroke([']'], (e) => {
+  console.log('key')
+  handleGeometryMove(selectedGeometryIndex.value + 1)
+  e.preventDefault()
+})
+// ジオメトリ移動(戻る)
+onKeyStroke([':'], (e) => {
+  handleGeometryMove(selectedGeometryIndex.value - 1)
+  e.preventDefault()
+})
+
 const geometryPointPageNoJump = ref(1)
 </script>
 
