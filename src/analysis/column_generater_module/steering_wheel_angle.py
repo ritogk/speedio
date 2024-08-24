@@ -12,13 +12,27 @@ def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
         angles_info = []
         coords = row['geometry'].coords
-        # 計算を行いやすくするために平面座標系(m単位)に変換
-        xy_coords = generate_xy_coords(coords)
+        adjustedCoords = [coords[0]]
+        # 各座標間の中間点を求めて追加する
+        for i in range(1, len(coords)):
+            p1 = coords[i - 1]
+            p2 = coords[i]
+            betweenPoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
+            adjustedCoords.append(betweenPoint)
+            adjustedCoords.append(p2)
 
-        for i in range(1, len(coords) - 1):
-            p1 = xy_coords[i - 1]
-            p2 = xy_coords[i]
-            p3 = xy_coords[i + 1]
+        # 計算を行いやすくするために平面座標系(m単位)に変換
+        xy_adjustedCoords = generate_xy_coords(adjustedCoords)
+
+        group_size = 3
+        for i in range(1, len(xy_adjustedCoords) - group_size, 2):
+            group = xy_adjustedCoords[i:i + group_size]
+            if len(group) < group_size:
+                print("break")
+                break
+            p1 = group[0]
+            p2 = group[1]
+            p3 = group[2]
             angle = 0
             try:
                 center, radius = calc_circle_center_and_radius(p1 ,p2, p3)
@@ -26,7 +40,7 @@ def generate(gdf: GeoDataFrame) -> Series:
                 # 一般的はステアリングがまっすぐの状態で左右に1.7回転切れる。よって片側の回転角度の最大値は612度。
                 # osmのラインの形状がおかしいと思われるので、一旦異常値いとして扱う。
                 if angle > 612:
-                    print(f"ステアリング角が異常値です。ステアリング角: {angle}, 座標: {coords[i]}")
+                    print(f"ステアリング角が異常値です。ステアリング角: {angle}, 座標: {adjustedCoords[i]}")
                     # 一旦以上値を10度にしておく
                     angle = 10
             except ValueError as e:
@@ -35,9 +49,9 @@ def generate(gdf: GeoDataFrame) -> Series:
             # p1, p2, p3の距離を求める
             distance = np.linalg.norm(p1 - p2) + np.linalg.norm(p2 - p3)
             direction = calc_direction(p1, p2, p3)
-            angles_info.append({'start':coords[i-1],
-                                'center': coords[i],
-                                'end': coords[i+1],
+            angles_info.append({'start':adjustedCoords[i],
+                                'center': adjustedCoords[i+1],
+                                'end': adjustedCoords[i+2],
                                 'steering_angle': angle,
                                 'radius': radius,
                                 'distance': distance,
