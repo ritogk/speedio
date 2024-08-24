@@ -13,25 +13,55 @@ MAX_DISTANCE = 450  # 最大距離
 
 def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
     def func(x):
-        # コーナーと距離の割合にx.lengthを使ってしまうとコーナーの合計距離よりも小さい値になってしまう。
-        # これは3点の座標を1つのコーナーとして扱っているため、範囲が重なる部分があるためである。
-        all_corner_distance = sum(item['distance'] for item in x.corners) 
+        length = sum(item['distance'] for item in x.corners) 
+        corner_st_p = x.corners[0]['points'][0]
+        corner_ed_p = x.corners[-1]['points'][-1]
+        coords = list(x.geometry.coords)
+        # オリジナルの開始地点と終了地点はコーナーに含まれないのでその分の距離を計算する
+        st_between_distance = 0
+        ed_between_distance = 0
+        if corner_st_p != coords[0]:
+            st_between_distance = geodesic(reversed(coords[0]), reversed(corner_st_p)).meters
+        if corner_ed_p != coords[-1]:
+            ed_between_distance = geodesic(reversed(coords[-1]), reversed(corner_ed_p)).meters
+        if(x.length / (length + st_between_distance + ed_between_distance) < 0.97):
+            print('★★コーナーの距離と誤差あり。要確認')
+            print(f"誤差: {x.length / (length + st_between_distance + ed_between_distance)} original:{x.length}, new:{length + st_between_distance + ed_between_distance}")
 
         # 弱コーナーのスコア計算
         score_week_corner = sum(
             min(item['distance'], MAX_DISTANCE) for item in x.corners
             if (WEEK_CORNER_ANGLE_MIN <= item['max_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
-        ) / all_corner_distance
+        ) / length
         # 中コーナーのスコア計算
         score_medium_corner = sum(
             min(item['distance'], MAX_DISTANCE) for item in x.corners
             if (MEDIUM_CORNER_ANGLE_MIN <= item['max_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
-        ) / all_corner_distance
+        ) / length
         # 強コーナーのスコア計算
         score_strong_corner = sum(
             min(item['distance'], MAX_DISTANCE) for item in x.corners
             if STRONG_CORNER_ANGLE_MIN <= item['max_steering_angle']
-        ) / all_corner_distance
+        ) / length
+
+        # if(x.length == 7187.297999999998):
+        #     print('week')
+        #     print(sum(
+        #         min(item['distance'], MAX_DISTANCE) for item in x.corners
+        #         if (WEEK_CORNER_ANGLE_MIN <= item['max_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
+        #     ))
+        #     print('medium')
+        #     print(sum(
+        #         min(item['distance'], MAX_DISTANCE) for item in x.corners
+        #         if (MEDIUM_CORNER_ANGLE_MIN <= item['max_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
+        #     ))
+        #     print('strong')
+        #     print(sum(
+        #         min(item['distance'], MAX_DISTANCE) for item in x.corners
+        #         if STRONG_CORNER_ANGLE_MIN <= item['max_steering_angle']
+        #     ))
+        #     print('all')
+        #     print(length)
 
         return score_week_corner, score_medium_corner, score_strong_corner
 

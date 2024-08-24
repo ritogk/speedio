@@ -28,7 +28,6 @@ def generate(gdf: GeoDataFrame) -> Series:
                 points.append(one_corner['start'])
                 points.append(one_corner['center'])
                 points.append(one_corner['end'])
-            points = list(dict.fromkeys(points))
             # pointsから距離(m)を計算
             distance = 0
             for i in range(len(points) - 1):
@@ -39,11 +38,8 @@ def generate(gdf: GeoDataFrame) -> Series:
                 'steering_direction': corner[0]['direction'],
                 'points': points,
                 'corner_info': corner,
-                'distance': distance
+                'distance': distance,
             })
-
-        # ステアリング切れ角が15度以下のデータを削除
-        datas = [data for data in datas if data['max_steering_angle'] > 15]
 
         return datas
 

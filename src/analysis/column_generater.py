@@ -31,3 +31,4 @@ from .column_generater_module import corners
 from .column_generater_module import elevation_infra_regulator
 from .column_generater_module import elevation_adjuster
 from .column_generater_module import steering_wheel_angle
+from .column_generater_module import corners_group

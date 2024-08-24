@@ -332,6 +332,13 @@ def main() -> GeoDataFrame:
     print(f"  row: {count}, deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
 
+    # コーナーをグループ化する
+    excution_timer_ins.start("calc corners_range")
+    gdf_edges["corners_group"] = column_generater.corners_group.generate(
+        gdf_edges
+    )
+    excution_timer_ins.stop()
+
     # スコアを求める
     excution_timer_ins.start("calc score")
     gdf_edges["score_elevation_over_heiht"] = (
@@ -419,6 +426,7 @@ def main() -> GeoDataFrame:
         "turn_candidate_points",
         "turn_points",
         "corners",
+        "corners_group",
         "tunnel",
         "bridge",
         "steering_wheel_angle_info",
