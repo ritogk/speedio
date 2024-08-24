@@ -7,7 +7,7 @@ from pandas import Series
 def generate(gdf: GeoDataFrame) -> Series:
     def func(x):
         min = 1000
-        max = 3000
+        max = 4000
         if x > max:
             return 1
         return (x - min) / (max - min)
