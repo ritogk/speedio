@@ -1,4 +1,13 @@
-export const drawGraph = (corners_group) => {
+export const drawGraph = (corners_group, elevation_smooth) => {
+  drawCornerGraph(corners_group);
+  drawElevationGraph(elevation_smooth);
+};
+
+/**
+ * コーナーのグラフを描画
+ * @param {*} corners_group
+ */
+const drawCornerGraph = (corners_group) => {
   var ctx = document.getElementById("graphCanvas").getContext("2d");
 
   const cornerGroupDistance = Object.keys(corners_group).map((group) => {
@@ -65,6 +74,54 @@ export const drawGraph = (corners_group) => {
         },
         y: {
           suggestedMax: maxCornerGroupDistance, // 縦軸の上限
+        },
+      },
+    },
+  });
+};
+
+/**
+ * 標高のグラフを描画
+ * @param {*} elevation_smooth
+ */
+const drawElevationGraph = (elevation_smooth) => {
+  // 0
+  const minElevation = Math.min(...elevation_smooth);
+  const maxElevation = Math.max(...elevation_smooth);
+  const adjustedElevations = elevation_smooth.map((x) => x - minElevation);
+  var ctx = document.getElementById("graphElevationCanvas").getContext("2d");
+  // console.log(minElevation);
+  // console.log(maxElevation);
+  // console.log(adjustedElevations);
+
+  new Chart(ctx, {
+    type: "line", // デフォルトのチャートタイプを設定
+    data: {
+      labels: Array.from(
+        { length: adjustedElevations.length },
+        (_, i) => i + 1
+      ), // データポイントに対応するラベル
+      datasets: [
+        {
+          label: "steering_avg_angle",
+          type: "line", // 折れ線グラフとして設定
+          data: adjustedElevations, // 折れ線グラフデータ
+          borderColor: "rgba(255, 99, 132, 1)",
+          backgroundColor: "rgba(255, 99, 132, 0.2)",
+          borderWidth: 1,
+          pointRadius: 1,
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      scales: {
+        y: {
+          min: 0,
+          max: 250,
+          ticks: {
+            stepSize: 30,
+          },
         },
       },
     },
