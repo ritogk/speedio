@@ -85,7 +85,6 @@ const drawCornerGraph = (corners_group) => {
  * @param {*} elevation_smooth
  */
 const drawElevationGraph = (elevation_smooth) => {
-  // 0
   const minElevation = Math.min(...elevation_smooth);
   const maxElevation = Math.max(...elevation_smooth);
   const adjustedElevations = elevation_smooth.map((x) => x - minElevation);
@@ -103,7 +102,7 @@ const drawElevationGraph = (elevation_smooth) => {
       ), // データポイントに対応するラベル
       datasets: [
         {
-          label: "steering_avg_angle",
+          label: `elevation max:${Math.trunc(Math.max(...adjustedElevations))}`,
           type: "line", // 折れ線グラフとして設定
           data: adjustedElevations, // 折れ線グラフデータ
           borderColor: "rgba(255, 99, 132, 1)",
