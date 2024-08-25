@@ -11,8 +11,6 @@ import os
 from .core.env import getEnv
 from datetime import datetime
 
-import matplotlib.pyplot as plt
-
 from .analysis.turn_edge_spliter import split
 
 def main() -> GeoDataFrame:
@@ -82,6 +80,7 @@ def main() -> GeoDataFrame:
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
 
+    
     # gdf_edgesがemptyの場合は終了する
     if gdf_edges.empty:
         return gdf_edges
@@ -116,7 +115,7 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     # 座標間の角度の変化量を求める
-    excution_timer_ins.start("📐 calc angle_deltas")
+    excution_timer_ins.start("📐 calc angle_and_length_ratio")
     gdf_edges["angle_and_length_ratio"] = (
         gdf_edges["angle_deltas"] / gdf_edges["length"]
     )
@@ -388,6 +387,39 @@ def main() -> GeoDataFrame:
     gdf_edges["street_view_url"] = column_generater.street_view_url.generate(gdf_edges)
     excution_timer_ins.stop()
 
+    # csvに変換して出力する
+    output_columns = [
+        "length",
+        "highway",
+        "street_view_url_list",
+        "geometry_list",
+        "geometry_check_list",
+        "google_map_url",
+        "score",
+        "lanes",
+        "gsi_min_width",
+        "gsi_avg_width",
+        "is_alpsmap",
+        "alpsmap_min_width",
+        "alpsmap_avg_width",
+    ]
+    # gdf_edges.scoreの上位100件を取得する
+    gdf_edges_week = gdf_edges.sort_values("week_corner_score", ascending=False).head(100)
+    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/week_corner.csv"
+    gdf_edges_week[output_columns].to_csv(output_dir, index=False)
+
+    gdf_edges_medium = gdf_edges.sort_values("medium_corner_score", ascending=False).head(100)
+    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/medium_corner.csv"
+    gdf_edges_medium[output_columns].to_csv(output_dir, index=False)
+
+    gdf_edges_strong = gdf_edges.sort_values("strong_corner_score", ascending=False).head(100)
+    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/strong_corner.csv"
+    gdf_edges_strong[output_columns].to_csv(output_dir, index=False)
+    excution_timer_ins.finish()
+
+    # gdf_edgesをscoreの大きい順に並び替える
+    gdf_edges = gdf_edges.sort_values("score", ascending=False)
+
     # jsonに変換して出力する
     output_columns = [
         "length",
@@ -438,38 +470,5 @@ def main() -> GeoDataFrame:
     gdf_edges[output_columns].to_json(output_dir, orient="records")
     output_dir_bk = f"{os.path.dirname(os.path.abspath(__file__))}/../html/json_bk/{datetime.now().strftime('%Y-%m-%d-%H-%M')}.json"
     gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
-
-    # csvに変換して出力する
-    output_columns = [
-        "length",
-        "highway",
-        "street_view_url_list",
-        "geometry_list",
-        "geometry_check_list",
-        "google_map_url",
-        "score",
-        "lanes",
-        "gsi_min_width",
-        "gsi_avg_width",
-        "is_alpsmap",
-        "alpsmap_min_width",
-        "alpsmap_avg_width",
-    ]
-    # gdf_edges.scoreの上位100件を取得する
-    gdf_edges_week = gdf_edges.sort_values("week_corner_score", ascending=False).head(100)
-    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/week_corner.csv"
-    gdf_edges_week[output_columns].to_csv(output_dir, index=False)
-
-    gdf_edges_medium = gdf_edges.sort_values("medium_corner_score", ascending=False).head(100)
-    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/medium_corner.csv"
-    gdf_edges_medium[output_columns].to_csv(output_dir, index=False)
-
-    gdf_edges_strong = gdf_edges.sort_values("strong_corner_score", ascending=False).head(100)
-    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/strong_corner.csv"
-    gdf_edges_strong[output_columns].to_csv(output_dir, index=False)
-    excution_timer_ins.finish()
-
-    # gdf_edgesをscoreの大きい順に並び替える
-    gdf_edges = gdf_edges.sort_values("score", ascending=False)
 
     return gdf_edges
