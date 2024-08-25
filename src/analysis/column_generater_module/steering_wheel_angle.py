@@ -40,7 +40,7 @@ def generate(gdf: GeoDataFrame) -> Series:
                 # 一般的はステアリングがまっすぐの状態で左右に1.7回転切れる。よって片側の回転角度の最大値は612度。
                 # osmのラインの形状がおかしいと思われるので、一旦異常値いとして扱う。
                 if angle > 612:
-                    print(f"ステアリング角が異常値です。ステアリング角: {angle}, 座標: {adjustedCoords[i]}")
+                    print(f"  🚨 ステアリング角が異常値です。ステアリング角: {angle}, 座標: {adjustedCoords[i]}")
                     # 一旦以上値を10度にしておく
                     angle = 10
             except ValueError as e:
