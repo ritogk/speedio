@@ -12,7 +12,7 @@ def generate(gdf: GeoDataFrame) -> Series:
     # ↑のコメントは古い情報なので注意。
     def func(x):
         min = 0
-        max = 200
+        max = 150
         if x > max:
             return 1
         return (x - min) / (max - min)
