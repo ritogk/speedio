@@ -61,11 +61,11 @@ export const draw = () => {
     const scoreNormalization = x.score_normalization;
     const style = generateStyle(scoreNormalization);
     const line = L.polyline(polyline, style)
-      .bindPopup(generateHtml(x), { maxWidth: 1100 })
+      .bindPopup(generateHtml(x), { maxWidth: 1100, width:500 })
       .addTo(map);
     line.on("popupopen", (e) => {
       console.log(x)
-      drawGraph(x.corners_group, x.elevation_smooth);
+      drawGraph(x.corners, x.corners_group, x.elevation_smooth);
       draw3D(x.geometry_meter_list, x.elevation_smooth);
     });
     polylines.push(line);

@@ -1,6 +1,6 @@
-export const drawGraph = (corners_group, elevation_smooth) => {
+export const drawGraph = (corners, corners_group, elevation_smooth) => {
   drawCornerGraph(corners_group);
-  drawElevationGraph(elevation_smooth);
+  drawElevationGraph(elevation_smooth, corners);
 };
 
 /**
@@ -83,8 +83,10 @@ const drawCornerGraph = (corners_group) => {
 /**
  * 標高のグラフを描画
  * @param {*} elevation_smooth
+ * @param {*} corners
  */
-const drawElevationGraph = (elevation_smooth) => {
+const drawElevationGraph = (elevation_smooth, corners) => {
+  const graphYMax = 300;
   const minElevation = Math.min(...elevation_smooth);
   const maxElevation = Math.max(...elevation_smooth);
   const adjustedElevations = elevation_smooth.map((x) => x - minElevation);
@@ -92,6 +94,28 @@ const drawElevationGraph = (elevation_smooth) => {
   // console.log(minElevation);
   // console.log(maxElevation);
   // console.log(adjustedElevations);
+
+  const steeringAngleData = corners
+    .map((corner) => {
+      return corner.corner_info.map((x) => {
+        return x.steering_angle;
+      });
+    })
+    .flat();
+  // 先頭に0を追加
+  steeringAngleData.unshift(0);
+  const minSteeringAngle = Math.min(...steeringAngleData);
+  const maxSteeringAngle = Math.max(...steeringAngleData);
+  // 角度の最大値100を標高の最大値のスケールに変換
+  const adjustedSteeringAngle = steeringAngleData.map((x) => {
+    return x;
+    // const adjustedAngle = x * (graphYMax / 100);
+    // if (adjustedAngle >= 300) return 300;
+    // return adjustedAngle;
+  });
+  // console.log(steeringAngleData);
+  console.log(adjustedSteeringAngle);
+  console.log(elevation_smooth);
 
   new Chart(ctx, {
     type: "line", // デフォルトのチャートタイプを設定
@@ -111,18 +135,30 @@ const drawElevationGraph = (elevation_smooth) => {
           pointRadius: 1,
           fill: false,
         },
+        {
+          label: `steeringAngle max:${maxSteeringAngle}`,
+          type: "line", // 折れ線グラフとして設定
+          data: adjustedSteeringAngle, // 折れ線グラフデータ
+          borderColor: "rgba(0, 255, 132, 1)",
+          backgroundColor: "rgba(0, 255, 132, 0.2)",
+          borderWidth: 1,
+          pointRadius: 1,
+          fill: false,
+          tension: 0.3,
+        },
       ],
     },
     options: {
       scales: {
         y: {
           min: 0,
-          max: 250,
+          max: graphYMax,
           ticks: {
             stepSize: 30,
           },
         },
       },
+      responsive: false,
     },
   });
 };

@@ -48,8 +48,8 @@ export const generateHtml = (x) => {
         </table>
         <button onclick="document.getElementById('graphArea').hidden=false;">Graph</button>
         <div id="graphArea" hidden>
-            <canvas id="graphCanvas" width="600" height="400"></canvas>
-            <canvas id="graphElevationCanvas" width="600" height="400"></canvas>
+            <canvas id="graphCanvas" width="600" height="400" style="background-color: white;"></canvas>
+            <canvas id="graphElevationCanvas" width="1000" height="400" style="background-color: white;"></canvas>
         </div><br>
         <button onclick="document.getElementById('road3DArea').hidden=false;">3D</button>
         <div id="road3DArea" style="height:300px" hidden>
