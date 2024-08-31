@@ -28,6 +28,8 @@ def generate(gdf: GeoDataFrame) -> Series:
                 points.append(one_corner['start'])
                 points.append(one_corner['center'])
                 points.append(one_corner['end'])
+            # 並び順を維持したまま重複を削除
+            points = list(dict.fromkeys(points))
             # pointsから距離(m)を計算
             distance = 0
             for i in range(len(points) - 1):
