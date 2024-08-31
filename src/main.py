@@ -53,7 +53,6 @@ def main() -> GeoDataFrame:
     excution_timer_ins.start("📍 calc end_point")
     gdf_edges["end_point"] = column_generater.end_point.generate(gdf_edges)
     excution_timer_ins.stop()
-    print(gdf_edges.to_dict())
 
     # 全graphを取得する
     excution_timer_ins.start("🗾 load openstreetmap all data", ExcutionType.FETCH)
