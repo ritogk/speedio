@@ -102,6 +102,13 @@ const drawElevationGraph = (elevation_smooth, corners) => {
       });
     })
     .flat();
+  const directions = corners
+    .map((corner) => {
+      return corner.corner_info.map((x) => {
+        return x.direction;
+      });
+    })
+    .flat();
   // 先頭に0を追加
   steeringAngleData.unshift(0);
   const minSteeringAngle = Math.min(...steeringAngleData);
@@ -116,6 +123,12 @@ const drawElevationGraph = (elevation_smooth, corners) => {
   // console.log(steeringAngleData);
   console.log(adjustedSteeringAngle);
   console.log(elevation_smooth);
+
+  const directionColors = {
+    straight: "rgba(0, 255, 132, 1)",
+    left: "rgba(255, 99, 132, 1)",
+    right: "rgba(54, 162, 235, 1)",
+  };
 
   new Chart(ctx, {
     type: "line", // デフォルトのチャートタイプを設定
@@ -145,6 +158,13 @@ const drawElevationGraph = (elevation_smooth, corners) => {
           pointRadius: 1,
           fill: false,
           tension: 0.3,
+          segment: {
+            borderColor: (ctx) => {
+              const index = ctx.p0DataIndex;
+              const direction = directions[index];
+              return directionColors[direction] || "rgba(0, 0, 0, 1)";
+            },
+          },
         },
       ],
     },
