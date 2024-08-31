@@ -256,6 +256,10 @@ def main() -> GeoDataFrame:
     gdf_edges["alpsmap_avg_width"] = avg_width
     excution_timer_ins.stop()
 
+    excution_timer_ins.start("🛣️ fetch locations")
+    gdf_edges['locations'] = column_generater.locations.generate(gdf_edges)
+    excution_timer_ins.stop()
+
     # alpsmapの道幅が3m以下のエッジを削除する
     count = len(gdf_edges)
     excution_timer_ins.start("🛣️ remove alpsmap_min_width edge")
@@ -402,6 +406,7 @@ def main() -> GeoDataFrame:
         "is_alpsmap",
         "alpsmap_min_width",
         "alpsmap_avg_width",
+        "locations"
     ]
     # gdf_edges.scoreの上位100件を取得する
     gdf_edges_week = gdf_edges.sort_values("week_corner_score", ascending=False).head(100)
@@ -452,7 +457,7 @@ def main() -> GeoDataFrame:
         "lanes",
         "gsi_min_width",
         "gsi_avg_width",
-        "is_alpsmap",
+        # "is_alpsmap",
         "alpsmap_min_width",
         "alpsmap_avg_width",
         "turn_candidate_points",
@@ -463,8 +468,8 @@ def main() -> GeoDataFrame:
         "bridge",
         "steering_wheel_angle_info",
         "steering_wheel_max_angle",
-        "steering_wheel_avg_angle"
-        # "eye_measured_width",
+        "steering_wheel_avg_angle",
+        "locations"
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[output_columns].to_json(output_dir, orient="records")
