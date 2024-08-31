@@ -169,8 +169,8 @@ const calcScore = (targets) => {
   // 重み
   const WEIGHTS = {
     elevation: Number(document.getElementById("weightElevation").value),
-    elvation_over_height: Number(
-      document.getElementById("weightElvationOverHeight").value
+    elevation_over_height: Number(
+      document.getElementById("weightElevationOverHeight").value
     ),
     elevation_u_shape: Number(
       document.getElementById("weightElevationUShape").value
@@ -193,7 +193,7 @@ const calcScore = (targets) => {
   targets = targets.map((x) => {
     x.score =
       (x.score_elevation * WEIGHTS["elevation"] +
-        (1 - x.score_elevation_over_heiht * WEIGHTS["elvation_over_height"]) +
+        (1 - x.score_elevation_over_heiht * WEIGHTS["elevation_over_height"]) +
         x.score_elevation_u_shape * WEIGHTS["elevation_u_shape"] +
         x.score_angle * WEIGHTS["angle"] +
         x.score_width * WEIGHTS["width"] +
