@@ -29,15 +29,15 @@ def main() -> GeoDataFrame:
 
     excution_timer_ins.start("💱 convert graph to GeoDataFrame")
     gdf_edges = ox.graph_to_gdfs(graph, nodes=False, edges=True)
-    print(f"  📑 row: {len(gdf_edges)}")
-    excution_timer_ins.stop()
-
-    # gdf_edgesにlanes列がない場合は追加する
+    # gdf_edgesに列がない場合は追加する
     if "lanes" not in gdf_edges.columns:
         gdf_edges["lanes"] = 1
-    # gdf_edgesにtunnel列がない場合は追加する
     if "tunnel" not in gdf_edges.columns:
         gdf_edges["tunnel"] = None
+    if "bridge" not in gdf_edges.columns:
+        gdf_edges["bridge"] = None
+    print(f"  📑 row: {len(gdf_edges)}")
+    excution_timer_ins.stop()
 
     excution_timer_ins.start("🛣️ remove reverse edge")
     count = len(gdf_edges)
@@ -53,6 +53,7 @@ def main() -> GeoDataFrame:
     excution_timer_ins.start("📍 calc end_point")
     gdf_edges["end_point"] = column_generater.end_point.generate(gdf_edges)
     excution_timer_ins.stop()
+    print(gdf_edges.to_dict())
 
     # 全graphを取得する
     excution_timer_ins.start("🗾 load openstreetmap all data", ExcutionType.FETCH)
