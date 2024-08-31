@@ -41,18 +41,17 @@ def generate(gdf: GeoDataFrame) -> Series:
             try:
                 center, radius = calc_circle_center_and_radius(p1 ,p2, p3)
                 angle = steering_angle(wheelbase, radius, steering_ratio)
-                print("before")
-                # print(p1_t, p2_t, p3_t) 
-                print(f" angle:🚨 {angle}")
+                # print("before")
+                # print(f" angle:🚨 {angle}")
                 # center_, radius_ = calc_circle_center_and_radius(p1 ,p2_adjusted, p3)
                 # angle_ = steering_angle(wheelbase, radius_, steering_ratio)
                 # print("after")
                 # # print(p1_t, p2_adjusted_t, p3_t) 
                 # print(f" angle-2:🚨 {angle_}")
-                if(angle >= 100):
-                    print(f"🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨")
-                else:
-                     pass   
+                # if(angle >= 100):
+                #     print(f"🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨")
+                # else:
+                #      pass   
                 # 一般的はステアリングがまっすぐの状態で左右に1.7回転切れる。よって片側の回転角度の最大値は612度。
                 # osmのラインの形状がおかしいと思われるので、一旦異常値いとして扱う。
                 if angle > 612:
@@ -150,9 +149,9 @@ def offset_point(p1, p2, p3, direction):
 
     # オフセット距離が垂直距離を超えないようにする
     if offset_distance > distance_to_line:
-        print(f"offset_distance:{offset_distance} distance_to_line:{distance_to_line}")
-        print("★★★★★★★★★★★★★★★★★★")
-        # 直線にする
+        # print(f"offset_distance:{offset_distance} distance_to_line:{distance_to_line}")
+        # print("★★★★★★★★★★★★★★★★★★")
+        # ほぼ直線にする
         offset_distance = distance_to_line * 0.8
     # p2を垂線方向に指定された距離だけオフセットする
     if direction == "left":
