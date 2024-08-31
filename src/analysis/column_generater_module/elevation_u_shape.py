@@ -17,7 +17,9 @@ def generate(gdf: GeoDataFrame) -> Series:
             ratio = fluctuation_down / fluctuation_up
         else:
             ratio = fluctuation_up / fluctuation_down
-        return ratio * (fluctuation_up + fluctuation_down)
+
+        # up, downの比率が完全にイコールの場合に評価値が上がるのはおかしいので0.8を上限とする
+        return (1 if ratio > 0.8 else ratio) * (fluctuation_up + fluctuation_down)
 
     series = gdf.apply(func, axis=1)
 
