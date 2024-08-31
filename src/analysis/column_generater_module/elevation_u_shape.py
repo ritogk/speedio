@@ -18,8 +18,16 @@ def generate(gdf: GeoDataFrame) -> Series:
         else:
             ratio = fluctuation_up / fluctuation_down
 
-        # up, downの比率が完全にイコールの場合に評価値が上がるのはおかしいので0.8を上限とする
-        return (1 if ratio > 0.8 else ratio) * (fluctuation_up + fluctuation_down)
+         # up, downの比率が完全にイコールの場合に評価値が上がるのはおかしいので0.8を上限とする
+        adjusted_ratio = (1 if ratio > 0.8 else ratio)
+        
+        # ★row.elevation_heightが30以下の場合に応じて値を下げる。
+        if row.elevation_height < 30:
+            adjusted_ratio *= (row.elevation_height / 30)
+        
+        # 標高の最大値が大きすぎると評価値が上がってしまうので上限を300に設定
+        adjusted_elevation_height = 300 if row.elevation_height >= 300 else row.elevation_height
+        return adjusted_ratio * adjusted_elevation_height
 
     series = gdf.apply(func, axis=1)
 
