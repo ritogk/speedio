@@ -33,13 +33,13 @@ def generate(gdf: GeoDataFrame, corner_type: str) -> Series:
                 + x["score_strong_corner"] * WEIGHTS["strong_corner"]
             ) / len(WEIGHTS)
         else:
-            # csv出力用
+            # 調査のためのcsv出力用
             return (
                 x["score_elevation"] * WEIGHTS["elevation"]
                 + (1 - x["score_elevation_over_heiht"] * WEIGHTS["elvation_over_height"])
                 + x["score_elevation_u_shape"] * WEIGHTS["elevation_u_shape"]
                 + x["score_angle"] * WEIGHTS["angle"]
-                + x["score_width"] * WEIGHTS["width"]
+                + x["score_width"] * 0
                 + x["score_length"] * WEIGHTS["length"]
                 + x["score_week_corner"] * (2 if corner_type == 'week_corner' else 1)
                 + x["score_medium_corner"] * (2 if corner_type == 'medium_corner' else 1)
