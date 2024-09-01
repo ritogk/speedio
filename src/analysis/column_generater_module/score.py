@@ -20,7 +20,7 @@ WEIGHTS = {
 def generate(gdf: GeoDataFrame, corner_type: str) -> Series:
     def func(x):
         # スコア計算
-        if(corner_type == 'elevation_fluctuation'):
+        if(corner_type == 'normal'):
             return (
                 x["score_elevation"] * WEIGHTS["elevation"]
                 + (1 - x["score_elevation_over_heiht"] * WEIGHTS["elevation_over_height"])
