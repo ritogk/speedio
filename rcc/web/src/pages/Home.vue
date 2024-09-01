@@ -37,7 +37,7 @@ const initGoogleService = async (polyline: PointType[], point: PointType): Promi
   })
   const resultPanorama = await loader.importLibrary('streetView')
   const nextIndex = findClosestPointIndex(polyline, point) + 1
-  const nextPoint = originalGeometries.value[selectedGeometryIndex.value][nextIndex]
+  const nextPoint = filteredGeometries.value[selectedGeometryIndex.value][nextIndex]
   panorama = new resultPanorama.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
     position: { lat: point.latitude, lng: point.longitude },
     pov: {
@@ -53,7 +53,6 @@ provide(UseHomeStateKey, homeState)
 const {
   loadGeometries,
   isLoaded,
-  originalGeometries,
   filteredGeometries,
   selectedGeometry,
   selectedGeometryIndex,
@@ -77,7 +76,7 @@ const loadCsv = async (e: Event) => {
 
   if (map === null && panorama === null && polyline === null) {
     await initGoogleService(
-      originalGeometries.value[selectedGeometryIndex.value],
+      filteredGeometries.value[selectedGeometryIndex.value],
       selectedGeometryPoint.value
     )
   }
@@ -137,10 +136,10 @@ let oldPano = ''
 const updatePanorama = (selectedGeometryPoint: PointType) => {
   const nextIndex =
     findClosestPointIndex(
-      originalGeometries.value[selectedGeometryIndex.value],
+      filteredGeometries.value[selectedGeometryIndex.value],
       selectedGeometryPoint
     ) + 1
-  const nextPoint = originalGeometries.value[selectedGeometryIndex.value][nextIndex]
+  const nextPoint = filteredGeometries.value[selectedGeometryIndex.value][nextIndex]
   if (panorama) {
     panorama.setPosition({
       lat: selectedGeometryPoint.latitude,
@@ -153,7 +152,6 @@ const updatePanorama = (selectedGeometryPoint: PointType) => {
       return
     }
     oldPano = panorama.getLocation().pano
-
     panorama.setPov({
       heading: calculateHeading(selectedGeometryPoint, nextPoint),
       pitch: 10
@@ -261,7 +259,7 @@ const points = computed(() => {
 
 // 対象ジオメトリの評価済の座標数数
 const selectedGeometryCheckCount = computed(() => {
-  return originalGeometries.value[selectedGeometryIndex.value].filter((point) => {
+  return filteredGeometries.value[selectedGeometryIndex.value].filter((point) => {
     if (!locations.value) return false
     return locations.value.some((location) => {
       return (
@@ -315,6 +313,15 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
   }
   selectedBeforeRoadType.value = selectedRoadType.value
   selectedRoadType.value = 'ONE_LANE'
+}
+
+/**
+ * フィルターをかける
+ */
+const handleChangeFilterGeometryClick = () => {
+  changeFilterGeometry()
+  // filteredGeometriesの値が変わった後に各値を初期化する
+  handleGeometryMove(0)
 }
 
 // onKeyStroke(['z'], (e) => {
@@ -490,7 +497,7 @@ const geometryPointPageNoJump = ref(1)
         ><span style="margin-right: 20px"
           >{{ selectedGeometryIndex + 1 }}/{{ filteredGeometries.length }}</span
         >
-        <button @click="changeFilterGeometry()">filter</button>
+        <button @click="handleChangeFilterGeometryClick()">filter</button>
         <br />
         <input type="number" style="width: 50px" v-model="geometryPointPageNoJump" /><button
           @click="handleGeometryMove(Number(geometryPointPageNoJump - 1))"
