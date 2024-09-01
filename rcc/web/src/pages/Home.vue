@@ -54,13 +54,14 @@ const {
   loadGeometries,
   isLoaded,
   originalGeometries,
-  geometries,
+  filteredGeometries,
   selectedGeometry,
   selectedGeometryIndex,
   selectedGeometryPoint,
   selectedGeometryPointIndex,
   changeSelectedGeometryPoint,
-  changeSelectedGeometry
+  changeSelectedGeometry,
+  changeFilterGeometry
 } = homeState
 
 /**
@@ -81,7 +82,7 @@ const loadCsv = async (e: Event) => {
     )
   }
   updatePanorama(selectedGeometryPoint.value)
-  updateMap(originalGeometries.value[selectedGeometryIndex.value])
+  updateMap(selectedGeometry.value)
   updateMapMarker(selectedGeometryPoint.value)
 }
 
@@ -93,7 +94,7 @@ const handleGeometryMove = (index: number) => {
   changeSelectedGeometry(index)
   changeSelectedGeometryPoint(0)
   updatePanorama(selectedGeometryPoint.value)
-  updateMap(originalGeometries.value[selectedGeometryIndex.value])
+  updateMap(selectedGeometry.value)
   updateMapMarker(selectedGeometryPoint.value)
 
   // geometryからバウンディングボックス生成
@@ -253,8 +254,7 @@ const points = computed(() => {
       label: check ? '済' : '未',
       latitude: point.latitude,
       longitude: point.longitude,
-      roadWidthType: point.roadWidthType,
-      isBlind: false
+      roadWidthType: point.roadWidthType
     }
   })
 })
@@ -349,7 +349,6 @@ onKeyStroke(['\\'], (e) => {
 
 // ジオメトリ移動(進む)
 onKeyStroke([']'], (e) => {
-  console.log('key')
   handleGeometryMove(selectedGeometryIndex.value + 1)
   e.preventDefault()
 })
@@ -479,18 +478,19 @@ const geometryPointPageNoJump = ref(1)
         </button>
         <button
           @click="handleGeometryMove(selectedGeometryIndex + 1)"
-          :disabled="selectedGeometryIndex + 2 > geometries.length || isLoaded === false"
+          :disabled="selectedGeometryIndex + 2 > filteredGeometries.length || isLoaded === false"
         >
           ▶
         </button>
         <button
           @click="handleGeometryMove(selectedGeometryIndex + 2)"
-          :disabled="selectedGeometryIndex + 3 > geometries.length || isLoaded === false"
+          :disabled="selectedGeometryIndex + 3 > filteredGeometries.length || isLoaded === false"
         >
           ▶▶</button
         ><span style="margin-right: 20px"
-          >{{ selectedGeometryIndex + 1 }}/{{ geometries.length }}</span
+          >{{ selectedGeometryIndex + 1 }}/{{ filteredGeometries.length }}</span
         >
+        <button @click="changeFilterGeometry()">filter</button>
         <br />
         <input type="number" style="width: 50px" v-model="geometryPointPageNoJump" /><button
           @click="handleGeometryMove(Number(geometryPointPageNoJump - 1))"
