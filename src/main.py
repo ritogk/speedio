@@ -409,15 +409,18 @@ def main() -> GeoDataFrame:
         "locations"
     ]
     # gdf_edges.scoreの上位100件を取得する
-    gdf_edges_week = gdf_edges.sort_values("week_corner_score", ascending=False).head(100)
+    gdf_edges_week = gdf_edges.sort_values("week_corner_score", ascending=False).head(200)
+    # gdf_edges_week = gdf_edges.sort_values("week_corner_score", ascending=False).iloc[100:200]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/week_corner.csv"
     gdf_edges_week[output_columns].to_csv(output_dir, index=False)
 
-    gdf_edges_medium = gdf_edges.sort_values("medium_corner_score", ascending=False).head(100)
+    gdf_edges_medium = gdf_edges.sort_values("medium_corner_score", ascending=False).head(200)
+    # gdf_edges_medium = gdf_edges.sort_values("medium_corner_score", ascending=False).iloc[100:200]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/medium_corner.csv"
     gdf_edges_medium[output_columns].to_csv(output_dir, index=False)
 
-    gdf_edges_strong = gdf_edges.sort_values("strong_corner_score", ascending=False).head(100)
+    gdf_edges_strong = gdf_edges.sort_values("strong_corner_score", ascending=False).head(200)
+    # gdf_edges_strong = gdf_edges.sort_values("strong_corner_score", ascending=False).iloc[100:200]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/strong_corner.csv"
     gdf_edges_strong[output_columns].to_csv(output_dir, index=False)
     excution_timer_ins.finish()
