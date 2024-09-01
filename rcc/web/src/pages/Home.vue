@@ -53,6 +53,7 @@ provide(UseHomeStateKey, homeState)
 const {
   loadGeometries,
   isLoaded,
+  originalGeometries,
   filteredGeometries,
   selectedGeometry,
   selectedGeometryIndex,
@@ -134,12 +135,9 @@ let oldPano = ''
  * street-viewの更新
  */
 const updatePanorama = (selectedGeometryPoint: PointType) => {
-  const nextIndex =
-    findClosestPointIndex(
-      filteredGeometries.value[selectedGeometryIndex.value],
-      selectedGeometryPoint
-    ) + 1
-  const nextPoint = filteredGeometries.value[selectedGeometryIndex.value][nextIndex]
+  // チェック座標より１点先の座標を取得する。
+  const nextPoint = getCheckNextPoint(selectedGeometryPoint)
+
   if (panorama) {
     panorama.setPosition({
       lat: selectedGeometryPoint.latitude,
@@ -152,11 +150,47 @@ const updatePanorama = (selectedGeometryPoint: PointType) => {
       return
     }
     oldPano = panorama.getLocation().pano
+
     panorama.setPov({
       heading: calculateHeading(selectedGeometryPoint, nextPoint),
       pitch: 10
     })
   }
+}
+
+/**
+ * ストリートビューの視点用。チェック用座標の１点先の座標を取得する。
+ * @param selectedGeometryPoint
+ */
+const getCheckNextPoint = (selectedGeometryPoint: PointType) => {
+  // チェック座標より１点先の座標を取得する。
+  const originalGeometry = originalGeometries.value.find((geometry) => {
+    return geometry.some((point) => {
+      if (
+        point.latitude === selectedGeometryPoint.latitude &&
+        point.longitude === selectedGeometryPoint.longitude
+      ) {
+        return true
+      }
+      return false
+    })
+  })
+  if (!originalGeometry) return
+
+  const originalGeometryPointIndex = originalGeometry.find((point) => {
+    if (
+      point.latitude === selectedGeometryPoint.latitude &&
+      point.longitude === selectedGeometryPoint.longitude
+    ) {
+      return true
+    }
+    return false
+  })
+  if (!originalGeometryPointIndex) return
+
+  const nextIndex = findClosestPointIndex(originalGeometry, originalGeometryPointIndex) + 1
+  const nextPoint = originalGeometry[nextIndex]
+  return nextPoint
 }
 
 /**
