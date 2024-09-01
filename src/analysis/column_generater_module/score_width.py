@@ -11,7 +11,6 @@ def generate(gdf: GeoDataFrame) -> Series:
         if (len(locations) / (row.length / 500)) >= 0.5:
             # ここに入ってこれるって事は十分なデータがあるって事
             for location in locations:
-                print(location)
                 if location['road_width_type'] == "TWO_LANE" or location['road_width_type'] == "TWO_LANE_SHOULDER":
                     score += 1
                 elif location['road_width_type'] == "ONE_LANE_SPACIOUS":
