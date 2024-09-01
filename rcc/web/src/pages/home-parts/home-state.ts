@@ -112,12 +112,12 @@ const useHomeState = (): UseHomeStateType => {
   }
 
   // ジオメトリーをフィルタリングするフラグ
-  const isFilterGeometry = ref(false)
+  const isFilterGeometry = ref(true)
   const changeFilterGeometry = () => {
     isFilterGeometry.value = !isFilterGeometry.value
   }
   /**
-   * チェック済の座標が80%以上のgeometryのみ表示させる用
+   * チェック済の座標が70%以上のgeometryのみ表示させる
    */
   const filteredGeometries = computed(() => {
     if (!isFilterGeometry.value) return geometries.value
@@ -127,8 +127,11 @@ const useHomeState = (): UseHomeStateType => {
         return point.initialChecked
       }).length
       if (geometry.length === 0 || checkedCnt === 0) return true
-      // チェック済の座標が80%以上の場合に表示させる
-      return checkedCnt / geometry.length <= 0.8
+      // console.log(
+      //   `checkedCnt: ${checkedCnt}, geometry.length: ${geometry.length}, calc: ${checkedCnt / geometry.length}`
+      // )
+      // チェック済の座標が70%以上の場合に表示させる
+      return checkedCnt / geometry.length <= 0.7
     })
   })
 
