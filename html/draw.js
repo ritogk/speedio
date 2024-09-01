@@ -116,14 +116,14 @@ export const draw = () => {
     });
   });
 
-  // 上位10件の中心座標にランクを表示
-  const top10 = targets
+  // 上位20件の中心座標にランクを表示
+  const ranks = targets
     .sort((a, b) => b.score_normalization - a.score_normalization)
-    .slice(0, 10);
+    .slice(0, 20);
   // console.log(JSON.stringify(top10[0].elevation));
   // console.log(JSON.stringify(top10[0].geometry_meter_list));
   // console.log(JSON.stringify(top10[0].score_normalization));
-  top10.forEach((x, index) => {
+  ranks.forEach((x, index) => {
     const center = Math.ceil(x.geometry_list.length / 2);
     const marker = L.marker(x.geometry_list[center], {
       icon: generateLabelIcon(index + 1),
