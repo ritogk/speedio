@@ -43,7 +43,6 @@ def generate(gdf: GeoDataFrame) -> Series:
                 for data in result:
                     if data.longitude == coord[0] and data.latitude == coord[1]:
                         locations.append(data._asdict())
-        print(locations)
         return locations
 
     series = gdf.apply(func, axis=1)
