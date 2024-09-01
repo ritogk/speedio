@@ -1,7 +1,7 @@
 from geopandas import GeoDataFrame
 from pandas import Series
 
-from sqlalchemy import create_engine, text, func
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 
