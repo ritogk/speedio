@@ -3,6 +3,7 @@ from .analysis import graph_feather
 from .analysis import graph_all_feather
 from .analysis import graph_tunnel_feather
 from .analysis import graph_bridge_feather
+from. analysis import gdf_building_feather
 from .analysis import column_generater
 from .analysis import remover
 import osmnx as ox
@@ -339,6 +340,12 @@ def main() -> GeoDataFrame:
     excution_timer_ins.start("🛞 calc corners_group")
     gdf_edges["corners_group"] = column_generater.corners_group.generate(
         gdf_edges
+    )
+    excution_timer_ins.stop()
+
+    excution_timer_ins.start("🏚️ load all building")
+    gdf_buildings = gdf_building_feather.fetch_gdf(
+        point_st[0], point_st[1], point_ed[0], point_ed[1]
     )
     excution_timer_ins.stop()
 
