@@ -34,6 +34,10 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.score_length)}</td>
           </tr>
           <tr>
+              <td>score_building</td>
+              <td>${truncateToTwoDecimals(x.score_building)}</td>
+          </tr>
+          <tr>
               <td>score_week_corner</td>
               <td>${truncateToTwoDecimals(x.score_week_corner)}</td>
           </tr>
@@ -58,6 +62,10 @@ export const generateHtml = (x) => {
 
         <span style="font-weight:bold;">Created</span>
         <table style="width:100%;" border="1">
+        <tr>
+              <td>building_nearby_cnt</td>
+              <td>${truncateToTwoDecimals(x.building_nearby_cnt)}</td>
+          </tr>
           <tr>
               <td>elevation_deltas</td>
               <td>${truncateToTwoDecimals(x.elevation_deltas)}</td>

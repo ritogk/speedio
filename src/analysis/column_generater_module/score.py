@@ -9,6 +9,7 @@ WEIGHTS = {
     "angle": 0,  
     "width": 1,
     "length": 0.6,
+    "building": 1,
     "week_corner": 1,
     "medium_corner": 1,
     "strong_corner": 1,
@@ -28,6 +29,7 @@ def generate(gdf: GeoDataFrame, corner_type: str) -> Series:
                 + x["score_angle"] * WEIGHTS["angle"]
                 + x["score_width"] * WEIGHTS["width"]
                 + x["score_length"] * WEIGHTS["length"]
+                + x["score_building"] * WEIGHTS["building"]
                 + x["score_week_corner"] * WEIGHTS["week_corner"]
                 + x["score_medium_corner"] * WEIGHTS["medium_corner"]
                 + x["score_strong_corner"] * WEIGHTS["strong_corner"]
@@ -41,6 +43,7 @@ def generate(gdf: GeoDataFrame, corner_type: str) -> Series:
                 + x["score_angle"] * WEIGHTS["angle"]
                 + x["score_width"] * 0
                 + x["score_length"] * WEIGHTS["length"]
+                + x["score_building"] * WEIGHTS["building"]
                 + x["score_week_corner"] * (2 if corner_type == 'week_corner' else 1)
                 + x["score_medium_corner"] * (2 if corner_type == 'medium_corner' else 1)
                 + x["score_strong_corner"] * (2 if corner_type == 'strong_corner' else 1)

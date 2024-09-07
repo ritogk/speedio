@@ -2,10 +2,10 @@ from geopandas import GeoDataFrame
 from pandas import Series
 from tqdm import tqdm
 from geopy.distance import geodesic
-from shapely.geometry import Point
+from shapely.geometry import Polygon
+import math
 
-
-# 
+# 道路の周辺20m以内にある建物の数をカウントする
 def generate(gdf: GeoDataFrame, gdf_buildings: GeoDataFrame) -> Series:
     # gdf_buildings の空間インデックスを作成
     sindex_buildings = gdf_buildings.sindex
@@ -14,81 +14,85 @@ def generate(gdf: GeoDataFrame, gdf_buildings: GeoDataFrame) -> Series:
         bbox = row.geometry.bounds
         # ジオメトリーの境界ボックス内の建物のインデックスを取得
         sindex_match_indices = list(sindex_buildings.intersection(bbox))
-        
         # 該当するインデックスから建物のジオメトリを取得
         sindex_match_buildings = gdf_buildings.iloc[sindex_match_indices]
+        # LinStringから上下に20m垂直に伸ばしたポリゴンを作成する。
+        polygon = create_vertical_polygon(row.geometry.coords, 20)
 
-        # # ★ row.geometry(linestring)の各座標から15m以内に建物があるもののみを抽出
-        # # ★★★★ ここの計算がおかしいので治す必要あり！！！！！
-        # if row.length == 1604.959:
-        #     print(row.start_point)
-        #     print(row.length)
-        # match_buildings = []
-        # for coord in row.geometry.coords:
-        #     point = Point(coord)
-        #     for building in sindex_match_buildings.itertuples():
-        #         # pointを中心に70m以内に建物があるかどうかを判定したい。
-        #         building_point = building.geometry.centroid
-        #         distance = geodesic((point.y, point.x), (building_point.y, building_point.x)).meters
-        #         # print(distance)
-        #         if row.length == 1604.959:
-        #             print(distance)
-        #             print('  ', point.y, point.x)
-        #             print('  ', building_point.y, building_point.x)
-        #         if distance <= 70:
-        #             match_buildings.append(building.geometry)
-
-        # # 重複を排除したインデックスを用いて建物を取得
-        # print(match_buildings)
-        # # ★★★★ match_buildingsの横幅の距離を表示
-        # for i in range(len(match_buildings)):
-        #     print(match_buildings[i].bounds[2] - match_buildings[i].bounds)
-
-        # match_buildings = list(dict.fromkeys(match_buildings))
-
-        # 各座標から70m以内に建物があるものを抽出
         match_buildings = []
-        for coord in row.geometry.coords:
-            point = Point(coord)
-            
-            lat_factor = 1 / 111320  # 緯度方向の1度の距離（約111.32km）
-            lon_factor = 1 / (111320 * abs(geodesic((coord[1], coord[0]), (coord[1], coord[0] + 1)).km))  # 経度方向の距離
-
-            # 緯度経度のスケールに合わせたバッファ（50m）
-            buffer_lat = 50 * lat_factor
-            buffer_lon = 50 * lon_factor
-
-            # 楕円形のバッファ（50m相当の範囲を作成
-            buffer = point.buffer(buffer_lat).buffer(buffer_lon)
-            
-            for building in sindex_match_buildings.itertuples():
-                # 建物がこのバッファの範囲に重なっているか確認
-                if building.geometry.intersects(buffer):
-                    match_buildings.append(building.Index)
-
-        if row.length == 1604.959:
-            pass
-        # # 重複を排除 (shapely.geometry.equalsを使う)
-        #  = []
-        # for b in match_buildings:
-        #     if not any(b.equals(ub) for ub in unique_buildings):
-        #         unique_buildings.append(b)
+        for building in sindex_match_buildings.itertuples():
+            # 建物が Polygon に重なっているか確認
+            if building.geometry.intersects(polygon):
+                match_buildings.append(building.Index)
+        # 重複を排除
         unique_buildings = list(dict.fromkeys(match_buildings))
 
-        # # 横幅の距離を表示 (bounds[2] - bounds[0] で横幅を計算)
-        # for building in unique_buildings:
-        #     width = building.bounds[2] - building.bounds[0]
-        #     print(f"Building width: {width}")
-        
         result = len(unique_buildings)
-        # print(unique_buildings)
-        # print(match_buildings)
-        # if(result >= 1):
-        #     print(row.start_point)
-        # print(match_buildings)
         return result
 
-    # tqdm.pandas()
+    tqdm.pandas()
     series = gdf.progress_apply(func, axis=1)
 
     return series
+
+def calculate_bearing(lat1, lon1, lat2, lon2):
+    """
+    2つの座標間の方位角を計算
+    """
+    lat1 = math.radians(lat1)
+    lon1 = math.radians(lon1)
+    lat2 = math.radians(lat2)
+    lon2 = math.radians(lon2)
+    
+    d_lon = lon2 - lon1
+
+    x = math.sin(d_lon) * math.cos(lat2)
+    y = math.cos(lat1) * math.sin(lat2) - (math.sin(lat1) * math.cos(lat2) * math.cos(d_lon))
+    
+    initial_bearing = math.atan2(x, y)
+    initial_bearing = math.degrees(initial_bearing)
+    
+    compass_bearing = (initial_bearing + 360) % 360
+    return compass_bearing
+
+def offset_latlon(lat, lon, distance_meters, bearing):
+    """
+    緯度経度座標を指定距離だけオフセットします
+    :param lat: 緯度
+    :param lon: 経度
+    :param distance_meters: オフセットする距離（メートル）
+    :param bearing: 方位角（0: 北, 90: 東, 180: 南, 270: 西）
+    :return: 新しい緯度経度
+    """
+    origin = (lat, lon)
+    destination = geodesic(meters=distance_meters).destination(origin, bearing)
+    return destination.latitude, destination.longitude
+
+def create_vertical_polygon(coords, offset_distance):
+    # 元の座標を上下にオフセット
+    offset_coords_up = []
+    offset_coords_down = []
+
+    for i in range(len(coords) - 1):
+        lon1, lat1  = coords[i]
+        lon2, lat2 = coords[i + 1]
+        
+        # 2座標間の方位角を計算
+        bearing = calculate_bearing(lat1, lon1, lat2, lon2)
+        
+        # 左側と右側に90度と270度の方向にオフセット
+        lat_up1, lon_up1 = offset_latlon(lat1, lon1, offset_distance, bearing + 90)
+        lat_up2, lon_up2 = offset_latlon(lat2, lon2, offset_distance, bearing + 90)
+        offset_coords_up.append((lon_up1, lat_up1))
+        offset_coords_up.append((lon_up2, lat_up2))
+        
+        lat_down1, lon_down1 = offset_latlon(lat1, lon1, offset_distance, bearing - 90)
+        lat_down2, lon_down2 = offset_latlon(lat2, lon2, offset_distance, bearing - 90)
+        offset_coords_down.append((lon_down1, lat_down1))
+        offset_coords_down.append((lon_down2, lat_down2))
+
+    # オフセットされた座標を使ってポリゴンを作成
+    all_coords = offset_coords_up + offset_coords_down[::-1]  # 上のラインと下のラインを結合
+    polygon = Polygon(all_coords)
+
+    return polygon

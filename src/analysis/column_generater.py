@@ -33,3 +33,5 @@ from .column_generater_module import elevation_adjuster
 from .column_generater_module import steering_wheel_angle
 from .column_generater_module import corners_group
 from .column_generater_module import locations
+from .column_generater_module import building_nearby_cnt
+from .column_generater_module import score_building

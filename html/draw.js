@@ -178,6 +178,7 @@ const calcScore = (targets) => {
     angle: Number(document.getElementById("weightAngle").value),
     width: Number(document.getElementById("weightWidth").value),
     length: Number(document.getElementById("weightLength").value),
+    building: Number(document.getElementById("weightBuilding").value),
     week_corner: Number(
       document.getElementById("wightWeekCorner").value
     ),
@@ -198,6 +199,7 @@ const calcScore = (targets) => {
         x.score_angle * WEIGHTS["angle"] +
         x.score_width * WEIGHTS["width"] +
         x.score_length * WEIGHTS["length"] +
+        x.score_building * WEIGHTS["building"] +
         x.score_week_corner * WEIGHTS["week_corner"] +
         x.score_medium_corner * WEIGHTS["medium_corner"] +
         x.score_strong_corner * WEIGHTS["strong_corner"]) /
