@@ -130,8 +130,16 @@ const useHomeState = (): UseHomeStateType => {
       // console.log(
       //   `checkedCnt: ${checkedCnt}, geometry.length: ${geometry.length}, calc: ${checkedCnt / geometry.length}`
       // )
+
+      // データが7個未満なら閾値を下げる
+      let threshold = 0.6
+      if (geometry.length <= 6) {
+        threshold = 0.4
+      } else if (geometry.length <= 8) {
+        threshold = 0.5
+      }
       // チェック済の座標が70%以上の場合に表示させる
-      return checkedCnt / geometry.length <= 0.7
+      return checkedCnt / geometry.length <= threshold
     })
   })
 
