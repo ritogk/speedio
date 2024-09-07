@@ -349,6 +349,10 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
+    excution_timer_ins.start("🏚️ calc building_nearby_cnt")
+    gdf_edges["building_nearby_cnt"] = column_generater.building_nearby_cnt.generate(gdf_edges, gdf_buildings)
+    excution_timer_ins.stop()
+
     # スコアを求める
     excution_timer_ins.start("🏆 calc score")
     gdf_edges["score_elevation_over_heiht"] = (
@@ -367,6 +371,7 @@ def main() -> GeoDataFrame:
     gdf_edges["score_week_corner"] = score_week_corner
     gdf_edges["score_medium_corner"] = score_medium_corner
     gdf_edges["score_strong_corner"] = score_strong_corner
+    gdf_edges["score_building"] = column_generater.score_building.generate(gdf_edges)
     excution_timer_ins.stop()
 
     # google map urlを生成する
@@ -460,6 +465,7 @@ def main() -> GeoDataFrame:
         "score_week_corner",
         "score_medium_corner",
         "score_strong_corner",
+        "score_building",
         "google_map_url",
         "google_earth_url",
         "street_view_url_list",
@@ -479,7 +485,8 @@ def main() -> GeoDataFrame:
         "steering_wheel_angle_info",
         "steering_wheel_max_angle",
         "steering_wheel_avg_angle",
-        "locations"
+        "locations",
+        "building_nearby_cnt"
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[output_columns].to_json(output_dir, orient="records")
