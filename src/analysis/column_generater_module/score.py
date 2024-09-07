@@ -9,7 +9,7 @@ WEIGHTS = {
     "angle": 0,  
     "width": 1,
     "length": 0.6,
-    "building": 1,
+    "building": 0.6, # 建物が描かれていない所もあるので評価を下げる。
     "week_corner": 1,
     "medium_corner": 1,
     "strong_corner": 1,
@@ -44,9 +44,9 @@ def generate(gdf: GeoDataFrame, corner_type: str) -> Series:
                 + x["score_width"] * 0
                 + x["score_length"] * WEIGHTS["length"]
                 + x["score_building"] * WEIGHTS["building"]
-                + x["score_week_corner"] * (2 if corner_type == 'week_corner' else 1)
-                + x["score_medium_corner"] * (2 if corner_type == 'medium_corner' else 1)
-                + x["score_strong_corner"] * (2 if corner_type == 'strong_corner' else 1)
+                + x["score_week_corner"] * (3 if corner_type == 'week_corner' else 1)
+                + x["score_medium_corner"] * (3 if corner_type == 'medium_corner' else 1)
+                + x["score_strong_corner"] * (3 if corner_type == 'strong_corner' else 1)
             ) / len(WEIGHTS)
 
     series = gdf.apply(func, axis=1)
