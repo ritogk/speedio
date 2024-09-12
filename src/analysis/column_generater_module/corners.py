@@ -25,7 +25,7 @@ def generate(gdf: GeoDataFrame) -> Series:
             point = current_segment['center']
 
             # angleが10度以下かつ距離の累計が50mを超える場合にストレートの候補として扱う。
-            if point == (136.4042, 35.0083748):
+            if point == (136.4137515, 35.0098451):
                 print(point)
             # else:
             #     print("なしです。")
@@ -34,6 +34,7 @@ def generate(gdf: GeoDataFrame) -> Series:
                 straightDistance += distance
                 if straightDistance >= 50:
                     # 直前のコーナーを登録
+                    # ここの登録タイミングがおかしい。
                     corners.append({'type': old_direction, 'steering_angle_info': corner})
                     # 累積距離が50mを超えたらストレートとして登録
                     corners.append({'type': 'straight', 'steering_angle_info': straight})
@@ -91,10 +92,10 @@ def generate(gdf: GeoDataFrame) -> Series:
             datas.append({
                 'max_steering_angle': max_steering_angle,
                 'avg_steering_angle': avg_steering_angle,
+                'section_type': corner['type'],
                 'steering_direction': steering_angle_info[0]['direction'],
                 'points': points,
                 'corner_info': steering_angle_info,
-                'section_type': corner['type'],
                 'distance': distance,
             })
 
