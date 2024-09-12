@@ -13,6 +13,10 @@ def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
         # ステアリングの方向が変わる毎にグループ化
         target = row['steering_wheel_angle_info']
+        # The `old_direction` variable in the code snippet is used to keep track of the direction of
+        # the steering wheel angle in the previous segment of the data being processed. It is
+        # initialized with the direction of the first segment (`target[0]['direction']`) and is
+        # updated as the code iterates through the segments.
         old_direction = target[0]['direction']
         corners = []
         corner = [target[0]]
@@ -22,34 +26,21 @@ def generate(gdf: GeoDataFrame) -> Series:
             current_segment = target[i]
             angle = current_segment['steering_angle']
             distance = current_segment['distance']  # 各セグメントの距離が存在する前提
-            point = current_segment['center']
-
-            # angleが10度以下かつ距離の累計が50mを超える場合にストレートの候補として扱う。
-            if point == (136.4137515, 35.0098451):
-                print(point)
-            # else:
-            #     print("なしです。")
-            if angle < 10:
+            if angle < 8:
                 straight.append(current_segment)
                 straightDistance += distance
+            else:
                 if straightDistance >= 50:
-                    # 直前のコーナーを登録
-                    # ここの登録タイミングがおかしい。
                     corners.append({'type': old_direction, 'steering_angle_info': corner})
-                    # 累積距離が50mを超えたらストレートとして登録
+                    old_direction = current_segment['direction']
+                    corner = [current_segment]
                     corners.append({'type': 'straight', 'steering_angle_info': straight})
                     straight = []
                     straightDistance = 0
-                    # old_direction = current_segment['direction']
-
-                    # コーナーの初期化
-                    corner = [current_segment]
-                    old_direction = current_segment['direction'] # これでよいのか？
-            else:
+                    continue
                 # ストレートが途中でもコーナー扱いに戻る場合
-                if len(straight) > 0:
-                    corner += straight # 未登録のストレートを格納
-                    # corners.append({'type': 'straight', 'steering_angle_info': straight})
+                if len(straight) >=1 and straightDistance < 50:
+                    corner += straight
                     straight = []
                     straightDistance = 0
 
@@ -103,24 +94,24 @@ def generate(gdf: GeoDataFrame) -> Series:
 
     series = gdf.apply(func, axis=1)
 
-    # # Matplotlibを使ってプロット
-    # fig, ax = plt.subplots()
+    # Matplotlibを使ってプロット
+    fig, ax = plt.subplots()
 
-    # # 各データのセクションごとに色を変えて描画
-    # for data in series:
-    #     for section in data:
-    #         points = section['points']
-    #         section_type = section['section_type']
-    #         x, y = zip(*points)  # x, y 座標に分割
+    # 各データのセクションごとに色を変えて描画
+    for data in series:
+        for section in data:
+            points = section['points']
+            section_type = section['section_type']
+            x, y = zip(*points)  # x, y 座標に分割
 
-    #         # セクションタイプごとに色を変える
-    #         ax.plot(x, y, color=color_map[section_type])
+            # セクションタイプごとに色を変える
+            ax.plot(x, y, color=color_map[section_type])
 
-    # # 凡例を表示
-    # handles, labels = ax.get_legend_handles_labels()
-    # by_label = dict(zip(labels, handles))
-    # ax.legend(by_label.values(), by_label.keys())
+    # 凡例を表示
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ax.legend(by_label.values(), by_label.keys())
 
-    # plt.show()
+    plt.show()
 
     return series
