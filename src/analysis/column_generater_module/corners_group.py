@@ -5,7 +5,7 @@ from pandas import Series
 # 10~100の範囲でコーナーをグループ化する
 def generate(gdf: GeoDataFrame) -> Series:
     def func(row: GeoSeries):
-        corners = row['corners']
+        corners = row['road_section']
         corner_groups = {'10': [], '20': [], '30': [], '40': [], '50': [], '60': [], '70': [], '80': [], '90': [], '100': []}
         for corner in corners:
             max_steering_angle = corner['max_steering_angle']
