@@ -14,7 +14,7 @@ def run():
         # 先頭のdataframeをセットする
         gdf_first = gdf.iloc[0]
 
-        corners = gdf_first.corners
+        corners = gdf_first.road_section
 
         week_corner = [item for item in corners if
                        (WEEK_CORNER_ANGLE_MIN <= item['max_steering_angle'] < WEEK_CORNER_ANGLE_MAX)]

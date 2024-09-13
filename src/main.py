@@ -324,7 +324,7 @@ def main() -> GeoDataFrame:
     
     # コーナーの情報を取得する
     excution_timer_ins.start("🛞 calc corners")
-    gdf_edges["corners"] = column_generater.corners.generate(
+    gdf_edges["road_section"] = column_generater.road_section.generate(
         gdf_edges
     )
     excution_timer_ins.stop()
@@ -332,7 +332,7 @@ def main() -> GeoDataFrame:
     # コーナーがないエッジを削除する
     excution_timer_ins.start("🛞 remove no corner edge")
     count = len(gdf_edges)
-    gdf_edges = gdf_edges = gdf_edges[gdf_edges['corners'].apply(lambda x: len(x) >= 1)]
+    gdf_edges = gdf_edges[gdf_edges['road_section'].apply(lambda x: any(d.get('section_type') != 'straight' for d in x))]
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
 
@@ -478,7 +478,7 @@ def main() -> GeoDataFrame:
         "alpsmap_avg_width",
         "turn_candidate_points",
         "turn_points",
-        "corners",
+        "road_section",
         "corners_group",
         "tunnel",
         "bridge",

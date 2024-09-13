@@ -13,9 +13,10 @@ MAX_DISTANCE = 450  # 最大距離
 
 def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
     def func(x):
-        length = sum(item['distance'] for item in x.corners) 
-        corner_st_p = x.corners[0]['points'][0]
-        corner_ed_p = x.corners[-1]['points'][-1]
+        road_section = x.road_section
+        length = sum(item['distance'] for item in road_section) 
+        corner_st_p = road_section[0]['points'][0]
+        corner_ed_p = road_section[-1]['points'][-1]
         coords = list(x.geometry.coords)
         # オリジナルの開始地点と終了地点はコーナーに含まれないのでその分の距離を計算する
         st_between_distance = 0
@@ -30,17 +31,17 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
 
         # 弱コーナーのスコア計算
         score_week_corner = sum(
-            min(item['distance'], MAX_DISTANCE) for item in x.corners
+            min(item['distance'], MAX_DISTANCE) for item in road_section
             if (WEEK_CORNER_ANGLE_MIN <= item['max_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
         ) / length
         # 中コーナーのスコア計算
         score_medium_corner = sum(
-            min(item['distance'], MAX_DISTANCE) for item in x.corners
+            min(item['distance'], MAX_DISTANCE) for item in road_section
             if (MEDIUM_CORNER_ANGLE_MIN <= item['max_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
         ) / length
         # 強コーナーのスコア計算
         score_strong_corner = sum(
-            min(item['distance'], MAX_DISTANCE) for item in x.corners
+            min(item['distance'], MAX_DISTANCE) for item in road_section
             if STRONG_CORNER_ANGLE_MIN <= item['max_steering_angle']
         ) / length
 
