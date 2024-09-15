@@ -450,6 +450,7 @@ def main() -> GeoDataFrame:
     output_columns = [
         "length",
         "highway",
+        "name",
         "geometry_list",
         "geometry_meter_list",
         "geometry_check_list",
