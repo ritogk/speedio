@@ -30,7 +30,7 @@ const drawCornerGraph = (corners_group) => {
     (group) => {
       return (
         corners_group[group].reduce((sum, item) => {
-          return sum + item.max_steering_angle;
+          return sum + item.adjusted_steering_angle;
         }, 0) / corners_group[group].length
       );
     }

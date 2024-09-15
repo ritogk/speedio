@@ -350,7 +350,10 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
 
     excution_timer_ins.start("🏚️ calc building_nearby_cnt")
-    gdf_edges["building_nearby_cnt"] = column_generater.building_nearby_cnt.generate(gdf_edges, gdf_buildings)
+    if gdf_buildings is not None:
+        gdf_edges["building_nearby_cnt"] = column_generater.building_nearby_cnt.generate(gdf_edges, gdf_buildings)
+    else:
+        gdf_edges["building_nearby_cnt"] = 0
     excution_timer_ins.stop()
 
     # スコアを求める
@@ -367,10 +370,11 @@ def main() -> GeoDataFrame:
     gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
     # gdf_edges["score_width"] = 1
-    score_week_corner, score_medium_corner, score_strong_corner = column_generater.score_corner.generate(gdf_edges)
+    score_week_corner, score_medium_corner, score_strong_corner, score_straight = column_generater.score_road_section.generate(gdf_edges)
     gdf_edges["score_week_corner"] = score_week_corner
     gdf_edges["score_medium_corner"] = score_medium_corner
     gdf_edges["score_strong_corner"] = score_strong_corner
+    gdf_edges["score_straight"] = score_straight
     gdf_edges["score_building"] = column_generater.score_building.generate(gdf_edges)
     excution_timer_ins.stop()
 
@@ -465,6 +469,7 @@ def main() -> GeoDataFrame:
         "score_week_corner",
         "score_medium_corner",
         "score_strong_corner",
+        "score_straight",
         "score_building",
         "google_map_url",
         "google_earth_url",

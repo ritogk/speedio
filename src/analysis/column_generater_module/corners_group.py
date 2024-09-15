@@ -8,24 +8,24 @@ def generate(gdf: GeoDataFrame) -> Series:
         corners = row['road_section']
         corner_groups = {'10': [], '20': [], '30': [], '40': [], '50': [], '60': [], '70': [], '80': [], '90': [], '100': []}
         for corner in corners:
-            max_steering_angle = corner['max_steering_angle']
-            if max_steering_angle <= 10:
+            adjusted_steering_angle = corner['adjusted_steering_angle']
+            if adjusted_steering_angle <= 10:
                 corner_groups['10'].append(corner)
-            elif max_steering_angle <= 20:
+            elif adjusted_steering_angle <= 20:
                 corner_groups['20'].append(corner)
-            elif max_steering_angle <= 30:
+            elif adjusted_steering_angle <= 30:
                 corner_groups['30'].append(corner)
-            elif max_steering_angle <= 40:
+            elif adjusted_steering_angle <= 40:
                 corner_groups['40'].append(corner)
-            elif max_steering_angle <= 50:
+            elif adjusted_steering_angle <= 50:
                 corner_groups['50'].append(corner)
-            elif max_steering_angle <= 60:
+            elif adjusted_steering_angle <= 60:
                 corner_groups['60'].append(corner)
-            elif max_steering_angle <= 70:
+            elif adjusted_steering_angle <= 70:
                 corner_groups['70'].append(corner)
-            elif max_steering_angle <= 80:
+            elif adjusted_steering_angle <= 80:
                 corner_groups['80'].append(corner)
-            elif max_steering_angle <= 90:
+            elif adjusted_steering_angle <= 90:
                 corner_groups['90'].append(corner)
             else:
                 corner_groups['100'].append(corner)
