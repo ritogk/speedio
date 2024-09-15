@@ -188,7 +188,8 @@ const calcScore = (targets) => {
     strong_corner: Number(
       document.getElementById("wightStrongCorner").value
     ),
-    straight: Number(document.getElementById("wightStraight").value)
+    straight: Number(document.getElementById("wightStraight").value),
+    road_section_standard_deviation: Number(document.getElementById("wightRoadSectionStandardDeviation").value)
   };
 
   // スコア計算
@@ -204,7 +205,8 @@ const calcScore = (targets) => {
         x.score_week_corner * WEIGHTS["week_corner"] +
         x.score_medium_corner * WEIGHTS["medium_corner"] +
         x.score_strong_corner * WEIGHTS["strong_corner"] +
-        x.score_straight * WEIGHTS["straight"]) /
+        x.score_straight * WEIGHTS["straight"] + 
+        x.score_road_section_standard_deviation * WEIGHTS["road_section_standard_deviation"]) /
       Object.keys(WEIGHTS).length;
     return x;
   });
