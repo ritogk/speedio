@@ -142,6 +142,10 @@ export const generateHtml = (x) => {
         <span style="font-weight:bold;">Original</span>
         <table style="width:100%;" border="1">
           <tr>
+              <td>name</td>
+              <td>${x.name}</td>
+          </tr>
+          <tr>
               <td>length</td>
               <td>${truncateToTwoDecimals(x.length)}</td>
           </tr>
