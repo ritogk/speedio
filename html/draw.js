@@ -152,16 +152,27 @@ const filter = (targets) => {
       : target.filter((x) => x[filterKey1] == filterValue);
 
   const filterKey2 = document.getElementById("filterKey2").value;
-  const minValue = document.getElementById("minValue").value;
-  const maxValue = document.getElementById("maxValue").value;
+  const filterKey2minValue = document.getElementById("filterKey2minValue").value;
+  const filterKey2maxValue = document.getElementById("filterKey2maxValue").value;
   targets =
-    filterKey2 === "" || minValue === ""
+    filterKey2 === "" || filterKey2minValue === ""
       ? targets
-      : targets.filter((x) => x[filterKey2] >= Number(minValue));
+      : targets.filter((x) => x[filterKey2] >= Number(filterKey2minValue));
   targets =
-    filterKey2 === "" || maxValue === ""
+    filterKey2 === "" || filterKey2maxValue === ""
       ? targets
-      : targets.filter((x) => x[filterKey2] <= Number(maxValue));
+      : targets.filter((x) => x[filterKey2] <= Number(filterKey2maxValue));
+  const filterKey3 = document.getElementById("filterKey3").value;
+  const filterKey3minValue = document.getElementById("filterKey3minValue").value;
+  const filterKey3maxValue = document.getElementById("filterKey3maxValue").value;
+  targets =
+    filterKey3 === "" || filterKey3minValue === ""
+      ? targets
+      : targets.filter((x) => x[filterKey3] >= Number(filterKey3minValue));
+  targets =
+    filterKey3 === "" || filterKey3maxValue === ""
+      ? targets
+      : targets.filter((x) => x[filterKey3] <= Number(filterKey3maxValue));
   return targets;
 };
 
