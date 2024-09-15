@@ -3,7 +3,7 @@ from src.main import main
 import geopandas as gpd
 import matplotlib.pyplot as plt
 from src.core.env import getEnv
-from src.analysis.column_generater_module.score_corner import WEEK_CORNER_ANGLE_MIN, WEEK_CORNER_ANGLE_MAX, MEDIUM_CORNER_ANGLE_MIN, MEDIUM_CORNER_ANGLE_MAX, STRONG_CORNER_ANGLE_MIN
+from src.analysis.column_generater_module.score_road_section import WEEK_CORNER_ANGLE_MIN, WEEK_CORNER_ANGLE_MAX, MEDIUM_CORNER_ANGLE_MIN, MEDIUM_CORNER_ANGLE_MAX, STRONG_CORNER_ANGLE_MIN
 import itertools
 
 def run():
@@ -17,11 +17,11 @@ def run():
         corners = gdf_first.road_section
 
         week_corner = [item for item in corners if
-                       (WEEK_CORNER_ANGLE_MIN <= item['max_steering_angle'] < WEEK_CORNER_ANGLE_MAX)]
+                       (WEEK_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < WEEK_CORNER_ANGLE_MAX)]
         medium_corner = [item for item in corners if
-                       (MEDIUM_CORNER_ANGLE_MIN <= item['max_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)]
+                       (MEDIUM_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)]
         strong_corner = [item for item in corners if
-                          STRONG_CORNER_ANGLE_MIN <= item['max_steering_angle']]
+                          STRONG_CORNER_ANGLE_MIN <= item['adjusted_steering_angle']]
 
          # プロットの準備
         fig, ax = plt.subplots()
@@ -43,15 +43,15 @@ def run():
         
         week_corner_distance = sum(
             item['distance'] for item in corners
-            if (WEEK_CORNER_ANGLE_MIN <= item['max_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
+            if (WEEK_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
         )
         medium_corner_distance = sum(
             item['distance'] for item in corners
-            if (MEDIUM_CORNER_ANGLE_MIN <= item['max_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
+            if (MEDIUM_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
         )
         strong_corner_distance = sum(
             item['distance'] for item in corners
-            if STRONG_CORNER_ANGLE_MIN <= item['max_steering_angle']
+            if STRONG_CORNER_ANGLE_MIN <= item['adjusted_steering_angle']
         )
         print(f"week: {week_corner_distance}m, medium: {medium_corner_distance}m, strong: {strong_corner_distance}m")
         print(f"all: {gdf_first.length}m")

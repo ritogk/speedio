@@ -32,43 +32,49 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
         # 弱コーナーのスコア計算
         score_week_corner = sum(
             min(item['distance'], MAX_DISTANCE) for item in road_section
-            if (WEEK_CORNER_ANGLE_MIN <= item['max_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
+            if (WEEK_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
         ) / length
         # 中コーナーのスコア計算
         score_medium_corner = sum(
             min(item['distance'], MAX_DISTANCE) for item in road_section
-            if (MEDIUM_CORNER_ANGLE_MIN <= item['max_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
+            if (MEDIUM_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
         ) / length
         # 強コーナーのスコア計算
         score_strong_corner = sum(
             min(item['distance'], MAX_DISTANCE) for item in road_section
-            if STRONG_CORNER_ANGLE_MIN <= item['max_steering_angle']
+            if STRONG_CORNER_ANGLE_MIN <= item['adjusted_steering_angle']
+        ) / length
+        # ストレートのスコア計算
+        score_straight = sum(
+            item['distance'] for item in road_section
+            if (item['section_type'] == 'straight')
         ) / length
 
         # if(x.length == 7187.297999999998):
         #     print('week')
         #     print(sum(
         #         min(item['distance'], MAX_DISTANCE) for item in x.corners
-        #         if (WEEK_CORNER_ANGLE_MIN <= item['max_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
+        #         if (WEEK_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
         #     ))
         #     print('medium')
         #     print(sum(
         #         min(item['distance'], MAX_DISTANCE) for item in x.corners
-        #         if (MEDIUM_CORNER_ANGLE_MIN <= item['max_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
+        #         if (MEDIUM_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
         #     ))
         #     print('strong')
         #     print(sum(
         #         min(item['distance'], MAX_DISTANCE) for item in x.corners
-        #         if STRONG_CORNER_ANGLE_MIN <= item['max_steering_angle']
+        #         if STRONG_CORNER_ANGLE_MIN <= item['adjusted_steering_angle']
         #     ))
         #     print('all')
         #     print(length)
 
-        return score_week_corner, score_medium_corner, score_strong_corner
+        return score_week_corner, score_medium_corner, score_strong_corner, score_straight
 
     results = gdf.apply(func, axis=1, result_type='expand')
     score_week_corner = results[0]
     score_medium_corner = results[1]
     score_strong_corner = results[2]
+    score_straight = results[3]
 
-    return score_week_corner, score_medium_corner, score_strong_corner
+    return score_week_corner, score_medium_corner, score_strong_corner, score_straight

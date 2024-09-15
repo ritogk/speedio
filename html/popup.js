@@ -49,6 +49,10 @@ export const generateHtml = (x) => {
               <td>score_strong_corner</td>
               <td>${truncateToTwoDecimals(x.score_strong_corner)}</td>
           </tr>
+          <tr>
+              <td>score_straight</td>
+              <td>${truncateToTwoDecimals(x.score_straight)}</td>
+          </tr>
         </table>
         <button onclick="document.getElementById('graphArea').hidden=false;">Graph</button>
         <div id="graphArea" hidden>

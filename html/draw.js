@@ -65,7 +65,7 @@ export const draw = () => {
       .addTo(map);
     line.on("popupopen", (e) => {
       console.log(x)
-      drawGraph(x.corners, x.corners_group, x.elevation_smooth);
+      drawGraph(x.road_section, x.corners_group, x.elevation_smooth);
       draw3D(x.geometry_meter_list, x.elevation_smooth);
     });
     polylines.push(line);
@@ -119,7 +119,7 @@ export const draw = () => {
   // 上位20件の中心座標にランクを表示
   const ranks = targets
     .sort((a, b) => b.score_normalization - a.score_normalization)
-    .slice(0, 20);
+    .slice(0, 10);
   // console.log(JSON.stringify(top10[0].elevation));
   // console.log(JSON.stringify(top10[0].geometry_meter_list));
   // console.log(JSON.stringify(top10[0].score_normalization));
@@ -188,6 +188,7 @@ const calcScore = (targets) => {
     strong_corner: Number(
       document.getElementById("wightStrongCorner").value
     ),
+    straight: Number(document.getElementById("wightStraight").value)
   };
 
   // スコア計算
@@ -202,7 +203,8 @@ const calcScore = (targets) => {
         x.score_building * WEIGHTS["building"] +
         x.score_week_corner * WEIGHTS["week_corner"] +
         x.score_medium_corner * WEIGHTS["medium_corner"] +
-        x.score_strong_corner * WEIGHTS["strong_corner"]) /
+        x.score_strong_corner * WEIGHTS["strong_corner"] +
+        x.score_straight * WEIGHTS["straight"]) /
       Object.keys(WEIGHTS).length;
     return x;
   });
