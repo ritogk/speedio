@@ -2,8 +2,7 @@ import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from ..src.core.db import get_db_session
-
+from db import get_db_session
 
 def main():
     session = get_db_session()
