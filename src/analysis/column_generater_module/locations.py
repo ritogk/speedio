@@ -7,7 +7,6 @@ from ...core.db import get_db_session
 
 # 開始、中央、終了地点からgoogleMapのルートURLを作成する
 def generate(gdf: GeoDataFrame) -> Series:
-    session = get_db_session()
     def func(row):
         coords = list(row.geometry.coords)
         min_longitude = coords[0][0]
@@ -38,6 +37,9 @@ def generate(gdf: GeoDataFrame) -> Series:
                     locations.append(data._asdict())
 
         return locations
-
-    series = gdf.apply(func, axis=1)
+    session = get_db_session()
+    try:
+        series = gdf.apply(func, axis=1)
+    finally:
+        session.close()
     return series

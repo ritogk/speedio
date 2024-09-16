@@ -103,28 +103,31 @@ def create_vertical_polygon(coords, offset_distance):
 # 近くの建物を取得する
 def get_nearby_builgings(min_longitude, min_latitude, max_longitude, max_latitude):
     session = get_db_session()
-    buildings = []
+    try:
+        buildings = []
 
-    # SQLクエリを実行
-    query = text(f"""
-    SELECT ST_AsText(geometry) as geometry
-    FROM buildings
-    WHERE ST_Intersects(
-    geometry, 
-    ST_MakeEnvelope(:min_longitude, :min_latitude, :max_longitude, :max_latitude, :srid)
-    );
-    """)
-    
-    # パラメータを渡してクエリ実行
-    result = session.execute(query, {
-        'min_longitude': min_longitude,
-        'min_latitude': min_latitude,
-        'max_longitude': max_longitude,
-        'max_latitude': max_latitude,
-        'srid': 4326
-    })
-    result = result.fetchall()
-    for data in result:
-        geometry = wkt.loads(data[0])
-        buildings.append(geometry)
+        # SQLクエリを実行
+        query = text(f"""
+        SELECT ST_AsText(geometry) as geometry
+        FROM buildings
+        WHERE ST_Intersects(
+        geometry, 
+        ST_MakeEnvelope(:min_longitude, :min_latitude, :max_longitude, :max_latitude, :srid)
+        );
+        """)
+        
+        # パラメータを渡してクエリ実行
+        result = session.execute(query, {
+            'min_longitude': min_longitude,
+            'min_latitude': min_latitude,
+            'max_longitude': max_longitude,
+            'max_latitude': max_latitude,
+            'srid': 4326
+        })
+        result = result.fetchall()
+        for data in result:
+            geometry = wkt.loads(data[0])
+            buildings.append(geometry)
+    finally:
+        session.close()
     return buildings
