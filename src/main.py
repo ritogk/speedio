@@ -343,17 +343,8 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
-    excution_timer_ins.start("🏚️ load all building")
-    gdf_buildings = gdf_building_feather.fetch_gdf(
-        point_st[0], point_st[1], point_ed[0], point_ed[1]
-    )
-    excution_timer_ins.stop()
-
     excution_timer_ins.start("🏚️ calc building_nearby_cnt")
-    if gdf_buildings is not None:
-        gdf_edges["building_nearby_cnt"] = column_generater.building_nearby_cnt.generate(gdf_edges, gdf_buildings)
-    else:
-        gdf_edges["building_nearby_cnt"] = 0
+    gdf_edges["building_nearby_cnt"] = column_generater.building_nearby_cnt.generate(gdf_edges)
     excution_timer_ins.stop()
 
     # スコアを求める
@@ -407,7 +398,6 @@ def main() -> GeoDataFrame:
     excution_timer_ins.start("🔗 create street_view_url")
     gdf_edges["street_view_url"] = column_generater.street_view_url.generate(gdf_edges)
     excution_timer_ins.stop()
-    print(gdf_edges.columns)
 
     # csvに変換して出力する
     output_columns = [

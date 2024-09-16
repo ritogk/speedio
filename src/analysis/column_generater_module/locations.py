@@ -1,19 +1,13 @@
 from geopandas import GeoDataFrame
 from pandas import Series
 
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
+from ...core.db import get_db_session
 
 
 # 開始、中央、終了地点からgoogleMapのルートURLを作成する
 def generate(gdf: GeoDataFrame) -> Series:
-    usename = "postgres"
-    password = "postgres"
-    dbname = "speedia"
-    host="localhost"
-    port="5432"
-    engine = create_engine(f"postgresql://{usename}:{password}@{host}:{port}/{dbname}")
-    Session = sessionmaker(bind=engine)
+    session = get_db_session()
     def func(row):
         coords = list(row.geometry.coords)
         min_longitude = coords[0][0]
@@ -32,17 +26,17 @@ def generate(gdf: GeoDataFrame) -> Series:
                 max_latitude = point[1]
         srid = 4326
         locations = []
-        with Session() as session:
-            # SQLクエリを実行
-            result = session.execute(text(f"SELECT ST_X(point) AS longitude, ST_Y(point) AS latitude, road_width_type  FROM locations WHERE ST_Intersects(ST_MakeEnvelope({min_longitude}, {min_latitude}, {max_longitude}, {max_latitude}, {srid}), locations.point)"))
-            result = result.fetchall()
-            # print(f"coords: {len(coords)}")
-            # print(f"db_result: {len(rows)}")
-            # geometryの座標に一致するデータのみ取り出す
-            for coord in coords:
-                for data in result:
-                    if data.longitude == coord[0] and data.latitude == coord[1]:
-                        locations.append(data._asdict())
+        # SQLクエリを実行
+        result = session.execute(text(f"SELECT ST_X(point) AS longitude, ST_Y(point) AS latitude, road_width_type  FROM locations WHERE ST_Intersects(ST_MakeEnvelope({min_longitude}, {min_latitude}, {max_longitude}, {max_latitude}, {srid}), locations.point)"))
+        result = result.fetchall()
+        # print(f"coords: {len(coords)}")
+        # print(f"db_result: {len(rows)}")
+        # geometryの座標に一致するデータのみ取り出す
+        for coord in coords:
+            for data in result:
+                if data.longitude == coord[0] and data.latitude == coord[1]:
+                    locations.append(data._asdict())
+
         return locations
 
     series = gdf.apply(func, axis=1)
