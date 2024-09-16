@@ -13,7 +13,7 @@ def main():
     print("loaded csv")
 
     # バッチサイズの設定
-    batch_size = 10000
+    batch_size = 100000
     batch = []
 
     insert_sql = """
