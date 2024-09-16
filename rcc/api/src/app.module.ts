@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Location } from './locations/entities/location.entity';
 import { LocationsModule } from './locations/locations.module';
+import { BuildingsModule } from './buildings/buildings.module';
+import { Building } from './buildings/entities/building.entity';
 
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -17,7 +19,7 @@ import { join } from 'path';
       username: 'postgres',
       password: 'postgres',
       database: 'speedia',
-      entities: [Location],
+      entities: [Location, Building],
       synchronize: true,
       // logging: true,
     }),
@@ -27,6 +29,7 @@ import { join } from 'path';
       renderPath: '*', // 任意のファイルパスやファイル名にアクセス可能にする
     }),
     LocationsModule,
+    BuildingsModule,
   ],
   providers: [AppService],
 })
