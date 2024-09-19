@@ -65,6 +65,7 @@ export const draw = () => {
       .addTo(map);
     line.on("popupopen", (e) => {
       console.log(x)
+      console.log(x.elevation_group)
       drawGraph(x.road_section, x.corners_group, x.elevation_smooth);
       draw3D(x.geometry_meter_list, x.elevation_smooth);
     });
@@ -200,7 +201,12 @@ const calcScore = (targets) => {
       document.getElementById("wightStrongCorner").value
     ),
     straight: Number(document.getElementById("wightStraight").value),
-    road_section_standard_deviation: Number(document.getElementById("wightRoadSectionStandardDeviation").value)
+    road_section_standard_deviation: Number(document.getElementById("wightRoadSectionStandardDeviation").value),
+    elevation_up_section: Number(document.getElementById("wightElevationUpSection").value),
+    elevation_down_section: Number(document.getElementById("wightElevationDownSection").value),
+    elevation_flat_section: Number(document.getElementById("wightElevationFlatSection").value),
+    elevation_deviation_section: Number(document.getElementById("wightElevationDeviationSection").value),
+    elevation_complexity: Number(document.getElementById("wightElevationComplexity").value),
   };
 
   // スコア計算
@@ -217,7 +223,12 @@ const calcScore = (targets) => {
         x.score_medium_corner * WEIGHTS["medium_corner"] +
         x.score_strong_corner * WEIGHTS["strong_corner"] +
         x.score_straight * WEIGHTS["straight"] + 
-        x.score_road_section_standard_deviation * WEIGHTS["road_section_standard_deviation"]) /
+        x.score_road_section_standard_deviation * WEIGHTS["road_section_standard_deviation"] +
+        x.score_elevation_up_section * WEIGHTS["elevation_up_section"] + 
+        x.score_elevation_down_section * WEIGHTS["elevation_down_section"] + 
+        x.score_elevation_flat_section * WEIGHTS["elevation_flat_section"] +
+        x.score_elevation_deviation_section * WEIGHTS["elevation_deviation_section"] +
+        x.score_elevation_complexity * WEIGHTS["elevation_complexity"])/
       Object.keys(WEIGHTS).length;
     return x;
   });

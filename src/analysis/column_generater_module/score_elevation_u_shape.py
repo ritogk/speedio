@@ -1,21 +1,55 @@
 from geopandas import GeoDataFrame
 from pandas import Series
+from .elevation_u_shape import SectionType
 
 
-# 標高のU字型のスコアを求める。
+
 def generate(gdf: GeoDataFrame) -> Series:
-    # `愛知の感動した道`: 388
-    # `地元の火葬場:` 97.4
-    # `そこそこいい道`: 69.5, 52.49, 16.7, 19.46, 25.02, 61.2, 13.37, 9.006, 2.25, 2.03
-    # `悪い道`: 1.24, 7.5
-    # 一旦150以上は1で、200~0は0~1に変換する
-    # ↑のコメントは古い情報なので注意。
     def func(x):
-        min = 0
-        max = 150
-        if x > max:
-            return 1
-        return (x - min) / (max - min)
+        # チェック対象
+        # elevation_sectionの区切りが多いか ※1 0~0.5
+        # 3パターンの距離がおおよそひとしいか ※2 0~0.5 これは本当に正しいのか?
+        # elevation_sectionの強度 ※3
+        return len(x.elevation_group) / len(x.elevation_section)
 
-    series = gdf["elevation_u_shape"].apply(func)
+        # 一旦※3ののぞいて評価する
+        elevation_group = x.elevation_group
+        up_distance = 0
+        down_distance = 0
+        flat_distance = 0
+        for i, group in enumerate(elevation_group):
+            # print(i, group)
+            if group['section_type'] == SectionType.UP:
+                up_distance += group['distance']
+            if group['section_type'] == SectionType.DOWN:
+                down_distance += group['distance']
+            if group['section_type'] == SectionType.FLAT:
+                flat_distance += group['distance']
+        score_distance = 0
+        # 0以外の最小値を求める
+        # min_distance 
+        if not (up_distance == 0 or down_distance == 0 or flat_distance == 0):
+            score_distance = min(up_distance, down_distance, flat_distance) / max(up_distance ,down_distance ,flat_distance)
+        print(score_distance)
+
+
+
+        # # 1mで0.12mまでが限界値。
+        # # 一旦 0.7
+        # height_and_distance_ratio = len(x.elevation_group) / len(x.elevation_section)
+        # print(height_and_distance_ratio)
+
+        # # elevation_groupでループする必要あり
+        # # flatとup, downの評価は分ける必要あり
+
+        # if height_and_distance_ratio > HEIGHT_AND_DISTANCE_STRONG_RATIO:
+        #     score = 1
+        # elif height_and_distance_ratio < HEIGHT_AND_DISTANCE_WEEK_RATIO:
+        #     score = 0
+        # else:
+        #     # 弱~強の範囲を0~1に正規化
+        #     score = (height_and_distance_ratio - HEIGHT_AND_DISTANCE_WEEK_RATIO) / (HEIGHT_AND_DISTANCE_STRONG_RATIO - HEIGHT_AND_DISTANCE_WEEK_RATIO)
+        return score_distance
+
+    series = gdf.apply(func, axis=1)
     return series
