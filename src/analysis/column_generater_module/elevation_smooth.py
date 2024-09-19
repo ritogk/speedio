@@ -15,14 +15,12 @@ def generate(gdf: GeoDataFrame) -> Series:
         # 最後から3番目のデータは、最後から3番目以降のデータの平均とする。
         # 最後から2番目のデータは、最後から2番目と最後のデータの平均とする。
         # 最後のデータは平均せずそのまま使用する。
-        if len(series) >= 3:
-            # 最後から3番目以降の平均
+        if len(series) >= 4:
+            last4_avg = series.iloc[-4:].mean()
             last3_avg = series.iloc[-3:].mean()
-            # 最後から2番目以降の平均
             last2_avg = series.iloc[-2:].mean()
-            # 最後のデータ
             last1 = series.iloc[-1]
-            smooth.extend([last3_avg, last2_avg, last1])
+            smooth.extend([last4_avg, last3_avg, last2_avg, last1])
         return smooth
 
     results = gdf.apply(func, axis=1)

@@ -15,19 +15,20 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
     def func(x):
         road_section = x.road_section
         length = sum(item['distance'] for item in road_section) 
-        corner_st_p = road_section[0]['points'][0]
-        corner_ed_p = road_section[-1]['points'][-1]
+        section_st_p = road_section[0]['points'][0]
+        section_ed_p = road_section[-1]['points'][-1]
         coords = list(x.geometry.coords)
         # オリジナルの開始地点と終了地点はコーナーに含まれないのでその分の距離を計算する
         st_between_distance = 0
         ed_between_distance = 0
-        if corner_st_p != coords[0]:
-            st_between_distance = geodesic(reversed(coords[0]), reversed(corner_st_p)).meters
-        if corner_ed_p != coords[-1]:
-            ed_between_distance = geodesic(reversed(coords[-1]), reversed(corner_ed_p)).meters
+        if section_st_p != coords[0]:
+            st_between_distance = geodesic(reversed(coords[0]), reversed(section_st_p)).meters
+        if section_ed_p != coords[-1]:
+            ed_between_distance = geodesic(reversed(coords[-1]), reversed(section_ed_p)).meters
         if(x.length / (length + st_between_distance + ed_between_distance) < 0.97):
             print('★★コーナーの距離と誤差あり。要確認')
             print(f"誤差: {x.length / (length + st_between_distance + ed_between_distance)} original:{x.length}, new:{length + st_between_distance + ed_between_distance}")
+            print(coords)
 
         # 弱コーナーのスコア計算
         score_week_corner = sum(

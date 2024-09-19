@@ -109,8 +109,9 @@ const drawElevationGraph = (elevation_smooth, corners) => {
       });
     })
     .flat();
-  // 先頭に0を追加
-  steeringAngleData.unshift(0);
+  // 先頭と末尾に0を追加
+  steeringAngleData.unshift(steeringAngleData[0]);
+  steeringAngleData.push(steeringAngleData[steeringAngleData.length - 1]);
   const minSteeringAngle = Math.min(...steeringAngleData);
   const maxSteeringAngle = Math.max(...steeringAngleData);
   // 角度の最大値100を標高の最大値のスケールに変換
@@ -120,7 +121,6 @@ const drawElevationGraph = (elevation_smooth, corners) => {
     // if (adjustedAngle >= 300) return 300;
     // return adjustedAngle;
   });
-  // console.log(steeringAngleData);
   console.log(adjustedSteeringAngle);
   console.log(elevation_smooth);
 

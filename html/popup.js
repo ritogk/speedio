@@ -59,6 +59,28 @@ export const generateHtml = (x) => {
                 x.score_road_section_standard_deviation
               )}</td>
           </tr>
+          <tr>
+              <td>score_elevation_up_section</td>
+              <td>${truncateToTwoDecimals(x.score_elevation_up_section)}</td>
+          </tr>
+          <tr>
+              <td>score_elevation_down_section</td>
+              <td>${truncateToTwoDecimals(x.score_elevation_down_section)}</td>
+          </tr>
+          <tr>
+              <td>score_elevation_flat_section</td>
+              <td>${truncateToTwoDecimals(x.score_elevation_flat_section)}</td>
+          </tr>
+          <tr>
+              <td>score_elevation_deviation_section</td>
+              <td>${truncateToTwoDecimals(
+                x.score_elevation_deviation_section
+              )}</td>
+          </tr>
+          <tr>
+              <td>score_elevation_complexity</td>
+              <td>${truncateToTwoDecimals(x.score_elevation_complexity)}</td>
+          </tr>
         </table>
         <button onclick="document.getElementById('graphArea').hidden=false;">Graph</button>
         <div id="graphArea" hidden>
