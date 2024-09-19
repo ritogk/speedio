@@ -4,7 +4,8 @@
 
 ## 抽出したワインディング
 
-![image](https://github.com/ritogk/speedio/assets/72111956/9c29dc11-b058-4f5f-8ffa-31d3857a792d)
+![image](https://github.com/user-attachments/assets/8798ffff-2cfc-4f02-8c32-f0050b1f1b5d)
+
 
 ## app setup
 
