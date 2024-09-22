@@ -26,7 +26,12 @@ export const init = () => {
 
   map.on("contextmenu", function (e) {
     const coord = e.latlng;
-    document.getElementById("coordinates").value = coord.lat + "," + coord.lng;
+    const text = coord.lat + "," + coord.lng;
+    navigator.clipboard.writeText(text).then(function() {
+      console.log('クリップボードにコピーされました: ', text);
+    }).catch(function(err) {
+        console.error('クリップボードへのコピーに失敗しました: ', err);
+    });
   });
 };
 
@@ -183,6 +188,9 @@ const calcScore = (targets) => {
     elevation_over_height: Number(
       document.getElementById("weightElevationOverHeight").value
     ),
+    elevation_deviation: Number(
+      document.getElementById("weightElevationDeviation").value
+    ),
     elevation_peak: Number(
       document.getElementById("weightElevationPeek").value
     ),
@@ -209,6 +217,7 @@ const calcScore = (targets) => {
       (x.score_elevation * WEIGHTS["elevation"] +
         (1 - x.score_elevation_over_heiht * WEIGHTS["elevation_over_height"]) +
         x.score_elevation_peak * WEIGHTS["elevation_peak"] +
+        x.score_elevation_deviation * WEIGHTS["elevation_deviation"] +
         x.score_angle * WEIGHTS["angle"] +
         x.score_width * WEIGHTS["width"] +
         x.score_length * WEIGHTS["length"] +

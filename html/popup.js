@@ -1,11 +1,11 @@
 export const generateHtml = (x) => {
   return `<span style="font-weight:bold;">Score</span>
         <table style="width:100%;" border="1">
-          <tr>
+          <tr style="background:bisque;">
               <td>score_normalization</td>
               <td>${truncateToTwoDecimals(x.score_normalization)}</td>
           </tr>
-          <tr>
+          <tr style="background:bisque;">
               <td>score</td>
               <td>${truncateToTwoDecimals(x.score)}</td>
           </tr>
@@ -13,15 +13,19 @@ export const generateHtml = (x) => {
               <td>score_angle</td>
               <td>${truncateToTwoDecimals(x.score_angle)}</td>
           </tr>
-          <tr>
+          <tr style="background: lightcyan;">
               <td>score_elevation</td>
               <td>${truncateToTwoDecimals(x.score_elevation)}</td>
           </tr>
-          <tr>
+          <tr style="background: lightcyan;">
               <td>score_elevation_over_heiht</td>
               <td>${truncateToTwoDecimals(x.score_elevation_over_heiht)}</td>
           </tr>
-          <tr>
+          <tr style="background: lightcyan;">
+              <td>score_elevation_deviation</td>
+              <td>${truncateToTwoDecimals(x.score_elevation_deviation)}</td>
+          </tr>
+          <tr style="background: lightcyan;">
               <td>score_elevation_peak</td>
               <td>${truncateToTwoDecimals(x.score_elevation_peak)}</td>
           </tr>
@@ -37,23 +41,23 @@ export const generateHtml = (x) => {
               <td>score_building</td>
               <td>${truncateToTwoDecimals(x.score_building)}</td>
           </tr>
-          <tr>
+          <tr style="background: mistyrose">
               <td>score_week_corner</td>
               <td>${truncateToTwoDecimals(x.score_week_corner)}</td>
           </tr>
-          <tr>
+          <tr style="background: mistyrose">
               <td>score_medium_corner</td>
               <td>${truncateToTwoDecimals(x.score_medium_corner)}</td>
           </tr>
-          <tr>
+          <tr style="background: mistyrose">
               <td>score_strong_corner</td>
               <td>${truncateToTwoDecimals(x.score_strong_corner)}</td>
           </tr>
-          <tr>
+          <tr style="background: mistyrose">
               <td>score_straight</td>
               <td>${truncateToTwoDecimals(x.score_straight)}</td>
           </tr>
-          <tr>
+          <tr style="background: mistyrose">
               <td>score_road_section_deviation</td>
               <td>${truncateToTwoDecimals(x.score_road_section_deviation)}</td>
           </tr>
