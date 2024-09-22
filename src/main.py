@@ -324,7 +324,7 @@ def main() -> GeoDataFrame:
     excution_timer_ins.stop()
     
     # コーナーの情報を取得する
-    excution_timer_ins.start("🛞 calc corners")
+    excution_timer_ins.start("🛞 calc road_section")
     gdf_edges["road_section"] = column_generater.road_section.generate(
         gdf_edges
     )
@@ -382,6 +382,7 @@ def main() -> GeoDataFrame:
         gdf_edges
     )
     gdf_edges["score"] = column_generater.score.generate(gdf_edges, 'normal')
+    gdf_edges["standard_score"] = column_generater.score.generate(gdf_edges, 'standard')
     gdf_edges["week_corner_score"] = column_generater.score.generate(gdf_edges, 'week_corner')
     gdf_edges["medium_corner_score"] = column_generater.score.generate(gdf_edges, 'medium_corner')
     gdf_edges["strong_corner_score"] = column_generater.score.generate(gdf_edges, 'strong_corner')
@@ -417,6 +418,12 @@ def main() -> GeoDataFrame:
         "alpsmap_avg_width",
         "locations"
     ]
+
+    # gdf_edges.scoreの上位100件を取得する
+    gdf_edges_week = gdf_edges.sort_values("standard_score", ascending=False).head(200)
+    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/standard.csv"
+    gdf_edges_week[output_columns].to_csv(output_dir, index=False)
+
     # gdf_edges.scoreの上位100件を取得する
     gdf_edges_week = gdf_edges.sort_values("week_corner_score", ascending=False).head(200)
     # gdf_edges_week = gdf_edges.sort_values("week_corner_score", ascending=False).iloc[100:200]
