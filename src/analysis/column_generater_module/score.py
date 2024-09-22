@@ -3,7 +3,7 @@ from pandas import Series
 
 # 定数（DOMから取得する値の代わり）
 WEIGHTS = {
-    "elevation": 0.4,
+    "elevation": 0.7,
     "elevation_over_height": 1.0,  
     "elevation_peak": 1,
     "elevation_deviation": 0.5,
