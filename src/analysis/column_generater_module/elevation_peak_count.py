@@ -19,7 +19,7 @@ def generate(gdf: GeoDataFrame) -> Series:
 
         # 0スケールに変換
         elevation_data = [item - min_elevation for item in elevation_data]
-        print(elevation_data)
+        # print(elevation_data)
         elevation_data = np.array(elevation_data)
 
         # ピーク（山）の検出
