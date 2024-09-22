@@ -366,7 +366,7 @@ def main() -> GeoDataFrame:
     gdf_edges["score_medium_corner"] = score_medium_corner
     gdf_edges["score_strong_corner"] = score_strong_corner
     gdf_edges["score_straight"] = score_straight
-    gdf_edges["score_road_section_standard_deviation"] = column_generater.score_road_section_standard_deviation.generate(gdf_edges)
+    gdf_edges["score_road_section_deviation"] = column_generater.score_road_section_deviation.generate(gdf_edges)
     gdf_edges["score_building"] = column_generater.score_building.generate(gdf_edges)
     excution_timer_ins.stop()
 
@@ -463,7 +463,7 @@ def main() -> GeoDataFrame:
         "score_medium_corner",
         "score_strong_corner",
         "score_straight",
-        "score_road_section_standard_deviation",
+        "score_road_section_deviation",
         "score_building",
         "google_map_url",
         "google_earth_url",

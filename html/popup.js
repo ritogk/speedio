@@ -54,10 +54,8 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.score_straight)}</td>
           </tr>
           <tr>
-              <td>score_road_section_standard_deviation</td>
-              <td>${truncateToTwoDecimals(
-                x.score_road_section_standard_deviation
-              )}</td>
+              <td>score_road_section_deviation</td>
+              <td>${truncateToTwoDecimals(x.score_road_section_deviation)}</td>
           </tr>
         </table>
         <button onclick="document.getElementById('graphArea').hidden=false;">Graph</button>
