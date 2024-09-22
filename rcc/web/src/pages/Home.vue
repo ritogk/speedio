@@ -375,7 +375,7 @@ onKeyStroke(['c'], (e) => {
   e.preventDefault()
 })
 
-// スキップ
+// 進む
 onKeyStroke(['\\'], (e) => {
   // 最後のポイントの場合はジオメトリーを切り替える
   if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
@@ -385,6 +385,18 @@ onKeyStroke(['\\'], (e) => {
   }
   selectedBeforeRoadType.value = selectedRoadType.value
   selectedRoadType.value = 'ONE_LANE'
+  e.preventDefault()
+})
+
+// 戻る
+onKeyStroke(['/'], (e) => {
+  // // 最初のポイントの場合はジオメトリーを切り替える
+  if (selectedGeometryPointIndex.value === 0) {
+    handleGeometryMove(selectedGeometryIndex.value - 1)
+  } else {
+    handlePointMove(selectedGeometryPointIndex.value - 1)
+  }
+
   e.preventDefault()
 })
 
