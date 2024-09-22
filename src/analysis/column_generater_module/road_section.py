@@ -51,11 +51,24 @@ def generate(gdf: GeoDataFrame) -> Series:
                     old_direction = direction
 
         # 最後の未処理のセグメントを追加
-        if len(straight) > 0:
-            corners.append({'type': 'straight', 'steering_angle_info': straight})
-        if len(corner) > 0:
-            corners.append({'type': corner[0]['direction'], 'steering_angle_info': corner})
-        
+        # ストレート区間とコーナーの区間が残ったままの場合は正しい順に挿入する。
+        if len(straight) > 0 and len(corner) > 0:
+            straight_st_point = straight[0]["start"]
+            straight_ed_point = straight[-1]["end"]
+            corner_st_point = corner[0]["start"]
+            corner_ed_point = corner[-1]["end"]
+            if straight_st_point == corner_ed_point:
+                corners.append({'type': old_direction, 'steering_angle_info': corner})
+                corners.append({'type': 'straight', 'steering_angle_info': straight})
+            else:
+                corners.append({'type': 'straight', 'steering_angle_info': straight})
+                corners.append({'type': old_direction, 'steering_angle_info': corner})
+        else:
+            if len(straight) > 0:
+                corners.append({'type': 'straight', 'steering_angle_info': straight})
+            if len(corner) > 0:
+                corners.append({'type': old_direction, 'steering_angle_info': corner})
+
         datas = []
         for corner in corners:
             steering_angle_info = corner['steering_angle_info']

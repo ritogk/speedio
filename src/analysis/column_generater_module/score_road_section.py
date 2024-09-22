@@ -29,6 +29,7 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
             print('★★コーナーの距離と誤差あり。要確認')
             print(f"誤差: {x.length / (length + st_between_distance + ed_between_distance)} original:{x.length}, new:{length + st_between_distance + ed_between_distance}")
             print(coords)
+            # print(road_section)
 
         # 弱コーナーのスコア計算
         score_week_corner = sum(
