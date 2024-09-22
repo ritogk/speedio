@@ -212,14 +212,12 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
-    # 標高のU字型の特徴量を求める
-    excution_timer_ins.start("🏔️ calc elevation_u_shape")
-    gdf_edges["elevation_u_shape"] = 0
-    elevation_group, elevation_section = column_generater.elevation_u_shape.generate(
+    # 標高のpeak数求める。
+    excution_timer_ins.start("🏔️ calc elevation_peak_count")
+    elevation_peak_count = column_generater.elevation_peak_count.generate(
         gdf_edges
     )
-    gdf_edges["elevation_group"] = elevation_group
-    gdf_edges["elevation_section"] = elevation_section
+    gdf_edges["elevation_peak_count"] = elevation_peak_count
     excution_timer_ins.stop()
 
     # 標高の変化量を求める
@@ -355,20 +353,10 @@ def main() -> GeoDataFrame:
     gdf_edges["score_elevation_over_heiht"] = (
         column_generater.score_elevation_over_heiht.generate(gdf_edges)
     )
-    gdf_edges["score_elevation_u_shape"] = (
-        column_generater.score_elevation_u_shape.generate(gdf_edges)
+    gdf_edges["score_elevation_peak"] = (
+        column_generater.score_elevation_peak.generate(gdf_edges)
     )
     gdf_edges["score_elevation"] = column_generater.score_elevation.generate(gdf_edges)
-
-    score_elevation_up_section , score_elevation_down_section, score_elevation_flat_section, score_elevation_deviation_section, score_complexity, num_large_peaks = column_generater.score_elevation_section.generate(gdf_edges)
-    gdf_edges["score_elevation_up_section"] = score_elevation_up_section
-    gdf_edges["score_elevation_down_section"] = score_elevation_down_section
-    gdf_edges["score_elevation_flat_section"] = score_elevation_flat_section
-    gdf_edges["score_elevation_deviation_section"] = score_elevation_deviation_section
-    gdf_edges["score_elevation_complexity"] = score_complexity
-    gdf_edges["num_large_peaks"] = num_large_peaks
-
-    # gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
     gdf_edges["score_angle"] = 1
     gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
@@ -460,14 +448,14 @@ def main() -> GeoDataFrame:
         "elevation_deltas",
         "elevation_deltas_and_length_ratio",
         "elevation_height_and_length_ratio",
-        "elevation_u_shape",
         "elevation_smooth",
         "elevation",
+        "elevation_peak_count",
         "angle_deltas",
         "angle_and_length_ratio",
         "score_elevation",
         "score_elevation_over_heiht",
-        "score_elevation_u_shape",
+        "score_elevation_peak",
         "score_angle",
         "score_width",
         "score_length",
@@ -477,11 +465,6 @@ def main() -> GeoDataFrame:
         "score_straight",
         "score_road_section_standard_deviation",
         "score_building",
-        "score_elevation_up_section",
-        "score_elevation_down_section",
-        "score_elevation_flat_section",
-        "score_elevation_deviation_section",
-        "score_elevation_complexity",
         "google_map_url",
         "google_earth_url",
         "street_view_url_list",
@@ -503,8 +486,7 @@ def main() -> GeoDataFrame:
         "steering_wheel_avg_angle",
         "locations",
         "building_nearby_cnt",
-        "elevation_group",
-        "num_large_peaks"
+        # "elevation_group",
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[output_columns].to_json(output_dir, orient="records")

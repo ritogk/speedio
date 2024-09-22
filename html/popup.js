@@ -22,8 +22,8 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.score_elevation_over_heiht)}</td>
           </tr>
           <tr>
-              <td>score_elevation_u_shape</td>
-              <td>${truncateToTwoDecimals(x.score_elevation_u_shape)}</td>
+              <td>score_elevation_peak</td>
+              <td>${truncateToTwoDecimals(x.score_elevation_peak)}</td>
           </tr>
           <tr>
               <td>score_width</td>
@@ -58,28 +58,6 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(
                 x.score_road_section_standard_deviation
               )}</td>
-          </tr>
-          <tr>
-              <td>score_elevation_up_section</td>
-              <td>${truncateToTwoDecimals(x.score_elevation_up_section)}</td>
-          </tr>
-          <tr>
-              <td>score_elevation_down_section</td>
-              <td>${truncateToTwoDecimals(x.score_elevation_down_section)}</td>
-          </tr>
-          <tr>
-              <td>score_elevation_flat_section</td>
-              <td>${truncateToTwoDecimals(x.score_elevation_flat_section)}</td>
-          </tr>
-          <tr>
-              <td>score_elevation_deviation_section</td>
-              <td>${truncateToTwoDecimals(
-                x.score_elevation_deviation_section
-              )}</td>
-          </tr>
-          <tr>
-              <td>score_elevation_complexity</td>
-              <td>${truncateToTwoDecimals(x.score_elevation_complexity)}</td>
           </tr>
         </table>
         <button onclick="document.getElementById('graphArea').hidden=false;">Graph</button>
@@ -119,8 +97,8 @@ export const generateHtml = (x) => {
               )}</td>
           </tr>
           <tr>
-              <td>elevation_u_shape</td>
-              <td>${truncateToTwoDecimals(x.elevation_u_shape)}</td>
+              <td>elevation_peak_count</td>
+              <td>${truncateToTwoDecimals(x.elevation_peak_count)}</td>
           </tr>
           <tr>
               <td>angle_deltas</td>
@@ -157,10 +135,6 @@ export const generateHtml = (x) => {
           <tr>
               <td>steering_wheel_avg_angle</td>
               <td>${truncateToTwoDecimals(x.steering_wheel_avg_angle)}</td>
-          </tr>
-          <tr>
-              <td>num_large_peaks</td>
-              <td>${x.num_large_peaks}</td>
           </tr>
         </table>
 
