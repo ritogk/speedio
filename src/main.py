@@ -360,12 +360,13 @@ def main() -> GeoDataFrame:
     )
     gdf_edges["score_elevation"] = column_generater.score_elevation.generate(gdf_edges)
 
-    score_elevation_up_section , score_elevation_down_section, score_elevation_flat_section, score_elevation_deviation_section, score_complexity = column_generater.score_elevation_section.generate(gdf_edges)
+    score_elevation_up_section , score_elevation_down_section, score_elevation_flat_section, score_elevation_deviation_section, score_complexity, num_large_peaks = column_generater.score_elevation_section.generate(gdf_edges)
     gdf_edges["score_elevation_up_section"] = score_elevation_up_section
     gdf_edges["score_elevation_down_section"] = score_elevation_down_section
     gdf_edges["score_elevation_flat_section"] = score_elevation_flat_section
     gdf_edges["score_elevation_deviation_section"] = score_elevation_deviation_section
     gdf_edges["score_elevation_complexity"] = score_complexity
+    gdf_edges["num_large_peaks"] = num_large_peaks
 
     # gdf_edges["score_angle"] = column_generater.score_angle.generate(gdf_edges)
     gdf_edges["score_angle"] = 1
@@ -502,7 +503,8 @@ def main() -> GeoDataFrame:
         "steering_wheel_avg_angle",
         "locations",
         "building_nearby_cnt",
-        "elevation_group"
+        "elevation_group",
+        "num_large_peaks"
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[output_columns].to_json(output_dir, orient="records")

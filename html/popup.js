@@ -158,6 +158,10 @@ export const generateHtml = (x) => {
               <td>steering_wheel_avg_angle</td>
               <td>${truncateToTwoDecimals(x.steering_wheel_avg_angle)}</td>
           </tr>
+          <tr>
+              <td>num_large_peaks</td>
+              <td>${x.num_large_peaks}</td>
+          </tr>
         </table>
 
         

@@ -27,6 +27,7 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series]:
         # print(segment_list)
 
         coords = list(row.geometry.coords)
+        
         elevations = row.elevation_smooth
         # print(len(coords))
         # print(len(elevations))
@@ -67,14 +68,13 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series]:
             height = max(st, center, ed) - min_elevation
 
             section_type = SectionType.FLAT.value
-            if avg_scaled > flat_elevation_avg:
-                temp = st_scaled - center_scaled - ed_scaled
-                if temp < 0:
-                    section_type = SectionType.UP.value
-                elif temp > 0:
-                    section_type = SectionType.DOWN.value
+            temp = st_scaled - center_scaled - ed_scaled
+            if temp < 0:
+                section_type = SectionType.UP.value
+            elif temp > 0:
+                section_type = SectionType.DOWN.value
 
-            section_type_level = calc_section_level(distance, height)
+            height_and_distance_ratio = calc_section_ratio(distance, height)
 
             elevation_section.append({
                 "p_st": [coords[st_index][1], coords[st_index][0]],
@@ -87,14 +87,14 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series]:
                 "section_type": section_type,
                 "distance": distance,
                 "e_height": height,
-                "section_type_level": section_type_level
+                "height_and_distance_ratio": height_and_distance_ratio
             })
         # elevation_sectionをa_typeが変わる毎にグループ化する
         old_section_type = elevation_section[0]["section_type"]
         section_work = {"section_type": old_section_type,
                         "height": elevation_section[0]["e_height"], # 後で変更する
                         "distance": elevation_section[0]["distance"], # 後で変更する
-                        "section_type_level": elevation_section[0]["section_type_level"], # 後で変更する
+                        "height_and_distance_ratio": elevation_section[0]["height_and_distance_ratio"], # 後で変更する
                         "info": [elevation_section[0]]}
         elevation_group = []
         for i, section in enumerate(elevation_section[1:], start=1):
@@ -103,14 +103,14 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series]:
                 # infoのdistanceを合計する
                 section_work["height"] = sum([info["e_height"] for info in section_work["info"]])
                 section_work["distance"] = sum([info["distance"] for info in section_work["info"]])
-                section_work["section_type_level"] = calc_section_level(section_work["distance"], section_work["height"])
+                section_work["height_and_distance_ratio"] = calc_section_ratio(section_work["distance"], section_work["height"])
                 elevation_group.append(section_work)
 
                 section_work = {
                     "section_type": section_type,
                     "height": section["e_height"],
                     "distance": section["distance"],
-                    "section_type_level": section["section_type_level"],
+                    "height_and_distance_ratio": section["height_and_distance_ratio"],
                     "info": [section]
                 }
                 old_section_type = section_type
@@ -119,7 +119,7 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series]:
         if len(section_work["info"]) >= 1:
             section_work["height"] = sum([info["e_height"] for info in section_work["info"]])
             section_work["distance"] = sum([info["distance"] for info in section_work["info"]])
-            section_work["section_type_level"] = calc_section_level(section_work["distance"], section_work["height"])
+            section_work["height_and_distance_ratio"] = calc_section_ratio(section_work["distance"], section_work["height"])
             elevation_group.append(section_work)
         
         return elevation_group, elevation_section
@@ -156,14 +156,6 @@ def interpolate_point_index_list(line: LineString, interval: int, length:int) ->
     # print(point_indexs)
     return point_indexs
 
-def calc_section_level(distance: int, height: int) -> float:
-    section_type_level = SectionTypeLevel.LOW.value
+def calc_section_ratio(distance: int, height: int) -> float:
     height_and_distance_ratio = height / distance
-    # print(height_and_distance_ratio)
-    if height_and_distance_ratio >= HEIGHT_AND_DISTANCE_STRONG_RATIO:
-        section_type_level = SectionTypeLevel.HIGHT.value
-    elif height_and_distance_ratio >= HEIGHT_AND_DISTANCE_MEDIUM_RATIO:
-        section_type_level = SectionTypeLevel.MEDIUM.value
-    else:
-        section_type_level = SectionTypeLevel.LOW.value
-    return section_type_level
+    return height_and_distance_ratio
