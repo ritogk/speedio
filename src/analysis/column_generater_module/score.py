@@ -6,6 +6,7 @@ WEIGHTS = {
     "elevation": 0.4,
     "elevation_over_height": 1.0,  
     "elevation_peak": 1,
+    "elevation_deviation": 0.5,
     "angle": 0,  
     "width": 1,
     "length": 0.6,
@@ -26,6 +27,7 @@ def generate(gdf: GeoDataFrame, corner_type: str) -> Series:
                 x["score_elevation"] * WEIGHTS["elevation"]
                 + (1 - x["score_elevation_over_heiht"] * WEIGHTS["elevation_over_height"])
                 + x["score_elevation_peak"] * WEIGHTS["elevation_peak"]
+                + x["score_elevation_deviation"] * WEIGHTS["elevation_deviation"]
                 + x["score_angle"] * WEIGHTS["angle"]
                 + x["score_width"] * WEIGHTS["width"]
                 + x["score_length"] * WEIGHTS["length"]
@@ -40,6 +42,7 @@ def generate(gdf: GeoDataFrame, corner_type: str) -> Series:
                 x["score_elevation"] * WEIGHTS["elevation"]
                 + (1 - x["score_elevation_over_heiht"] * WEIGHTS["elevation_over_height"])
                 + x["score_elevation_peak"] * WEIGHTS["elevation_peak"]
+                + x["score_elevation_deviation"] * WEIGHTS["elevation_deviation"]
                 + x["score_angle"] * WEIGHTS["angle"]
                 + x["score_width"] * 0
                 + x["score_length"] * WEIGHTS["length"]
