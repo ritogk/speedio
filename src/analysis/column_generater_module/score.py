@@ -10,7 +10,7 @@ WEIGHTS = {
     "angle": 0,  
     "width": 1,
     "length": 0.7,
-    "building": 0.8, # 建物が描かれていない所もあるので評価を下げる。
+    "building": 1,
     "week_corner": 0,
     "medium_corner": 0,
     "strong_corner": 0,
