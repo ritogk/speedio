@@ -26,6 +26,9 @@ def calc_steering_wheel_angle(p1: np.ndarray
     except ValueError as e:
         # 3点が直線上にある場合はステアリング角を0とする
         angle = 0
+        radius = 0
+        center = (0, 0)
+        direction = "straight"
         print("直線だよ")
     return angle, radius, center, direction
 
