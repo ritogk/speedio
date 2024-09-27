@@ -92,7 +92,7 @@ const loadCsv = async (e: Event) => {
  */
 const handleGeometryMove = (index: number) => {
   changeSelectedGeometry(index)
-  changeSelectedGeometryPoint(0)
+  changeSelectedGeometryPoint(1)
   updatePanorama(selectedGeometryPoint.value)
   updateMap(selectedGeometry.value)
   updateMapMarker(selectedGeometryPoint.value)
@@ -340,7 +340,7 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
   }
 
   // 最後のポイントの場合はジオメトリーを切り替える
-  if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
+  if (selectedGeometryPointIndex.value + 2 === selectedGeometry.value.length) {
     handleGeometryMove(selectedGeometryIndex.value + 1)
   } else {
     handlePointMove(selectedGeometryPointIndex.value + 1)
@@ -416,8 +416,8 @@ const geometryPointPageNoJump = ref(1)
 
 <template>
   <div style="display: flex; width: 100%">
-    <div style="flex: 7; height: 750px">
-      <div id="pano" style="flex: 5; background-color: gray; height: 750px">street_view_area</div>
+    <div style="flex: 7; height: 1000px">
+      <div id="pano" style="flex: 5; background-color: gray; height: 1000px">street_view_area</div>
       <div style="width: 100%">
         <div class="button-container">
           <button
@@ -483,9 +483,9 @@ const geometryPointPageNoJump = ref(1)
         </div>
       </div>
     </div>
-    <div id="map" style="flex: 2; background-color: darkgray; height: 750px">google_map_area</div>
+    <div id="map" style="flex: 2; background-color: darkgray; height: 1000px">google_map_area</div>
     <div style="flex: 2; background-color: white">
-      <table border="1" style="height: 750px; overflow-y: auto; display: block">
+      <table border="1" style="height: 1000px; overflow-y: auto; display: block">
         <thead>
           <tr style="background: lightblue">
             <th>DB</th>
