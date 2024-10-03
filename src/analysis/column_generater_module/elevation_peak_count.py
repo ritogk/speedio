@@ -23,8 +23,7 @@ def generate(gdf: GeoDataFrame) -> Series:
         elevation_data = np.array(elevation_data)
 
         # ピーク（山）の検出
-        # ★★ find_peaks関数の意味を理解する所から
-        peaks, _ = find_peaks(elevation_data, distance=3, prominence=4.5)
+        peaks, _ = find_peaks(elevation_data, distance=3, prominence=6)
         # print("ピークのインデックス")
         # print(peaks)
         # print(_["prominences"])

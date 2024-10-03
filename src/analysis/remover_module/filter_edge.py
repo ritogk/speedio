@@ -8,7 +8,7 @@ import numpy as np
 # ジオメトリーの座標感の角度変化量の合計が120度以上
 # 1500mで10分岐以下
 def remove(gdf: GeoDataFrame) -> GeoDataFrame:
-    lower_bound_meter = 2000
+    lower_bound_meter = 1600
     # max_bound_meter = 10000
     branch_meter_rate = 10 / 1500  # 1500mで10分岐以上ある場合は対象外にする
 
