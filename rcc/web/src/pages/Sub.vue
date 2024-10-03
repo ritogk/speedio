@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { provide, computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { provide, computed, ref } from 'vue'
+import { Loader } from '@googlemaps/js-api-loader'
 import {
   useHomeState,
   UseHomeStateKey,
@@ -11,10 +12,40 @@ import { usePostLocations } from '@/core/api/use-post-locations'
 import { usePatchLocations } from '@/core/api/use-patch-locations'
 
 import { onKeyStroke } from '@vueuse/core'
+const apiKey = import.meta.env.VITE_API_KEY
+
+let map: google.maps.Map | null = null
+let marker: google.maps.Marker | null = null
+let polyline: google.maps.Polyline | null = null
+let panorama: google.maps.StreetViewPanorama | null = null
 
 const { data: locations, setQueryParams } = useGetLocations()
 const postLocations = usePostLocations()
 const patchLocations = usePatchLocations()
+
+const initGoogleService = async (polyline: PointType[], point: PointType): Promise<void> => {
+  const loader = new Loader({
+    apiKey: apiKey,
+    version: 'weekly',
+    libraries: ['places']
+  })
+  // このへんの処理で初期値をセットしているが先の処理で更新しているので消したい。
+  const MapsLibrary = await loader.importLibrary('maps')
+  map = new MapsLibrary.Map(document.getElementById('map') as HTMLElement, {
+    center: { lat: point.latitude, lng: point.longitude },
+    zoom: 13
+  })
+  const resultPanorama = await loader.importLibrary('streetView')
+  const nextIndex = findClosestPointIndex(polyline, point) + 1
+  const nextPoint = filteredGeometries.value[selectedGeometryIndex.value][nextIndex]
+  panorama = new resultPanorama.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
+    position: { lat: point.latitude, lng: point.longitude },
+    pov: {
+      heading: calculateHeading(selectedGeometryPoint, nextPoint),
+      pitch: 10
+    }
+  })
+}
 
 const homeState = useHomeState()
 provide(UseHomeStateKey, homeState)
@@ -43,9 +74,15 @@ const loadCsv = async (e: Event) => {
   if (!fileList.length) return
   const file = target.files?.[0]
   await loadGeometries(file)
-  const originalGeometry = originalGeometries.value[selectedGeometryIndex.value]
-  updateMainMap(originalGeometry, selectedGeometryPoint.value)
-  updateMap(originalGeometry)
+
+  if (map === null && panorama === null && polyline === null) {
+    await initGoogleService(
+      filteredGeometries.value[selectedGeometryIndex.value],
+      selectedGeometryPoint.value
+    )
+  }
+  updatePanorama(selectedGeometryPoint.value)
+  updateMap(selectedGeometry.value)
   updateMapMarker(selectedGeometryPoint.value)
 }
 
@@ -56,9 +93,8 @@ const loadCsv = async (e: Event) => {
 const handleGeometryMove = (index: number) => {
   changeSelectedGeometry(index)
   changeSelectedGeometryPoint(1)
-  const originalGeometry = originalGeometries.value[selectedGeometryIndex.value]
-  updateMainMap(originalGeometry, selectedGeometryPoint.value)
-  updateMap(originalGeometry)
+  updatePanorama(selectedGeometryPoint.value)
+  updateMap(selectedGeometry.value)
   updateMapMarker(selectedGeometryPoint.value)
 
   // geometryからバウンディングボックス生成
@@ -90,66 +126,95 @@ const handleGeometryMove = (index: number) => {
  */
 const handlePointMove = (index: number) => {
   changeSelectedGeometryPoint(index)
-  const originalGeometry = originalGeometries.value[selectedGeometryIndex.value]
-  updateMainMap(originalGeometry, selectedGeometryPoint.value)
+  updatePanorama(selectedGeometryPoint.value)
   updateMapMarker(selectedGeometryPoint.value)
 }
 
+let oldPano = ''
 /**
- * main-mapの更新
+ * street-viewの更新
  */
-const updateMainMap = (selectedOriginalGeometry: PointType[], selectedGeometryPoint: PointType) => {
-  if (!gsiMapMain || !gsiMapMainContainer.value) return
+const updatePanorama = (selectedGeometryPoint: PointType) => {
+  // チェック座標より１点先の座標を取得する。
+  const nextPoint = getCheckNextPoint(selectedGeometryPoint)
 
-  // gsiMapMainのポリラインとcircleを削除
-  gsiMapMain.eachLayer((layer) => {
-    if (!gsiMapMain) return
-    if (layer instanceof L.Polyline || layer instanceof L.Circle) {
-      gsiMapMain.removeLayer(layer)
+  if (panorama) {
+    panorama.setPosition({
+      lat: selectedGeometryPoint.latitude,
+      lng: selectedGeometryPoint.longitude
+    })
+
+    // 直前の画像と変わったかどうかを判定
+    if (oldPano === panorama.getLocation().pano) {
+      alert('画像がありません。')
+      return
     }
+    oldPano = panorama.getLocation().pano
+
+    panorama.setPov({
+      heading: calculateHeading(selectedGeometryPoint, nextPoint),
+      pitch: 10
+    })
+  }
+}
+
+/**
+ * ストリートビューの視点用。チェック用座標の１点先の座標を取得する。
+ * @param selectedGeometryPoint
+ */
+const getCheckNextPoint = (selectedGeometryPoint: PointType) => {
+  // チェック座標より１点先の座標を取得する。
+  const originalGeometry = originalGeometries.value.find((geometry) => {
+    return geometry.some((point) => {
+      if (
+        point.latitude === selectedGeometryPoint.latitude &&
+        point.longitude === selectedGeometryPoint.longitude
+      ) {
+        return true
+      }
+      return false
+    })
   })
+  if (!originalGeometry) return
 
-  // 座標を移動
-  gsiMapMain.setView([selectedGeometryPoint.latitude, selectedGeometryPoint.longitude], 18)
-
-  // polylineを描画
-  const latlngs: L.LatLngTuple[] = selectedOriginalGeometry.map((point) => {
-    return [point.latitude, point.longitude]
+  const originalGeometryPointIndex = originalGeometry.find((point) => {
+    if (
+      point.latitude === selectedGeometryPoint.latitude &&
+      point.longitude === selectedGeometryPoint.longitude
+    ) {
+      return true
+    }
+    return false
   })
-  L.polyline(latlngs, { color: 'red', opacity: 0.1 }).addTo(gsiMapMain)
+  if (!originalGeometryPointIndex) return
 
-  // チェック範囲の塩を描画
-  L.circle([selectedGeometryPoint.latitude, selectedGeometryPoint.longitude], {
-    color: 'blue', // 外周の色
-    opacity: 0.3, // 外周の透明度
-    fillColor: 'blue', // 円内部の色
-    fillOpacity: 0.2, // デフォルトの透明度
-    radius: 10, // 円の半径
-    weight: 2 // 外周の幅を小さく設定
-  }).addTo(gsiMapMain)
+  const nextIndex = findClosestPointIndex(originalGeometry, originalGeometryPointIndex) + 1
+  const nextPoint = originalGeometry[nextIndex]
+  return nextPoint
 }
 
 /**
  * ポリラインの更新
  */
 const updateMap = (geometry: PointType[]) => {
-  if (!gsiMap || !gsiMapContainer.value) return
-
-  // gsiMapのポリラインとcircleを削除
-  gsiMap.eachLayer((layer) => {
-    if (!gsiMap) return
-    if (layer instanceof L.Polyline || layer instanceof L.Circle) {
-      gsiMap.removeLayer(layer)
-    }
+  // ポリライン更新
+  polyline?.setMap(null)
+  polyline = new google.maps.Polyline({
+    path: geometry.map((point) => {
+      return { lat: point.latitude, lng: point.longitude }
+    }),
+    geodesic: true,
+    strokeColor: '#FF0000',
+    strokeOpacity: 1.0,
+    strokeWeight: 2
   })
+  polyline.setMap(map)
 
-  // polylineを描画
-  const latlngs: L.LatLngTuple[] = geometry.map((point) => {
-    return [point.latitude, point.longitude]
+  // 中央座標の更新
+  map?.setCenter({
+    lat: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].latitude,
+    lng: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].longitude
   })
-  L.polyline(latlngs, { color: 'red', opacity: 0.5 }).addTo(gsiMap)
-
-  gsiMap.fitBounds(L.polyline(latlngs).getBounds())
 }
 
 /**
@@ -157,18 +222,47 @@ const updateMap = (geometry: PointType[]) => {
  * @param point
  */
 const updateMapMarker = (point: PointType) => {
-  if (!gsiMap || !gsiMapContainer.value) return
-
-  // マーカーを削除
-  gsiMap.eachLayer((layer) => {
-    if (!gsiMap) return
-    if (layer instanceof L.Marker) {
-      gsiMap.removeLayer(layer)
-    }
+  marker?.setMap(null)
+  marker = new google.maps.Marker({
+    position: {
+      lat: point.latitude,
+      lng: point.longitude
+    },
+    map: map,
+    title: 'Hello World!'
   })
+}
 
-  // 特定の座標にマーカーを追加
-  L.marker([point.latitude, point.longitude]).addTo(gsiMap)
+/**
+ * 座標間の視点を計算
+ * @param point1
+ * @param point2
+ */
+const calculateHeading = (point1: any, point2: any): number => {
+  if (!point1 || !point2) return 0
+  const lat1 = (point1.latitude * Math.PI) / 180
+  const lat2 = (point2.latitude * Math.PI) / 180
+  const diffLong = ((point2.longitude - point1.longitude) * Math.PI) / 180
+
+  const x = Math.sin(diffLong) * Math.cos(lat2)
+  const y = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(diffLong)
+
+  return ((Math.atan2(x, y) * 180) / Math.PI + 360) % 360
+}
+
+/**
+ * 指定座標に最も近いポイントのインデックスを取得
+ * @param points
+ * @param targetXY
+ */
+const findClosestPointIndex = (points: PointType[], targetXY: PointType): number => {
+  const nextIndex = points.findIndex((point) => {
+    if (point.latitude === targetXY.latitude && point.longitude === targetXY.longitude) {
+      return true
+    }
+    return false
+  })
+  return nextIndex
 }
 
 // 一覧に表示するデータ
@@ -318,57 +412,12 @@ onKeyStroke([':'], (e) => {
 })
 
 const geometryPointPageNoJump = ref(1)
-
-import L from 'leaflet'
-
-const gsiMapMainContainer = ref(null)
-const gsiMapContainer = ref(null)
-let gsiMapMain: null | L.Map = null
-let gsiMap: null | L.Map = null
-
-const initMap = () => {
-  if (!gsiMapContainer.value || !gsiMapMainContainer.value) return
-  gsiMapMain = L.map(gsiMapMainContainer.value).setView([34.826114, 137.5715965], 18)
-  L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
-    attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html'>国土地理院</a>",
-    maxZoom: 18
-  }).addTo(gsiMapMain)
-
-  gsiMap = L.map(gsiMapContainer.value).setView([34.826114, 137.5715965], 18)
-  L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
-    attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html'>国土地理院</a>",
-    maxZoom: 18
-  }).addTo(gsiMap)
-}
-
-onMounted(() => {
-  initMap()
-})
-
-onBeforeUnmount(() => {
-  if (gsiMap) {
-    gsiMap.remove()
-  }
-})
 </script>
 
 <template>
   <div style="display: flex; width: 100%">
     <div style="flex: 7; height: 1000px">
-      <div style="overflow: hidden; /* はみ出しを隠す */">
-        <div
-          ref="gsiMapMainContainer"
-          style="
-            flex: 5;
-            background-color: gray;
-            height: 1000px;
-            transform: scale(1.2);
-            /* z-index: -1; */
-          "
-        >
-          gsi_map_main_area
-        </div>
-      </div>
+      <div id="pano" style="flex: 5; background-color: gray; height: 1000px">street_view_area</div>
       <div style="width: 100%">
         <div class="button-container">
           <button
@@ -434,9 +483,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
-    <div ref="gsiMapContainer" style="flex: 2; background-color: darkgray; height: 1000px">
-      gsi_map_area
-    </div>
+    <div id="map" style="flex: 2; background-color: darkgray; height: 1000px">google_map_area</div>
     <div style="flex: 2; background-color: white">
       <table border="1" style="height: 1000px; overflow-y: auto; display: block">
         <thead>
