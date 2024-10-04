@@ -70,6 +70,7 @@ export const draw = () => {
       .addTo(map);
     line.on("popupopen", (e) => {
       console.log(x)
+      console.log(x.elevation_segment_list)
       drawGraph(x.road_section, x.corners_group, x.elevation_smooth);
       draw3D(x.geometry_meter_list, x.elevation_smooth);
     });
