@@ -1,19 +1,14 @@
 import osmnx as ox
 import networkx as nx
+from shapely.geometry import MultiPolygon
 
-
-def fetch_graph(
-    latitude_start, longitude_start, latitude_end, longitude_end
-) -> nx.Graph:
+def fetch_graph(search_area_polygon : MultiPolygon) -> nx.Graph:
     # キャッシュを使う
     ox.settings.use_cache = True
     ox.settings.log_console = False
 
-    graph = ox.graph_from_bbox(
-        north=max(latitude_start, latitude_end),
-        south=min(latitude_start, latitude_end),
-        east=max(longitude_start, longitude_end),
-        west=min(longitude_start, longitude_end),
+    graph = ox.graph_from_polygon(
+        search_area_polygon,
         network_type="drive",
         simplify=True,
         retain_all=True,
