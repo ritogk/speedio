@@ -17,7 +17,7 @@ def generate(gdf: GeoDataFrame) -> Series:
         values = [score_corner_week, score_corner_medium, score_corner_strong, score_corner_none]
 
         # 正規化定数 k を設定（必要に応じて調整）大きくするほど標準偏差の影響が小さくなる。
-        k = 0.8
+        k = 0.5
 
         # 標準偏差を計算
         std_dev = np.std(values)
