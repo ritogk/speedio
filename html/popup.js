@@ -74,9 +74,13 @@ export const generateHtml = (x) => {
 
         <span style="font-weight:bold;">Created</span>
         <table style="width:100%;" border="1">
-        <tr>
+          <tr>
               <td>building_nearby_cnt</td>
               <td>${truncateToTwoDecimals(x.building_nearby_cnt)}</td>
+          </tr>
+          <tr>
+              <td>road_section_cnt</td>
+              <td>${truncateToTwoDecimals(x.road_section_cnt)}</td>
           </tr>
           <tr>
               <td>elevation_deltas</td>
