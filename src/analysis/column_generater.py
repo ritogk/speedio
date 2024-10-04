@@ -21,7 +21,7 @@ from .column_generater_module import score_elevation_over_heiht
 from .column_generater_module import score_elevation_unevenness
 from .column_generater_module import score_length
 from .column_generater_module import score_corner_level
-from .column_generater_module import score_corner_level_deviation
+from .column_generater_module import score_corner_balance
 from .column_generater_module import turn_candidate_points
 from .column_generater_module import turn
 from .column_generater_module import street_view_url_list

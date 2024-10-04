@@ -209,7 +209,7 @@ const calcScore = (targets) => {
       document.getElementById("wightCornerStrong").value
     ),
     corner_none: Number(document.getElementById("wightCornerNone").value),
-    corner_level_deviation: Number(document.getElementById("wightCornerLevelDeviation").value)
+    corner_balance: Number(document.getElementById("wightCornerBalance").value)
   };
 
   // スコア計算
@@ -227,7 +227,7 @@ const calcScore = (targets) => {
         x.score_corner_medium * WEIGHTS["corner_medium"] +
         x.score_corner_strong * WEIGHTS["corner_strong"] +
         x.score_corner_none * WEIGHTS["corner_none"] + 
-        x.score_corner_level_deviation * WEIGHTS["corner_level_deviation"])/
+        x.score_corner_balance * WEIGHTS["corner_balance"])/
       Object.keys(WEIGHTS).length;
     return x;
   });
