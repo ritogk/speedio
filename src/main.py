@@ -219,13 +219,12 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
-
-    # 標高のpeak数求める。
-    excution_timer_ins.start("🏔️ calc elevation_peak_count")
-    elevation_peak_count = column_generater.elevation_peak_count.generate(
+    # 標高のバンプ数求める。
+    excution_timer_ins.start("🏔️ calc elevation_unevenness_count")
+    elevation_unevenness_count = column_generater.elevation_unevenness_count.generate(
         gdf_edges
     )
-    gdf_edges["elevation_peak_count"] = elevation_peak_count
+    gdf_edges["elevation_unevenness_count"] = elevation_unevenness_count
     excution_timer_ins.stop()
 
     # 標高の変化量を求める
@@ -361,8 +360,8 @@ def main() -> GeoDataFrame:
     gdf_edges["score_elevation_over_heiht"] = (
         column_generater.score_elevation_over_heiht.generate(gdf_edges)
     )
-    gdf_edges["score_elevation_peak"] = (
-        column_generater.score_elevation_peak.generate(gdf_edges)
+    gdf_edges["score_elevation_unevenness"] = (
+        column_generater.score_elevation_unevenness.generate(gdf_edges)
     )
     gdf_edges["score_elevation"] = column_generater.score_elevation.generate(gdf_edges)
     gdf_edges["score_elevation_deviation"] = column_generater.score_elevation_deviation.generate(gdf_edges) 
@@ -467,12 +466,12 @@ def main() -> GeoDataFrame:
         "elevation_smooth",
         "elevation",
         "elevation_segment_list",
-        "elevation_peak_count",
+        "elevation_unevenness_count",
         "angle_deltas",
         "angle_and_length_ratio",
         "score_elevation",
         "score_elevation_over_heiht",
-        "score_elevation_peak",
+        "score_elevation_unevenness",
         "score_elevation_deviation",
         "score_angle",
         "score_width",

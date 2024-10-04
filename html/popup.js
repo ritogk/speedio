@@ -26,8 +26,8 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.score_elevation_deviation)}</td>
           </tr>
           <tr style="background: lightcyan;">
-              <td>score_elevation_peak</td>
-              <td>${truncateToTwoDecimals(x.score_elevation_peak)}</td>
+              <td>score_elevation_unevenness</td>
+              <td>${truncateToTwoDecimals(x.score_elevation_unevenness)}</td>
           </tr>
           <tr>
               <td>score_width</td>
@@ -99,8 +99,8 @@ export const generateHtml = (x) => {
               )}</td>
           </tr>
           <tr>
-              <td>elevation_peak_count</td>
-              <td>${truncateToTwoDecimals(x.elevation_peak_count)}</td>
+              <td>elevation_unevenness_count</td>
+              <td>${truncateToTwoDecimals(x.elevation_unevenness_count)}</td>
           </tr>
           <tr>
               <td>angle_deltas</td>
