@@ -12,7 +12,6 @@ def find_prefecture_polygon(geojson_path: str, prefecture_name: str) -> MultiPol
 
     # # GeoDataFrameに変換して保存
     # expanded_gdf = gpd.GeoDataFrame(geometry=[expanded_polygon], crs="EPSG:4326")
-    
     # # GeoJSON形式でファイルに保存
     # expanded_gdf.to_file("./expanded_polygon.geojson", driver="GeoJSON")
     return expanded_polygon
