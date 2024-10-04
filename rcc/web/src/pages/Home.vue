@@ -45,7 +45,8 @@ const loadCsv = async (e: Event) => {
   if (!fileList.length) return
   const file = target.files?.[0]
   await loadGeometries(file)
-  const originalGeometry = originalGeometries.value[selectedGeometryIndex.value]
+  const originalGeometry = findOriginalGeometry(selectedGeometryIndex.value)
+  if (!originalGeometry) return
   updateMainMap(originalGeometry, selectedGeometryPoint.value)
   updateMap(originalGeometry)
   updateMapMarker(selectedGeometryPoint.value)
@@ -58,7 +59,8 @@ const loadCsv = async (e: Event) => {
 const handleGeometryMove = (index: number) => {
   changeSelectedGeometry(index)
   changeSelectedGeometryPoint(1)
-  const originalGeometry = originalGeometries.value[selectedGeometryIndex.value]
+  const originalGeometry = findOriginalGeometry(selectedGeometryIndex.value)
+  if (!originalGeometry) return
   updateMainMap(originalGeometry, selectedGeometryPoint.value)
   updateMap(originalGeometry)
   updateMapMarker(selectedGeometryPoint.value)
@@ -92,7 +94,8 @@ const handleGeometryMove = (index: number) => {
  */
 const handlePointMove = (index: number) => {
   changeSelectedGeometryPoint(index)
-  const originalGeometry = originalGeometries.value[selectedGeometryIndex.value]
+  const originalGeometry = findOriginalGeometry(selectedGeometryIndex.value)
+  if (!originalGeometry) return
   updateMainMap(originalGeometry, selectedGeometryPoint.value)
   updateMapMarker(selectedGeometryPoint.value)
 }
@@ -264,6 +267,23 @@ const handleChangeFilterGeometryClick = () => {
   changeFilterGeometry()
   // filteredGeometriesの値が変わった後に各値を初期化する
   handleGeometryMove(0)
+}
+
+/**
+ * オリジナルのジオメトリーを取得
+ * @param geometryIndex
+ */
+const findOriginalGeometry = (geometryIndex: number) => {
+  const geometry = filteredGeometries.value[geometryIndex]
+  const originalGeometry = originalGeometries.value.find((x) => {
+    return (
+      x[0].latitude === geometry[0].latitude &&
+      x[0].longitude === geometry[0].longitude &&
+      x[x.length - 1].latitude === geometry[geometry.length - 1].latitude &&
+      x[x.length - 1].longitude === geometry[geometry.length - 1].longitude
+    )
+  })
+  return originalGeometry
 }
 
 // onKeyStroke(['z'], (e) => {
