@@ -7,9 +7,9 @@ WEEK_CORNER_ANGLE_MAX = 45
 MEDIUM_CORNER_ANGLE_MIN = 45
 MEDIUM_CORNER_ANGLE_MAX = 80
 STRONG_CORNER_ANGLE_MIN = 80
-# 現状のアルゴリズムの都合上、1000mのコーナーが存在してしまい、直線区間がなくコーナーの性質が薄いため450mとして帳尻を合わせる。
-# NOTE: https://www.notion.so/d2fe2f7ad1be47a9831863f20a83c0ac?pvs=4
-MAX_DISTANCE = 450  # 最大距離
+# # 現状のアルゴリズムの都合上、1000mのコーナーが存在してしまい、直線区間がなくコーナーの性質が薄いため450mとして帳尻を合わせる。
+# # NOTE: https://www.notion.so/d2fe2f7ad1be47a9831863f20a83c0ac?pvs=4
+# MAX_DISTANCE = 450  # 最大距離
 
 def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
     def func(x):
@@ -33,23 +33,25 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
 
         # 弱コーナーのスコア計算
         score_corner_week = sum(
-            min(item['distance'], MAX_DISTANCE) for item in road_section
+            item['distance'] for item in road_section
             if (WEEK_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
         ) / length
         # 中コーナーのスコア計算
         score_corner_medium = sum(
-            min(item['distance'], MAX_DISTANCE) for item in road_section
+            item['distance'] for item in road_section
             if (MEDIUM_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
         ) / length
         # 強コーナーのスコア計算
         score_corner_strong = sum(
-            min(item['distance'], MAX_DISTANCE) for item in road_section
+            item['distance'] for item in road_section
             if STRONG_CORNER_ANGLE_MIN <= item['adjusted_steering_angle']
         ) / length
-        # ストレートのスコア計算
-        score_corner_none = sum(
-            item['distance'] for item in road_section
-            if (item['section_type'] == 'straight')
+        # Noneコーナーのスコア計算
+        score_corner_none = (
+            sum(
+                item['distance'] for item in road_section
+                if (WEEK_CORNER_ANGLE_MIN > item['adjusted_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
+            )
         ) / length
 
         # if(x.length == 7187.297999999998):

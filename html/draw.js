@@ -198,17 +198,17 @@ const calcScore = (targets) => {
     width: Number(document.getElementById("weightWidth").value),
     length: Number(document.getElementById("weightLength").value),
     building: Number(document.getElementById("weightBuilding").value),
-    week_corner: Number(
-      document.getElementById("wightWeekCorner").value
+    corner_week: Number(
+      document.getElementById("wightCornerWeek").value
     ),
-    medium_corner: Number(
-      document.getElementById("wightMediumCorner").value
+    corner_medium: Number(
+      document.getElementById("wightCornerMedium").value
     ),
-    strong_corner: Number(
-      document.getElementById("wightStrongCorner").value
+    corner_strong: Number(
+      document.getElementById("wightCornerStrong").value
     ),
-    straight: Number(document.getElementById("wightStraight").value),
-    road_section_deviation: Number(document.getElementById("wightRoadSectionDeviation").value)
+    corner_none: Number(document.getElementById("wightCornerNone").value),
+    corner_level_deviation: Number(document.getElementById("wightCornerLevelDeviation").value)
   };
 
   // スコア計算
@@ -222,11 +222,11 @@ const calcScore = (targets) => {
         x.score_width * WEIGHTS["width"] +
         x.score_length * WEIGHTS["length"] +
         x.score_building * WEIGHTS["building"] +
-        x.score_corner_week * WEIGHTS["week_corner"] +
-        x.score_corner_medium * WEIGHTS["medium_corner"] +
-        x.score_corner_strong * WEIGHTS["strong_corner"] +
-        x.score_corner_none * WEIGHTS["straight"] + 
-        x.score_road_section_deviation * WEIGHTS["road_section_deviation"])/
+        x.score_corner_week * WEIGHTS["corner_week"] +
+        x.score_corner_medium * WEIGHTS["corner_medium"] +
+        x.score_corner_strong * WEIGHTS["corner_strong"] +
+        x.score_corner_none * WEIGHTS["corner_none"] + 
+        x.score_corner_level_deviation * WEIGHTS["corner_level_deviation"])/
       Object.keys(WEIGHTS).length;
     return x;
   });

@@ -58,8 +58,8 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.score_corner_none)}</td>
           </tr>
           <tr style="background: mistyrose">
-              <td>score_road_section_deviation</td>
-              <td>${truncateToTwoDecimals(x.score_road_section_deviation)}</td>
+              <td>score_corner_level_deviation</td>
+              <td>${truncateToTwoDecimals(x.score_corner_level_deviation)}</td>
           </tr>
         </table>
         <button onclick="document.getElementById('graphArea').hidden=false;">Graph</button>
