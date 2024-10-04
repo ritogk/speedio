@@ -31,7 +31,7 @@ def main() -> GeoDataFrame:
         search_area_polygon = Polygon([top_left, top_right, bottom_right, bottom_left])
     else:
         prefectures_geojson_path = f"{os.path.dirname(os.path.abspath(__file__))}/../prefectures.geojson"
-        search_area_polygon = find_prefecture_polygon(prefectures_geojson_path, "静岡県")
+        search_area_polygon = find_prefecture_polygon(prefectures_geojson_path, env["AREA_PREFECTURE_NAME"])
     execution_timer_ins.stop()
 
     # ベースとなるグラフを取得する
