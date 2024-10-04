@@ -32,22 +32,22 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
             # print(road_section)
 
         # 弱コーナーのスコア計算
-        score_week_corner = sum(
+        score_corner_week = sum(
             min(item['distance'], MAX_DISTANCE) for item in road_section
             if (WEEK_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
         ) / length
         # 中コーナーのスコア計算
-        score_medium_corner = sum(
+        score_corner_medium = sum(
             min(item['distance'], MAX_DISTANCE) for item in road_section
             if (MEDIUM_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
         ) / length
         # 強コーナーのスコア計算
-        score_strong_corner = sum(
+        score_corner_strong = sum(
             min(item['distance'], MAX_DISTANCE) for item in road_section
             if STRONG_CORNER_ANGLE_MIN <= item['adjusted_steering_angle']
         ) / length
         # ストレートのスコア計算
-        score_straight = sum(
+        score_corner_none = sum(
             item['distance'] for item in road_section
             if (item['section_type'] == 'straight')
         ) / length
@@ -71,12 +71,12 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
         #     print('all')
         #     print(length)
 
-        return score_week_corner, score_medium_corner, score_strong_corner, score_straight
+        return score_corner_week, score_corner_medium, score_corner_strong, score_corner_none
 
     results = gdf.apply(func, axis=1, result_type='expand')
-    score_week_corner = results[0]
-    score_medium_corner = results[1]
-    score_strong_corner = results[2]
-    score_straight = results[3]
+    score_corner_week = results[0]
+    score_corner_medium = results[1]
+    score_corner_strong = results[2]
+    score_corner_none = results[3]
 
-    return score_week_corner, score_medium_corner, score_strong_corner, score_straight
+    return score_corner_week, score_corner_medium, score_corner_strong, score_corner_none
