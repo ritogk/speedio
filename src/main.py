@@ -212,6 +212,14 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
 
+    # 100m単位の標高の区間リストを生成する
+    excution_timer_ins.start("🏔️ calc elevation_segment_list")
+    gdf_edges["elevation_segment_list"] = column_generater.elevation_segment_list.generate(
+        gdf_edges
+    )
+    excution_timer_ins.stop()
+
+
     # 標高のpeak数求める。
     excution_timer_ins.start("🏔️ calc elevation_peak_count")
     elevation_peak_count = column_generater.elevation_peak_count.generate(
@@ -458,6 +466,7 @@ def main() -> GeoDataFrame:
         "elevation_height_and_length_ratio",
         "elevation_smooth",
         "elevation",
+        "elevation_segment_list",
         "elevation_peak_count",
         "angle_deltas",
         "angle_and_length_ratio",
@@ -495,7 +504,7 @@ def main() -> GeoDataFrame:
         "steering_wheel_avg_angle",
         "locations",
         "building_nearby_cnt",
-        # "elevation_group",
+    
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[output_columns].to_json(output_dir, orient="records")
