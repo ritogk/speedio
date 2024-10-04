@@ -1,4 +1,4 @@
-from .core import excution_timer
+from .core import execution_timer
 from .analysis import graph_feather
 from .analysis import column_generater
 from .analysis import remover
@@ -28,111 +28,111 @@ def short_search() -> GeoDataFrame:
     # latitude_end = 34.833082
     # longitude_end = 137.672158
 
-    excution_timer_ins = excution_timer.ExcutionTimer()
+    execution_timer_ins = execution_timer.ExecutionTimer()
 
-    excution_timer_ins.start("load openstreetmap data")
+    execution_timer_ins.start("load openstreetmap data")
     graph = graph_feather.fetch_graph(
         latitude_start, longitude_start, latitude_end, longitude_end
     )
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
-    excution_timer_ins.start("convert graph to GeoDataFrame")
+    execution_timer_ins.start("convert graph to GeoDataFrame")
     gdf_edges = ox.graph_to_gdfs(graph, nodes=False, edges=True)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
-    excution_timer_ins.start("remove reverse edge")
+    execution_timer_ins.start("remove reverse edge")
     gdf_edges = remover.reverse_edge.remove(gdf_edges)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # 開始位置列を追加する
-    excution_timer_ins.start("calc start_point")
+    execution_timer_ins.start("calc start_point")
     gdf_edges["start_point"] = column_generater.start_point.generate(gdf_edges)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
-    excution_timer_ins.start("calc end_point")
+    execution_timer_ins.start("calc end_point")
     gdf_edges["end_point"] = column_generater.end_point.generate(gdf_edges)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # エッジ内のnodeから分岐数を取得する
-    excution_timer_ins.start("calc connection_node_cnt")
+    execution_timer_ins.start("calc connection_node_cnt")
     gdf_edges["connection_node_cnt"] = column_generater.connection_node_cnt.generate(
         gdf_edges, latitude_start, longitude_start, latitude_end, longitude_end
     )
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # 座標間の角度の変化量を求める
-    excution_timer_ins.start("calc angle_deltas")
+    execution_timer_ins.start("calc angle_deltas")
     gdf_edges["angle_deltas"] = column_generater.angle_deltas.generate(gdf_edges)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # 基準に満たないエッジを削除する
-    excution_timer_ins.start("remove below standard edge")
+    execution_timer_ins.start("remove below standard edge")
     gdf_edges = remover.filter_edge.remove(gdf_edges)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # 座標間の角度の変化量を求める
-    excution_timer_ins.start("calc angle_and_length_ratio")
+    execution_timer_ins.start("calc angle_and_length_ratio")
     gdf_edges["angle_and_length_ratio"] = (
         gdf_edges["angle_deltas"] / gdf_edges["length"]
     )
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # 座標間の標高の変化量を求める
-    excution_timer_ins.start("calc elevation_deltas")
+    execution_timer_ins.start("calc elevation_deltas")
     gdf_edges["elevation_deltas"] = column_generater.elevation_deltas.generate(
         gdf_edges, "./merge-chubu-tokuriku-kanto3-tohoku.tif"
     )
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # 標高と距離の比率を求める
-    excution_timer_ins.start("calc elevation_deltas_and_length_ratio")
+    execution_timer_ins.start("calc elevation_deltas_and_length_ratio")
     gdf_edges["elevation_deltas_and_length_ratio"] = (
         gdf_edges["elevation_deltas"] / gdf_edges["length"]
     )
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # スコアを求める
-    excution_timer_ins.start("calc score")
+    execution_timer_ins.start("calc score")
     gdf_edges["score"] = column_generater.score.generate(gdf_edges)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # スコアが低いエッジを削除する
-    excution_timer_ins.start("remoce low score edge")
+    execution_timer_ins.start("remoce low score edge")
     gdf_edges = remover.score.remove(gdf_edges)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # スコアを正規化
-    excution_timer_ins.start("calc score_nomalization")
+    execution_timer_ins.start("calc score_nomalization")
     gdf_edges["score_normalization"] = column_generater.score_normalization.generate(
         gdf_edges
     )
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # 上位5件を取得する
-    excution_timer_ins.start("get top 5")
+    execution_timer_ins.start("get top 5")
     # gdf_edgesの上位5件を取得する
     gdf_edges = gdf_edges.sort_values("score_normalization", ascending=False).head(5)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # google map urlを生成する
-    excution_timer_ins.start("create google_map_url")
+    execution_timer_ins.start("create google_map_url")
     gdf_edges["google_map_url"] = column_generater.google_map_url.generate(gdf_edges)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # google earth urlを生成する
-    excution_timer_ins.start("create google_earth_url")
+    execution_timer_ins.start("create google_earth_url")
     gdf_edges["google_earth_url"] = column_generater.google_earth_url.generate(
         gdf_edges
     )
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # street view urlを生成する
-    excution_timer_ins.start("create street_view_url")
+    execution_timer_ins.start("create street_view_url")
     gdf_edges["street_view_url"] = column_generater.street_view_url.generate(gdf_edges)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # 上位5件を抽出して最短ルートを求める
-    excution_timer_ins.start("calc short_root")
+    execution_timer_ins.start("calc short_root")
     g_all = ox.graph_from_bbox(
         north=max(latitude_start, latitude_end),
         south=min(latitude_start, latitude_end),
@@ -289,7 +289,7 @@ def short_search() -> GeoDataFrame:
     routes_seikika.append(current_location)
 
     print(routes_seikika)
-    excution_timer_ins.stop()
+    execution_timer_ins.stop()
 
     # # LINESTRINGを緯度と経度のリストに変換する.coords[0]とcoords[1]を入り変えたリストを返す
     gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
@@ -314,6 +314,6 @@ def short_search() -> GeoDataFrame:
         ]
     ].to_json(output_dir, orient="records")
 
-    excution_timer_ins.finish()
+    execution_timer_ins.finish()
 
     return gdf_edges
