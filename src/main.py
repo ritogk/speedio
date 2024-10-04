@@ -3,7 +3,6 @@ from .analysis import graph_feather
 from .analysis import graph_all_feather
 from .analysis import graph_tunnel_feather
 from .analysis import graph_bridge_feather
-from. analysis import gdf_building_feather
 from .analysis import column_generater
 from .analysis import remover
 import osmnx as ox
@@ -11,23 +10,36 @@ from geopandas import GeoDataFrame
 import os
 from .core.env import getEnv
 from datetime import datetime
-
+from .core.prefecture_polygon import find_prefecture_polygon
+from shapely.geometry import Polygon
 from .analysis.turn_edge_spliter import split
 
 def main() -> GeoDataFrame:
     env = getEnv()
     consider_gsi_width = env["CONSIDER_GSI_WIDTH"]
-    point_st = env["POINT_ST"]
-    point_ed = env["POINT_ED"]
+    use_custom_area = env["USE_CUSTOM_AREA"]
 
     excution_timer_ins = ExcutionTimer()
 
-    excution_timer_ins.start("🗾 load openstreetmap data", ExcutionType.FETCH)
-    graph = graph_feather.fetch_graph(
-        point_st[0], point_st[1], point_ed[0], point_ed[1]
-    )
+    # 対象範囲のポリゴンを取得する
+    excution_timer_ins.start("🗾 get target area polygon", ExcutionType.PROC)
+    if use_custom_area:
+        top_left = (env["CUSTOM_AREA_POINT_ST"][1], env["CUSTOM_AREA_POINT_ST"][0])
+        bottom_right = (env["CUSTOM_AREA_POINT_ED"][1], env["CUSTOM_AREA_POINT_ED"][0])
+        top_right = (bottom_right[0], top_left[1])  # 右上
+        bottom_left = (top_left[0], bottom_right[1])  # 左下
+        search_area_polygon = Polygon([top_left, top_right, bottom_right, bottom_left])
+    else:
+        prefectures_geojson_path = f"{os.path.dirname(os.path.abspath(__file__))}/../prefectures.geojson"
+        search_area_polygon = find_prefecture_polygon(prefectures_geojson_path, "静岡県")
     excution_timer_ins.stop()
 
+    # ベースとなるグラフを取得する
+    excution_timer_ins.start("🗾 load openstreetmap data", ExcutionType.FETCH)
+    graph = graph_feather.fetch_graph(search_area_polygon)
+    excution_timer_ins.stop()
+
+    # グラフをGeoDataFrameに変換する
     excution_timer_ins.start("💱 convert graph to GeoDataFrame")
     gdf_edges = ox.graph_to_gdfs(graph, nodes=False, edges=True)
     # gdf_edgesに列がない場合は追加する
@@ -40,6 +52,7 @@ def main() -> GeoDataFrame:
     print(f"  📑 row: {len(gdf_edges)}")
     excution_timer_ins.stop()
 
+    # 不要なエッジを削除
     excution_timer_ins.start("🛣️ remove reverse edge")
     count = len(gdf_edges)
     gdf_edges = remover.reverse_edge.remove(gdf_edges)
@@ -57,9 +70,7 @@ def main() -> GeoDataFrame:
 
     # 全graphを取得する
     excution_timer_ins.start("🗾 load openstreetmap all data", ExcutionType.FETCH)
-    g_all = graph_all_feather.fetch_graph(
-        point_st[0], point_st[1], point_ed[0], point_ed[1]
-    )
+    g_all = graph_all_feather.fetch_graph(search_area_polygon)
     excution_timer_ins.stop()
 
     # エッジ内のnodeから分岐数を取得する
@@ -130,9 +141,7 @@ def main() -> GeoDataFrame:
 
     # トンネルのデータを取得する
     excution_timer_ins.start("🗾 load osm tunnel data", ExcutionType.FETCH)
-    graph_tunnel = graph_tunnel_feather.fetch_graph(
-        point_st[0], point_st[1], point_ed[0], point_ed[1]
-    )
+    graph_tunnel = graph_tunnel_feather.fetch_graph(search_area_polygon)
     if graph_tunnel is not None:
         gdf_tunnel_edges = ox.graph_to_gdfs(graph_tunnel, nodes=False, edges=True)
     excution_timer_ins.stop()
@@ -153,9 +162,7 @@ def main() -> GeoDataFrame:
     
     # 橋のデータを取得する
     excution_timer_ins.start("🌉 load osm bridge data", ExcutionType.FETCH) 
-    graph_bridge = graph_bridge_feather.fetch_graph(
-        point_st[0], point_st[1], point_ed[0], point_ed[1]
-    )
+    graph_bridge = graph_bridge_feather.fetch_graph(search_area_polygon)
     if graph_bridge is not None:
         gdf_bridge_edges = ox.graph_to_gdfs(graph_bridge, nodes=False, edges=True)
     excution_timer_ins.stop()
