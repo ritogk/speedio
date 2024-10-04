@@ -1,8 +1,8 @@
 from geopandas import GeoDataFrame
 from pandas import Series
 
-# 一旦1建物の横幅の長さを35mとする。
-BUILDING_LENGTH = 35
+# 一旦1建物の横幅の長さを45mとする。
+BUILDING_LENGTH = 45
 
 # 近くに建物が少ないほどスコアが高くなる
 def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
