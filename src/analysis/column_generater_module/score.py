@@ -15,7 +15,7 @@ WEIGHTS = {
     "corner_medium": 0,
     "corner_strong": 0,
     "corner_none": 0,
-    "corner_level_deviation": 1,
+    "corner_balance": 1,
 }
 
 
@@ -38,7 +38,7 @@ def generate(gdf: GeoDataFrame, type: str) -> Series:
                 + x["score_corner_medium"] * WEIGHTS["corner_medium"]
                 + x["score_corner_strong"] * WEIGHTS["corner_strong"]
                 + x["score_corner_none"] * WEIGHTS["corner_none"]
-                + x["score_corner_level_deviation"] * WEIGHTS["corner_level_deviation"]
+                + x["score_corner_balance"] * WEIGHTS["corner_balance"]
             ) / len(WEIGHTS)
         else:
             # 調査のためのcsv出力用
@@ -50,25 +50,25 @@ def generate(gdf: GeoDataFrame, type: str) -> Series:
                 weights["corner_medium"] = 0.6
                 weights["corner_strong"] = 0.6
                 weights["corner_none"] = 0
-                weights["corner_level_deviation"] = 0
+                weights["corner_balance"] = 0
             elif type == 'medium_corner':
                 weights["corner_week"] = 0.6
                 weights["corner_medium"] = 2.7
                 weights["corner_strong"] = 0.6
                 weights["corner_none"] = 0
-                weights["corner_level_deviation"] = 0
+                weights["corner_balance"] = 0
             elif type == 'strong_corner':
                 weights["corner_week"] = 0.6
                 weights["corner_medium"] = 0.6
                 weights["corner_strong"] = 2.7
                 weights["corner_none"] = 0
-                weights["corner_level_deviation"] = 0
+                weights["corner_balance"] = 0
             elif type == 'standard':
                 weights["corner_week"] = 0
                 weights["corner_medium"] = 0
                 weights["corner_strong"] = 0
                 weights["corner_none"] = 0
-                weights["corner_level_deviation"] = 1
+                weights["corner_balance"] = 1
             
             return (
                 x["score_elevation"] * weights["elevation"]
@@ -83,7 +83,7 @@ def generate(gdf: GeoDataFrame, type: str) -> Series:
                 + x["score_corner_medium"] * weights["corner_medium"]
                 + x["score_corner_strong"] * weights["corner_strong"]
                 + x["score_corner_none"] * weights["corner_none"]
-                + x["score_corner_level_deviation"] * weights["corner_level_deviation"]
+                + x["score_corner_balance"] * weights["corner_balance"]
             ) / len(weights)
 
     series = gdf.apply(func, axis=1)
