@@ -121,8 +121,6 @@ const drawElevationGraph = (elevation_smooth, corners) => {
     // if (adjustedAngle >= 300) return 300;
     // return adjustedAngle;
   });
-  console.log(adjustedSteeringAngle);
-  console.log(elevation_smooth);
 
   const directionColors = {
     straight: "rgba(0, 255, 132, 1)",
