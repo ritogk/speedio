@@ -330,11 +330,19 @@ def main() -> GeoDataFrame:
     )
     excution_timer_ins.stop()
     
-    # コーナーの情報を取得する
+    # 道の区間情報を取得する
     excution_timer_ins.start("🛞 calc road_section")
     gdf_edges["road_section"] = column_generater.road_section.generate(
         gdf_edges
     )
+    gdf_edges["road_section_cnt"] = gdf_edges["road_section"].apply(lambda x: len(x))
+    excution_timer_ins.stop()
+
+    # 道の区間数が少ないエッジを削除する
+    excution_timer_ins.start("🛞 remove road_section_small_count")
+    count = len(gdf_edges)
+    gdf_edges = remover.remove_road_section_small_count.remove(gdf_edges)
+    print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     excution_timer_ins.stop()
 
     # コーナーがないエッジを削除する
@@ -503,7 +511,7 @@ def main() -> GeoDataFrame:
         "steering_wheel_avg_angle",
         "locations",
         "building_nearby_cnt",
-    
+        "road_section_cnt",
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[output_columns].to_json(output_dir, orient="records")
