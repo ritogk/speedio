@@ -5,12 +5,12 @@ import numpy as np
 # 目視検証データから道幅を評価する
 def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
-        score_week_corner = row.score_week_corner
-        score_medium_corner = row.score_medium_corner
-        score_strong_corner = row.score_strong_corner
-        score_straight = row.score_straight
+        score_corner_week = row.score_corner_week
+        score_corner_medium = row.score_corner_medium
+        score_corner_strong = row.score_corner_strong
+        score_corner_none = row.score_corner_none
         # a, b, c, d の4つの値
-        values = [score_week_corner, score_medium_corner, score_strong_corner, score_straight]
+        values = [score_corner_week, score_corner_medium, score_corner_strong, score_corner_none]
 
         max_val = max(values)
         min_val = min(values)

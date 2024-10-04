@@ -222,10 +222,10 @@ const calcScore = (targets) => {
         x.score_width * WEIGHTS["width"] +
         x.score_length * WEIGHTS["length"] +
         x.score_building * WEIGHTS["building"] +
-        x.score_week_corner * WEIGHTS["week_corner"] +
-        x.score_medium_corner * WEIGHTS["medium_corner"] +
-        x.score_strong_corner * WEIGHTS["strong_corner"] +
-        x.score_straight * WEIGHTS["straight"] + 
+        x.score_corner_week * WEIGHTS["week_corner"] +
+        x.score_corner_medium * WEIGHTS["medium_corner"] +
+        x.score_corner_strong * WEIGHTS["strong_corner"] +
+        x.score_corner_none * WEIGHTS["straight"] + 
         x.score_road_section_deviation * WEIGHTS["road_section_deviation"])/
       Object.keys(WEIGHTS).length;
     return x;

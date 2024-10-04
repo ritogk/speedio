@@ -42,20 +42,20 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.score_building)}</td>
           </tr>
           <tr style="background: mistyrose">
-              <td>score_week_corner</td>
-              <td>${truncateToTwoDecimals(x.score_week_corner)}</td>
+              <td>score_corner_week</td>
+              <td>${truncateToTwoDecimals(x.score_corner_week)}</td>
           </tr>
           <tr style="background: mistyrose">
-              <td>score_medium_corner</td>
-              <td>${truncateToTwoDecimals(x.score_medium_corner)}</td>
+              <td>score_corner_medium</td>
+              <td>${truncateToTwoDecimals(x.score_corner_medium)}</td>
           </tr>
           <tr style="background: mistyrose">
-              <td>score_strong_corner</td>
-              <td>${truncateToTwoDecimals(x.score_strong_corner)}</td>
+              <td>score_corner_strong</td>
+              <td>${truncateToTwoDecimals(x.score_corner_strong)}</td>
           </tr>
           <tr style="background: mistyrose">
-              <td>score_straight</td>
-              <td>${truncateToTwoDecimals(x.score_straight)}</td>
+              <td>score_corner_none</td>
+              <td>${truncateToTwoDecimals(x.score_corner_none)}</td>
           </tr>
           <tr style="background: mistyrose">
               <td>score_road_section_deviation</td>

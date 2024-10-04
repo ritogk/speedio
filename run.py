@@ -3,7 +3,7 @@ from src.main import main
 import geopandas as gpd
 import matplotlib.pyplot as plt
 from src.core.env import getEnv
-from src.analysis.column_generater_module.score_road_section import WEEK_CORNER_ANGLE_MIN, WEEK_CORNER_ANGLE_MAX, MEDIUM_CORNER_ANGLE_MIN, MEDIUM_CORNER_ANGLE_MAX, STRONG_CORNER_ANGLE_MIN
+from src.analysis.column_generater_module.score_corner_level import WEEK_CORNER_ANGLE_MIN, WEEK_CORNER_ANGLE_MAX, MEDIUM_CORNER_ANGLE_MIN, MEDIUM_CORNER_ANGLE_MAX, STRONG_CORNER_ANGLE_MIN
 import itertools
 
 def run():
