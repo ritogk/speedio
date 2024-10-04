@@ -7,24 +7,26 @@ INTERVAL = 100
 
 def generate(gdf: GeoDataFrame) -> Series:
     def func(x):
-        elevation_data = x.elevation_segment_list
-        min_elevation = min(elevation_data)
+        elevation_segment_list = x.elevation_segment_list
+        min_elevation = min(elevation_segment_list)
 
         # 0スケールに変換
-        elevation_data = [item - min_elevation for item in elevation_data]
-        # print(elevation_data)
-        elevation_data = np.array(elevation_data)
+        elevations = [item - min_elevation for item in elevation_segment_list]
+        elevations = np.array(elevations)
 
-        # ピーク（山）の検出
-        peaks, _ = find_peaks(elevation_data, distance=3, prominence=6)
-        # print("ピークのインデックス")
-        # print(peaks)
-        # print(_["prominences"])
-        # print("調査対象")
-        # print(_)
+        # 凹凸を検出。
+        # 凸は生データのpeakで凹は反転したデータのpeakとして検出する
+        distance = 3
+        prominence = 5
+        peaks, _ = find_peaks(elevations, distance=distance, prominence=prominence)
 
-        # 大きなコブと凹みの数
-        peak_count = len(peaks)
+        elevations_inverted = np.max(elevations) - elevations
+        peaks_inverted, _ = find_peaks(elevations_inverted, distance=3, prominence=5)
+
+        peak_count = len(peaks) + len(peaks_inverted)
+
+        print(peaks)
+        print(peaks_inverted)
         return peak_count
 
     results = gdf.apply(func, axis=1)
