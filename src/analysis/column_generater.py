@@ -7,7 +7,7 @@ from .column_generater_module import elevation_smooth
 from .column_generater_module import elevation_deltas
 from .column_generater_module import elevation_height
 from .column_generater_module import elevation_fluctuation
-from .column_generater_module import elevation_peak_count
+from .column_generater_module import elevation_unevenness_count
 from .column_generater_module import google_map_url
 from .column_generater_module import google_earth_url
 from .column_generater_module import street_view_url
@@ -18,7 +18,7 @@ from .column_generater_module import score_width
 from .column_generater_module import score_angle
 from .column_generater_module import score_elevation
 from .column_generater_module import score_elevation_over_heiht
-from .column_generater_module import score_elevation_peak
+from .column_generater_module import score_elevation_unevenness
 from .column_generater_module import score_length
 from .column_generater_module import score_corner_level
 from .column_generater_module import score_corner_level_deviation

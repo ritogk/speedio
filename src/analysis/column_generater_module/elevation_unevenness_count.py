@@ -23,11 +23,9 @@ def generate(gdf: GeoDataFrame) -> Series:
         elevations_inverted = np.max(elevations) - elevations
         peaks_inverted, _ = find_peaks(elevations_inverted, distance=3, prominence=5)
 
-        peak_count = len(peaks) + len(peaks_inverted)
+        unevenness_count = len(peaks) + len(peaks_inverted)
 
-        print(peaks)
-        print(peaks_inverted)
-        return peak_count
+        return unevenness_count
 
     results = gdf.apply(func, axis=1)
 
