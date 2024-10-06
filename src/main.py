@@ -46,9 +46,12 @@ def main() -> GeoDataFrame:
     if "lanes" not in gdf_edges.columns:
         gdf_edges["lanes"] = 1
     if "tunnel" not in gdf_edges.columns:
-        gdf_edges["tunnel"] = None
+        gdf_edges["tunnel"] = "no"
     if "bridge" not in gdf_edges.columns:
-        gdf_edges["bridge"] = None
+        gdf_edges["bridge"] = "no"
+    # tunnelとbridgeの値がnanの場合はnoに変換する
+    gdf_edges["tunnel"] = gdf_edges["tunnel"].fillna("no")
+    gdf_edges["bridge"] = gdf_edges["bridge"].fillna("no")
     print(f"  📑 row: {len(gdf_edges)}")
     execution_timer_ins.stop()
 

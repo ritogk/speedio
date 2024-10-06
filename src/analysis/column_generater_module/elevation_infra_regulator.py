@@ -10,14 +10,23 @@ class InfraType(Enum):
     BRIDGE = 2
 
 # トンネルや橋の標高を調整する
-# 問題: 現状標高は地球表面の形状の値なためトンネル区間の標高値が道の値ではなく山の値になってしまっている。
-# また上記の区間はu_shape_elevationも高くなってしまう。
+# そのまんま標高値を使うと標高値は地球表面の形状の値なため調整する
 def generate(gdf: GeoDataFrame, infra_edges: GeoDataFrame, infraType: InfraType) -> Series:
     # トンネルの空間インデックスを作成
     infra_edges_sindex = infra_edges["geometry"].sindex
     def func(row: GeoSeries):
-        if (infraType == InfraType.BRIDGE and row['bridge'] != 'yes') or (infraType == InfraType.TUNNEL and row['tunnel'] != 'yes'):
+        # row['bridge']とrow['tunnel']は配列と文字列の２パターンあり。
+        if (
+            infraType == InfraType.BRIDGE
+            and not any(x in row['bridge'] for x in ['yes', 'aqueduct', 'boardwalk', 'cantilever', 'covered', 'low_water_crossing', 'movable', 'trestle', 'viaduct'])
+        ):
             return row['elevation']
+        if(
+            infraType == InfraType.TUNNEL
+            and not any(x in row['tunnel'] for x in ['yes', 'building_passage', 'avalanche_protector', 'culvert', 'canal', 'flooded'])
+        ):
+            return row['elevation']
+        
         base_edge_coords = list(row.geometry.coords) 
         # 1. 対象のエッジのバウンディングボックス内のトンネルのインデックスを取得(バウンディングボックスでの抽出なのでエッジ外のトンネルも含まれる可能性がある)
         infra_edge_in_bbox_index_list = list(infra_edges_sindex.intersection(row.geometry.bounds))
