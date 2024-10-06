@@ -147,7 +147,7 @@ def main() -> GeoDataFrame:
     execution_timer_ins.stop()
 
     if graph_tunnel is not None:
-        execution_timer_ins.start("🛣️ remove reverse edge")
+        execution_timer_ins.start("🛣️ remove reverse tunnel edge")
         count = len(gdf_tunnel_edges)
         gdf_tunnel_edges = remover.reverse_edge.remove(gdf_tunnel_edges)
         print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_tunnel_edges)}")
