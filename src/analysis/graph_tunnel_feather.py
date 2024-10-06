@@ -13,7 +13,7 @@ def fetch_graph(
     # # 道幅用のタグを追加
     # ox.settings.useful_tags_way += ["yh:WIDTH"] + ["source"] + ["tunnel"]
     try:
-        graph = ox.graph_from_bbox(
+        graph = ox.graph_from_polygon(
             search_area_polygon,
             network_type="drive",
             simplify=True,
