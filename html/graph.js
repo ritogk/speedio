@@ -1,6 +1,6 @@
-export const drawGraph = (corners, corners_group, elevation_smooth) => {
+export const drawGraph = (corners, corners_group, elevation_segment_list) => {
   drawCornerGraph(corners_group);
-  drawElevationGraph(elevation_smooth, corners);
+  drawElevationGraph(elevation_segment_list);
 };
 
 /**
@@ -82,51 +82,16 @@ const drawCornerGraph = (corners_group) => {
 
 /**
  * 標高のグラフを描画
- * @param {*} elevation_smooth
- * @param {*} corners
+ * @param {*} elevation_segment_list
  */
-const drawElevationGraph = (elevation_smooth, corners) => {
-  const graphYMax = 300;
-  const minElevation = Math.min(...elevation_smooth);
-  const maxElevation = Math.max(...elevation_smooth);
-  const adjustedElevations = elevation_smooth.map((x) => x - minElevation);
+const drawElevationGraph = (elevation_segment_list) => {
+  const graphYMax = 400;
+  const minElevation = Math.min(...elevation_segment_list);
+  const maxElevation = Math.max(...elevation_segment_list);
+  const adjustedElevations = elevation_segment_list.map(
+    (x) => x - minElevation
+  );
   var ctx = document.getElementById("graphElevationCanvas").getContext("2d");
-  // console.log(minElevation);
-  // console.log(maxElevation);
-  // console.log(adjustedElevations);
-
-  const steeringAngleData = corners
-    .map((corner) => {
-      return corner.corner_info.map((x) => {
-        return x.steering_angle;
-      });
-    })
-    .flat();
-  const directions = corners
-    .map((corner) => {
-      return corner.corner_info.map((x) => {
-        return x.direction;
-      });
-    })
-    .flat();
-  // 先頭と末尾に0を追加
-  steeringAngleData.unshift(steeringAngleData[0]);
-  steeringAngleData.push(steeringAngleData[steeringAngleData.length - 1]);
-  const minSteeringAngle = Math.min(...steeringAngleData);
-  const maxSteeringAngle = Math.max(...steeringAngleData);
-  // 角度の最大値100を標高の最大値のスケールに変換
-  const adjustedSteeringAngle = steeringAngleData.map((x) => {
-    return x;
-    // const adjustedAngle = x * (graphYMax / 100);
-    // if (adjustedAngle >= 300) return 300;
-    // return adjustedAngle;
-  });
-
-  const directionColors = {
-    straight: "rgba(0, 255, 132, 1)",
-    left: "rgba(255, 99, 132, 1)",
-    right: "rgba(54, 162, 235, 1)",
-  };
 
   new Chart(ctx, {
     type: "line", // デフォルトのチャートタイプを設定
@@ -145,24 +110,6 @@ const drawElevationGraph = (elevation_smooth, corners) => {
           borderWidth: 1,
           pointRadius: 1,
           fill: false,
-        },
-        {
-          label: `steeringAngle max:${maxSteeringAngle}`,
-          type: "line", // 折れ線グラフとして設定
-          data: adjustedSteeringAngle, // 折れ線グラフデータ
-          borderColor: "rgba(0, 255, 132, 1)",
-          backgroundColor: "rgba(0, 255, 132, 0.2)",
-          borderWidth: 1,
-          pointRadius: 1,
-          fill: false,
-          tension: 0.3,
-          segment: {
-            borderColor: (ctx) => {
-              const index = ctx.p0DataIndex;
-              const direction = directions[index];
-              return directionColors[direction] || "rgba(0, 0, 0, 1)";
-            },
-          },
         },
       ],
     },
