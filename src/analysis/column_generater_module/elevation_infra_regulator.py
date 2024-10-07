@@ -61,6 +61,8 @@ def generate(gdf: GeoDataFrame, infra_edges: GeoDataFrame, infraType: InfraType)
             b_idx = base_edge_coords.index(nearest_outside_end)
             start_idx = min(a_idx, b_idx)
             end_idx = max(a_idx, b_idx)
+            # print(nearest_outside_start)
+            # print(nearest_outside_end)
             def linear_interpolation(arr, start_idx, end_idx) -> List[int]:
                 # 開始値と終了値を取得
                 start_value = arr[start_idx]
@@ -82,13 +84,23 @@ def generate(gdf: GeoDataFrame, infra_edges: GeoDataFrame, infraType: InfraType)
     return results
 
 # トンネル外で最も近い座標を取得
+# 単純にベースのエッジからinfra座標(先頭と末尾を消したもの)をすべて消して、指定のトンネルの座標に最も近い座標を取得するだけ。
 def get_nearest_outside_point(road_coords: list, point: Tuple[float, float] , infra_coords: list):
-    # 単純にベースのエッジ(roadからinfraの座標をすべて消して、指定のトンネルの座標に最も近い座標を取得すればいいだけ)
-    # 1. road_edgeからinfra_coordsの座標をすべて消す ※1
-    # 先頭と末尾の座標は保持しておかないとインフラの座標が先頭と末尾の座標に含まれる時にnear_pointが計算できなくなる。例: (34.76489640673564, 135.15251373171773)
-    road_coords_without_infras = [road_coords[0]]  # 先頭を保持
-    road_coords_without_infras += [coord for coord in road_coords[1:-1] if not coord in infra_coords]  # 中間のデータをフィルタリング
-    road_coords_without_infras.append(road_coords[-1])  # 末尾を保持
-    # 2. ※1から指定座標(point)に最も近い座標を取得 ※3
+
+    if road_coords == infra_coords:
+        # インフラとエッジが一致している場合の処理
+        return min(road_coords, key=lambda x: Point(x).distance(Point(point)))    
+    road_coords_without_infras = []
+    # インフラの先頭と末尾を削除。
+    infra_coords_without_first_and_last = infra_coords[1:-1]
+    if not len(infra_coords_without_first_and_last) == 0:
+        # ベースエッジからinfraの中間座標を削除
+        road_coords_without_infras += [coord for coord in road_coords if not coord in infra_coords_without_first_and_last]  # 中間のデータをフィルタリング
+    else:
+        # インフラが２座標の場合は消す座標がないのでそのまま代入
+        road_coords_without_infras = road_coords
+    # 指定座標(point)に最も近い座標を取得
     nearest_point = min(road_coords_without_infras, key=lambda x: Point(x).distance(Point(point)))
+    if nearest_point == (135.1666045, 34.699294):
+        pass
     return nearest_point
