@@ -49,6 +49,8 @@ def main() -> GeoDataFrame:
         gdf_edges["tunnel"] = "no"
     if "bridge" not in gdf_edges.columns:
         gdf_edges["bridge"] = "no"
+    if "name" not in gdf_edges.columns:
+        gdf_edges["name"] = ""
     # tunnelとbridgeの値がnanの場合はnoに変換する
     gdf_edges["tunnel"] = gdf_edges["tunnel"].fillna("no")
     gdf_edges["bridge"] = gdf_edges["bridge"].fillna("no")
@@ -145,11 +147,12 @@ def main() -> GeoDataFrame:
     # トンネルのデータを取得する
     execution_timer_ins.start("🗾 load osm tunnel data", ExecutionType.FETCH)
     graph_tunnel = graph_tunnel_feather.fetch_graph(search_area_polygon)
-    if graph_tunnel is not None:
+    in_tunnel = graph_tunnel is not None and len(graph_tunnel.edges) >= 1
+    if in_tunnel:
         gdf_tunnel_edges = ox.graph_to_gdfs(graph_tunnel, nodes=False, edges=True)
     execution_timer_ins.stop()
 
-    if graph_tunnel is not None:
+    if in_tunnel:
         execution_timer_ins.start("🛣️ remove reverse tunnel edge")
         count = len(gdf_tunnel_edges)
         gdf_tunnel_edges = remover.reverse_edge.remove(gdf_tunnel_edges)
@@ -166,7 +169,8 @@ def main() -> GeoDataFrame:
     # 橋のデータを取得する
     execution_timer_ins.start("🌉 load osm bridge data", ExecutionType.FETCH) 
     graph_bridge = graph_bridge_feather.fetch_graph(search_area_polygon)
-    if graph_bridge is not None:
+    in_bridge = graph_bridge is not None and len(graph_bridge.edges) >= 1
+    if in_bridge:
         gdf_bridge_edges = ox.graph_to_gdfs(graph_bridge, nodes=False, edges=True)
     execution_timer_ins.stop()
 
