@@ -1,6 +1,6 @@
 from geopandas import GeoDataFrame
 from pandas import Series
-
+from tqdm import tqdm
 from .core.segmnet import generate_segment_original_index_list
 
 INTERVAL = 50
@@ -12,9 +12,11 @@ def generate(gdf: GeoDataFrame) -> Series:
         # elevation_dataからsegment_listのindexの値を抽出
         elevation_segment_list = []
         for segment_index in segment_index_list:
-            elevation_segment_list.append(x.elevation_smooth[segment_index])        
+            elevation_segment_list.append(x.elevation_smooth[segment_index])
+
         return elevation_segment_list
 
-    results = gdf.apply(func, axis=1)
+    tqdm.pandas()
+    series = gdf.progress_apply(func, axis=1)
 
-    return results
+    return series
