@@ -3,8 +3,8 @@ from pandas import Series
 from geopy.distance import geodesic
 import matplotlib.pyplot as plt
 
-STRAIGHT_DISTANCE = 50
-STRAIGHT_ANGLE = 8
+STRAIGHT_DISTANCE = 100
+STRAIGHT_ANGLE = 7
 #
 # 右左コーナー、ストレートの情報を抽出する
 # ストレートはステアリング角度が8度以下で50m以上の区間とする。
