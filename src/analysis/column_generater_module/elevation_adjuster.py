@@ -10,8 +10,8 @@ from geopy.distance import geodesic
 # 長崎県は最大17％.
 # https://trafficnews.jp/post/122278
 
-# とりあえず20%にしておく。
-METER_AND_ELEVATION_RATIO = 0.2
+# 国基基準だと12~17%だが、補正を強くしたいのでとりあえず8%にしておく。
+METER_AND_ELEVATION_RATIO = 0.08
 def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
         line = row.geometry
@@ -19,7 +19,6 @@ def generate(gdf: GeoDataFrame) -> Series:
 
         slope_per_meter_list = []
         # print(f'distance, elevation_diff, slope_per_meter, point')
-        METER_AND_ELEVATION_RATIO = 0.2
         for index, point in enumerate(line.coords):
             elevation = elevations[index]
             if index + 1 < len(line.coords):

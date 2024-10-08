@@ -11,6 +11,12 @@ export const init = () => {
     [target[0].geometry_list[0][0], target[0].geometry_list[0][1]],
     13
   );
+  // 国土地理院の航空写真
+  // L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
+  //   attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>",
+  //   maxZoom: 18
+  // }).addTo(map);
+
   // OpenStreetMapのタイルレイヤーを追加
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution:
