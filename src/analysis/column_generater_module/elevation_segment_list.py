@@ -3,7 +3,7 @@ from pandas import Series
 
 from .core.segmnet import generate_segment_original_index_list
 
-INTERVAL = 25
+INTERVAL = 50
 
 # 指定距離単位の標高一覧を生成する
 def generate(gdf: GeoDataFrame) -> Series:
