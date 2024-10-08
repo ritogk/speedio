@@ -8,6 +8,11 @@ WEEK_CORNER_ANGLE_MAX = 45
 MEDIUM_CORNER_ANGLE_MIN = 45
 MEDIUM_CORNER_ANGLE_MAX = 80
 STRONG_CORNER_ANGLE_MIN = 80
+
+# 各コーナー種別の間のゾーン値(±5度)
+# コーナー種別が切替る間を段階的に評価するために必要
+CORNER_TRANSITION_ZOON = 5 
+
 # # 現状のアルゴリズムの都合上、1000mのコーナーが存在してしまい、直線区間がなくコーナーの性質が薄いため450mとして帳尻を合わせる。
 # # NOTE: https://www.notion.so/d2fe2f7ad1be47a9831863f20a83c0ac?pvs=4
 # MAX_DISTANCE = 450  # 最大距離
@@ -30,47 +35,49 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
             print('★★コーナーの距離と誤差あり。要確認')
             print(f"誤差: {x.length / (length + st_between_distance + ed_between_distance)} original:{x.length}, new:{length + st_between_distance + ed_between_distance}")
             print(coords)
-            # print(road_section)
-        # 弱コーナーのスコア計算
-        score_corner_week = sum(
-            item['distance'] for item in road_section
-            if (WEEK_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
-            and (item['section_type'] != 'straight')
-        ) / length
-        # 中コーナーのスコア計算
-        score_corner_medium = sum(
-            item['distance'] for item in road_section
-            if (MEDIUM_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
-            and (item['section_type'] != 'straight')
-        ) / length
-        # 強コーナーのスコア計算
-        score_corner_strong = sum(
-            item['distance'] for item in road_section
-            if STRONG_CORNER_ANGLE_MIN <= item['adjusted_steering_angle']
-            and (item['section_type'] != 'straight')
-        ) / length
-        score_corner_none = sum(
-            item['distance'] for item in road_section
-            if (item['section_type'] == 'straight')
-        ) / length
-        # if(x.length == 7187.297999999998):
-        #     print('week')
-        #     print(sum(
-        #         min(item['distance'], MAX_DISTANCE) for item in x.corners
-        #         if (WEEK_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
-        #     ))
-        #     print('medium')
-        #     print(sum(
-        #         min(item['distance'], MAX_DISTANCE) for item in x.corners
-        #         if (MEDIUM_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
-        #     ))
-        #     print('strong')
-        #     print(sum(
-        #         min(item['distance'], MAX_DISTANCE) for item in x.corners
-        #         if STRONG_CORNER_ANGLE_MIN <= item['adjusted_steering_angle']
-        #     ))
-        #     print('all')
-        #     print(length)
+        
+        score_corner_week = 0
+        score_corner_medium = 0
+        score_corner_strong = 0
+        score_corner_none = 0
+
+        for item in road_section:
+            angle = item['adjusted_steering_angle']
+            distance = item['distance']
+            
+            if item['section_type'] == 'straight':
+                score_corner_none += distance
+            else:
+                if WEEK_CORNER_ANGLE_MIN <= angle < MEDIUM_CORNER_ANGLE_MIN:
+                    # 弱コーナーの計算
+                    if angle < (WEEK_CORNER_ANGLE_MAX - CORNER_TRANSITION_ZOON):
+                        score_corner_week += distance  # 完全に「弱」の領域
+                    else:
+                        # 境界付近は重み付け
+                        transition_ratio = (WEEK_CORNER_ANGLE_MAX - angle) / CORNER_TRANSITION_ZOON
+                        score_corner_week += distance * transition_ratio
+                        score_corner_medium += distance * (1 - transition_ratio)
+                elif MEDIUM_CORNER_ANGLE_MIN <= angle < STRONG_CORNER_ANGLE_MIN:
+                    # 中コーナーの計算
+                    if angle < (MEDIUM_CORNER_ANGLE_MAX - CORNER_TRANSITION_ZOON):
+                        score_corner_medium += distance  # 完全に「中」の領域
+                    else:
+                        # 境界付近は重み付け
+                        transition_ratio = (MEDIUM_CORNER_ANGLE_MAX - angle) / CORNER_TRANSITION_ZOON
+                        score_corner_medium += distance * transition_ratio
+                        score_corner_strong += distance * (1 - transition_ratio)
+
+                elif STRONG_CORNER_ANGLE_MIN <= angle:
+                    # 強コーナーの計算
+                    score_corner_strong += distance  # 完全に「強」の領域
+            # 総距離で正規化
+            total_distance = score_corner_week + score_corner_medium + score_corner_strong + score_corner_none
+
+        if total_distance > 0:
+            score_corner_week /= total_distance
+            score_corner_medium /= total_distance
+            score_corner_strong /= total_distance
+            score_corner_none /= total_distance
 
         return score_corner_week, score_corner_medium, score_corner_strong, score_corner_none
 
