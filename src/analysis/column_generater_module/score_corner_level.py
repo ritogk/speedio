@@ -1,8 +1,9 @@
 from geopandas import GeoDataFrame
 from pandas import Series
 from geopy.distance import geodesic
+from .road_section import STRAIGHT_ANGLE
 
-WEEK_CORNER_ANGLE_MIN = 22
+WEEK_CORNER_ANGLE_MIN = STRAIGHT_ANGLE
 WEEK_CORNER_ANGLE_MAX = 45
 MEDIUM_CORNER_ANGLE_MIN = 45
 MEDIUM_CORNER_ANGLE_MAX = 80
@@ -30,30 +31,28 @@ def generate(gdf: GeoDataFrame) -> tuple[Series, Series, Series]:
             print(f"誤差: {x.length / (length + st_between_distance + ed_between_distance)} original:{x.length}, new:{length + st_between_distance + ed_between_distance}")
             print(coords)
             # print(road_section)
-
         # 弱コーナーのスコア計算
         score_corner_week = sum(
             item['distance'] for item in road_section
             if (WEEK_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
+            and (item['section_type'] != 'straight')
         ) / length
         # 中コーナーのスコア計算
         score_corner_medium = sum(
             item['distance'] for item in road_section
             if (MEDIUM_CORNER_ANGLE_MIN <= item['adjusted_steering_angle'] < MEDIUM_CORNER_ANGLE_MAX)
+            and (item['section_type'] != 'straight')
         ) / length
         # 強コーナーのスコア計算
         score_corner_strong = sum(
             item['distance'] for item in road_section
             if STRONG_CORNER_ANGLE_MIN <= item['adjusted_steering_angle']
+            and (item['section_type'] != 'straight')
         ) / length
-        # Noneコーナーのスコア計算
-        score_corner_none = (
-            sum(
-                item['distance'] for item in road_section
-                if (WEEK_CORNER_ANGLE_MIN > item['adjusted_steering_angle'] < WEEK_CORNER_ANGLE_MAX)
-            )
+        score_corner_none = sum(
+            item['distance'] for item in road_section
+            if (item['section_type'] == 'straight')
         ) / length
-
         # if(x.length == 7187.297999999998):
         #     print('week')
         #     print(sum(
