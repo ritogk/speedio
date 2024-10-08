@@ -35,8 +35,9 @@ def generate_segment_original_index_list(line: LineString, interval: int, length
         point_st = coords[i]
         point_ed = coords[i + 1]
         target_line_coords = [point_st, point_ed]
-        # 幅を1m増やしたポリゴンを作成
-        polygon = create_vertical_polygon(target_line_coords, 1)
+        # 幅を0.5m増やしたポリゴンを作成
+        # ※交差するようなラインは重なる可能性があるので余分なデータが取得される可能性あり
+        polygon = create_vertical_polygon(target_line_coords, 0.5)
         # segment_pointsからポリゴン内の座標を取得
         polygon_in_segment_points = []
         for point in segment_points:
@@ -49,13 +50,20 @@ def generate_segment_original_index_list(line: LineString, interval: int, length
             # 対象座標と始点と終点までの距離を測り最も近い座標のindex番号を取得
             point_st_p = Point(point_st)
             point_ed_p = Point(point_ed)
+
+            work_list = []
             for p in polygon_in_segment_points:
                 distance_st = point_st_p.distance(p)
                 distance_ed = point_ed_p.distance(p)
                 if distance_st < distance_ed:
-                    point_indexs.append(i)
+                    work_list.append(i)
+                    # point_indexs.append(i)
                     # target.append({"index":i, "point":p})
                 else:
-                    point_indexs.append(i + 1)
+                    work_list.append(i + 1)
+                    # point_indexs.append(i + 1)
                     # target.append({"index":i+1, "point":p})
+            # 昇順に並び替え
+            work_list.sort()
+            point_indexs += work_list
     return point_indexs
