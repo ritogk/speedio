@@ -122,7 +122,7 @@ const useHomeState = (): UseHomeStateType => {
   const filteredGeometries = computed(() => {
     if (!isFilterGeometry.value) return geometries.value
 
-    return geometries.value.filter((geometry) => {
+    const filtered_geometry = geometries.value.filter((geometry) => {
       const checkedCnt = geometry.filter((point) => {
         return point.initialChecked
       }).length
@@ -141,6 +141,10 @@ const useHomeState = (): UseHomeStateType => {
       // チェック済の座標が70%以上の場合に表示させる
       return checkedCnt / geometry.length <= threshold
     })
+    if (filtered_geometry.length === 0) {
+      alert('フィルタリングしたデータが0件です。フィルターを解除してください。')
+    }
+    return filtered_geometry
   })
 
   const changeSelectedGeometry = (index: number) => {
