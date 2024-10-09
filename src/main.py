@@ -158,6 +158,13 @@ def main() -> GeoDataFrame:
             gdf_edges, gdf_tunnel_edges, column_generater.elevation_infra_regulator.InfraType.TUNNEL
         )
         execution_timer_ins.stop()
+
+        # トンネルの距離を求める
+        execution_timer_ins.start("🏔️ calc tunnel_length")
+        gdf_edges["tunnel_length"] = column_generater.tunnel_length.generate(
+            gdf_edges, gdf_tunnel_edges
+        )
+        execution_timer_ins.stop()
     
     # 橋のデータを取得する
     execution_timer_ins.start("🌉 load osm bridge data", ExecutionType.FETCH) 
@@ -361,6 +368,7 @@ def main() -> GeoDataFrame:
     gdf_edges["score_corner_none"] = score_corner_none
     gdf_edges["score_corner_balance"] = column_generater.score_corner_balance.generate(gdf_edges)
     gdf_edges["score_building"] = column_generater.score_building.generate(gdf_edges)
+    gdf_edges["score_tunnel_outside"] = column_generater.score_tunnel_outside.generate(gdf_edges)
     execution_timer_ins.stop()
 
     # google map urlを生成する
@@ -461,6 +469,7 @@ def main() -> GeoDataFrame:
         "score_corner_none",
         "score_corner_balance",
         "score_building",
+        "score_tunnel_outside",
         "google_map_url",
         "google_earth_url",
         "street_view_url",
@@ -482,6 +491,7 @@ def main() -> GeoDataFrame:
         "locations",
         "building_nearby_cnt",
         "road_section_cnt",
+        "tunnel_length"
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[output_columns].to_json(output_dir, orient="records")

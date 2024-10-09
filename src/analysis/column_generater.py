@@ -33,5 +33,7 @@ from .column_generater_module import locations
 from .column_generater_module import building_nearby_cnt
 from .column_generater_module import score_building
 from .column_generater_module import score_elevation_deviation
+from .column_generater_module import score_tunnel_outside
 from .column_generater_module import road_section
 from .column_generater_module import elevation_segment_list
+from .column_generater_module import tunnel_length

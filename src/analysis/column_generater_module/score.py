@@ -9,6 +9,7 @@ WEIGHTS = {
     "width": 1.3,
     "length": 0.7,
     "building": 1,
+    "tunnel_outside": 1,
     "corner_week": 0.2,
     "corner_medium": 0.3,
     "corner_strong": 0.2,
@@ -30,6 +31,7 @@ def generate(gdf: GeoDataFrame, type: str) -> Series:
                 + x["score_width"] * WEIGHTS["width"]
                 + x["score_length"] * WEIGHTS["length"]
                 + x["score_building"] * WEIGHTS["building"]
+                + x["score_tunnel_outside"] * WEIGHTS["tunnel_outside"]
                 + x["score_corner_week"] * WEIGHTS["corner_week"]
                 + x["score_corner_medium"] * WEIGHTS["corner_medium"]
                 + x["score_corner_strong"] * WEIGHTS["corner_strong"]
@@ -73,6 +75,7 @@ def generate(gdf: GeoDataFrame, type: str) -> Series:
                 + x["score_width"] * weights["width"]
                 + x["score_length"] * weights["length"]
                 + x["score_building"] * weights["building"]
+                + x["score_tunnel_outside"] * WEIGHTS["tunnel_outside"]
                 + x["score_corner_week"] * weights["corner_week"]
                 + x["score_corner_medium"] * weights["corner_medium"]
                 + x["score_corner_strong"] * weights["corner_strong"]
