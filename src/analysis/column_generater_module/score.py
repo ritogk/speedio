@@ -10,10 +10,10 @@ WEIGHTS = {
     "length": 0.7,
     "building": 1,
     "tunnel_outside": 1,
-    "corner_week": 0.2,
-    "corner_medium": 0.3,
-    "corner_strong": 0.2,
-    "corner_none": 0.3,
+    "corner_week": 0.5,
+    "corner_medium": 0.8,
+    "corner_strong": 0.5,
+    "corner_none": 0.8,
     "corner_balance": 1,
 }
 
@@ -44,29 +44,25 @@ def generate(gdf: GeoDataFrame, type: str) -> Series:
             weights["width"] = 0
 
             if type == 'week_corner':
-                weights["corner_week"] = 2.7
-                weights["corner_medium"] = 0.6
-                weights["corner_strong"] = 0.6
-                weights["corner_none"] = 0
+                weights["corner_week"] = 2
+                weights["corner_medium"] = 1
+                weights["corner_strong"] = 1
+                weights["corner_none"] = 1
                 weights["corner_balance"] = 0
             elif type == 'medium_corner':
-                weights["corner_week"] = 0.6
-                weights["corner_medium"] = 2.7
-                weights["corner_strong"] = 0.6
-                weights["corner_none"] = 0
+                weights["corner_week"] = 1
+                weights["corner_medium"] = 2
+                weights["corner_strong"] = 1
+                weights["corner_none"] = 1
                 weights["corner_balance"] = 0
             elif type == 'strong_corner':
-                weights["corner_week"] = 0.6
-                weights["corner_medium"] = 0.6
-                weights["corner_strong"] = 2.7
-                weights["corner_none"] = 0
+                weights["corner_week"] = 1
+                weights["corner_medium"] = 1
+                weights["corner_strong"] = 2
+                weights["corner_none"] = 1
                 weights["corner_balance"] = 0
             elif type == 'standard':
-                weights["corner_week"] = 0
-                weights["corner_medium"] = 0
-                weights["corner_strong"] = 0
-                weights["corner_none"] = 0
-                weights["corner_balance"] = 1
+                pass
             
             return (
                 x["score_elevation"] * weights["elevation"]
