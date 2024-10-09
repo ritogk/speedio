@@ -2,13 +2,16 @@ from geopandas import GeoDataFrame
 from pandas import Series
 from shapely.geometry import LineString, Point
 from geopy.distance import geodesic
+# こいつを使いたい所だが、dbのlocationsの座標と合わなくなるので使えない。
+# from .core.segmnet import generate_segment_list
 
 # 愛知は250m間隔で計測。ほかは500m間隔で計測
 INTERVAL = 500
 def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
+        # segment_list = generate_segment_list(row.geometry, INTERVAL, row.length)
         segments = interpolate_points(row.geometry, INTERVAL, row.length)
-        return [[segment[1], segment[0]] for segment in segments]   
+        return [[segment[1], segment[0]] for segment in segments]
 
     series = gdf.apply(func, axis=1)
     return series
