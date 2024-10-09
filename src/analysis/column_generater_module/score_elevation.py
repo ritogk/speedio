@@ -8,9 +8,9 @@ HEIGHT_WEIGHT = 2
 def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
         elevation_height = row["elevation_height"]
-        # 30-300を0.35~1の範囲に変換
+        # 30-300を0.4~1の範囲に変換
         old_min, old_max = 30, 300
-        new_min, new_max = 0.35, 1
+        new_min, new_max = 0.4, 1
         
         initial_value = 0
         if elevation_height >= old_max:
