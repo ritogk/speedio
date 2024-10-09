@@ -93,12 +93,6 @@ export const generateHtml = (x) => {
               )}</td>
           </tr>
           <tr>
-              <td>elevation_height_and_length_ratio</td>
-              <td>${truncateToTwoDecimals(
-                x.elevation_height_and_length_ratio
-              )}</td>
-          </tr>
-          <tr>
               <td>elevation_unevenness_count</td>
               <td>${truncateToTwoDecimals(x.elevation_unevenness_count)}</td>
           </tr>
