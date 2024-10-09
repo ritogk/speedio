@@ -79,10 +79,6 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.road_section_cnt)}</td>
           </tr>
           <tr>
-              <td>elevation_deltas</td>
-              <td>${truncateToTwoDecimals(x.elevation_deltas)}</td>
-          </tr>
-          <tr>
               <td>elevation_height</td>
               <td>${truncateToTwoDecimals(x.elevation_height)}</td>
           </tr>

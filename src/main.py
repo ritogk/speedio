@@ -241,13 +241,6 @@ def main() -> GeoDataFrame:
     gdf_edges["elevation_unevenness_count"] = elevation_unevenness_count
     execution_timer_ins.stop()
 
-    # 標高の変化量を求める
-    execution_timer_ins.start("🏔️ calc elevation_deltas")
-    gdf_edges["elevation_deltas"] = column_generater.elevation_deltas.generate(
-        gdf_edges
-    )
-    execution_timer_ins.stop()
-
     execution_timer_ins.start("🛣️ calc width")
     if consider_gsi_width:
         # gsiの道幅を取得する
@@ -460,7 +453,6 @@ def main() -> GeoDataFrame:
         "geometry_meter_list",
         "geometry_check_list",
         "elevation_height",
-        "elevation_deltas",
         "elevation_smooth",
         "elevation",
         "elevation_segment_list",

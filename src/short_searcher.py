@@ -77,13 +77,6 @@ def short_search() -> GeoDataFrame:
     )
     execution_timer_ins.stop()
 
-    # 座標間の標高の変化量を求める
-    execution_timer_ins.start("calc elevation_deltas")
-    gdf_edges["elevation_deltas"] = column_generater.elevation_deltas.generate(
-        gdf_edges, "./merge-chubu-tokuriku-kanto3-tohoku.tif"
-    )
-    execution_timer_ins.stop()
-
     # スコアを求める
     execution_timer_ins.start("calc score")
     gdf_edges["score"] = column_generater.score.generate(gdf_edges)
