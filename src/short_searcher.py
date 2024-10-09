@@ -70,13 +70,6 @@ def short_search() -> GeoDataFrame:
     gdf_edges = remover.filter_edge.remove(gdf_edges)
     execution_timer_ins.stop()
 
-    # 座標間の角度の変化量を求める
-    execution_timer_ins.start("calc angle_and_length_ratio")
-    gdf_edges["angle_and_length_ratio"] = (
-        gdf_edges["angle_deltas"] / gdf_edges["length"]
-    )
-    execution_timer_ins.stop()
-
     # スコアを求める
     execution_timer_ins.start("calc score")
     gdf_edges["score"] = column_generater.score.generate(gdf_edges)
@@ -291,7 +284,6 @@ def short_search() -> GeoDataFrame:
             "length",
             "elevation_change_amount",
             "angle_change_amount",
-            "angle_and_length_ratio",
             "score",
             "google_map_url",
             "google_earth_url",

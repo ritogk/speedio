@@ -5,8 +5,7 @@ from pandas import Series
 WEIGHTS = {
     "elevation": 0.7,
     "elevation_deviation": 0.5,
-    "elevation_unevenness": 1,
-    "angle": 0,  
+    "elevation_unevenness": 1,  
     "width": 1,
     "length": 0.7,
     "building": 1,
@@ -28,7 +27,6 @@ def generate(gdf: GeoDataFrame, type: str) -> Series:
                 x["score_elevation"] * WEIGHTS["elevation"]
                 + x["score_elevation_unevenness"] * WEIGHTS["elevation_unevenness"]
                 + x["score_elevation_deviation"] * WEIGHTS["elevation_deviation"]
-                + x["score_angle"] * WEIGHTS["angle"]
                 + x["score_width"] * WEIGHTS["width"]
                 + x["score_length"] * WEIGHTS["length"]
                 + x["score_building"] * WEIGHTS["building"]
@@ -72,7 +70,6 @@ def generate(gdf: GeoDataFrame, type: str) -> Series:
                 x["score_elevation"] * weights["elevation"]
                 + x["score_elevation_unevenness"] * weights["elevation_unevenness"]
                 + x["score_elevation_deviation"] * weights["elevation_deviation"]
-                + x["score_angle"] * weights["angle"]
                 + x["score_width"] * weights["width"]
                 + x["score_length"] * weights["length"]
                 + x["score_building"] * weights["building"]
