@@ -9,10 +9,6 @@ export const generateHtml = (x) => {
               <td>score</td>
               <td>${truncateToTwoDecimals(x.score)}</td>
           </tr>
-          <tr>
-              <td>score_angle</td>
-              <td>${truncateToTwoDecimals(x.score_angle)}</td>
-          </tr>
           <tr style="background: lightcyan;">
               <td>score_elevation</td>
               <td>${truncateToTwoDecimals(x.score_elevation)}</td>
@@ -89,10 +85,6 @@ export const generateHtml = (x) => {
           <tr>
               <td>angle_deltas</td>
               <td>${truncateToTwoDecimals(x.angle_deltas)}</td>
-          </tr>
-          <tr>
-              <td>angle_and_length_ratio</td>
-              <td>${truncateToTwoDecimals(x.angle_and_length_ratio)}</td>
           </tr>
           <tr>
               <td>gsi_min_width</td>

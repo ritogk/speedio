@@ -198,7 +198,6 @@ const calcScore = (targets) => {
     elevation_unevenness: Number(
       document.getElementById("weightElevationUnevenness").value
     ),
-    angle: Number(document.getElementById("weightAngle").value),
     width: Number(document.getElementById("weightWidth").value),
     length: Number(document.getElementById("weightLength").value),
     building: Number(document.getElementById("weightBuilding").value),
@@ -221,7 +220,6 @@ const calcScore = (targets) => {
       (x.score_elevation * WEIGHTS["elevation"] +
         x.score_elevation_unevenness * WEIGHTS["elevation_unevenness"] +
         x.score_elevation_deviation * WEIGHTS["elevation_deviation"] +
-        x.score_angle * WEIGHTS["angle"] +
         x.score_width * WEIGHTS["width"] +
         x.score_length * WEIGHTS["length"] +
         x.score_building * WEIGHTS["building"] +

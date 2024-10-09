@@ -14,7 +14,6 @@ from .column_generater_module import width_alpsmap
 from .column_generater_module import width_gsi
 from .column_generater_module import is_alpsmap
 from .column_generater_module import score_width
-from .column_generater_module import score_angle
 from .column_generater_module import score_elevation
 from .column_generater_module import score_elevation_unevenness
 from .column_generater_module import score_length

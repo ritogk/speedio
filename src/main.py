@@ -131,13 +131,6 @@ def main() -> GeoDataFrame:
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     execution_timer_ins.stop()
 
-    # 座標間の角度の変化量を求める
-    execution_timer_ins.start("📐 calc angle_and_length_ratio")
-    gdf_edges["angle_and_length_ratio"] = (
-        gdf_edges["angle_deltas"] / gdf_edges["length"]
-    )
-    execution_timer_ins.stop()
-
     # 座標間の標高の変化量を求める
     tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/../elevation.tif"
     execution_timer_ins.start("🏔️ calc elevation")
@@ -358,7 +351,6 @@ def main() -> GeoDataFrame:
     )
     gdf_edges["score_elevation"] = column_generater.score_elevation.generate(gdf_edges)
     gdf_edges["score_elevation_deviation"] = column_generater.score_elevation_deviation.generate(gdf_edges) 
-    gdf_edges["score_angle"] = 1
     gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
     # gdf_edges["score_width"] = 1
@@ -458,11 +450,9 @@ def main() -> GeoDataFrame:
         "elevation_segment_list",
         "elevation_unevenness_count",
         "angle_deltas",
-        "angle_and_length_ratio",
         "score_elevation",
         "score_elevation_unevenness",
         "score_elevation_deviation",
-        "score_angle",
         "score_width",
         "score_length",
         "score_corner_week",
