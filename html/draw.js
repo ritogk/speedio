@@ -201,6 +201,7 @@ const calcScore = (targets) => {
     width: Number(document.getElementById("weightWidth").value),
     length: Number(document.getElementById("weightLength").value),
     building: Number(document.getElementById("weightBuilding").value),
+    tunnel_outside: Number(document.getElementById("wightTunnelOutside").value),
     corner_week: Number(
       document.getElementById("wightCornerWeek").value
     ),
@@ -211,7 +212,7 @@ const calcScore = (targets) => {
       document.getElementById("wightCornerStrong").value
     ),
     corner_none: Number(document.getElementById("wightCornerNone").value),
-    corner_balance: Number(document.getElementById("wightCornerBalance").value)
+    corner_balance: Number(document.getElementById("wightCornerBalance").value),
   };
 
   // スコア計算
@@ -223,6 +224,7 @@ const calcScore = (targets) => {
         x.score_width * WEIGHTS["width"] +
         x.score_length * WEIGHTS["length"] +
         x.score_building * WEIGHTS["building"] +
+        x.score_tunnel_outside * WEIGHTS["tunnel_outside"] + 
         x.score_corner_week * WEIGHTS["corner_week"] +
         x.score_corner_medium * WEIGHTS["corner_medium"] +
         x.score_corner_strong * WEIGHTS["corner_strong"] +
