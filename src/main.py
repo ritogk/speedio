@@ -248,12 +248,6 @@ def main() -> GeoDataFrame:
     )
     execution_timer_ins.stop()
 
-    execution_timer_ins.start("🏔️ calc elevation_height_and_length_ratio")
-    gdf_edges["elevation_height_and_length_ratio"] = (
-        gdf_edges["elevation_height"] / gdf_edges["length"]
-    )
-    execution_timer_ins.stop()
-
     execution_timer_ins.start("🛣️ calc width")
     if consider_gsi_width:
         # gsiの道幅を取得する
@@ -298,12 +292,6 @@ def main() -> GeoDataFrame:
         gdf_edges["elevation_deltas"] / gdf_edges["length"]
     )
     execution_timer_ins.stop()
-
-    # # 標高と距離の比率が0.02未満のエッジを削除する
-    # count = len(gdf_edges)
-    # gdf_edges = remover.elevation_min_height.remove(gdf_edges)
-    # # 元のデータの長さと削除後のデータの長さを表示する
-    # print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
 
     # # LINESTRINGを緯度と経度のリストに変換する.coords[0]とcoords[1]を入り変えたリストを返す
     gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
@@ -481,7 +469,6 @@ def main() -> GeoDataFrame:
         "elevation_height",
         "elevation_deltas",
         "elevation_deltas_and_length_ratio",
-        "elevation_height_and_length_ratio",
         "elevation_smooth",
         "elevation",
         "elevation_segment_list",
