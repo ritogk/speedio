@@ -4,7 +4,6 @@ from pandas import Series
 # 定数（DOMから取得する値の代わり）
 WEIGHTS = {
     "elevation": 0.7,
-    "elevation_over_height": 1.0,  
     "elevation_deviation": 0.5,
     "elevation_unevenness": 1,
     "angle": 0,  
@@ -27,7 +26,6 @@ def generate(gdf: GeoDataFrame, type: str) -> Series:
         if(type == 'normal'):
             return (
                 x["score_elevation"] * WEIGHTS["elevation"]
-                + (1 - x["score_elevation_over_heiht"] * WEIGHTS["elevation_over_height"])
                 + x["score_elevation_unevenness"] * WEIGHTS["elevation_unevenness"]
                 + x["score_elevation_deviation"] * WEIGHTS["elevation_deviation"]
                 + x["score_angle"] * WEIGHTS["angle"]
@@ -72,7 +70,6 @@ def generate(gdf: GeoDataFrame, type: str) -> Series:
             
             return (
                 x["score_elevation"] * weights["elevation"]
-                + (1 - x["score_elevation_over_heiht"] * weights["elevation_over_height"])
                 + x["score_elevation_unevenness"] * weights["elevation_unevenness"]
                 + x["score_elevation_deviation"] * weights["elevation_deviation"]
                 + x["score_angle"] * weights["angle"]

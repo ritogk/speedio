@@ -379,9 +379,6 @@ def main() -> GeoDataFrame:
 
     # スコアを求める
     execution_timer_ins.start("🏆 calc score")
-    gdf_edges["score_elevation_over_heiht"] = (
-        column_generater.score_elevation_over_heiht.generate(gdf_edges)
-    )
     gdf_edges["score_elevation_unevenness"] = (
         column_generater.score_elevation_unevenness.generate(gdf_edges)
     )
@@ -492,7 +489,6 @@ def main() -> GeoDataFrame:
         "angle_deltas",
         "angle_and_length_ratio",
         "score_elevation",
-        "score_elevation_over_heiht",
         "score_elevation_unevenness",
         "score_elevation_deviation",
         "score_angle",

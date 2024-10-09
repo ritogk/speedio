@@ -1,8 +1,6 @@
 from geopandas import GeoDataFrame
 from pandas import Series
 from .core import elevation_service
-import pandas as pd
-
 
 # 標高の変化量を取得する
 def generate(gdf: GeoDataFrame, tif_path: str) -> Series:
