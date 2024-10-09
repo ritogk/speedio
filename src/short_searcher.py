@@ -84,13 +84,6 @@ def short_search() -> GeoDataFrame:
     )
     execution_timer_ins.stop()
 
-    # 標高と距離の比率を求める
-    execution_timer_ins.start("calc elevation_deltas_and_length_ratio")
-    gdf_edges["elevation_deltas_and_length_ratio"] = (
-        gdf_edges["elevation_deltas"] / gdf_edges["length"]
-    )
-    execution_timer_ins.stop()
-
     # スコアを求める
     execution_timer_ins.start("calc score")
     gdf_edges["score"] = column_generater.score.generate(gdf_edges)
@@ -304,7 +297,6 @@ def short_search() -> GeoDataFrame:
             "score_normalization",
             "length",
             "elevation_change_amount",
-            "elevation_deltas_and_length_ratio",
             "angle_change_amount",
             "angle_and_length_ratio",
             "score",

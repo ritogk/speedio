@@ -87,12 +87,6 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.elevation_height)}</td>
           </tr>
           <tr>
-              <td>elevation_deltas_and_length_ratio</td>
-              <td>${truncateToTwoDecimals(
-                x.elevation_deltas_and_length_ratio
-              )}</td>
-          </tr>
-          <tr>
               <td>elevation_unevenness_count</td>
               <td>${truncateToTwoDecimals(x.elevation_unevenness_count)}</td>
           </tr>
