@@ -368,18 +368,18 @@ def main() -> GeoDataFrame:
     gdf_edges["google_map_url"] = column_generater.google_map_url.generate(gdf_edges)
     execution_timer_ins.stop()
 
-    # street_view_url_list
-    execution_timer_ins.start("test")
-    gdf_edges["street_view_url_list"] = column_generater.street_view_url_list.generate(
+    # geometry_check_list
+    execution_timer_ins.start("🔗 create geometry_check_list")
+    gdf_edges["geometry_check_list"] = column_generater.geometry_check_list.generate(
         gdf_edges
     )
+    gdf_edges["street_view_url_list"] = gdf_edges["geometry_check_list"]
     gdf_edges["score"] = column_generater.score.generate(gdf_edges, 'normal')
     gdf_edges["standard_score"] = column_generater.score.generate(gdf_edges, 'standard')
     gdf_edges["week_corner_score"] = column_generater.score.generate(gdf_edges, 'week_corner')
     gdf_edges["medium_corner_score"] = column_generater.score.generate(gdf_edges, 'medium_corner')
     gdf_edges["strong_corner_score"] = column_generater.score.generate(gdf_edges, 'strong_corner')
     execution_timer_ins.stop()
-    gdf_edges["geometry_check_list"] = gdf_edges["street_view_url_list"]
 
     # google earth urlを生成する
     execution_timer_ins.start("🔗 create google_earth_url")
@@ -463,7 +463,6 @@ def main() -> GeoDataFrame:
         "score_building",
         "google_map_url",
         "google_earth_url",
-        "street_view_url_list",
         "street_view_url",
         "lanes",
         "gsi_min_width",

@@ -21,7 +21,7 @@ from .column_generater_module import score_corner_level
 from .column_generater_module import score_corner_balance
 from .column_generater_module import turn_candidate_points
 from .column_generater_module import turn
-from .column_generater_module import street_view_url_list
+from .column_generater_module import geometry_check_list
 from .column_generater_module import score
 from .column_generater_module import eye_measured_width
 from .column_generater_module import geometry_meter_list
