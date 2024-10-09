@@ -286,13 +286,6 @@ def main() -> GeoDataFrame:
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     execution_timer_ins.stop()
 
-    # 標高と距離の比率を求める
-    execution_timer_ins.start("🏔️ calc elevation_deltas_and_length_ratio")
-    gdf_edges["elevation_deltas_and_length_ratio"] = (
-        gdf_edges["elevation_deltas"] / gdf_edges["length"]
-    )
-    execution_timer_ins.stop()
-
     # # LINESTRINGを緯度と経度のリストに変換する.coords[0]とcoords[1]を入り変えたリストを返す
     gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
         lambda x: list(map(lambda y: [y[1], y[0]], x.coords))
@@ -468,7 +461,6 @@ def main() -> GeoDataFrame:
         "geometry_check_list",
         "elevation_height",
         "elevation_deltas",
-        "elevation_deltas_and_length_ratio",
         "elevation_smooth",
         "elevation",
         "elevation_segment_list",
