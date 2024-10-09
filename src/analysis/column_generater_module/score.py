@@ -4,15 +4,15 @@ from pandas import Series
 # 定数（DOMから取得する値の代わり）
 WEIGHTS = {
     "elevation": 0.7,
-    "elevation_deviation": 0.5,
+    "elevation_deviation": 0,
     "elevation_unevenness": 1,  
-    "width": 1,
+    "width": 1.3,
     "length": 0.7,
     "building": 1,
-    "corner_week": 0,
-    "corner_medium": 0,
-    "corner_strong": 0,
-    "corner_none": 0,
+    "corner_week": 0.2,
+    "corner_medium": 0.3,
+    "corner_strong": 0.2,
+    "corner_none": 0.3,
     "corner_balance": 1,
 }
 
