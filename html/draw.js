@@ -192,9 +192,6 @@ const calcScore = (targets) => {
   // 重み
   const WEIGHTS = {
     elevation: Number(document.getElementById("weightElevation").value),
-    elevation_deviation: Number(
-      document.getElementById("weightElevationDeviation").value
-    ),
     elevation_unevenness: Number(
       document.getElementById("weightElevationUnevenness").value
     ),
@@ -222,7 +219,6 @@ const calcScore = (targets) => {
     x.score =
       (x.score_elevation * WEIGHTS.elevation +
         x.score_elevation_unevenness * WEIGHTS.elevation_unevenness +
-        x.score_elevation_deviation * WEIGHTS.elevation_deviation +
         x.score_width * WEIGHTS.width +
         x.score_length * WEIGHTS.length +
         x.score_building * WEIGHTS.building +

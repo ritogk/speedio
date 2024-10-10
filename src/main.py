@@ -357,7 +357,6 @@ def main() -> GeoDataFrame:
         column_generater.score_elevation_unevenness.generate(gdf_edges)
     )
     gdf_edges["score_elevation"] = column_generater.score_elevation.generate(gdf_edges)
-    gdf_edges["score_elevation_deviation"] = column_generater.score_elevation_deviation.generate(gdf_edges) 
     gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
     # gdf_edges["score_width"] = 1
@@ -456,7 +455,6 @@ def main() -> GeoDataFrame:
         "angle_deltas",
         "score_elevation",
         "score_elevation_unevenness",
-        "score_elevation_deviation",
         "score_width",
         "score_length",
         "score_corner_week",
