@@ -14,10 +14,6 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.score_elevation)}</td>
           </tr>
           <tr style="background: lightcyan;">
-              <td>score_elevation_deviation</td>
-              <td>${truncateToTwoDecimals(x.score_elevation_deviation)}</td>
-          </tr>
-          <tr style="background: lightcyan;">
               <td>score_elevation_unevenness</td>
               <td>${truncateToTwoDecimals(x.score_elevation_unevenness)}</td>
           </tr>
