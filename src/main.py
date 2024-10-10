@@ -382,11 +382,7 @@ def main() -> GeoDataFrame:
         gdf_edges
     )
     gdf_edges["street_view_url_list"] = gdf_edges["geometry_check_list"]
-    gdf_edges["score"] = column_generater.score.generate(gdf_edges, 'normal')
-    gdf_edges["standard_score"] = column_generater.score.generate(gdf_edges, 'standard')
-    gdf_edges["week_corner_score"] = column_generater.score.generate(gdf_edges, 'week_corner')
-    gdf_edges["medium_corner_score"] = column_generater.score.generate(gdf_edges, 'medium_corner')
-    gdf_edges["strong_corner_score"] = column_generater.score.generate(gdf_edges, 'strong_corner')
+    gdf_edges["score"] = column_generater.score.generate(gdf_edges)
     execution_timer_ins.stop()
 
     # google earth urlを生成する
@@ -419,19 +415,19 @@ def main() -> GeoDataFrame:
         "locations"
     ]
 
-    gdf_edges_balance = gdf_edges[gdf_edges["score_corner_balance"] >= 0.5].sort_values("standard_score", ascending=False).head(200)
+    gdf_edges_balance = gdf_edges[gdf_edges["score_corner_balance"] >= 0.5].sort_values("score", ascending=False).head(200)
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/standard.csv"
     gdf_edges_balance[output_columns].to_csv(output_dir, index=False)
 
-    gdf_edges_week = gdf_edges[(gdf_edges["score_corner_week"] >= 0.35) & (gdf_edges["road_section_cnt"] >= 16)].sort_values("week_corner_score", ascending=False).head(200)
+    gdf_edges_week = gdf_edges[(gdf_edges["score_corner_week"] >= 0.35) & (gdf_edges["road_section_cnt"] >= 16)].sort_values("score", ascending=False).head(200)
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/week_corner.csv"
     gdf_edges_week[output_columns].to_csv(output_dir, index=False)
 
-    gdf_edges_medium = gdf_edges[gdf_edges["score_corner_medium"] >= 0.2].sort_values("medium_corner_score", ascending=False).head(200)
+    gdf_edges_medium = gdf_edges[gdf_edges["score_corner_medium"] >= 0.2].sort_values("score", ascending=False).head(200)
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/medium_corner.csv"
     gdf_edges_medium[output_columns].to_csv(output_dir, index=False)
 
-    gdf_edges_strong = gdf_edges[gdf_edges["score_corner_strong"] >= 0.2].sort_values("strong_corner_score", ascending=False).head(200)
+    gdf_edges_strong = gdf_edges[gdf_edges["score_corner_strong"] >= 0.2].sort_values("score", ascending=False).head(200)
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/strong_corner.csv"
     gdf_edges_strong[output_columns].to_csv(output_dir, index=False)
     execution_timer_ins.finish()
