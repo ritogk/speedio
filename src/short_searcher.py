@@ -75,11 +75,6 @@ def short_search() -> GeoDataFrame:
     gdf_edges["score"] = column_generater.score.generate(gdf_edges)
     execution_timer_ins.stop()
 
-    # スコアが低いエッジを削除する
-    execution_timer_ins.start("remoce low score edge")
-    gdf_edges = remover.score.remove(gdf_edges)
-    execution_timer_ins.stop()
-
     # スコアを正規化
     execution_timer_ins.start("calc score_nomalization")
     gdf_edges["score_normalization"] = column_generater.score_normalization.generate(

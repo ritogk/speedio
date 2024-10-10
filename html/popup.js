@@ -37,19 +37,19 @@ export const generateHtml = (x) => {
               <td>score_tunnel_outside</td>
               <td>${truncateToTwoDecimals(x.score_tunnel_outside)}</td>
           </tr>
-          <tr style="background: mistyrose">
+          <tr style="background: #ffe1fe">
               <td>score_corner_week</td>
               <td>${truncateToTwoDecimals(x.score_corner_week)}</td>
           </tr>
-          <tr style="background: mistyrose">
+          <tr style="background: #ffe1fe">
               <td>score_corner_medium</td>
               <td>${truncateToTwoDecimals(x.score_corner_medium)}</td>
           </tr>
-          <tr style="background: mistyrose">
+          <tr style="background: #ffe1fe">
               <td>score_corner_strong</td>
               <td>${truncateToTwoDecimals(x.score_corner_strong)}</td>
           </tr>
-          <tr style="background: mistyrose">
+          <tr style="background: #ffe1fe">
               <td>score_corner_none</td>
               <td>${truncateToTwoDecimals(x.score_corner_none)}</td>
           </tr>

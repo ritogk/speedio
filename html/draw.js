@@ -202,34 +202,38 @@ const calcScore = (targets) => {
     length: Number(document.getElementById("weightLength").value),
     building: Number(document.getElementById("weightBuilding").value),
     tunnel_outside: Number(document.getElementById("wightTunnelOutside").value),
-    corner_week: Number(
-      document.getElementById("wightCornerWeek").value
-    ),
-    corner_medium: Number(
-      document.getElementById("wightCornerMedium").value
-    ),
-    corner_strong: Number(
-      document.getElementById("wightCornerStrong").value
-    ),
-    corner_none: Number(document.getElementById("wightCornerNone").value),
+    corner: {
+      week: Number(
+        document.getElementById("wightCornerWeek").value
+      ),
+      medium: Number(
+        document.getElementById("wightCornerMedium").value
+      ),
+      strong: Number(
+        document.getElementById("wightCornerStrong").value
+      ),
+      none: Number(document.getElementById("wightCornerNone").value),
+    },
     corner_balance: Number(document.getElementById("wightCornerBalance").value),
   };
 
   // スコア計算
   targets = targets.map((x) => {
     x.score =
-      (x.score_elevation * WEIGHTS["elevation"] +
-        x.score_elevation_unevenness * WEIGHTS["elevation_unevenness"] +
-        x.score_elevation_deviation * WEIGHTS["elevation_deviation"] +
-        x.score_width * WEIGHTS["width"] +
-        x.score_length * WEIGHTS["length"] +
-        x.score_building * WEIGHTS["building"] +
-        x.score_tunnel_outside * WEIGHTS["tunnel_outside"] + 
-        x.score_corner_week * WEIGHTS["corner_week"] +
-        x.score_corner_medium * WEIGHTS["corner_medium"] +
-        x.score_corner_strong * WEIGHTS["corner_strong"] +
-        x.score_corner_none * WEIGHTS["corner_none"] + 
-        x.score_corner_balance * WEIGHTS["corner_balance"])/
+      (x.score_elevation * WEIGHTS.elevation +
+        x.score_elevation_unevenness * WEIGHTS.elevation_unevenness +
+        x.score_elevation_deviation * WEIGHTS.elevation_deviation +
+        x.score_width * WEIGHTS.width +
+        x.score_length * WEIGHTS.length +
+        x.score_building * WEIGHTS.building +
+        x.score_tunnel_outside * WEIGHTS.tunnel_outside + 
+        (
+          x.score_corner_week * WEIGHTS.corner.week +
+          x.score_corner_medium * WEIGHTS.corner.medium +
+          x.score_corner_strong * WEIGHTS.corner.strong +
+          x.score_corner_none * WEIGHTS.corner.none
+        ) + 
+        x.score_corner_balance * WEIGHTS.corner_balance)/
       Object.keys(WEIGHTS).length;
     return x;
   });
