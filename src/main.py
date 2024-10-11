@@ -431,7 +431,6 @@ def main() -> GeoDataFrame:
     gdf_edges_strong = gdf_edges[gdf_edges["score_corner_strong"] >= 0.2].sort_values("score", ascending=False).head(200)
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/strong_corner.csv"
     gdf_edges_strong[output_columns].to_csv(output_dir, index=False)
-    execution_timer_ins.finish()
 
     gdf_edges_elevation_unevenness = gdf_edges[gdf_edges["elevation_unevenness_count"] >= 2].sort_values("elevation_unevenness_count", ascending=False).head(200)
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/elevation_unevenness.csv"
