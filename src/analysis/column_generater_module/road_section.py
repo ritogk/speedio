@@ -39,11 +39,8 @@ def generate(gdf: GeoDataFrame) -> Series:
         # ストレート区間が100m未満の場合は半分に分割して前後のコーナーと結合する
         corners = merge_min_straight_section(corners)
 
-        # 同じ方向のコーナーが連続する場合は結合する。
-        # 60m以下のコーナーがマージの対象。
-        # ステアリングアングルが大きい方に取り込む
-        adjusted_corners = copy.deepcopy(corners)
-        
+        # # 連続する同一方向のコーナーをマージ
+        corners = merge_continuous_corner_section(corners)
 
         # データを整形
         datas = []
@@ -68,6 +65,7 @@ def generate(gdf: GeoDataFrame) -> Series:
             point_st = points[1]
             point_end = points[-2]
             coords = list(row.geometry.coords)
+            
             index_st = coords.index(point_st)
             index_end = coords.index(point_end)
             elevation_corner = row.elevation[index_st:index_end+1]
@@ -187,3 +185,22 @@ def merge_min_straight_section(corners):
         # ストレートを削除
         adjusted_corners.remove(min_straight_first)
     return adjusted_corners
+
+# 連続する同一方向のコーナーをマージ
+# 同じ方向のコーナーが連続する場合は結合する。
+def merge_continuous_corner_section(road_sections):
+    merged_lst = []
+    i = 0
+    target_sections = road_sections
+    while i < len(target_sections):
+        current_section = target_sections[i].copy()  # 現在のセクションをコピーして使用
+        # 次のセクションが同じタイプか確認
+        while i + 1 < len(target_sections) and target_sections[i]['type'] == target_sections[i + 1]['type']:
+            # 次のセクションが同じタイプであれば、steering_angle_infoを結合
+            current_section['steering_angle_info'] += target_sections[i + 1]['steering_angle_info']
+            i += 1  # 次のセクションをスキップ
+
+        # 結合したセクション（または単一のセクション）をリストに追加
+        merged_lst.append(current_section)
+        i += 1  # 次のセクションに移動
+    return merged_lst
