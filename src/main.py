@@ -47,10 +47,13 @@ def main() -> GeoDataFrame:
         gdf_edges["lanes"] = 1
     if "tunnel" not in gdf_edges.columns:
         gdf_edges["tunnel"] = "no"
+    if "tunnel_length" not in gdf_edges.columns:
+        gdf_edges["tunnel_length"] = 0
     if "bridge" not in gdf_edges.columns:
         gdf_edges["bridge"] = "no"
     if "name" not in gdf_edges.columns:
         gdf_edges["name"] = ""
+    
     # tunnelとbridgeの値がnanの場合はnoに変換する
     gdf_edges["tunnel"] = gdf_edges["tunnel"].fillna("no")
     gdf_edges["bridge"] = gdf_edges["bridge"].fillna("no")
@@ -96,7 +99,6 @@ def main() -> GeoDataFrame:
     gdf_edges = remover.filter_edge.remove(gdf_edges)
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     execution_timer_ins.stop()
-
     
     # gdf_edgesがemptyの場合は終了する
     if gdf_edges.empty:

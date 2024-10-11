@@ -2,6 +2,7 @@ from geopandas import GeoDataFrame
 from pandas import Series
 from geopy.distance import geodesic
 import matplotlib.pyplot as plt
+import copy
 
 STRAIGHT_DISTANCE = 100
 STRAIGHT_ANGLE = 7
@@ -17,58 +18,34 @@ def generate(gdf: GeoDataFrame) -> Series:
         corners = []
         # 右左コーナーの情報
         corner = [target[0]]
-        # ストレート区間の情報
-        straight =[]
-        straightDistance = 0 
         for i in range(1, len(target)):
             current_segment = target[i]
             angle = current_segment['steering_angle']
             distance = current_segment['distance']
             direction = current_segment['direction']
             if angle < STRAIGHT_ANGLE:
-                straight.append(current_segment)
-                straightDistance += distance
+                direction = 'straight'
+            
+            if direction == old_direction:
+                corner.append(current_segment)
             else:
-                if straightDistance >= STRAIGHT_DISTANCE:
-                    corners.append({'type': old_direction, 'steering_angle_info': corner})
-                    old_direction = direction
-                    corner = [current_segment]
-                    corners.append({'type': 'straight', 'steering_angle_info': straight})
-                    straight = []
-                    straightDistance = 0
-                    continue
-                # 途中でコーナーに戻る場合。angle: 20→ angle: 5→ angle:30の要な場合はストレート情報を破棄してコーナーにマージする。
-                if len(straight) >=1 and straightDistance < STRAIGHT_DISTANCE:
-                    corner += straight
-                    straight = []
-                    straightDistance = 0
-
-                if direction == old_direction:
-                    corner.append(current_segment)
-                else:
-                    corners.append({'type': old_direction, 'steering_angle_info': corner})
-                    corner = [current_segment]
-                    old_direction = direction
-
+                corners.append({'type': old_direction, 'steering_angle_info': corner})
+                corner = [current_segment]
+                old_direction = direction
         # 最後の未処理のセグメントを追加
-        # ストレート区間とコーナーの区間が残ったままの場合は正しい順に挿入する。
-        if len(straight) > 0 and len(corner) > 0:
-            straight_st_point = straight[0]["start"]
-            straight_ed_point = straight[-1]["end"]
-            corner_st_point = corner[0]["start"]
-            corner_ed_point = corner[-1]["end"]
-            if straight_st_point == corner_ed_point:
-                corners.append({'type': old_direction, 'steering_angle_info': corner})
-                corners.append({'type': 'straight', 'steering_angle_info': straight})
-            else:
-                corners.append({'type': 'straight', 'steering_angle_info': straight})
-                corners.append({'type': old_direction, 'steering_angle_info': corner})
-        else:
-            if len(straight) > 0:
-                corners.append({'type': 'straight', 'steering_angle_info': straight})
-            if len(corner) > 0:
-                corners.append({'type': old_direction, 'steering_angle_info': corner})
+        if len(corner) > 0:
+            corners.append({'type': old_direction, 'steering_angle_info': corner})
 
+        # ストレート区間が100m未満の場合は半分に分割して前後のコーナーと結合する
+        corners = merge_min_straight_section(corners)
+
+        # 同じ方向のコーナーが連続する場合は結合する。
+        # 60m以下のコーナーがマージの対象。
+        # ステアリングアングルが大きい方に取り込む
+        adjusted_corners = copy.deepcopy(corners)
+        
+
+        # データを整形
         datas = []
         for corner in corners:
             steering_angle_info = corner['steering_angle_info']
@@ -161,3 +138,52 @@ def scale_to_range(val):
         return 1.25
     else:
         return 1 + (val - 0.05) * (1.25 - 1) / (0.11 - 0.05)
+
+# 短いストレート区間をコーナーセクションにマージ
+def merge_min_straight_section(corners):
+    # ストレート区間が100m未満の場合は半分に分割して前後のコーナーと結合する
+    adjusted_corners = copy.deepcopy(corners)
+    is_not_exists_min_straight = True
+    while is_not_exists_min_straight:
+        # ストレートを抽出
+        straights = [x for x in adjusted_corners if x['type'] == 'straight']
+        # 100m以下のストレートを抽出
+        min_straights = [x for x in straights if sum([y['distance'] for y in x['steering_angle_info']]) < STRAIGHT_DISTANCE]
+        if len(min_straights) == 0:
+            is_not_exists_min_straight = False
+            break
+        min_straight_first = min_straights[0]
+        # 100m未満の先頭indexを取得
+        min_straight_first_index = adjusted_corners.index(min_straight_first)
+        steering_angle_info = min_straight_first['steering_angle_info']
+        # 前後のコーナーを取得
+        if min_straight_first_index == 0:
+            # 先頭のコーナーの処理
+            next_corner = copy.deepcopy(adjusted_corners[min_straight_first_index + 1])
+            next_corner['steering_angle_info'] = steering_angle_info + next_corner['steering_angle_info']
+            adjusted_corners[min_straight_first_index + 1] = next_corner
+        elif min_straight_first_index == len(adjusted_corners) - 1:
+            # 末尾のコーナーの処理
+            previous_corner = copy.deepcopy(adjusted_corners[min_straight_first_index - 1])
+            previous_corner['steering_angle_info'] += steering_angle_info
+            adjusted_corners[min_straight_first_index - 1] = previous_corner
+        else:
+            if(len(steering_angle_info)) >= 2:
+                # 前後のコーナーにマージ
+                previous_corner = copy.deepcopy(adjusted_corners[min_straight_first_index - 1])
+                next_corner = copy.deepcopy(adjusted_corners[min_straight_first_index + 1])
+                # 厳密にストレートの距離の半分を分割するべきだが、一旦は要素数から分割
+                previous_corner['steering_angle_info'] += steering_angle_info[:len(steering_angle_info)//2]
+                next_corner['steering_angle_info'] = steering_angle_info[len(steering_angle_info)//2:] + next_corner['steering_angle_info']
+
+                adjusted_corners[min_straight_first_index - 1] = previous_corner
+                adjusted_corners[min_straight_first_index + 1] = next_corner
+            else:
+                # 1件だけの場合は直前のコーナーにマージ
+                previous_corner = copy.deepcopy(adjusted_corners[min_straight_first_index - 1])
+                previous_corner['steering_angle_info'] += steering_angle_info
+                adjusted_corners[min_straight_first_index - 1] = previous_corner
+
+        # ストレートを削除
+        adjusted_corners.remove(min_straight_first)
+    return adjusted_corners
