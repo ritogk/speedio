@@ -400,6 +400,19 @@ onKeyStroke(['/'], (e) => {
   e.preventDefault()
 })
 
+// 3つ進む
+onKeyStroke(['End'], (e) => {
+  // 最後のポイントの場合はジオメトリーを切り替える
+  if (selectedGeometryPointIndex.value + 3 >= selectedGeometry.value.length) {
+    handleGeometryMove(selectedGeometryIndex.value + 3)
+  } else {
+    handlePointMove(selectedGeometryPointIndex.value + 3)
+  }
+  selectedBeforeRoadType.value = selectedRoadType.value
+  selectedRoadType.value = 'ONE_LANE'
+  e.preventDefault()
+})
+
 // ジオメトリ移動(進む)
 onKeyStroke([']'], (e) => {
   handleGeometryMove(selectedGeometryIndex.value + 1)
