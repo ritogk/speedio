@@ -12,8 +12,8 @@ def generate(gdf: GeoDataFrame) -> Series:
 
     def func(row):
         bbox = row.geometry.bounds
-        # LinStringから上下に12m垂直に伸ばしたポリゴンを作成する。
-        polygon = create_vertical_polygon(row.geometry.coords, 12)
+        # LinStringから上下に15m垂直に伸ばしたポリゴンを作成する。
+        polygon = create_vertical_polygon(row.geometry.coords, 15)
 
         buildings = get_nearby_builgings(bbox[0], bbox[1], bbox[2], bbox[3])
 
