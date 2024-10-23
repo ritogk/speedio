@@ -370,6 +370,15 @@ def main() -> GeoDataFrame:
     gdf_edges["score_corner_balance"] = column_generater.score_corner_balance.generate(gdf_edges)
     gdf_edges["score_building"] = column_generater.score_building.generate(gdf_edges)
     gdf_edges["score_tunnel_outside"] = column_generater.score_tunnel_outside.generate(gdf_edges)
+
+    gdf_edges["score"] = column_generater.score.generate(gdf_edges)
+    execution_timer_ins.stop()
+
+    # 低いスコアのデータを削除する
+    execution_timer_ins.start("🛣️ remove low score")
+    count = len(gdf_edges)
+    gdf_edges = gdf_edges[gdf_edges["score"] >= 0.5]
+    print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     execution_timer_ins.stop()
 
     # google map urlを生成する
@@ -383,7 +392,6 @@ def main() -> GeoDataFrame:
         gdf_edges
     )
     gdf_edges["street_view_url_list"] = gdf_edges["geometry_check_list"]
-    gdf_edges["score"] = column_generater.score.generate(gdf_edges)
     execution_timer_ins.stop()
 
     # google earth urlを生成する
