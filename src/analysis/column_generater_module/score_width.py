@@ -7,8 +7,8 @@ def generate(gdf: GeoDataFrame) -> Series:
         locations = row.locations
         score = 0
         # 必要最低限の座標データがある場合のみに評価する
-        # 上記の判断式: points / (length/500) ≥ 0.5の場合
-        if (len(locations) / (row.length / 500)) >= 0.5:
+        # 上記の判断式: points / (length/500) ≥ 0.8の場合
+        if (len(locations) / (row.length / 500)) >= 0.8:
             # ここに入ってこれるって事は十分なデータがあるって事
             for location in locations:
                 if location['road_width_type'] == "TWO_LANE" or location['road_width_type'] == "TWO_LANE_SHOULDER":
