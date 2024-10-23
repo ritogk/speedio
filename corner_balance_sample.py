@@ -1,27 +1,33 @@
-from geopandas import GeoDataFrame
-from pandas import Series
 import numpy as np
 
-WEEK_WEIGHT = 1
-MEDIUM_WEIGHT = 1
-STRONG_WEIGHT = 1.15 # 強コーナーは印象が強いので重みで上げる
-NONE_WEIGHT = 1
+def convert_range(value, old_max, new_min=0, new_max=1):
+    # old_minは0に固定されているので省略
+    if old_max == 0:  # ゼロ除算を防ぐ
+        return new_min
+    return (value / old_max) * (new_max - new_min) + new_min
 
-score_corner_week = 0 * WEEK_WEIGHT
-score_corner_medium = 0 * MEDIUM_WEIGHT
-score_corner_strong = 0 * STRONG_WEIGHT
-score_corner_none = 1 * NONE_WEIGHT
+def calculate(actual, predicted):
+    # 実際の値と予測値の長さを確認
+    if len(actual) != len(predicted):
+        raise ValueError("The length of actual and predicted lists must be the same.")
+    
+    results = []
+    for a, p in zip(actual, predicted):
+        abs_diff = abs(a - p)
+        if abs_diff >= a:
+            results.append(0)
+        else:
+            converted_value = convert_range(abs_diff, a)
+            results.append(1 - converted_value)
+    
+    return np.mean(results)
 
-values = [score_corner_week, score_corner_medium, score_corner_strong, score_corner_none]
+# 実際の値（期待される割合）
+actual_values = [0.3, 0.2, 0.3, 0.2]
 
-# 正規化定数 k を設定（必要に応じて調整）大きくするほど標準偏差の影響が小さくなる。
-k = 0.5
+# 予測値（現在の割合）
+predicted_values = [0.3, 0.2, 0.3, 0.2]
 
-# 標準偏差を計算
-std_dev = np.std(values)
-# print(std_dev)
+mse = calculate(actual_values, predicted_values)
 
-# 評価値の計算
-score = 1 - (std_dev / k)
-
-print(score)
+print(f"Mean Squared Error (MSE): {mse}")
