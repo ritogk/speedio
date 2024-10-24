@@ -501,4 +501,75 @@ def main() -> GeoDataFrame:
     output_dir_bk = f"{os.path.dirname(os.path.abspath(__file__))}/../html/json_bk/{datetime.now().strftime('%Y-%m-%d-%H-%M')}.json"
     gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
 
+    # gdf_first = gdf_edges.head(1)
+    # bounds = gdf_first.geometry.bounds
+    # terrain_elevations = generate_10m_grid_from_bbox(tif_path, bounds.minx, bounds.miny, bounds.maxx, bounds.maxy)
+    # print(len(terrain_elevations))
+
+    # import numpy as np
+    # # ファイルに出力する
+    # output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/elevation_grid.json"
+    # with open(output_dir, "w") as f:
+    #     f.write(str(terrain_elevations))
+        
+
     return gdf_edges
+
+
+import numpy as np
+from pyproj import Proj, transform
+from .analysis.column_generater_module.core import elevation_service
+def generate_10m_grid_from_bbox(tif_path, lat_min, lon_min, lat_max, lon_max):
+    # 緯度経度からEPSG:4326 (WGS84) に変換するための投影を設定
+    wgs84 = Proj('epsg:4326')  # WGS84 (緯度経度)
+    japan_plane = Proj('epsg:2451')  # 日本の平面直角座標系（ゾーン9を例とする）
+    
+    # BBoxの緯度経度を平面直角座標に変換
+    x_min, y_min = transform(wgs84, japan_plane, lon_min, lat_min)
+    x_max, y_max = transform(wgs84, japan_plane, lon_max, lat_max)
+    
+    # 10m間隔のグリッドを作成
+    x_coords = np.arange(x_min, x_max, 10)  # x方向
+    y_coords = np.arange(y_min, y_max, 10)  # y方向
+    
+    # グリッドの座標を生成
+    grid_x, grid_y = np.meshgrid(x_coords, y_coords)
+    
+    # 平面直角座標から緯度経度に逆変換
+    lon_grid, lat_grid = transform(japan_plane, wgs84, grid_x, grid_y)
+    
+    # 緯度と経度のグリッドを1つの3次元配列に統合
+    lat_lon_grid = np.dstack((lat_grid, lon_grid))
+
+    # Elevation Serviceのインスタンスを作成
+    elevation_service_ins = elevation_service.ElevationService(tif_path)
+    
+    # 1次元配列にするためのリスト
+    terrain_elevations = []
+    
+    for i in range(len(lat_lon_grid)):
+        for j in range(len(lat_lon_grid[i])):
+            lat = lat_lon_grid[i][j][1]
+            lon = lat_lon_grid[i][j][0]
+
+            # 緯度経度をそのまま使用して標高を取得
+            elevation = elevation_service_ins.get_elevation(lat, lon)
+            
+            if elevation is None:
+                print(f"Elevation is None for lat: {lat}, lon: {lon}")
+            else:
+                # 平面直角座標に再変換してリストに追加
+                terrain_elevations.append([lat, lon, elevation])
+    
+        # terrain_elevationsをNumPy配列に変換
+    terrain_elevations = np.array(terrain_elevations)
+
+    # 緯度経度を平面直角座標に変換
+    print(terrain_elevations[:, 1])
+    x, y = transform(wgs84, japan_plane, terrain_elevations[:, 0], terrain_elevations[:, 1])
+
+    # 結果の平面直角座標をterrain_elevationsに代入
+    terrain_elevations[:, 0] = x  # x座標（平面直角座標）
+    terrain_elevations[:, 1] = y  # y座標（平面直角座標）
+
+    return terrain_elevations.tolist()
