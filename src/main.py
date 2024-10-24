@@ -501,16 +501,16 @@ def main() -> GeoDataFrame:
     output_dir_bk = f"{os.path.dirname(os.path.abspath(__file__))}/../html/json_bk/{datetime.now().strftime('%Y-%m-%d-%H-%M')}.json"
     gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
 
-    # gdf_first = gdf_edges.head(1)
-    # bounds = gdf_first.geometry.bounds
-    # terrain_elevations = generate_10m_grid_from_bbox(tif_path, bounds.minx, bounds.miny, bounds.maxx, bounds.maxy)
-    # print(len(terrain_elevations))
+    gdf_first = gdf_edges.head(1)
+    bounds = gdf_first.geometry.bounds
+    terrain_elevations = generate_10m_grid_from_bbox(tif_path, bounds.minx, bounds.miny, bounds.maxx, bounds.maxy)
+    print(len(terrain_elevations))
 
-    # import numpy as np
-    # # ファイルに出力する
-    # output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/elevation_grid.json"
-    # with open(output_dir, "w") as f:
-    #     f.write(str(terrain_elevations))
+    import numpy as np
+    # ファイルに出力する
+    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/elevation_grid.json"
+    with open(output_dir, "w") as f:
+        f.write(str(terrain_elevations))
         
 
     return gdf_edges
@@ -545,7 +545,7 @@ def generate_10m_grid_from_bbox(tif_path, lat_min, lon_min, lat_max, lon_max):
     elevation_service_ins = elevation_service.ElevationService(tif_path)
     
     # 1次元配列にするためのリスト
-    terrain_elevations = []
+    lat_lon_elev_grid = np.zeros((lat_grid.shape[0], lat_grid.shape[1], 3))
     
     for i in range(len(lat_lon_grid)):
         for j in range(len(lat_lon_grid[i])):
@@ -558,18 +558,18 @@ def generate_10m_grid_from_bbox(tif_path, lat_min, lon_min, lat_max, lon_max):
             if elevation is None:
                 print(f"Elevation is None for lat: {lat}, lon: {lon}")
             else:
-                # 平面直角座標に再変換してリストに追加
-                terrain_elevations.append([lat, lon, elevation])
+                # # 平面直角座標に再変換してリストに追加
+                # terrain_elevations.append([lat, lon, elevation])
+                lat_lon_elev_grid[i, j] = [lat, lon, elevation]
     
-        # terrain_elevationsをNumPy配列に変換
-    terrain_elevations = np.array(terrain_elevations)
+    # terrain_elevationsをNumPy配列に変換
+    # terrain_elevations = np.array(terrain_elevations)
 
-    # 緯度経度を平面直角座標に変換
-    print(terrain_elevations[:, 1])
-    x, y = transform(wgs84, japan_plane, terrain_elevations[:, 0], terrain_elevations[:, 1])
+    # 緯度経度から平面直角座標に変換
+    flat_x, flat_y = transform(wgs84, japan_plane, lat_lon_elev_grid[:, :, 0], lat_lon_elev_grid[:, :, 1])
 
-    # 結果の平面直角座標をterrain_elevationsに代入
-    terrain_elevations[:, 0] = x  # x座標（平面直角座標）
-    terrain_elevations[:, 1] = y  # y座標（平面直角座標）
+    # 結果をlat_lon_elev_gridに反映 (緯度経度を平面直角座標に置き換え)
+    lat_lon_elev_grid[:, :, 0] = flat_x  # x座標（平面直角座標）
+    lat_lon_elev_grid[:, :, 1] = flat_y  # y座標（平面直角座標）
 
-    return terrain_elevations.tolist()
+    return lat_lon_elev_grid.tolist()
