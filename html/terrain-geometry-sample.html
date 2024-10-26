@@ -81,16 +81,70 @@
             return new THREE.Vector3(x, y, z);
           });
 
-          // 頂点を結ぶ一本の線を作成
-          const geometry = new THREE.BufferGeometry().setFromPoints(points);
+          const offsetDistance = 1; // オフセット距離
+          let normalVectors = [];
 
-          // マテリアルを作成
-          const material = new THREE.LineBasicMaterial({
-            color: 0xff0000, // 赤色の線
+          for (let i = 0; i < points.length - 1; i++) {
+            let p1 = points[i];
+            let p2 = points[i + 1];
+            let direction = new THREE.Vector3().subVectors(p2, p1).normalize();
+            let normal = new THREE.Vector3(-direction.y, direction.x, 0);
+            normalVectors.push(normal);
+          }
+
+          // 最後の法線ベクトルは一つ前のものを使用
+          normalVectors.push(normalVectors[normalVectors.length - 1]);
+
+          const offsetPoints = points.map((point, index) => {
+            return new THREE.Vector3().addVectors(
+              point,
+              normalVectors[index].multiplyScalar(offsetDistance)
+            );
           });
 
-          // ラインを作成
-          const roadMeth = new THREE.Line(geometry, material);
+          // 平面を生成する
+          const vertices = [];
+          points.forEach((point, index) =>
+            vertices.push(point.x, point.y, point.z)
+          );
+          offsetPoints.forEach((point, index) =>
+            vertices.push(point.x, point.y, point.z)
+          );
+
+          const faces = [];
+          for (let i = 0; i < points.length - 1; i++) {
+            const n = points.length;
+            // 下面の三角形
+            faces.push(i, i + n, i + 1);
+            // 上面の三角形
+            faces.push(i + 1, i + n, i + n + 1);
+          }
+
+          // 平面ジオメトリの作成
+          const geometry = new THREE.BufferGeometry();
+
+          const verticesFloat32 = new Float32Array(vertices);
+          geometry.setAttribute(
+            "position",
+            new THREE.BufferAttribute(verticesFloat32, 3)
+          );
+          const indicesUint16 = new Uint16Array(faces);
+          geometry.setIndex(new THREE.BufferAttribute(indicesUint16, 1));
+
+          geometry.computeVertexNormals();
+
+          const material = new THREE.MeshBasicMaterial({
+            side: THREE.DoubleSide,
+            color: 0xdbdcdc,
+          });
+          const roadMesh = new THREE.Mesh(geometry, material);
+
+          // エッジを作成
+          const edges = new THREE.EdgesGeometry(geometry);
+          const roadMeshEdge = new THREE.LineSegments(
+            edges,
+            new THREE.LineBasicMaterial({ color: 0xaaacaa })
+          );
 
           // 最高点からZ軸0までの線を描画
           const maxZIndex = elevations.indexOf(Math.max(...elevations));
@@ -112,7 +166,7 @@
 
           const verticalLineMeth = addVerticalLineToZero(maxPoint, 0x00ffff); // 青色で最高点からZ軸0までの線
 
-          return { roadMeth, verticalLineMeth };
+          return { roadMesh, roadMeshEdge, verticalLineMeth };
         };
 
         const generateTerrainMesh = async (
@@ -265,15 +319,18 @@
 
         // 道のメッシュを作成
         const elevations = await loadJson("elevation.json");
-        const coordinates = await loadJson("geometry.json");
-        const { roadMeth, verticalLineMeth } = generateRoadMesh(
+        const coordinates = await loadJson("geometry_.json");
+
+        const { roadMesh, roadMeshEdge, verticalLineMeth } = generateRoadMesh(
           elevations,
           coordinates,
           baseLat,
           baseLon,
           baseElev
         );
-        scene.add(roadMeth);
+        // console.log(roadMesh, roadMeshEdge, verticalLineMeth);
+        scene.add(roadMesh);
+        scene.add(roadMeshEdge);
         scene.add(verticalLineMeth);
 
         // 光源の追加
