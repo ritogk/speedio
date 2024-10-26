@@ -18,7 +18,8 @@
       {
         "imports": {
           "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
-          "OrbitControls": "https://unpkg.com/three@0.164.1/examples/jsm/controls/OrbitControls.js"
+          "OrbitControls": "https://unpkg.com/three@0.164.1/examples/jsm/controls/OrbitControls.js",
+          "LoopSubdivision ": "https://unpkg.com/three-subdivide/build/index.module.js"
         }
       }
     </script>
@@ -26,6 +27,7 @@
       // Three.jsとOrbitControlsをモジュールとしてインポート
       import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js";
       import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js";
+      import { LoopSubdivision } from "https://unpkg.com/three-subdivide/build/index.module.js";
 
       async function loadTerrainData() {
         const response = await fetch("elevation_grid.json");
@@ -70,7 +72,6 @@
           const x = (lon - baseLon) / 10; // 経度の差をX座標として正規化
           const y = (lat - baseLat) / 10; // 緯度の差をY座標として正規化
           const z = (elev - baseElev) / 6; // 標高の差をZ座標として正規化
-          console.log([x, y, z]);
 
           return [x, y, z];
         });
@@ -113,35 +114,75 @@
       const centerY = (boundingBox.max.y + boundingBox.min.y) / 2;
       const centerZ = (boundingBox.max.z + boundingBox.min.z) / 2;
 
+      // 高解像度化(おもい)
+      // const iterations = 0.5;
+
+      // const params = {
+      //   split: true, // optional, default: true
+      //   uvSmooth: false, // optional, default: false
+      //   preserveEdges: false, // optional, default: false
+      //   flatOnly: false, // optional, default: false
+      //   maxTriangles: Infinity, // optional, default: Infinity
+      // };
+
+      // const new_geometry = LoopSubdivision.modify(geometry, iterations, params);
+
       // ジオメトリの中心をシーンの中心に移動
       geometry.translate(-centerX, -centerY, -centerZ);
 
+      // 面の表面を表すベクトルを自動計算
+      geometry.computeVertexNormals(); // 法線を自動計算
+
       // マテリアルを作成
-      const material = new THREE.MeshPhongMaterial({
-        side: THREE.DoubleSide,
-        color: 0x00ff00,
-        flatShading: true,
+      const material = new THREE.MeshStandardMaterial({
+        // side: THREE.DoubleSide,
+        color: 0x00ff00, // 緑色
+        roughness: 0.8, // ラフネス (0: つるつる, 1: ザラザラ)
+        metalness: 0.5, // 金属度 (0: 非金属, 1: 金属)
+        latShading: false, // スムースシェーディングを有効にする
       });
+      // const material = new THREE.MeshPhongMaterial({
+      //   side: THREE.DoubleSide,
+      //   color: 0x00ff00,
+      //   flatShading: true,
+      // });
+
+      // // マットな質感
+      // const material = new THREE.MeshLambertMaterial({
+      //   // side: THREE.DoubleSide,
+      //   color: 0x00ff00,
+      //   // flatShading: true,
+      // });
 
       // メッシュを作成し、シーンに追加
       const mesh = new THREE.Mesh(geometry, material);
       mesh.castShadow = true; // 影を落とす
       scene.add(mesh);
 
-      // // 影を受ける平面
-      const planeGeometry = new THREE.PlaneGeometry(10, 10);
-      const planeMaterial = new THREE.ShadowMaterial({ opacity: 0.5 }); // 影が見えるように設定
-      const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-      plane.position.z = -0.01; // ほんの少し下に配置して影を受ける
-      plane.rotation.x = -Math.PI / 2; // Z軸を上にするために平面を回転
-      plane.receiveShadow = true; // 影を受ける
-      scene.add(plane);
+      // // 環境光(全体を光らせる)を追加
+      // const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+      // scene.add(ambientLight);
 
       // ライトの追加（影のための光源）
       const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-      directionalLight.position.set(5, -5, 5); // ライトの位置
+      directionalLight.position.set(10, 10, 20); // ライトの位置
       directionalLight.castShadow = true; // ライトに影を有効化
+      // directionalLight.shadow.mapSize.width = 4096; // 高解像度に設定
+      // directionalLight.shadow.mapSize.height = 4096;
       scene.add(directionalLight);
+
+      // DirectionalLightHelperを追加して光源の位置と方向を視覚化
+      const directionalLightHelper = new THREE.DirectionalLightHelper(
+        directionalLight,
+        5
+      );
+      scene.add(directionalLightHelper);
+
+      // カメラヘルパーを追加して影の影響範囲を視覚化
+      const shadowCameraHelper = new THREE.CameraHelper(
+        directionalLight.shadow.camera
+      );
+      scene.add(shadowCameraHelper);
 
       // OrbitControlsを追加して、カメラをマウス操作で回転させる
       const controls = new OrbitControls(camera, renderer.domElement);
