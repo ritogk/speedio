@@ -319,7 +319,7 @@
 
         // 道のメッシュを作成
         const elevations = await loadJson("elevation.json");
-        const coordinates = await loadJson("geometry_.json");
+        const coordinates = await loadJson("geometry_data.json");
 
         const { roadMesh, roadMeshEdge, verticalLineMeth } = generateRoadMesh(
           elevations,

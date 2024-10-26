@@ -14,24 +14,40 @@ from .core.prefecture_polygon import find_prefecture_polygon
 from shapely.geometry import Polygon
 from .analysis.turn_edge_spliter import split
 
+from .core.epsg_service import generate_epsg_code, get_nearest_prefecture
+
 def main() -> GeoDataFrame:
     env = getEnv()
     consider_gsi_width = env["CONSIDER_GSI_WIDTH"]
+    area_prefecture_name = env["AREA_PREFECTURE_NAME"]
     use_custom_area = env["USE_CUSTOM_AREA"]
+    custom_area_point_st = env["CUSTOM_AREA_POINT_ST"]
+    custom_area_point_ed = env["CUSTOM_AREA_POINT_ED"]
 
     execution_timer_ins = ExecutionTimer()
+    plane_epsg_code = None
+
+    # 対象範囲のポリゴンを取得する
+    execution_timer_ins.start("📍 get plane epsg code", ExecutionType.PROC)
+    if use_custom_area:
+        prefecture_name = get_nearest_prefecture(custom_area_point_st[0], custom_area_point_st[1])
+        plane_epsg_code = generate_epsg_code(prefecture_name)
+    else:
+        plane_epsg_code = generate_epsg_code(area_prefecture_name)
+    print(f"  plane_epsg_code: {plane_epsg_code}")
+    execution_timer_ins.stop()
 
     # 対象範囲のポリゴンを取得する
     execution_timer_ins.start("🗾 get target area polygon", ExecutionType.PROC)
     if use_custom_area:
-        top_left = (env["CUSTOM_AREA_POINT_ST"][1], env["CUSTOM_AREA_POINT_ST"][0])
-        bottom_right = (env["CUSTOM_AREA_POINT_ED"][1], env["CUSTOM_AREA_POINT_ED"][0])
+        top_left = (custom_area_point_st[1], custom_area_point_st[0])
+        bottom_right = (custom_area_point_ed[1], custom_area_point_ed[0])
         top_right = (bottom_right[0], top_left[1])  # 右上
         bottom_left = (top_left[0], bottom_right[1])  # 左下
         search_area_polygon = Polygon([top_left, top_right, bottom_right, bottom_left])
     else:
         prefectures_geojson_path = f"{os.path.dirname(os.path.abspath(__file__))}/../prefectures.geojson"
-        search_area_polygon = find_prefecture_polygon(prefectures_geojson_path, env["AREA_PREFECTURE_NAME"])
+        search_area_polygon = find_prefecture_polygon(prefectures_geojson_path, area_prefecture_name)
     execution_timer_ins.stop()
 
     # ベースとなるグラフを取得する
@@ -286,18 +302,8 @@ def main() -> GeoDataFrame:
         lambda x: list(map(lambda y: [y[1], y[0]], x.coords))
     )
     gdf_edges["geometry_meter_list"] = (
-        column_generater.geometry_meter_list.generate(gdf_edges)
+        column_generater.geometry_meter_list.generate(gdf_edges, plane_epsg_code)
     )
-
-    # # 目視チェックした道幅をセットする
-    # eye_meadured_width_path = (
-    #     f"{os.path.dirname(os.path.abspath(__file__))}/../eye_meadured_width.csv"
-    # )
-    # execution_timer_ins.start("calc eye_measured_width")
-    # gdf_edges["eye_measured_width"] = column_generater.eye_measured_width.generate(
-    #     gdf_edges, eye_meadured_width_path
-    # )
-    # execution_timer_ins.stop()
 
     # ステアリングホイールの角度を計算する
     execution_timer_ins.start("🛞 calc steering_wheel_angle")
@@ -501,32 +507,60 @@ def main() -> GeoDataFrame:
     output_dir_bk = f"{os.path.dirname(os.path.abspath(__file__))}/../html/json_bk/{datetime.now().strftime('%Y-%m-%d-%H-%M')}.json"
     gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
 
+
+    # 3D用データを一時的に出力
     gdf_first = gdf_edges.head(1)
-    bounds = gdf_first.geometry.bounds
-    terrain_elevations = generate_10m_grid_from_bbox(tif_path, bounds.minx, bounds.miny, bounds.maxx, bounds.maxy)
-    print(len(terrain_elevations))
+    bounds = gdf_first.geometry.bounds.iloc[0]
+    # print(bounds.minx, bounds.miny, bounds.maxx, bounds.maxy)
+    terrain_elevations = generate_10m_grid_from_bbox(plane_epsg_code, tif_path, bounds.minx, bounds.miny, bounds.maxx, bounds.maxy)
+    # print(len(terrain_elevations))
 
     import numpy as np
     # ファイルに出力する
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/elevation_grid.json"
     with open(output_dir, "w") as f:
         f.write(str(terrain_elevations))
-        
+    
+    # geometry_meter_listの緯度経度を逆転した配列を作る
+    geometry_meter = gdf_edges["geometry_meter_list"].iloc[0]
+    geometry_meter_json = []
+    for geometry_meter_point in geometry_meter:
+        geometry_meter_json.append([geometry_meter_point[0], geometry_meter_point[1]])
+
+    # JSONで出力
+    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/geometry_data.json"
+    with open(output_dir, "w") as f:
+        f.write(str(geometry_meter_json))
+    elevation_smooth = gdf_edges["elevation_smooth"].iloc[0]
+    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/elevation.json"
+    with open(output_dir, "w") as f:
+        f.write(str(elevation_smooth))
 
     return gdf_edges
 
 
 import numpy as np
-from pyproj import Proj, transform
+from pyproj import Proj, Transformer
 from .analysis.column_generater_module.core import elevation_service
-def generate_10m_grid_from_bbox(tif_path, lat_min, lon_min, lat_max, lon_max):
+import geopandas as gpd
+from shapely.geometry import Point
+def generate_10m_grid_from_bbox(plane_epsg_code, tif_path, lat_min, lon_min, lat_max, lon_max):
     # 緯度経度からEPSG:4326 (WGS84) に変換するための投影を設定
     wgs84 = Proj('epsg:4326')  # WGS84 (緯度経度)
-    japan_plane = Proj('epsg:2451')  # 日本の平面直角座標系（ゾーン9を例とする）
+    japan_plane = Proj(f"epsg:{plane_epsg_code}")  # 日本の平面直角座標系（ゾーン9を例とする）
     
+      # Transformerを使って座標変換用のオブジェクトを作成
+    transformer_to_plane = Transformer.from_proj(wgs84, japan_plane)
+    transformer_to_wgs84 = Transformer.from_proj(japan_plane, wgs84)
+
     # BBoxの緯度経度を平面直角座標に変換
-    x_min, y_min = transform(wgs84, japan_plane, lon_min, lat_min)
-    x_max, y_max = transform(wgs84, japan_plane, lon_max, lat_max)
+    x_min, y_min = transformer_to_plane.transform(lon_min, lat_min)
+    x_max, y_max = transformer_to_plane.transform(lon_max, lat_max)
+
+    # ★なんかここの時点でずれてる。
+    print(lat_min, lon_min)
+    print(lat_max, lon_max)
+    print(x_min, y_min, x_max, y_max)
     
     # 10m間隔のグリッドを作成
     x_coords = np.arange(x_min, x_max, 10)  # x方向
@@ -536,7 +570,7 @@ def generate_10m_grid_from_bbox(tif_path, lat_min, lon_min, lat_max, lon_max):
     grid_x, grid_y = np.meshgrid(x_coords, y_coords)
     
     # 平面直角座標から緯度経度に逆変換
-    lon_grid, lat_grid = transform(japan_plane, wgs84, grid_x, grid_y)
+    lon_grid, lat_grid = transformer_to_wgs84.transform(grid_x, grid_y)
     
     # 緯度と経度のグリッドを1つの3次元配列に統合
     lat_lon_grid = np.dstack((lat_grid, lon_grid))
@@ -566,10 +600,24 @@ def generate_10m_grid_from_bbox(tif_path, lat_min, lon_min, lat_max, lon_max):
     # terrain_elevations = np.array(terrain_elevations)
 
     # 緯度経度から平面直角座標に変換
-    flat_x, flat_y = transform(wgs84, japan_plane, lat_lon_elev_grid[:, :, 0], lat_lon_elev_grid[:, :, 1])
+    flat_x, flat_y = transformer_to_plane.transform(lat_lon_elev_grid[:, :, 0], lat_lon_elev_grid[:, :, 1])
 
     # 結果をlat_lon_elev_gridに反映 (緯度経度を平面直角座標に置き換え)
     lat_lon_elev_grid[:, :, 0] = flat_x  # x座標（平面直角座標）
     lat_lon_elev_grid[:, :, 1] = flat_y  # y座標（平面直角座標）
+    
+    points = []
+    for i in range(len(lat_lon_elev_grid)):
+        for j in range(len(lat_lon_elev_grid[i])):
+            lat = lat_lon_elev_grid[i][j][1]
+            lon = lat_lon_elev_grid[i][j][0]
+            point = Point(lon, lat)
+            points.append(point)
+
+    # GeoDataFrameを作成し、ポイントデータを格納
+    gdf = gpd.GeoDataFrame(geometry=points, crs=f"epsg:{plane_epsg_code}")
+
+    # GeoJSONとして出力
+    gdf.to_file('terrain.geojson', driver='GeoJSON')
 
     return lat_lon_elev_grid.tolist()
