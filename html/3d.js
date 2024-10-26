@@ -5,22 +5,13 @@ export const draw3D = (coordinates, elevations) => {
   const width = 1800;
   const height = 1100;
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-
-  const renderer = new THREE.WebGLRenderer();
-  renderer.setSize(width, height);
+  const camera = generateCamera(width, height);
+  const renderer = generateRenderer(width, height);
   document.getElementById("road3DArea").appendChild(renderer.domElement);
-  // Z軸が上になるようにカメラの向きを設定
-  camera.up.set(0, 0, 1);
-  camera.position.set(200, 200, 100); // Z軸を真上から見る。
-  camera.lookAt(0, 0, 0); // 原点を見る
+  const cameraControls = generateOrbitControls(camera, renderer);
 
   const axesHelper = new THREE.AxesHelper(100); // 軸の長さを指定
   scene.add(axesHelper);
-
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.25;
 
   // 描画処理
   const centerIndex = Math.floor(coordinates.length / 2 - 1);
@@ -133,11 +124,36 @@ export const draw3D = (coordinates, elevations) => {
   // Render loop
   function animate() {
     requestAnimationFrame(animate);
-    controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+    cameraControls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
     // x座標に対して回転
     scene.rotation.z += 0.01;
     renderer.render(scene, camera);
   }
 
   animate();
+};
+
+const generateCamera = (width, height) => {
+  // 画角, アスペクト比, 描画開始距離, 描画終了距離
+  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+  // Z軸が上になるようにカメラの向きを設定
+  camera.up.set(0, 0, 1);
+  camera.position.set(200, 200, 100); // Z軸を真上から見る。
+  camera.lookAt(0, 0, 0); // 原点を見る
+  return camera;
+};
+
+const generateOrbitControls = (camera, renderer) => {
+  const controls = new OrbitControls(camera, renderer.domElement);
+  // カメラ操作時の慣性を有効化
+  controls.enableDamping = true;
+  // カメラ操作時の減衰率
+  controls.dampingFactor = 0.25;
+  return controls;
+};
+
+const generateRenderer = (width, height) => {
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(width, height);
+  return renderer;
 };
