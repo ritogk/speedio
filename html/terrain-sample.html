@@ -35,176 +35,226 @@
         return data;
       }
 
-      // シーン、カメラ、レンダラーの作成
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(
-        75,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
-      );
-      const renderer = new THREE.WebGLRenderer();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+      const main = async () => {
+        const generateScene = () => {
+          const scene = new THREE.Scene();
+          return scene;
+        };
 
-      // カメラ位置
-      camera.up.set(0, 0, 1);
-      camera.position.set(0, 0, 400); // Z軸を真上から見る。
-      camera.lookAt(0, 0, 0); // 原点を見る
+        const generateCamera = (renderer, width, height) => {
+          const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+          );
+          camera.up.set(0, 0, 1);
+          camera.position.set(0, 0, 400); // Z軸を真上から見る。
+          camera.lookAt(0, 0, 0); // 原点を見る
 
-      // グリッドの座標と高さデータ（多次元配列: x, y, z）
-      const terrainData = await loadTerrainData();
+          // OrbitControlsを追加して、カメラをマウス操作で回転させる
+          const cameraControls = new OrbitControls(camera, renderer.domElement);
+          cameraControls.enableDamping = true; // 慣性効果
+          cameraControls.dampingFactor = 0.05;
+          cameraControls.screenSpacePanning = false;
+          cameraControls.maxPolarAngle = Math.PI / 2; // 上向きすぎるのを防ぐ
 
-      const baseLat = terrainData[0][0][0]; // 基準の緯度
-      const baseLon = terrainData[0][0][1]; // 基準の経度
-      const baseElev = terrainData[0][0][2]; // 基準の標高
+          return { camera, cameraControls };
+        };
 
-      // gridDataを基に各座標を基準からの相対的な座標に変換し、Vector3オブジェクトを作成
-      const gridData = terrainData.map((data) => {
-        // console.log(data);
-        return data.map((d) => {
-          // console.log(d);
-          const lat = d[0]; // 緯度
-          const lon = d[1]; // 経度
-          const elev = d[2]; // 標高
+        const generateRenderer = (width, height) => {
+          const renderer = new THREE.WebGLRenderer();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          document.body.appendChild(renderer.domElement);
+          return renderer;
+        };
 
-          // 基準座標に対する相対座標を計算
-          const x = (lon - baseLon) / 10; // 経度の差をX座標として正規化
-          const y = (lat - baseLat) / 10; // 緯度の差をY座標として正規化
-          const z = (elev - baseElev) / 6; // 標高の差をZ座標として正規化
+        const generateGeometry = async () => {
+          // グリッドの座標と高さデータ（多次元配列: x, y, z）
+          const terrainData = await loadTerrainData();
 
-          return [x, y, z];
+          const baseLat = terrainData[0][0][0]; // 基準の緯度
+          const baseLon = terrainData[0][0][1]; // 基準の経度
+          const baseElev = terrainData[0][0][2]; // 基準の標高
+
+          // gridDataを基に各座標を基準からの相対的な座標に変換し、Vector3オブジェクトを作成
+          const gridData = terrainData.map((data) => {
+            // console.log(data);
+            return data.map((d) => {
+              // console.log(d);
+              const lat = d[0]; // 緯度
+              const lon = d[1]; // 経度
+              const elev = d[2]; // 標高
+
+              // 基準座標に対する相対座標を計算
+              const x = (lon - baseLon) / 10; // 経度の差をX座標として正規化
+              const y = (lat - baseLat) / 10; // 緯度の差をY座標として正規化
+              const z = (elev - baseElev) / 6; // 標高の差をZ座標として正規化
+
+              return [x, y, z];
+            });
+          });
+          // ジオメトリの作成
+          const geometry = new THREE.BufferGeometry();
+          const vertices = [];
+
+          // 頂点データを取得して三角形を作成
+          for (let y = 0; y < gridData.length - 1; y++) {
+            for (let x = 0; x < gridData[y].length - 1; x++) {
+              // 2つの三角形で1つの四角形を構成
+              const v0 = gridData[y][x];
+              const v1 = gridData[y + 1][x];
+              const v2 = gridData[y][x + 1];
+              const v3 = gridData[y + 1][x + 1];
+
+              // 1つ目の三角形
+              vertices.push(...v0);
+              vertices.push(...v1);
+              vertices.push(...v2);
+
+              // 2つ目の三角形
+              vertices.push(...v2);
+              vertices.push(...v1);
+              vertices.push(...v3);
+            }
+          }
+
+          geometry.setAttribute(
+            "position",
+            new THREE.BufferAttribute(new Float32Array(vertices), 3)
+          );
+
+          // 中心座標を計算 (X, Y, Zの範囲を取得して中心を計算)
+          geometry.computeBoundingBox();
+          const boundingBox = geometry.boundingBox;
+          const centerX = (boundingBox.max.x + boundingBox.min.x) / 2;
+          const centerY = (boundingBox.max.y + boundingBox.min.y) / 2;
+          const centerZ = (boundingBox.max.z + boundingBox.min.z) / 2;
+
+          // 高解像度化(おもい)
+          // const iterations = 0.5;
+
+          // const params = {
+          //   split: true, // optional, default: true
+          //   uvSmooth: false, // optional, default: false
+          //   preserveEdges: false, // optional, default: false
+          //   flatOnly: false, // optional, default: false
+          //   maxTriangles: Infinity, // optional, default: Infinity
+          // };
+
+          // const new_geometry = LoopSubdivision.modify(geometry, iterations, params);
+
+          // ジオメトリの中心をシーンの中心に移動
+          geometry.translate(-centerX, -centerY, -centerZ);
+
+          // 面の表面を表すベクトルを自動計算
+          geometry.computeVertexNormals(); // 法線を自動計算
+
+          return geometry;
+        };
+
+        const generateMaterial = () => {
+          // マテリアルを作成
+          const material = new THREE.MeshStandardMaterial({
+            // side: THREE.DoubleSide,
+            color: 0x00ff00, // 緑色
+            roughness: 0.8, // ラフネス (0: つるつる, 1: ザラザラ)
+            metalness: 0.5, // 金属度 (0: 非金属, 1: 金属)
+            latShading: false, // スムースシェーディングを有効にする
+          });
+          // const material = new THREE.MeshPhongMaterial({
+          //   side: THREE.DoubleSide,
+          //   color: 0x00ff00,
+          //   flatShading: true,
+          // });
+
+          // // マットな質感
+          // const material = new THREE.MeshLambertMaterial({
+          //   // side: THREE.DoubleSide,
+          //   color: 0x00ff00,
+          //   // flatShading: true,
+          // });
+          return material;
+        };
+
+        const generateMesh = (geometry, material) => {
+          // メッシュを作成し、シーンに追加
+          const mesh = new THREE.Mesh(geometry, material);
+          mesh.castShadow = true; // 影を落とす
+          return mesh;
+        };
+
+        const generateAmbientLight = () => {
+          // 環境光(全体を光らせる)を追加
+          const ambientLight = new THREE.AmbientLight(0xffffff, 0);
+          return ambientLight;
+        };
+
+        const generateDirectionalLight = () => {
+          // ライトの追加（影のための光源）
+          const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+          directionalLight.position.set(10, 10, 20); // ライトの位置
+          directionalLight.castShadow = true; // ライトに影を有効化
+          // directionalLight.shadow.mapSize.width = 4096; // 高解像度に設定
+          // directionalLight.shadow.mapSize.height = 4096;
+
+          // DirectionalLightHelperを追加して光源の位置と方向を視覚化
+          const directionalLightHelper = new THREE.DirectionalLightHelper(
+            directionalLight,
+            5
+          );
+
+          // カメラヘルパーを追加して影の影響範囲を視覚化
+          const shadowCameraHelper = new THREE.CameraHelper(
+            directionalLight.shadow.camera
+          );
+          return {
+            directionalLight,
+            directionalLightHelper,
+            shadowCameraHelper,
+          };
+        };
+
+        // シーン、カメラ、レンダラーの作成
+        const renderer = generateRenderer();
+
+        const scene = generateScene();
+        const { camera, cameraControls } = generateCamera(
+          renderer,
+          window.innerWidth,
+          window.innerHeight
+        );
+
+        const geometry = await generateGeometry();
+        const material = generateMaterial();
+        const mesh = generateMesh(geometry, material);
+        scene.add(mesh);
+
+        const ambientLight = generateAmbientLight();
+        scene.add(ambientLight);
+
+        const { directionalLight, directionalLightHelper, shadowCameraHelper } =
+          generateDirectionalLight();
+        scene.add(directionalLight);
+        scene.add(directionalLightHelper);
+        scene.add(shadowCameraHelper);
+
+        // レンダリングの設定
+        const animate = () => {
+          requestAnimationFrame(animate);
+          cameraControls.update();
+          renderer.render(scene, camera);
+        };
+        animate();
+
+        // ウィンドウのリサイズに対応
+        window.addEventListener("resize", () => {
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
         });
-      });
-
-      // ジオメトリの作成
-      const geometry = new THREE.BufferGeometry();
-      const vertices = [];
-
-      // 頂点データを取得して三角形を作成
-      for (let y = 0; y < gridData.length - 1; y++) {
-        for (let x = 0; x < gridData[y].length - 1; x++) {
-          // 2つの三角形で1つの四角形を構成
-          const v0 = gridData[y][x];
-          const v1 = gridData[y + 1][x];
-          const v2 = gridData[y][x + 1];
-          const v3 = gridData[y + 1][x + 1];
-
-          // 1つ目の三角形
-          vertices.push(...v0);
-          vertices.push(...v1);
-          vertices.push(...v2);
-
-          // 2つ目の三角形
-          vertices.push(...v2);
-          vertices.push(...v1);
-          vertices.push(...v3);
-        }
-      }
-
-      geometry.setAttribute(
-        "position",
-        new THREE.BufferAttribute(new Float32Array(vertices), 3)
-      );
-
-      // 中心座標を計算 (X, Y, Zの範囲を取得して中心を計算)
-      geometry.computeBoundingBox();
-      const boundingBox = geometry.boundingBox;
-      const centerX = (boundingBox.max.x + boundingBox.min.x) / 2;
-      const centerY = (boundingBox.max.y + boundingBox.min.y) / 2;
-      const centerZ = (boundingBox.max.z + boundingBox.min.z) / 2;
-
-      // 高解像度化(おもい)
-      // const iterations = 0.5;
-
-      // const params = {
-      //   split: true, // optional, default: true
-      //   uvSmooth: false, // optional, default: false
-      //   preserveEdges: false, // optional, default: false
-      //   flatOnly: false, // optional, default: false
-      //   maxTriangles: Infinity, // optional, default: Infinity
-      // };
-
-      // const new_geometry = LoopSubdivision.modify(geometry, iterations, params);
-
-      // ジオメトリの中心をシーンの中心に移動
-      geometry.translate(-centerX, -centerY, -centerZ);
-
-      // 面の表面を表すベクトルを自動計算
-      geometry.computeVertexNormals(); // 法線を自動計算
-
-      // マテリアルを作成
-      const material = new THREE.MeshStandardMaterial({
-        // side: THREE.DoubleSide,
-        color: 0x00ff00, // 緑色
-        roughness: 0.8, // ラフネス (0: つるつる, 1: ザラザラ)
-        metalness: 0.5, // 金属度 (0: 非金属, 1: 金属)
-        latShading: false, // スムースシェーディングを有効にする
-      });
-      // const material = new THREE.MeshPhongMaterial({
-      //   side: THREE.DoubleSide,
-      //   color: 0x00ff00,
-      //   flatShading: true,
-      // });
-
-      // // マットな質感
-      // const material = new THREE.MeshLambertMaterial({
-      //   // side: THREE.DoubleSide,
-      //   color: 0x00ff00,
-      //   // flatShading: true,
-      // });
-
-      // メッシュを作成し、シーンに追加
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.castShadow = true; // 影を落とす
-      scene.add(mesh);
-
-      // // 環境光(全体を光らせる)を追加
-      // const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-      // scene.add(ambientLight);
-
-      // ライトの追加（影のための光源）
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-      directionalLight.position.set(10, 10, 20); // ライトの位置
-      directionalLight.castShadow = true; // ライトに影を有効化
-      // directionalLight.shadow.mapSize.width = 4096; // 高解像度に設定
-      // directionalLight.shadow.mapSize.height = 4096;
-      scene.add(directionalLight);
-
-      // DirectionalLightHelperを追加して光源の位置と方向を視覚化
-      const directionalLightHelper = new THREE.DirectionalLightHelper(
-        directionalLight,
-        5
-      );
-      scene.add(directionalLightHelper);
-
-      // カメラヘルパーを追加して影の影響範囲を視覚化
-      const shadowCameraHelper = new THREE.CameraHelper(
-        directionalLight.shadow.camera
-      );
-      scene.add(shadowCameraHelper);
-
-      // OrbitControlsを追加して、カメラをマウス操作で回転させる
-      const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true; // 慣性効果
-      controls.dampingFactor = 0.05;
-      controls.screenSpacePanning = false;
-      controls.maxPolarAngle = Math.PI / 2; // 上向きすぎるのを防ぐ
-
-      // レンダリングの設定
-      function animate() {
-        requestAnimationFrame(animate);
-        controls.update(); // OrbitControlsを更新
-        renderer.render(scene, camera);
-      }
-      animate();
-
-      // ウィンドウのリサイズに対応
-      window.addEventListener("resize", () => {
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-      });
+      };
+      main();
     </script>
   </body>
 </html>
