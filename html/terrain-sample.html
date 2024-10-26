@@ -29,8 +29,8 @@
       import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js";
       import { LoopSubdivision } from "https://unpkg.com/three-subdivide/build/index.module.js";
 
-      async function loadTerrainData() {
-        const response = await fetch("elevation_grid.json");
+      async function loadJson(path) {
+        const response = await fetch(path);
         const data = await response.json();
         return data;
       }
@@ -71,7 +71,7 @@
 
         const generateGeometry = async () => {
           // グリッドの座標と高さデータ（多次元配列: x, y, z）
-          const terrainData = await loadTerrainData();
+          const terrainData = await loadJson("elevation_grid.json");
 
           const baseLat = terrainData[0][0][0]; // 基準の緯度
           const baseLon = terrainData[0][0][1]; // 基準の経度
