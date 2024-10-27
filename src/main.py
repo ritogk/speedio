@@ -30,11 +30,11 @@ def main() -> GeoDataFrame:
     # 対象範囲のポリゴンを取得する
     execution_timer_ins.start("📍 get plane epsg code", ExecutionType.PROC)
     if use_custom_area:
-        prefecture_name = get_nearest_prefecture(custom_area_point_st[0], custom_area_point_st[1])
-        plane_epsg_code = generate_epsg_code(prefecture_name)
+        area_prefecture_name = get_nearest_prefecture(custom_area_point_st[0], custom_area_point_st[1])
+        plane_epsg_code = generate_epsg_code(area_prefecture_name)
     else:
         plane_epsg_code = generate_epsg_code(area_prefecture_name)
-    print(f"  plane_epsg_code: {plane_epsg_code}")
+    print(f"  prefecture_name: {area_prefecture_name} plane_epsg_code: {plane_epsg_code}")
     execution_timer_ins.stop()
 
     # 対象範囲のポリゴンを取得する
