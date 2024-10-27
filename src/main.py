@@ -508,21 +508,20 @@ def main() -> GeoDataFrame:
     gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
 
 
-    # 3D用データを一時的に出力
-    gdf_first = gdf_edges.head(1)
-    bounds = gdf_first.geometry.bounds.iloc[0]
-    # print(bounds.minx, bounds.miny, bounds.maxx, bounds.maxy)
-    terrain_elevations = generate_10m_grid_from_bbox(plane_epsg_code, tif_path, bounds.minx, bounds.miny, bounds.maxx, bounds.maxy)
-    # print(len(terrain_elevations))
 
-    import numpy as np
+
+    # 3D用データを一時的に出力
+    gdf_first = gdf_edges.head(1).iloc[0]
+    bounds = gdf_first.geometry.bounds
+    terrain_elevations = generate_10m_grid_from_bbox(plane_epsg_code, tif_path, bounds[0], bounds[1], bounds[2], bounds[3])
+    
     # ファイルに出力する
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/elevation_grid.json"
     with open(output_dir, "w") as f:
         f.write(str(terrain_elevations))
     
     # geometry_meter_listの緯度経度を逆転した配列を作る
-    geometry_meter = gdf_edges["geometry_meter_list"].iloc[0]
+    geometry_meter = gdf_first["geometry_meter_list"]
     geometry_meter_json = []
     for geometry_meter_point in geometry_meter:
         geometry_meter_json.append([geometry_meter_point[0], geometry_meter_point[1]])
@@ -531,7 +530,7 @@ def main() -> GeoDataFrame:
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/geometry_data.json"
     with open(output_dir, "w") as f:
         f.write(str(geometry_meter_json))
-    elevation_smooth = gdf_edges["elevation_smooth"].iloc[0]
+    elevation_smooth = gdf_first["elevation_smooth"]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/elevation.json"
     with open(output_dir, "w") as f:
         f.write(str(elevation_smooth))
