@@ -36,20 +36,25 @@
 
         const generateRenderer = (width, height) => {
           const renderer = new THREE.WebGLRenderer();
+          renderer.shadowMap.enabled = true; // 影を有効化
           renderer.setSize(window.innerWidth, window.innerHeight);
           document.body.appendChild(renderer.domElement);
           return renderer;
         };
 
         const generateScene = () => {
-          return new THREE.Scene();
+          const scence = new THREE.Scene();
+          // scence.fog = new THREE.Fog(0x000000, 50, 800); // 霧を追加
+          return scence;
         };
 
         const generateCamera = (renderer, width, height) => {
+          // カメラを作成(視野角, アスペクト比, near, far(広角.30くらいで望遠。90で広角))
+          // nearとfarの範囲をレンダリングするのでパーフォマンスを上げるために適切な値を設定する。
           const camera = new THREE.PerspectiveCamera(
-            75,
+            50,
             width / height,
-            0.1,
+            10,
             1000
           );
           // カメラ位置
@@ -74,6 +79,11 @@
           baseY,
           baseZ
         ) => {
+          const roadColor = 0xbfbfbf;
+          const sideLineColor = 0x595959;
+          const centerLineColor = 0x595959;
+          const offsetDistance = 1.5; // 道幅のオフセット距離
+
           const points = coordinates.map((coord, index) => {
             const x = (coord[1] - baseY) / 10; // coordinates[0]のX座標を基準に
             const y = (coord[0] - baseX) / 10; // coordinates[0]のY座標を基準に
@@ -81,7 +91,6 @@
             return new THREE.Vector3(x, y, z);
           });
 
-          const offsetDistance = 1; // オフセット距離
           let normalVectors = [];
 
           for (let i = 0; i < points.length - 1; i++) {
@@ -135,22 +144,72 @@
 
           const material = new THREE.MeshBasicMaterial({
             side: THREE.DoubleSide,
-            color: 0xdbdcdc,
+            color: roadColor,
           });
           const roadMesh = new THREE.Mesh(geometry, material);
 
-          // エッジを作成
-          const edges = new THREE.EdgesGeometry(geometry);
-          const roadMeshEdge = new THREE.LineSegments(
-            edges,
-            new THREE.LineBasicMaterial({ color: 0xaaacaa })
+          // 車線の生成
+          const leftLinePoints = points;
+          const rightLinePoints = points.map((point, index) => {
+            return new THREE.Vector3().addVectors(
+              point,
+              normalVectors[index]
+                .clone()
+                .multiplyScalar(offsetDistance / offsetDistance) // 右にオフセット
+            );
+          });
+          const centerLinePoints = points.map((point, index) => {
+            return new THREE.Vector3().addVectors(
+              point,
+              normalVectors[index]
+                .clone()
+                .multiplyScalar(offsetDistance / (offsetDistance * 2)) // 左にオフセット
+            );
+          });
+
+          // 線を作成する関数
+          const generateLine = (pointsArray, color, isLineDashed) => {
+            let material = null;
+            if (!isLineDashed) {
+              material = new THREE.LineBasicMaterial({ color: color });
+            } else {
+              material = new THREE.LineDashedMaterial({
+                color: color,
+                scale: 100,
+                dashSize: 20,
+                gapSize: 200000,
+              });
+            }
+            const geometry = new THREE.BufferGeometry().setFromPoints(
+              pointsArray
+            );
+            return new THREE.Line(geometry, material);
+          };
+
+          // 左、右、中央の線を作成
+          const leftLineMesh = generateLine(
+            leftLinePoints,
+            sideLineColor,
+            false
+          );
+          const rightLineMesh = generateLine(
+            rightLinePoints,
+            sideLineColor,
+            false
+          );
+          const centerLineMesh = generateLine(
+            centerLinePoints,
+            centerLineColor,
+            true
           );
 
-          // 最高点からZ軸0までの線を描画
+          // 補助線の生成
           const maxZIndex = elevations.indexOf(Math.max(...elevations));
-          const maxPoint = points[maxZIndex];
+          const minZIndex = elevations.indexOf(Math.min(...elevations));
+          const maxZPoint = points[maxZIndex];
+          const minZPoint = points[minZIndex];
 
-          const addVerticalLineToZero = (point, color) => {
+          const generateVerticalLineToZero = (point, color) => {
             const material = new THREE.LineBasicMaterial({ color: color });
             const linePoints = [];
             linePoints.push(new THREE.Vector3(point.x, point.y, point.z));
@@ -164,9 +223,24 @@
             return verticalLineMeth;
           };
 
-          const verticalLineMeth = addVerticalLineToZero(maxPoint, 0x00ffff); // 青色で最高点からZ軸0までの線
+          // const verticalLineMeth = addVerticalLineToZero(maxPoint, 0x00ffff); // 青色で最高点からZ軸0までの線
+          const verticalLineMaxZMeth = generateVerticalLineToZero(
+            maxZPoint,
+            0xff00ff
+          );
+          const verticalLineMinZMeth = generateVerticalLineToZero(
+            minZPoint,
+            0xffff00
+          );
 
-          return { roadMesh, roadMeshEdge, verticalLineMeth };
+          return {
+            roadMesh,
+            leftLineMesh,
+            rightLineMesh,
+            centerLineMesh,
+            verticalLineMaxZMeth,
+            verticalLineMinZMeth,
+          };
         };
 
         const generateTerrainMesh = async (
@@ -234,7 +308,6 @@
           const centerY = (boundingBox.max.y + boundingBox.min.y) / 2;
           const centerZ = (boundingBox.max.z + boundingBox.min.z) / 2;
 
-          // // ★こいつがずれの原因か?
           // // ジオメトリの中心をシーンの中心に移動
           // geometry.translate(-centerX, -centerY, -centerZ);
 
@@ -248,25 +321,32 @@
             roughness: 0.8, // ラフネス (0: つるつる, 1: ザラザラ)
             metalness: 0.5, // 金属度 (0: 非金属, 1: 金属)
             latShading: false, // スムースシェーディングを有効にする
+            transparent: true, // 透明を有効化
+            opacity: 0.6,
           });
 
           // メッシュを作成し、シーンに追加
           const mesh = new THREE.Mesh(geometry, material);
-          mesh.castShadow = true; // 影を落とす
+          // mesh.receiveShadow = true; // 影を落とす
 
           return mesh;
         };
 
         const generateAmbientLight = () => {
           // 環境光(全体を光らせる)を追加
-          const ambientLight = new THREE.AmbientLight(0xffffff, 0);
+          // const ambientLight = new THREE.AmbientLight(0xffffff, 0);
+          const ambientLight = new THREE.HemisphereLight(
+            0xffffff, // 上からの光
+            0x0000ff, // 下からの光
+            0.3
+          );
           return ambientLight;
         };
 
         const generateDirectionalLight = () => {
           // ライトの追加（影のための光源）
           const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-          directionalLight.position.set(10, 10, 20); // ライトの位置
+          directionalLight.position.set(10, 20, 40); // ライトの位置
           directionalLight.castShadow = true; // ライトに影を有効化
           // directionalLight.shadow.mapSize.width = 4096; // 高解像度に設定
           // directionalLight.shadow.mapSize.height = 4096;
@@ -300,6 +380,10 @@
           window.innerHeight
         );
 
+        // グループを作成
+        const group = new THREE.Group();
+        // 中心座標を計算 (X, Y, Zの範囲を取得して中心を計算)
+
         // 地形ロード
         const terrainData = await loadJson("elevation_grid.json");
 
@@ -315,25 +399,46 @@
           baseLon,
           baseElev
         );
-        scene.add(terrainMesh);
+        group.add(terrainMesh);
 
         // 道のメッシュを作成
         const elevations = await loadJson("elevation.json");
         const coordinates = await loadJson("geometry_data.json");
 
-        const { roadMesh, roadMeshEdge, verticalLineMeth } = generateRoadMesh(
+        const {
+          roadMesh,
+          leftLineMesh,
+          rightLineMesh,
+          centerLineMesh,
+          verticalLineMaxZMeth,
+          verticalLineMinZMeth,
+        } = generateRoadMesh(
           elevations,
           coordinates,
           baseLat,
           baseLon,
           baseElev
         );
-        // console.log(roadMesh, roadMeshEdge, verticalLineMeth);
-        scene.add(roadMesh);
-        scene.add(roadMeshEdge);
-        scene.add(verticalLineMeth);
+        group.add(roadMesh);
+        group.add(leftLineMesh);
+        group.add(rightLineMesh);
+        group.add(centerLineMesh);
+        // group.add(verticalLineMaxZMeth);
+        // group.add(verticalLineMinZMeth);
+        // const axesHelper = new THREE.AxesHelper(100); // 軸の長さを指定
+        // scene.add(axesHelper);
+
+        // グループを中心座標に移動してシーンに追加
+        const boundingBox = terrainMesh.geometry.boundingBox;
+        const centerX = (boundingBox.max.x + boundingBox.min.x) / 2;
+        const centerY = (boundingBox.max.y + boundingBox.min.y) / 2;
+        const centerZ = (boundingBox.max.z + boundingBox.min.z) / 2;
+        group.position.set(-centerX, -centerY, -centerZ);
+        scene.add(group);
 
         // 光源の追加
+        const ambientLight = generateAmbientLight();
+        scene.add(ambientLight);
         const { directionalLight, directionalLightHelper, shadowCameraHelper } =
           generateDirectionalLight();
         scene.add(directionalLight);
