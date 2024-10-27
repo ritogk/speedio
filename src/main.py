@@ -557,6 +557,12 @@ def generate_10m_grid_from_bbox(plane_epsg_code, tif_path, lat_min, lon_min, lat
     x_min, y_min = transformer_to_plane.transform(lon_min, lat_min)
     x_max, y_max = transformer_to_plane.transform(lon_max, lat_max)
 
+    expand_distance = 50  # 拡張する距離（メートル）
+    x_min -= expand_distance
+    x_max += expand_distance
+    y_min -= expand_distance
+    y_max += expand_distance
+
     # ★なんかここの時点でずれてる。
     print(lat_min, lon_min)
     print(lat_max, lon_max)
