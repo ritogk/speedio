@@ -563,10 +563,9 @@ def generate_10m_grid_from_bbox(plane_epsg_code, tif_path, lat_min, lon_min, lat
     y_min -= expand_distance
     y_max += expand_distance
 
-    # ★なんかここの時点でずれてる。
-    print(lat_min, lon_min)
-    print(lat_max, lon_max)
-    print(x_min, y_min, x_max, y_max)
+    # print(lat_min, lon_min)
+    # print(lat_max, lon_max)
+    # print(x_min, y_min, x_max, y_max)
     
     # 10m間隔のグリッドを作成
     x_coords = np.arange(x_min, x_max, 10)  # x方向
