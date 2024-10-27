@@ -28,12 +28,18 @@
       import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js";
 
       const main = async () => {
+        /**
+         * JSONファイルを読み込む
+         */
         async function loadJson(path) {
           const response = await fetch(path);
           const data = await response.json();
           return data;
         }
 
+        /**
+         * レンダラーを生成
+         */
         const generateRenderer = (width, height) => {
           const renderer = new THREE.WebGLRenderer();
           renderer.shadowMap.enabled = true; // 影を有効化
@@ -42,12 +48,18 @@
           return renderer;
         };
 
+        /**
+         * シーンを生成
+         */
         const generateScene = () => {
           const scence = new THREE.Scene();
           // scence.fog = new THREE.Fog(0x000000, 50, 800); // 霧を追加
           return scence;
         };
 
+        /**
+         * カメラを生成
+         */
         const generateCamera = (renderer, width, height) => {
           // カメラを作成(視野角, アスペクト比, near, far(広角.30くらいで望遠。90で広角))
           // nearとfarの範囲をレンダリングするのでパーフォマンスを上げるために適切な値を設定する。
@@ -72,6 +84,9 @@
           return { camera, cameraControls };
         };
 
+        /**
+         * 道路メッシュを生成
+         */
         const generateRoadMesh = (
           elevations,
           coordinates,
@@ -243,6 +258,9 @@
           };
         };
 
+        /**
+         * 地形メッシュを生成
+         */
         const generateTerrainMesh = async (
           terrainData,
           baseLat,
@@ -332,6 +350,9 @@
           return mesh;
         };
 
+        /**
+         * 環境光を生成
+         */
         const generateAmbientLight = () => {
           // 環境光(全体を光らせる)を追加
           // const ambientLight = new THREE.AmbientLight(0xffffff, 0);
@@ -343,6 +364,9 @@
           return ambientLight;
         };
 
+        /**
+         * ディレクショナルライトを生成
+         */
         const generateDirectionalLight = () => {
           // ライトの追加（影のための光源）
           const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -366,6 +390,65 @@
             directionalLightHelper,
             shadowCameraHelper,
           };
+        };
+
+        /**
+         * // 道路の上を移動するオブジェクトを作成
+         */
+        const generateRoadOnObject = () => {
+          const sphereGeometry = new THREE.SphereGeometry(3, 32, 32); // 半径1、詳細度32の球体
+          const sphereMaterial = new THREE.MeshBasicMaterial({
+            color: 0xff0000,
+          }); // 赤色の球体
+          const movingObjectMeth = new THREE.Mesh(
+            sphereGeometry,
+            sphereMaterial
+          ); // 球体のメッシュを作成
+
+          const animateObjectOnRoad = (object, line, speed) => {
+            const points = line.geometry.attributes.position.array;
+            const pointCount = points.length / 3; // 3次元座標なので、ポイント数は3で割る
+
+            let progress = 0; // オブジェクトの進行度（0から1まで）
+
+            function animateObject() {
+              // オブジェクトの進行度を更新
+              progress += speed;
+              if (progress > 1) progress = 0; // 1を超えたらリセット
+
+              // 線の上の位置を線形補間で取得
+              const index = Math.floor(progress * (pointCount - 1)); // 現在のインデックスを計算
+              const nextIndex = index + 1 < pointCount ? index + 1 : index; // 次のインデックス
+              const lerpFactor = (progress * (pointCount - 1)) % 1; // 線形補間のためのファクター
+
+              // 2つのポイント間の位置を補間
+              const x = THREE.MathUtils.lerp(
+                points[index * 3],
+                points[nextIndex * 3],
+                lerpFactor
+              );
+              const y = THREE.MathUtils.lerp(
+                points[index * 3 + 1],
+                points[nextIndex * 3 + 1],
+                lerpFactor
+              );
+              const z = THREE.MathUtils.lerp(
+                points[index * 3 + 2],
+                points[nextIndex * 3 + 2],
+                lerpFactor
+              );
+
+              // オブジェクトを新しい位置に移動
+              object.position.set(x, y, z);
+
+              // 再度アニメーションを要求
+              requestAnimationFrame(animateObject);
+            }
+
+            // アニメーションを開始
+            animateObject();
+          };
+          return { movingObjectMeth, animateObjectOnRoad };
         };
 
         // シーン、カメラ、レンダラーの作成
@@ -423,68 +506,26 @@
         group.add(leftLineMesh);
         group.add(rightLineMesh);
         group.add(centerLineMesh);
+
         // group.add(verticalLineMaxZMeth);
         // group.add(verticalLineMinZMeth);
         // const axesHelper = new THREE.AxesHelper(100); // 軸の長さを指定
         // scene.add(axesHelper);
 
+        // roadMesh上を走るオブジェクトを作成
+        const { movingObjectMeth, animateObjectOnRoad } =
+          generateRoadOnObject();
+        group.add(movingObjectMeth);
         // オブジェクトをセンターライン上に走らせる
-        const sphereGeometry = new THREE.SphereGeometry(3, 32, 32); // 半径1、詳細度32の球体
-        const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // 赤色の球体
-        const movingObject = new THREE.Mesh(sphereGeometry, sphereMaterial); // 球体のメッシュを作成
-        scene.add(movingObject);
+        animateObjectOnRoad(movingObjectMeth, centerLineMesh, 0.0009);
 
-        function moveObjectAlongLine(object, line, speed) {
-          const points = line.geometry.attributes.position.array;
-          const pointCount = points.length / 3; // 3次元座標なので、ポイント数は3で割る
+        // グループを中心座標に移動してシーンに追加
+        const boundingBox = terrainMesh.geometry.boundingBox;
+        const centerX = (boundingBox.max.x + boundingBox.min.x) / 2;
+        const centerY = (boundingBox.max.y + boundingBox.min.y) / 2;
+        const centerZ = (boundingBox.max.z + boundingBox.min.z) / 2;
+        group.position.set(-centerX, -centerY, -centerZ);
 
-          let progress = 0; // オブジェクトの進行度（0から1まで）
-
-          function animateObject() {
-            // オブジェクトの進行度を更新
-            progress += speed;
-            if (progress > 1) progress = 0; // 1を超えたらリセット
-
-            // 線の上の位置を線形補間で取得
-            const index = Math.floor(progress * (pointCount - 1)); // 現在のインデックスを計算
-            const nextIndex = index + 1 < pointCount ? index + 1 : index; // 次のインデックス
-            const lerpFactor = (progress * (pointCount - 1)) % 1; // 線形補間のためのファクター
-
-            // 2つのポイント間の位置を補間
-            const x = THREE.MathUtils.lerp(
-              points[index * 3],
-              points[nextIndex * 3],
-              lerpFactor
-            );
-            const y = THREE.MathUtils.lerp(
-              points[index * 3 + 1],
-              points[nextIndex * 3 + 1],
-              lerpFactor
-            );
-            const z = THREE.MathUtils.lerp(
-              points[index * 3 + 2],
-              points[nextIndex * 3 + 2],
-              lerpFactor
-            );
-
-            // オブジェクトを新しい位置に移動
-            object.position.set(x, y, z);
-
-            // 再度アニメーションを要求
-            requestAnimationFrame(animateObject);
-          }
-
-          // アニメーションを開始
-          animateObject();
-        }
-        moveObjectAlongLine(movingObject, centerLineMesh, 0.0005);
-
-        // // グループを中心座標に移動してシーンに追加
-        // const boundingBox = terrainMesh.geometry.boundingBox;
-        // const centerX = (boundingBox.max.x + boundingBox.min.x) / 2;
-        // const centerY = (boundingBox.max.y + boundingBox.min.y) / 2;
-        // const centerZ = (boundingBox.max.z + boundingBox.min.z) / 2;
-        // group.position.set(-centerX, -centerY, -centerZ);
         scene.add(group);
 
         // 光源の追加
