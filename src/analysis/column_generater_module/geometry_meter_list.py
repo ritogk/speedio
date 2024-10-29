@@ -18,6 +18,9 @@ def generate(gdf: GeoDataFrame, plane_epsg_code: int) -> Series:
 
         # itransform を使用して座標リスト全体を変換
         transformed_coords = list(transformer.itransform(coords))
+
+        # transformed_coordsのxとyを整数に変換
+        transformed_coords = [(int(x), int(y)) for x, y in transformed_coords]
         return transformed_coords
 
     series = gdf.apply(func, axis=1)
