@@ -609,19 +609,9 @@ def generate_10m_grid_from_bbox(plane_epsg_code, tif_path, lat_min, lon_min, lat
     # 結果をlat_lon_elev_gridに反映 (緯度経度を平面直角座標に置き換え)
     lat_lon_elev_grid[:, :, 0] = flat_x  # x座標（平面直角座標）
     lat_lon_elev_grid[:, :, 1] = flat_y  # y座標（平面直角座標）
-    
-    points = []
-    for i in range(len(lat_lon_elev_grid)):
-        for j in range(len(lat_lon_elev_grid[i])):
-            lat = lat_lon_elev_grid[i][j][1]
-            lon = lat_lon_elev_grid[i][j][0]
-            point = Point(lon, lat)
-            points.append(point)
 
-    # GeoDataFrameを作成し、ポイントデータを格納
-    gdf = gpd.GeoDataFrame(geometry=points, crs=f"epsg:{plane_epsg_code}")
-
-    # GeoJSONとして出力
-    gdf.to_file('terrain.geojson', driver='GeoJSON')
+    # xとy座標を整数に変換(データサイズを減らすため)
+    lat_lon_elev_grid[:, :, 0] = lat_lon_elev_grid[:, :, 0].astype(int)
+    lat_lon_elev_grid[:, :, 1] = lat_lon_elev_grid[:, :, 1].astype(int)
 
     return lat_lon_elev_grid.tolist()
