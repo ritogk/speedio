@@ -566,9 +566,10 @@ def generate_10m_grid_from_bbox(plane_epsg_code, tif_path, lat_min, lon_min, lat
     # print(lat_max, lon_max)
     # print(x_min, y_min, x_max, y_max)
     
-    # 10m間隔のグリッドを作成
-    x_coords = np.arange(x_min, x_max, 10)  # x方向
-    y_coords = np.arange(y_min, y_max, 10)  # y方向
+    # 指定間隔のグリッドを作成
+    mesh_size = 10  # メッシュサイズ(m)
+    x_coords = np.arange(x_min, x_max, mesh_size)  # x方向
+    y_coords = np.arange(y_min, y_max, mesh_size)  # y方向
     
     # グリッドの座標を生成
     grid_x, grid_y = np.meshgrid(x_coords, y_coords)
