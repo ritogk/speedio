@@ -71,7 +71,8 @@
           );
           // カメラ位置
           camera.up.set(0, 0, 1);
-          camera.position.set(0, 0, 400); // Z軸を真上から見る。
+          // camera.position.set(0, 0, 400); // Z軸を真上から見る。
+          camera.position.set(200, 400, 400); // Z軸を真上から見る。
           camera.lookAt(0, 0, 0); // 原点を見る
 
           // OrbitControlsを追加して、カメラをマウス操作で回転させる
@@ -534,13 +535,14 @@
         const { directionalLight, directionalLightHelper, shadowCameraHelper } =
           generateDirectionalLight();
         scene.add(directionalLight);
-        scene.add(directionalLightHelper);
-        scene.add(shadowCameraHelper);
+        // scene.add(directionalLightHelper);
+        // scene.add(shadowCameraHelper);
 
         // レンダリングの設定
         function animate() {
           requestAnimationFrame(animate);
           cameraControls.update(); // OrbitControlsを更新
+          scene.rotation.z += 0.01;
           renderer.render(scene, camera);
         }
         animate();
