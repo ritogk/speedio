@@ -5,3 +5,7 @@ strong_corner.csv
 week_corner.csv
 standard.csv
 elevation_unevenness.csv
+
+elevation_grid.json
+elevation.json
+geometry_data.json
