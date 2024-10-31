@@ -87,26 +87,6 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.angle_deltas)}</td>
           </tr>
           <tr>
-              <td>gsi_min_width</td>
-              <td>${x.gsi_min_width}</td>
-          </tr>
-          <tr>
-              <td>gsi_avg_width</td>
-              <td>${x.gsi_avg_width}</td>
-          </tr>
-          <tr>
-              <td>is_alpsmap</td>
-              <td>${x.is_alpsmap}</td>
-          </tr>
-          <tr>
-              <td>alpsmap_min_width</td>
-              <td>${x.alpsmap_min_width}</td>
-          </tr>
-          <tr>
-              <td>alpsmap_avg_width</td>
-              <td>${x.alpsmap_avg_width}</td>
-          </tr>
-          <tr>
               <td>steering_wheel_max_angle</td>
               <td>${truncateToTwoDecimals(x.steering_wheel_max_angle)}</td>
           </tr>
