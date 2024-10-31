@@ -348,13 +348,6 @@ def main() -> GeoDataFrame:
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     execution_timer_ins.stop()
 
-    # コーナーをグループ化する
-    execution_timer_ins.start("🛞 calc corners_group")
-    gdf_edges["corners_group"] = column_generater.corners_group.generate(
-        gdf_edges
-    )
-    execution_timer_ins.stop()
-
     execution_timer_ins.start("🏚️ calc building_nearby_cnt")
     gdf_edges["building_nearby_cnt"] = column_generater.building_nearby_cnt.generate(gdf_edges)
     execution_timer_ins.stop()
@@ -461,10 +454,8 @@ def main() -> GeoDataFrame:
         "name",
         "geometry_list",
         "geometry_meter_list",
-        "geometry_check_list",
         "elevation_height",
         "elevation_smooth",
-        "elevation",
         "elevation_segment_list",
         "elevation_unevenness_count",
         "angle_deltas",
@@ -483,21 +474,14 @@ def main() -> GeoDataFrame:
         "google_earth_url",
         "street_view_url",
         "lanes",
-        "gsi_min_width",
-        "gsi_avg_width",
-        # "is_alpsmap",
-        "alpsmap_min_width",
-        "alpsmap_avg_width",
-        "turn_candidate_points",
         "turn_points",
-        "road_section",
-        "corners_group",
+        # "road_section",
         "tunnel",
         "bridge",
         "steering_wheel_angle_info",
         "steering_wheel_max_angle",
         "steering_wheel_avg_angle",
-        "locations",
+        # "locations",
         "building_nearby_cnt",
         "road_section_cnt",
         "tunnel_length"

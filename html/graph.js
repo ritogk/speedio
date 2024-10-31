@@ -1,5 +1,4 @@
-export const drawGraph = (corners, corners_group, elevation_segment_list) => {
-  drawCornerGraph(corners_group);
+export const drawGraph = (elevation_segment_list) => {
   drawElevationGraph(elevation_segment_list);
 };
 
