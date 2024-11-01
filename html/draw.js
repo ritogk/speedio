@@ -5,7 +5,7 @@ import { draw3D } from "./3d.js";
 import { drawGraph } from "./graph.js"
 
 let map;
-export const init = () => {
+export const init = async () => {
   // 地図を初期化し、指定位置を中心にする
   map = L.map("map").setView(
     [target[0].geometry_list[0][0], target[0].geometry_list[0][1]],
@@ -39,7 +39,33 @@ export const init = () => {
         console.error('クリップボードへのコピーに失敗しました: ', err);
     });
   });
+
+  await setupPrefecturesLayer()
 };
+
+// 都道府県レイヤーの設定
+const setupPrefecturesLayer = async () => {
+  let selectedPolygon = null;
+  const prefecturesMultiPolygonPath = './prefectures.geojson';
+  const response = await fetch(prefecturesMultiPolygonPath);
+  const data = await response.json();
+  L.geoJSON(data, {
+    style: { color: 'blue', weight: 1 },
+    onEachFeature: (feature, layer) => {
+        layer.on('mouseover', () => layer.setStyle({ color: 'red' }));
+        layer.on('mouseout', () => layer.setStyle({ color: 'blue' }));
+        layer.on('click', () => {
+          // 以前に選択されていたポリゴンを元の色に戻す
+          if (selectedPolygon) {
+            selectedPolygon.setStyle({ fillOpacity: 0.2 });
+          }
+          // 新しいポリゴンを透明にし、選択されたポリゴンとして設定
+          layer.setStyle({ fillOpacity: 0.0 });
+          selectedPolygon = layer;
+        });
+    }
+  }).addTo(map);
+}
 
 let polylines = [];
 const clearPolylines = () => {
