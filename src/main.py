@@ -496,20 +496,4 @@ def main() -> GeoDataFrame:
     base_path = f'{os.path.dirname(os.path.abspath(__file__))}/../html/terrain_elevations/{area_prefecture_name}'
     write_terrain_elevations_file(gdf_edges, base_path, tif_path, plane_epsg_code, area_prefecture_name)
 
-    # geometry_meter_listの緯度経度を逆転した配列を作る
-    gdf_first = gdf_edges.head(1).iloc[0]
-    geometry_meter = gdf_first["geometry_meter_list"]
-    geometry_meter_json = []
-    for geometry_meter_point in geometry_meter:
-        geometry_meter_json.append([geometry_meter_point[0], geometry_meter_point[1]])
-
-    # JSONで出力
-    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/geometry_data.json"
-    with open(output_dir, "w") as f:
-        f.write(str(geometry_meter_json))
-    elevation_smooth = gdf_first["elevation_smooth"]
-    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/elevation.json"
-    with open(output_dir, "w") as f:
-        f.write(str(elevation_smooth))
-
     return gdf_edges
