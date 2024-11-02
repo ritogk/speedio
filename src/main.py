@@ -17,10 +17,9 @@ from .analysis.turn_edge_spliter import split
 from .core.terrain_elevation_generator import write_terrain_elevations_file, generate_file_path
 
 # 指定したポリゴン内を対象に処理を行う。
-def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str) -> GeoDataFrame:
+def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefecture_code:str) -> GeoDataFrame:
     env = getEnv()
     consider_gsi_width = env["CONSIDER_GSI_WIDTH"]
-    area_prefecture_name = env["AREA_PREFECTURE_NAME"]
 
     execution_timer_ins = ExecutionTimer()
     # ベースとなるグラフを取得する
@@ -373,7 +372,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str) -> GeoDa
 
     # 地形データを出力する
     execution_timer_ins.start("🏔️ write terrain_elevation file")
-    gdf_edges["terrain_elevation_file_path"] = generate_file_path(gdf_edges, area_prefecture_name)
+    gdf_edges["terrain_elevation_file_path"] = generate_file_path(gdf_edges, prefecture_code)
     write_terrain_elevations_file(gdf_edges, tif_path, plane_epsg_code)
     execution_timer_ins.stop()
 
