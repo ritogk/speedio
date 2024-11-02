@@ -18,8 +18,10 @@ def generate(gdf: GeoDataFrame) -> Series:
             elevation_segment_list.append(x.elevation_smooth[segment_index])
         # 移動平均で平準化
         series = pd.Series(elevation_segment_list)
-        smooth_series = generate_moving_average(series, WINDOW_SIZE)
-        return smooth_series.tolist()
+        smooth_elevations = generate_moving_average(series, WINDOW_SIZE).to_list()
+        # 少数第1桁以下を切り捨てる
+        smooth_elevations = [round(elevation, 1) for elevation in smooth_elevations]
+        return smooth_elevations
 
     tqdm.pandas()
     series = gdf.progress_apply(func, axis=1)

@@ -15,7 +15,7 @@ from shapely.geometry import Polygon
 from .analysis.turn_edge_spliter import split
 
 from .core.epsg_service import generate_epsg_code, get_nearest_prefecture
-from .core.terrain_elevation_generator import write_terrain_elevations_file
+from .core.terrain_elevation_generator import write_terrain_elevations_file, generate_file_path
 
 def main() -> GeoDataFrame:
     env = getEnv()
@@ -206,13 +206,6 @@ def main() -> GeoDataFrame:
             gdf_edges, gdf_bridge_edges, column_generater.elevation_infra_regulator.InfraType.BRIDGE
         )
         execution_timer_ins.stop()
-    
-
-    # fig, ax = plt.subplots(figsize=(10, 10))
-    # ax.set_facecolor('black')  # 背景色を黒に設定
-    # ox.plot_graph(graph_tunnel, ax=ax, bgcolor='black', edge_color='red', node_size=5, show=False, close=False, edge_linewidth=5) 
-    # ox.plot_graph(graph, ax=ax, bgcolor='black', edge_color='blue', node_size=0, show=False, close=False)
-    # plt.show()
 
     # 国の基準に合わせて傾斜を調整する
     execution_timer_ins.start("🏔️ calc elevation_adjuster")
@@ -406,6 +399,12 @@ def main() -> GeoDataFrame:
     gdf_edges["street_view_url"] = column_generater.street_view_url.generate(gdf_edges)
     execution_timer_ins.stop()
 
+    # 地形データを出力する
+    execution_timer_ins.start("🏔️ write terrain_elevation file")
+    gdf_edges["terrain_elevation_file_path"] = generate_file_path(gdf_edges, area_prefecture_name)
+    write_terrain_elevations_file(gdf_edges, tif_path, plane_epsg_code)
+    execution_timer_ins.stop()
+
     # csvに変換して出力する
     output_columns = [
         "length",
@@ -485,15 +484,12 @@ def main() -> GeoDataFrame:
         # "locations",
         "building_nearby_cnt",
         "road_section_cnt",
-        "tunnel_length"
+        "tunnel_length",
+        "terrain_elevation_file_path",
     ]
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
     gdf_edges[output_columns].to_json(output_dir, orient="records")
     output_dir_bk = f"{os.path.dirname(os.path.abspath(__file__))}/../html/json_bk/{datetime.now().strftime('%Y-%m-%d-%H-%M')}.json"
     gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
-
-    # 地形データを出力する
-    base_path = f'{os.path.dirname(os.path.abspath(__file__))}/../html/terrain_elevations/{area_prefecture_name}'
-    write_terrain_elevations_file(gdf_edges, base_path, tif_path, plane_epsg_code, area_prefecture_name)
 
     return gdf_edges

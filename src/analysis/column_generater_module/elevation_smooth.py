@@ -9,7 +9,10 @@ def generate(gdf: GeoDataFrame) -> Series:
 
     def func(row):
         series = pd.Series(row.elevation)
-        return generate_moving_average(series, WINDOW_SIZE).to_list()
+        elevations = generate_moving_average(series, WINDOW_SIZE).to_list()
+        # 少数第1桁以下を切り捨てる
+        elevations = [round(elevation, 1) for elevation in elevations]
+        return elevations
 
     results = gdf.apply(func, axis=1)
     return results
