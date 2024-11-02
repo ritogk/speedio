@@ -6,6 +6,7 @@ from geopandas import GeoDataFrame
 import hashlib
 import os
 from pandas import Series
+from tqdm import tqdm
 
 def generate_terrain_elevation(plane_epsg_code, tif_path, lat_min, lon_min, lat_max, lon_max) -> list:
     # 緯度経度からEPSG:4326 (WGS84) に変換するための投影を設定
@@ -82,8 +83,7 @@ def generate_terrain_elevation(plane_epsg_code, tif_path, lat_min, lon_min, lat_
     return lat_lon_elev_grid.tolist()
 
 def write_terrain_elevations_file(gdf_edges: GeoDataFrame, tif_path, plane_epsg_code:str):
-    # 3D用データを一時的に出力
-    for index, row in gdf_edges.iterrows():
+    def func(row):
         bounds = row.geometry.bounds
         terrain_elevations = generate_terrain_elevation(plane_epsg_code, tif_path, bounds[0], bounds[1], bounds[2], bounds[3])
 
@@ -92,6 +92,10 @@ def write_terrain_elevations_file(gdf_edges: GeoDataFrame, tif_path, plane_epsg_
         os.makedirs(os.path.dirname(output_dir), exist_ok=True)
         with open(output_dir, "w") as f:
             f.write(str(terrain_elevations))
+        return
+
+    tqdm.pandas()
+    gdf_edges.progress_apply(func, axis=1)
 
 # ファイル出力用のハッシュ値を生成
 def generate_file_path(gdf_edges: GeoDataFrame, prefecture_name:str) -> Series:
@@ -103,5 +107,5 @@ def generate_file_path(gdf_edges: GeoDataFrame, prefecture_name:str) -> Series:
         base_path = f'./terrain_elevations/{prefecture_name}/{hash_value}/terrain_elevation.json'
         return base_path
 
-    series = gdf_edges.progress_apply(func, axis=1)
+    series = gdf_edges.apply(func, axis=1)
     return series
