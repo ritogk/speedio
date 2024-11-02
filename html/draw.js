@@ -104,7 +104,7 @@ export const draw = () => {
       console.log(x)
       console.log(x.elevation_segment_list)
       drawGraph(x.elevation_segment_list);
-      draw3D(x.geometry_meter_list, x.elevation_smooth);
+      draw3D(x.geometry_meter_list, x.elevation_smooth, x.terrain_elevation_file_path);
     });
     polylines.push(line);
   });
