@@ -46,16 +46,16 @@ export const draw3D = async (
     camera.up.set(0, 0, 1);
     // camera.position.set(0, 0, 400); // Z軸を真上から見る。
     camera.position.set(200, 400, 400); // Z軸を真上から見る。
-    camera.lookAt(0, 0, 0); // 原点を見る
+    // camera.lookAt(0, 0, 0); // 原点を見る
 
-    // OrbitControlsを追加して、カメラをマウス操作で回転させる
-    const cameraControls = new OrbitControls(camera, renderer.domElement);
-    cameraControls.enableDamping = true; // 慣性効果
-    cameraControls.dampingFactor = 0.05;
-    cameraControls.screenSpacePanning = false;
-    cameraControls.maxPolarAngle = Math.PI / 2; // 上向きすぎるのを防ぐ
+    // // OrbitControlsを追加して、カメラをマウス操作で回転させる
+    // const cameraControls = new OrbitControls(camera, renderer.domElement);
+    // cameraControls.enableDamping = true; // 慣性効果
+    // cameraControls.dampingFactor = 0.05;
+    // cameraControls.screenSpacePanning = false;
+    // cameraControls.maxPolarAngle = Math.PI / 2; // 上向きすぎるのを防ぐ
 
-    return { camera, cameraControls };
+    return { camera };
   };
 
   /**
@@ -275,6 +275,13 @@ export const draw3D = async (
 
     // 中心座標を計算 (X, Y, Zの範囲を取得して中心を計算)
     geometry.computeBoundingBox();
+    const boundingBox = geometry.boundingBox;
+    const centerX = (boundingBox.max.x + boundingBox.min.x) / 2;
+    const centerY = (boundingBox.max.y + boundingBox.min.y) / 2;
+    const centerZ = (boundingBox.max.z + boundingBox.min.z) / 2;
+
+    // // ジオメトリの中心をシーンの中心に移動
+    // geometry.translate(-centerX, -centerY, -centerZ);
 
     // 面の表面を表すベクトルを自動計算
     geometry.computeVertexNormals(); // 法線を自動計算
@@ -342,7 +349,7 @@ export const draw3D = async (
   /**
    * // 道路の上を移動するオブジェクトを作成
    */
-  const generateRoadOnObject = () => {
+  const generateRoadOnObject = (camera) => {
     const sphereGeometry = new THREE.SphereGeometry(1, 32, 32); // 半径1、詳細度32の球体
     const sphereMaterial = new THREE.MeshBasicMaterial({
       color: 0xff0000,
@@ -382,8 +389,48 @@ export const draw3D = async (
           lerpFactor
         );
 
-        // オブジェクトを新しい位置に移動
-        object.position.set(x, y, z);
+        // オブジェクトを新しい位置に移動（groupの位置補正を適用）
+        object.position.set(
+          x + group.position.x,
+          y + group.position.y,
+          z + group.position.z
+        );
+
+        // 次のポイントから方向ベクトルを計算
+        const nextPosition = new THREE.Vector3(
+          points[nextIndex * 3] + group.position.x,
+          points[nextIndex * 3 + 1] + group.position.y,
+          points[nextIndex * 3 + 2] + group.position.z
+        );
+        const currentPosition = new THREE.Vector3(
+          x + group.position.x,
+          y + group.position.y,
+          z + group.position.z
+        );
+        const direction = new THREE.Vector3()
+          .subVectors(nextPosition, currentPosition)
+          .normalize();
+
+        // カメラの位置を動的に計算
+        const cameraOffset = direction.clone().multiplyScalar(-30); // さらに後方にカメラを配置
+        cameraOffset.z = 20; // 高さを少し下げて角度を小さくする
+        const targetCameraPosition = currentPosition.clone().add(cameraOffset);
+
+        // カメラの位置を滑らかに補間して移動
+        camera.position.lerp(targetCameraPosition, 0.05); // 0.1で滑らかに補間
+
+        // カメラが少し先を見るように調整
+        const lookAheadOffset = direction.clone().multiplyScalar(10); // カメラが見つめるポイントを少し前に
+        const targetLookAtPosition = nextPosition.clone().add(lookAheadOffset);
+
+        // カメラの向きを滑らかに補間
+        const currentLookAt = new THREE.Vector3();
+        camera.getWorldDirection(currentLookAt);
+        const smoothLookAt = currentLookAt.lerp(
+          targetLookAtPosition.sub(camera.position).normalize(),
+          0.1
+        );
+        camera.lookAt(camera.position.clone().add(smoothLookAt));
 
         // アニメーションを継続
         requestAnimationFrame(animateObject);
@@ -404,7 +451,7 @@ export const draw3D = async (
   document.getElementById("road3DArea").hidden = false;
   document.getElementById("road3DArea").appendChild(renderer.domElement);
   const scene = generateScene();
-  const { camera, cameraControls } = generateCamera(renderer, width, height);
+  const { camera } = generateCamera(renderer, width, height);
 
   // グループを作成
   const group = new THREE.Group();
@@ -447,17 +494,18 @@ export const draw3D = async (
   // scene.add(axesHelper);
 
   // roadMesh上を走るオブジェクトを作成
-  const { movingObjectMeth, animateObjectOnRoad } = generateRoadOnObject();
+  const { movingObjectMeth, animateObjectOnRoad } =
+    generateRoadOnObject(camera);
   group.add(movingObjectMeth);
   // オブジェクトをセンターライン上に走らせる
-  animateObjectOnRoad(movingObjectMeth, centerLineMesh, 0.0009);
+  animateObjectOnRoad(movingObjectMeth, centerLineMesh, 0.0006);
 
   // グループを中心座標に移動してシーンに追加
   const boundingBox = terrainMesh.geometry.boundingBox;
   const centerX = (boundingBox.max.x + boundingBox.min.x) / 2;
   const centerY = (boundingBox.max.y + boundingBox.min.y) / 2;
   const centerZ = (boundingBox.max.z + boundingBox.min.z) / 2;
-  group.position.set(-centerX, -centerY, -centerZ);
+  // group.position.set(-centerX, -centerY, -centerZ);
 
   scene.add(group);
 
@@ -473,8 +521,8 @@ export const draw3D = async (
   // レンダリングの設定
   function animate() {
     requestAnimationFrame(animate);
-    cameraControls.update(); // OrbitControlsを更新
-    scene.rotation.z += 0.01;
+    // cameraControls.update(); // OrbitControlsを更新
+    // scene.rotation.z += 0.01;
     renderer.render(scene, camera);
   }
   animate();

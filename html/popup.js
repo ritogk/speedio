@@ -54,15 +54,14 @@ export const generateHtml = (x) => {
               <td>${truncateToTwoDecimals(x.score_corner_balance)}</td>
           </tr>
         </table>
-        <button onclick="document.getElementById('graphArea').hidden=false;">Graph</button>
+        <button id="buttonElevationGraph">elevation_graph</button>
         <div id="graphArea" hidden>
-            <canvas id="graphCanvas" width="600" height="400" style="background-color: white;"></canvas>
             <canvas id="graphElevationCanvas" width="1000" height="600" style="background-color: white;"></canvas>
         </div><br>
-        <button onclick="document.getElementById('road3DArea').hidden=false;">3D</button>
-        <div id="road3DArea" style="height:300px" hidden>
-            <span style="font-weight:bold;">3D</span>
-        </div>
+
+        <button id="button3D">3d</button>
+        <button id="button3dDriverView">3d_road_view</button>
+        <div id="road3DArea" hidden></div><br>
 
         <span style="font-weight:bold;">Created</span>
         <table style="width:100%;" border="1">

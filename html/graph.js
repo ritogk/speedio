@@ -90,6 +90,7 @@ const drawElevationGraph = (elevation_segment_list) => {
   const adjustedElevations = elevation_segment_list.map(
     (x) => x - minElevation
   );
+  document.getElementById("graphArea").hidden = false;
   var ctx = document.getElementById("graphElevationCanvas").getContext("2d");
 
   new Chart(ctx, {
