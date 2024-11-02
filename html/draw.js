@@ -2,6 +2,7 @@ import target from "./target.json" with { type: "json" };
 import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
 import { generateHtml } from "./popup.js";
 import { draw3D } from "./3d.js";
+import { draw3D as draw3dDriverView} from "./3d_.driver_view.js";
 import { drawGraph } from "./graph.js"
 
 let map;
@@ -101,10 +102,18 @@ export const draw = () => {
       .bindPopup(generateHtml(x), { maxWidth: 1100, width:500 })
       .addTo(map);
     line.on("popupopen", (e) => {
-      console.log(x)
-      console.log(x.elevation_segment_list)
-      drawGraph(x.elevation_segment_list);
-      draw3D(x.geometry_meter_list, x.elevation_smooth, x.terrain_elevation_file_path);
+      // 標高グラフ
+      document.getElementById("buttonElevationGraph").addEventListener("click", () => {
+        drawGraph(x.elevation_segment_list);
+      })
+      // 3D通常ビュー
+      document.getElementById("button3D").addEventListener("click", () => {
+        draw3D(x.geometry_meter_list, x.elevation_smooth, x.terrain_elevation_file_path);
+      })
+      // 3Dドライバービュー
+      document.getElementById("button3dDriverView").addEventListener("click", () => {
+        draw3dDriverView(x.geometry_meter_list, x.elevation_smooth, x.terrain_elevation_file_path);
+      })
     });
     polylines.push(line);
   });
