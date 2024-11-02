@@ -4,10 +4,48 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 from src.core.env import getEnv
 from src.analysis.column_generater_module.score_corner_level import WEEK_CORNER_ANGLE_MIN, WEEK_CORNER_ANGLE_MAX, MEDIUM_CORNER_ANGLE_MIN, MEDIUM_CORNER_ANGLE_MAX, STRONG_CORNER_ANGLE_MIN
+from src.core.execution_timer import ExecutionTimer, ExecutionType
+from src.core.epsg_service import generate_epsg_code, get_nearest_prefecture
+from shapely.geometry import Polygon
+from src.core.prefecture_polygon import find_prefecture_polygon
+import os
 
 def run():
-    gdf = main()
     env = getEnv()
+
+    area_prefecture_name = env["AREA_PREFECTURE_NAME"]
+    use_custom_area = env["USE_CUSTOM_AREA"]
+    custom_area_point_st = env["CUSTOM_AREA_POINT_ST"]
+    custom_area_point_ed = env["CUSTOM_AREA_POINT_ED"]
+
+    execution_timer_ins = ExecutionTimer()
+    plane_epsg_code = None
+
+    # 対象範囲のポリゴンを取得する
+    execution_timer_ins.start("📍 get plane epsg code", ExecutionType.PROC)
+    if use_custom_area:
+        area_prefecture_name = get_nearest_prefecture(custom_area_point_st[0], custom_area_point_st[1])
+        plane_epsg_code = generate_epsg_code(area_prefecture_name)
+    else:
+        plane_epsg_code = generate_epsg_code(area_prefecture_name)
+    print(f"  prefecture_name: {area_prefecture_name} plane_epsg_code: {plane_epsg_code}")
+    execution_timer_ins.stop()
+
+    # 対象範囲のポリゴンを取得する
+    execution_timer_ins.start("🗾 get target area polygon", ExecutionType.PROC)
+    if use_custom_area:
+        top_left = (custom_area_point_st[1], custom_area_point_st[0])
+        bottom_right = (custom_area_point_ed[1], custom_area_point_ed[0])
+        top_right = (bottom_right[0], top_left[1])  # 右上
+        bottom_left = (top_left[0], bottom_right[1])  # 左下
+        search_area_polygon = Polygon([top_left, top_right, bottom_right, bottom_left])
+    else:
+        prefectures_geojson_path = f"{os.path.dirname(os.path.abspath(__file__))}/./prefectures.geojson"
+        search_area_polygon = find_prefecture_polygon(prefectures_geojson_path, area_prefecture_name)
+    execution_timer_ins.stop()
+
+    # メインロジック
+    gdf = main(search_area_polygon, plane_epsg_code)
 
     if env["SHOW_CORNER"]:
         # 先頭のdataframeをセットする
