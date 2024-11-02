@@ -98,13 +98,13 @@ def write_terrain_elevations_file(gdf_edges: GeoDataFrame, tif_path, plane_epsg_
     gdf_edges.progress_apply(func, axis=1)
 
 # ファイル出力用のハッシュ値を生成
-def generate_file_path(gdf_edges: GeoDataFrame, prefecture_name:str) -> Series:
+def generate_file_path(gdf_edges: GeoDataFrame, prefecture_code:str) -> Series:
     def func(row):
         data = json.dumps([row.geometry.coords[0], row.geometry.coords[-1]]).encode()
         hash_object = hashlib.sha256(data)
         hash_value = hash_object.hexdigest()
         # index.htmlからの相対パス
-        base_path = f'./terrain_elevations/{prefecture_name}/{hash_value}/terrain_elevation.json'
+        base_path = f'./terrain_elevations/{prefecture_code}/{hash_value}/terrain_elevation.json'
         return base_path
 
     series = gdf_edges.apply(func, axis=1)

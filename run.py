@@ -9,43 +9,61 @@ from src.core.epsg_service import generate_epsg_code, get_nearest_prefecture
 from shapely.geometry import Polygon
 from src.core.prefecture_polygon import find_prefecture_polygon
 import os
+from src.core.prefecture import prefecture_codes
 
 def run():
     env = getEnv()
 
-    area_prefecture_name = env["AREA_PREFECTURE_NAME"]
-    use_custom_area = env["USE_CUSTOM_AREA"]
-    custom_area_point_st = env["CUSTOM_AREA_POINT_ST"]
-    custom_area_point_ed = env["CUSTOM_AREA_POINT_ED"]
-
     execution_timer_ins = ExecutionTimer()
-    plane_epsg_code = None
 
-    # 対象範囲のポリゴンを取得する
-    execution_timer_ins.start("📍 get plane epsg code", ExecutionType.PROC)
-    if use_custom_area:
-        area_prefecture_name = get_nearest_prefecture(custom_area_point_st[0], custom_area_point_st[1])
-        plane_epsg_code = generate_epsg_code(area_prefecture_name)
+    search_all_prefectures = env["SEARCH_ALL_PREFECTURES"]
+    if(not search_all_prefectures):
+        area_prefecture_name = env["AREA_PREFECTURE_NAME"]
+        use_custom_area = env["USE_CUSTOM_AREA"]
+        custom_area_point_st = env["CUSTOM_AREA_POINT_ST"]
+        custom_area_point_ed = env["CUSTOM_AREA_POINT_ED"]
+        plane_epsg_code = None
+
+        # 対象範囲のポリゴンを取得する
+        execution_timer_ins.start("📍 get plane epsg code", ExecutionType.PROC)
+        if use_custom_area:
+            area_prefecture_name = get_nearest_prefecture(custom_area_point_st[0], custom_area_point_st[1])
+            plane_epsg_code = generate_epsg_code(area_prefecture_name)
+        else:
+            plane_epsg_code = generate_epsg_code(area_prefecture_name)
+        prefecture_code = prefecture_codes[area_prefecture_name]
+        print(f"  prefecture_name: {area_prefecture_name}, prefecture_code: {prefecture_code}, plane_epsg_code: {plane_epsg_code}")
+        execution_timer_ins.stop()
+
+        # 対象範囲のポリゴンを取得する
+        execution_timer_ins.start("🗾 get target area polygon", ExecutionType.PROC)
+        if use_custom_area:
+            top_left = (custom_area_point_st[1], custom_area_point_st[0])
+            bottom_right = (custom_area_point_ed[1], custom_area_point_ed[0])
+            top_right = (bottom_right[0], top_left[1])  # 右上
+            bottom_left = (top_left[0], bottom_right[1])  # 左下
+            search_area_polygon = Polygon([top_left, top_right, bottom_right, bottom_left])
+        else:
+            prefectures_geojson_path = f"{os.path.dirname(os.path.abspath(__file__))}/./prefectures.geojson"
+            search_area_polygon = find_prefecture_polygon(prefectures_geojson_path, area_prefecture_name)
+        execution_timer_ins.stop()
+
+        # メインロジック
+        gdf = main(search_area_polygon, plane_epsg_code, prefecture_code)
     else:
-        plane_epsg_code = generate_epsg_code(area_prefecture_name)
-    print(f"  prefecture_name: {area_prefecture_name} plane_epsg_code: {plane_epsg_code}")
-    execution_timer_ins.stop()
+        for prefecture_name, prefecture_code in prefecture_codes.items():
+            execution_timer_ins.start("📍 get plane epsg code", ExecutionType.PROC)
+            plane_epsg_code = generate_epsg_code(prefecture_name)
+            print(f"  prefecture_name: {prefecture_name}, prefecture_code: {prefecture_code}, plane_epsg_code: {plane_epsg_code}")
+            execution_timer_ins.stop()
 
-    # 対象範囲のポリゴンを取得する
-    execution_timer_ins.start("🗾 get target area polygon", ExecutionType.PROC)
-    if use_custom_area:
-        top_left = (custom_area_point_st[1], custom_area_point_st[0])
-        bottom_right = (custom_area_point_ed[1], custom_area_point_ed[0])
-        top_right = (bottom_right[0], top_left[1])  # 右上
-        bottom_left = (top_left[0], bottom_right[1])  # 左下
-        search_area_polygon = Polygon([top_left, top_right, bottom_right, bottom_left])
-    else:
-        prefectures_geojson_path = f"{os.path.dirname(os.path.abspath(__file__))}/./prefectures.geojson"
-        search_area_polygon = find_prefecture_polygon(prefectures_geojson_path, area_prefecture_name)
-    execution_timer_ins.stop()
+            execution_timer_ins.start("🗾 get target area polygon", ExecutionType.PROC)
+            prefectures_geojson_path = f"{os.path.dirname(os.path.abspath(__file__))}/./prefectures.geojson"
+            search_area_polygon = find_prefecture_polygon(prefectures_geojson_path, prefecture_name)
+            execution_timer_ins.stop()
 
-    # メインロジック
-    gdf = main(search_area_polygon, plane_epsg_code)
+            gdf = main(search_area_polygon, plane_epsg_code, prefecture_code)
+        return
 
     if env["SHOW_CORNER"]:
         # 先頭のdataframeをセットする
