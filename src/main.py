@@ -10,47 +10,19 @@ from geopandas import GeoDataFrame
 import os
 from .core.env import getEnv
 from datetime import datetime
-from .core.prefecture_polygon import find_prefecture_polygon
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, MultiPolygon
 from .analysis.turn_edge_spliter import split
 
-from .core.epsg_service import generate_epsg_code, get_nearest_prefecture
+
 from .core.terrain_elevation_generator import write_terrain_elevations_file, generate_file_path
 
-def main() -> GeoDataFrame:
+# 指定したポリゴン内を対象に処理を行う。
+def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str) -> GeoDataFrame:
     env = getEnv()
     consider_gsi_width = env["CONSIDER_GSI_WIDTH"]
     area_prefecture_name = env["AREA_PREFECTURE_NAME"]
-    use_custom_area = env["USE_CUSTOM_AREA"]
-    custom_area_point_st = env["CUSTOM_AREA_POINT_ST"]
-    custom_area_point_ed = env["CUSTOM_AREA_POINT_ED"]
 
     execution_timer_ins = ExecutionTimer()
-    plane_epsg_code = None
-
-    # 対象範囲のポリゴンを取得する
-    execution_timer_ins.start("📍 get plane epsg code", ExecutionType.PROC)
-    if use_custom_area:
-        area_prefecture_name = get_nearest_prefecture(custom_area_point_st[0], custom_area_point_st[1])
-        plane_epsg_code = generate_epsg_code(area_prefecture_name)
-    else:
-        plane_epsg_code = generate_epsg_code(area_prefecture_name)
-    print(f"  prefecture_name: {area_prefecture_name} plane_epsg_code: {plane_epsg_code}")
-    execution_timer_ins.stop()
-
-    # 対象範囲のポリゴンを取得する
-    execution_timer_ins.start("🗾 get target area polygon", ExecutionType.PROC)
-    if use_custom_area:
-        top_left = (custom_area_point_st[1], custom_area_point_st[0])
-        bottom_right = (custom_area_point_ed[1], custom_area_point_ed[0])
-        top_right = (bottom_right[0], top_left[1])  # 右上
-        bottom_left = (top_left[0], bottom_right[1])  # 左下
-        search_area_polygon = Polygon([top_left, top_right, bottom_right, bottom_left])
-    else:
-        prefectures_geojson_path = f"{os.path.dirname(os.path.abspath(__file__))}/../prefectures.geojson"
-        search_area_polygon = find_prefecture_polygon(prefectures_geojson_path, area_prefecture_name)
-    execution_timer_ins.stop()
-
     # ベースとなるグラフを取得する
     execution_timer_ins.start("🗾 load openstreetmap data", ExecutionType.FETCH)
     graph = graph_feather.fetch_graph(search_area_polygon)
