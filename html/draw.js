@@ -40,7 +40,7 @@ export const init = async () => {
     });
   });
 
-  await setupPrefecturesLayer()
+  // await setupPrefecturesLayer()
 };
 
 // 都道府県レイヤーの設定
