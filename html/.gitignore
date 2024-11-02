@@ -9,3 +9,5 @@ elevation_unevenness.csv
 elevation_grid.json
 elevation.json
 geometry_data.json
+
+*.json
