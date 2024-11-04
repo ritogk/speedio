@@ -458,9 +458,13 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "tunnel_length",
         "terrain_elevation_file_path",
     ]
-    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/target.json"
+
+    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/targets/{prefecture_code}/target.json"
+    os.makedirs(os.path.dirname(output_dir), exist_ok=True)
     gdf_edges[output_columns].to_json(output_dir, orient="records")
+
     output_dir_bk = f"{os.path.dirname(os.path.abspath(__file__))}/../html/json_bk/{datetime.now().strftime('%Y-%m-%d-%H-%M')}.json"
+    os.makedirs(os.path.dirname(output_dir_bk), exist_ok=True)
     gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
 
     return gdf_edges
