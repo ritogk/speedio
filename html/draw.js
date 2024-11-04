@@ -1,17 +1,14 @@
-import target from "./target.json" with { type: "json" };
+// import target from "./target.json" with { type: "json" };
 import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
 import { generateHtml } from "./popup.js";
 import { draw3D } from "./3d.js";
-import { draw3D as draw3dDriverView} from "./3d_.driver_view.js";
-import { drawGraph } from "./graph.js"
+import { draw3D as draw3dDriverView } from "./3d_.driver_view.js";
+import { drawGraph } from "./graph.js";
 
 let map;
 export const init = async () => {
   // 地図を初期化し、指定位置を中心にする
-  map = L.map("map").setView(
-    [target[0].geometry_list[0][0], target[0].geometry_list[0][1]],
-    13
-  );
+  map = L.map("map").setView([38.413230596320496, 138.69513468275233], 6);
   // 国土地理院の航空写真
   // L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
   //   attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>国土地理院</a>",
@@ -34,39 +31,48 @@ export const init = async () => {
   map.on("contextmenu", function (e) {
     const coord = e.latlng;
     const text = coord.lat + "," + coord.lng;
-    navigator.clipboard.writeText(text).then(function() {
-      console.log('クリップボードにコピーされました: ', text);
-    }).catch(function(err) {
-        console.error('クリップボードへのコピーに失敗しました: ', err);
-    });
+    navigator.clipboard
+      .writeText(text)
+      .then(function () {
+        console.log("クリップボードにコピーされました: ", text);
+      })
+      .catch(function (err) {
+        console.error("クリップボードへのコピーに失敗しました: ", err);
+      });
   });
 
-  // await setupPrefecturesLayer()
+  await setupPrefecturesLayer();
 };
 
 // 都道府県レイヤーの設定
 const setupPrefecturesLayer = async () => {
   let selectedPolygon = null;
-  const prefecturesMultiPolygonPath = './prefectures.geojson';
+  const prefecturesMultiPolygonPath = "./prefectures.geojson";
   const response = await fetch(prefecturesMultiPolygonPath);
   const data = await response.json();
   L.geoJSON(data, {
-    style: { color: 'blue', weight: 1 },
+    style: { color: "blue", weight: 1 },
     onEachFeature: (feature, layer) => {
-        layer.on('mouseover', () => layer.setStyle({ color: 'red' }));
-        layer.on('mouseout', () => layer.setStyle({ color: 'blue' }));
-        layer.on('click', () => {
-          // 以前に選択されていたポリゴンを元の色に戻す
-          if (selectedPolygon) {
-            selectedPolygon.setStyle({ fillOpacity: 0.2 });
-          }
-          // 新しいポリゴンを透明にし、選択されたポリゴンとして設定
-          layer.setStyle({ fillOpacity: 0.0 });
-          selectedPolygon = layer;
-        });
-    }
+      layer.on("mouseover", () => layer.setStyle({ color: "red" }));
+      layer.on("mouseout", () => layer.setStyle({ color: "blue" }));
+      layer.on("click", async () => {
+        // 以前に選択されていたポリゴンを元の色に戻す
+        if (selectedPolygon) {
+          selectedPolygon.setStyle({ fillOpacity: 0.2 });
+        }
+        // 新しいポリゴンを透明にし、選択されたポリゴンとして設定
+        layer.setStyle({ fillOpacity: 0.0 });
+        selectedPolygon = layer;
+
+        const prefValue = String(feature.properties.pref).padStart(2, "0");
+        // target.jsonを読み込む
+        const response = await fetch(`./targets/${prefValue}/target.json`);
+        const target = await response.json();
+        drawTargets(target);
+      });
+    },
   }).addTo(map);
-}
+};
 
 let polylines = [];
 const clearPolylines = () => {
@@ -87,9 +93,15 @@ const clearMarkers = () => {
 export const draw = () => {
   clearPolylines();
   clearMarkers();
+};
 
+/**
+ * 対象の道路を描画する
+ * @param {target.jsonんの内容} value
+ */
+export const drawTargets = (value) => {
   // スコア計算
-  let targets = calcScore([...target]);
+  let targets = calcScore([...value]);
 
   // フィルタリング
   targets = filter([...targets]);
@@ -99,21 +111,33 @@ export const draw = () => {
     const scoreNormalization = x.score_normalization;
     const style = generateStyle(scoreNormalization);
     const line = L.polyline(polyline, style)
-      .bindPopup(generateHtml(x), { maxWidth: 1100, width:500 })
+      .bindPopup(generateHtml(x), { maxWidth: 1100, width: 500 })
       .addTo(map);
     line.on("popupopen", (e) => {
       // 標高グラフ
-      document.getElementById("buttonElevationGraph").addEventListener("click", () => {
-        drawGraph(x.elevation_segment_list);
-      })
+      document
+        .getElementById("buttonElevationGraph")
+        .addEventListener("click", () => {
+          drawGraph(x.elevation_segment_list);
+        });
       // 3D通常ビュー
       document.getElementById("button3D").addEventListener("click", () => {
-        draw3D(x.geometry_meter_list, x.elevation_smooth, x.terrain_elevation_file_path);
-      })
+        draw3D(
+          x.geometry_meter_list,
+          x.elevation_smooth,
+          x.terrain_elevation_file_path
+        );
+      });
       // 3Dドライバービュー
-      document.getElementById("button3dDriverView").addEventListener("click", () => {
-        draw3dDriverView(x.geometry_meter_list, x.elevation_smooth, x.terrain_elevation_file_path);
-      })
+      document
+        .getElementById("button3dDriverView")
+        .addEventListener("click", () => {
+          draw3dDriverView(
+            x.geometry_meter_list,
+            x.elevation_smooth,
+            x.terrain_elevation_file_path
+          );
+        });
     });
     polylines.push(line);
   });
@@ -146,9 +170,6 @@ export const draw = () => {
   const ranks = targets
     .sort((a, b) => b.score_normalization - a.score_normalization)
     .slice(0, 10);
-  // console.log(JSON.stringify(top10[0].elevation));
-  // console.log(JSON.stringify(top10[0].geometry_meter_list));
-  // console.log(JSON.stringify(top10[0].score_normalization));
   ranks.forEach((x, index) => {
     const center = Math.ceil(x.geometry_list.length / 2);
     const marker = L.marker(x.geometry_list[center], {
@@ -174,12 +195,14 @@ const filter = (targets) => {
   const filterValue = document.getElementById("filterValue").value;
   targets =
     filterValue === "" || filterKey1 === ""
-      ? target
-      : target.filter((x) => x[filterKey1] == filterValue);
+      ? targets
+      : targets.filter((x) => x[filterKey1] == filterValue);
 
   const filterKey2 = document.getElementById("filterKey2").value;
-  const filterKey2minValue = document.getElementById("filterKey2minValue").value;
-  const filterKey2maxValue = document.getElementById("filterKey2maxValue").value;
+  const filterKey2minValue =
+    document.getElementById("filterKey2minValue").value;
+  const filterKey2maxValue =
+    document.getElementById("filterKey2maxValue").value;
   targets =
     filterKey2 === "" || filterKey2minValue === ""
       ? targets
@@ -189,8 +212,10 @@ const filter = (targets) => {
       ? targets
       : targets.filter((x) => x[filterKey2] <= Number(filterKey2maxValue));
   const filterKey3 = document.getElementById("filterKey3").value;
-  const filterKey3minValue = document.getElementById("filterKey3minValue").value;
-  const filterKey3maxValue = document.getElementById("filterKey3maxValue").value;
+  const filterKey3minValue =
+    document.getElementById("filterKey3minValue").value;
+  const filterKey3maxValue =
+    document.getElementById("filterKey3maxValue").value;
   targets =
     filterKey3 === "" || filterKey3minValue === ""
       ? targets
@@ -214,15 +239,9 @@ const calcScore = (targets) => {
     building: Number(document.getElementById("weightBuilding").value),
     tunnel_outside: Number(document.getElementById("wightTunnelOutside").value),
     corner: {
-      week: Number(
-        document.getElementById("wightCornerWeek").value
-      ),
-      medium: Number(
-        document.getElementById("wightCornerMedium").value
-      ),
-      strong: Number(
-        document.getElementById("wightCornerStrong").value
-      ),
+      week: Number(document.getElementById("wightCornerWeek").value),
+      medium: Number(document.getElementById("wightCornerMedium").value),
+      strong: Number(document.getElementById("wightCornerStrong").value),
       none: Number(document.getElementById("wightCornerNone").value),
     },
     corner_balance: Number(document.getElementById("wightCornerBalance").value),
@@ -236,14 +255,12 @@ const calcScore = (targets) => {
         x.score_width * WEIGHTS.width +
         x.score_length * WEIGHTS.length +
         x.score_building * WEIGHTS.building +
-        x.score_tunnel_outside * WEIGHTS.tunnel_outside + 
-        (
-          x.score_corner_week * WEIGHTS.corner.week +
+        x.score_tunnel_outside * WEIGHTS.tunnel_outside +
+        (x.score_corner_week * WEIGHTS.corner.week +
           x.score_corner_medium * WEIGHTS.corner.medium +
           x.score_corner_strong * WEIGHTS.corner.strong +
-          x.score_corner_none * WEIGHTS.corner.none
-        ) + 
-        x.score_corner_balance * WEIGHTS.corner_balance)/
+          x.score_corner_none * WEIGHTS.corner.none) +
+        x.score_corner_balance * WEIGHTS.corner_balance) /
       Object.keys(WEIGHTS).length;
     return x;
   });
