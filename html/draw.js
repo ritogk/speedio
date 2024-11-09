@@ -44,6 +44,7 @@ export const init = async () => {
   await setupPrefecturesLayer();
 };
 
+const loadedPrefectures = [];
 // 都道府県レイヤーの設定
 const setupPrefecturesLayer = async () => {
   let selectedPolygon = null;
@@ -65,6 +66,11 @@ const setupPrefecturesLayer = async () => {
         selectedPolygon = layer;
 
         const prefValue = String(feature.properties.pref).padStart(2, "0");
+        // すでに読み込まれている都道府県の場合は何もしない
+        if (loadedPrefectures.includes(prefValue)) {
+          return;
+        }
+        loadedPrefectures.push(prefValue);
         // target.jsonを読み込む
         const response = await fetch(`./targets/${prefValue}/target.json`);
         const target = await response.json();
