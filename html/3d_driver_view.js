@@ -412,8 +412,8 @@ export const draw3D = async (
           .normalize();
 
         // カメラの位置を動的に計算
-        const cameraOffset = direction.clone().multiplyScalar(-30); // さらに後方にカメラを配置
-        cameraOffset.z = 20; // 高さを少し下げて角度を小さくする
+        const cameraOffset = direction.clone().multiplyScalar(-40); // さらに後方にカメラを配置
+        cameraOffset.z = 30; // 高さを少し下げて角度を小さくする
         const targetCameraPosition = currentPosition.clone().add(cameraOffset);
 
         // カメラの位置を滑らかに補間して移動
@@ -443,12 +443,12 @@ export const draw3D = async (
     return { movingObjectMeth, animateObjectOnRoad };
   };
 
-  const width = 1800;
-  const height = 1100;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
 
   // シーン、カメラ、レンダラーの作成
   const renderer = generateRenderer(width, height);
-  document.getElementById("road3DArea").hidden = false;
+  document.getElementById("road3DArea").style.display = "flex";
   document.getElementById("road3DArea").appendChild(renderer.domElement);
   const scene = generateScene();
   const { camera } = generateCamera(renderer, width, height);
@@ -519,11 +519,49 @@ export const draw3D = async (
   // scene.add(shadowCameraHelper);
 
   // レンダリングの設定
+  let animationId;
   function animate() {
-    requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
     // cameraControls.update(); // OrbitControlsを更新
     // scene.rotation.z += 0.01;
     renderer.render(scene, camera);
   }
   animate();
+
+  const disposeScene = () => {
+    if (animationId) {
+      cancelAnimationFrame(animationId); // アニメーションループの停止
+      animationId = null;
+    }
+
+    scene.traverse((object) => {
+      if (object.geometry) {
+        object.geometry.dispose();
+      }
+      if (object.material) {
+        // マテリアルが配列の場合、全てを解放
+        if (Array.isArray(object.material)) {
+          object.material.forEach((material) => material.dispose());
+        } else {
+          object.material.dispose();
+        }
+      }
+      if (object.texture) {
+        object.texture.dispose();
+      }
+    });
+
+    // レンダラーの削除
+    renderer.dispose();
+
+    // DOMからキャンバス要素を削除
+    if (renderer.domElement && renderer.domElement.parentNode) {
+      renderer.domElement.parentNode.removeChild(renderer.domElement);
+    }
+
+    document.getElementById("road3DArea").style.display = "none";
+  };
+  document
+    .getElementById("road3DCloseButton")
+    .addEventListener("click", disposeScene);
 };
