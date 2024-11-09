@@ -132,6 +132,36 @@
       #road3DCloseButton:hover {
         background-color: #0056b3;
       }
+
+      #graphArea {
+        position: relative; /* 子要素の絶対配置を基準にするため */
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+        background-color: white;
+      }
+
+      #graphCloseButton {
+        position: fixed; /* 画面上で固定配置 */
+        top: 20px; /* 画面の下からの距離 */
+        right: 20px; /* 画面の右からの距離 */
+
+        width: 20vw;
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1010; /* 前面に表示 */
+      }
+
+      #graphCloseButton:hover {
+        background-color: #0056b3;
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
@@ -346,6 +376,7 @@
       </div>
     </div>
     <div id="map"></div>
+
     <!-- ローディングスピナー -->
     <div id="loading" class="loading-overlay">
       <div class="spinner"></div>
@@ -354,6 +385,12 @@
     <!-- 3d表示用エリア -->
     <div id="road3DArea" hidden>
       <button id="road3DCloseButton">Close</button>
+    </div>
+
+    <!-- グラフ用エリア-->
+    <div id="graphArea" hidden>
+      <canvas id="graphElevationCanvas" width="1000" height="600" style="background-color: white;"></canvas>
+      <button id="graphCloseButton">Close</button>
     </div>
 
     <script type="importmap">
