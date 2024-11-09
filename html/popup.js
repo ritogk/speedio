@@ -104,15 +104,12 @@ export const generateHtml = (x) => {
           x.google_map_url
         }', '_blank')"
         >GoogleMapで表示</button><br>
-        
+
         <button id="button3D" class="large-button">3Dで表示</button><br>
 
         <button id="button3dDriverView" class="large-button">3Dで表示(運転者目線)</button><br>
 
-        <button id="buttonElevationGraph" class="large-button">標高グラフを表示</button>
-        <div id="graphArea" hidden>
-            <canvas id="graphElevationCanvas" width="1000" height="600" style="background-color: white;"></canvas>
-        </div><br>
+        <button id="buttonElevationGraph" class="large-button">標高グラフを表示</button><br>
         
         <span style="font-weight:bold;">Original</span>
         <table style="width:100%;" border="1">

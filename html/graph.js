@@ -79,6 +79,7 @@ const drawCornerGraph = (corners_group) => {
   });
 };
 
+let elevationChart = null; // 標高グラフ用のグローバル変数
 /**
  * 標高のグラフを描画
  * @param {*} elevation_segment_list
@@ -90,10 +91,14 @@ const drawElevationGraph = (elevation_segment_list) => {
   const adjustedElevations = elevation_segment_list.map(
     (x) => x - minElevation
   );
-  document.getElementById("graphArea").hidden = false;
+  document.getElementById("graphArea").style.display = "flex";
   var ctx = document.getElementById("graphElevationCanvas").getContext("2d");
 
-  new Chart(ctx, {
+  if (elevationChart) {
+    elevationChart.destroy();
+  }
+
+  elevationChart = new Chart(ctx, {
     type: "line", // デフォルトのチャートタイプを設定
     data: {
       labels: Array.from(
@@ -126,4 +131,18 @@ const drawElevationGraph = (elevation_segment_list) => {
       responsive: false,
     },
   });
+
+  // グラフを閉じて破棄する関数
+  const closeGraph = () => {
+    if (elevationChart) {
+      elevationChart.destroy();
+      elevationChart = null;
+    }
+    document.getElementById("graphArea").style.display = "none"; // グラフを非表示にする
+  };
+
+  // ボタンのイベントリスナーを追加
+  document
+    .getElementById("graphCloseButton")
+    .addEventListener("click", closeGraph);
 };
