@@ -57,6 +57,30 @@ export const init = async () => {
   });
 
   await setupPrefecturesLayer();
+
+  // ボタンのクリックイベントで現在位置に移動
+  document.getElementById("locate-btn").addEventListener("click", function () {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          var lat = position.coords.latitude;
+          var lon = position.coords.longitude;
+
+          // 現在位置にマーカーを追加し、マップを移動
+          L.marker([lat, lon]).addTo(map).bindPopup("現在位置").openPopup();
+
+          map.setView([lat, lon], 15); // フォーカスを移動してズームイン
+        },
+        function (error) {
+          console.error("位置情報の取得に失敗しました:", error);
+          alert("位置情報の取得に失敗しました。");
+        }
+      );
+    } else {
+      console.error("このブラウザは位置情報取得をサポートしていません。");
+      alert("このブラウザは位置情報取得をサポートしていません。");
+    }
+  });
 };
 
 const loadedPrefectures = [];
