@@ -8,6 +8,10 @@
       href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
     />
     <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
       /* 地図のコンテナのスタイル */
       #map {
         position: absolute;
@@ -77,6 +81,56 @@
         100% {
           transform: rotate(360deg);
         }
+      }
+
+      /* 大きなボタンのスタイル */
+      .large-button {
+        padding: 4px 40px;
+        font-size: 1.5rem;
+        border: 2px solid #2980b9; /* 境界線を追加 */
+        border-radius: 8px;
+        background-color: #3498db;
+        color: white;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* ボタンに影を追加 */
+        transition: background-color 0.3s, box-shadow 0.3s;
+        margin:1px;
+      }
+
+      .large-button:hover {
+        background-color: #2980b9;
+      }
+
+      #road3DArea {
+        position: relative; /* 子要素の絶対配置を基準にするため */
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: black;
+        font-size: 13px;
+      }
+
+      #road3DCloseButton {
+        position: fixed; /* 画面上で固定配置 */
+        bottom: 20px; /* 画面の下からの距離 */
+        right: 20px; /* 画面の右からの距離 */
+
+        width: 20vw;
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1010; /* 前面に表示 */
+      }
+
+      #road3DCloseButton:hover {
+        background-color: #0056b3;
       }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -296,6 +350,12 @@
     <div id="loading" class="loading-overlay">
       <div class="spinner"></div>
     </div>
+
+    <!-- 3d表示用エリア -->
+    <div id="road3DArea" hidden>
+      <button id="road3DCloseButton">Close</button>
+    </div>
+
     <script type="importmap">
       {
         "imports": {

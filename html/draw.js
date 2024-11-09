@@ -2,7 +2,7 @@
 import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
 import { generateHtml } from "./popup.js";
 import { draw3D } from "./3d.js";
-import { draw3D as draw3dDriverView } from "./3d_.driver_view.js";
+import { draw3D as draw3dDriverView } from "./3d_driver_view.js";
 import { drawGraph } from "./graph.js";
 
 let map;
@@ -42,7 +42,7 @@ export const init = async () => {
   });
 
   // ポリラインの初期太さ
-  const initialWeight = 2;
+  const initialWeight = 3;
   // ズーム終了時にポリラインの太さを調整する処理
   map.on("zoomend", () => {
     const zoomLevel = map.getZoom();
@@ -136,7 +136,7 @@ export const drawTargets = (value) => {
     const scoreNormalization = x.score_normalization;
     const style = generateStyle(scoreNormalization);
     const line = L.polyline(polyline, style)
-      .bindPopup(generateHtml(x), { maxWidth: 1100, width: 500 })
+      .bindPopup(generateHtml(x), { maxWidth: 1100 })
       .addTo(map);
     line.on("popupopen", (e) => {
       // 標高グラフ

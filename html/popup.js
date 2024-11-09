@@ -1,5 +1,6 @@
 export const generateHtml = (x) => {
-  return `<span style="font-weight:bold;">Score</span>
+  return `<div style="padding: 10px; background:white;transform: scale(1.7); transform-origin: top left; box-sizing: border-box;">
+        <span style="font-weight:bold;">Score</span>
         <table style="width:100%;" border="1">
           <tr style="background:bisque;">
               <td>score_normalization</td>
@@ -59,9 +60,8 @@ export const generateHtml = (x) => {
             <canvas id="graphElevationCanvas" width="1000" height="600" style="background-color: white;"></canvas>
         </div><br>
 
-        <button id="button3D">3d</button>
-        <button id="button3dDriverView">3d_road_view</button>
-        <div id="road3DArea" hidden></div><br>
+        <button id="button3D" class="large-button">3d_normal</button><br>
+        <button id="button3dDriverView" class="large-button">3d_driver_view</button><br>
 
         <span style="font-weight:bold;">Created</span>
         <table style="width:100%;" border="1">
@@ -153,7 +153,7 @@ export const generateHtml = (x) => {
                 x.google_earth_url
               }" target="_blank">googleEarthCenter</a></td>
           </tr>
-        </table>`;
+        </table></div>`;
 };
 
 // 数値を小数点2桁で丸める
