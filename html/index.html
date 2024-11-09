@@ -2,6 +2,7 @@
 <html lang="ja">
   <head>
     <title>speedio_analytics</title>
+    <meta charset="UTF-8">
     <!-- Leaflet CSSとスタイルのリンク -->
     <link
       rel="stylesheet"
@@ -19,6 +20,20 @@
         bottom: 0;
         left: 0;
         right: 0;
+      }
+
+      #locate-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        padding: 10px 20px;
+        font-size: 16px;
       }
 
       #InfoArea {
@@ -375,7 +390,9 @@
         </div>
       </div>
     </div>
-    <div id="map"></div>
+    <div id="map">
+      <button id="locate-btn">現在位置に移動</button>
+    </div>
 
     <!-- ローディングスピナー -->
     <div id="loading" class="loading-overlay">
