@@ -41,7 +41,7 @@ export const draw3D = async (
   const generateCamera = (renderer, width, height) => {
     // カメラを作成(視野角, アスペクト比, near, far(広角.30くらいで望遠。90で広角))
     // nearとfarの範囲をレンダリングするのでパーフォマンスを上げるために適切な値を設定する。
-    const camera = new THREE.PerspectiveCamera(50, width / height, 10, 1000);
+    const camera = new THREE.PerspectiveCamera(50, width / height, 10, 2000);
     // カメラ位置
     camera.up.set(0, 0, 1);
     // camera.position.set(0, 0, 400); // Z軸を真上から見る。
