@@ -56,7 +56,7 @@ export const generateHtml = (x) => {
           </tr>
         </table>
 
-        <span style="font-weight:bold;">スコアを計算した各要素</span>
+        <span style="font-weight:bold;">スコア_内訳の構成要素</span>
         <table style="width:100%;" border="1">
           <tr>
               <td>周辺の建物の数</td>
