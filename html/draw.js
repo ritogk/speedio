@@ -41,6 +41,21 @@ export const init = async () => {
       });
   });
 
+  // ポリラインの初期太さ
+  const initialWeight = 2;
+  // ズーム終了時にポリラインの太さを調整する処理
+  map.on("zoomend", () => {
+    const zoomLevel = map.getZoom();
+    polylines.forEach((polyline) => {
+      if (polyline instanceof L.Polyline) {
+        // Polylineのみ対象にする
+        const newWeight = initialWeight * zoomLevel; // ズームレベルに応じて太さを調整
+        console.log(newWeight);
+        polyline.setStyle({ weight: newWeight });
+      }
+    });
+  });
+
   await setupPrefecturesLayer();
 };
 
