@@ -64,8 +64,10 @@ const loadedPrefectures = [];
 const setupPrefecturesLayer = async () => {
   let selectedPolygon = null;
   const prefecturesMultiPolygonPath = "./prefectures.geojson";
+  toggleLoading();
   const response = await fetch(prefecturesMultiPolygonPath);
   const data = await response.json();
+  toggleLoading();
   L.geoJSON(data, {
     style: { color: "blue", weight: 1 },
     onEachFeature: (feature, layer) => {
@@ -87,9 +89,11 @@ const setupPrefecturesLayer = async () => {
         }
         loadedPrefectures.push(prefValue);
         // target.jsonを読み込む
+        toggleLoading();
         const response = await fetch(`./targets/${prefValue}/target.json`);
         const target = await response.json();
         drawTargets(target);
+        toggleLoading();
       });
     },
   }).addTo(map);
@@ -142,22 +146,28 @@ export const drawTargets = (value) => {
           drawGraph(x.elevation_segment_list);
         });
       // 3D通常ビュー
-      document.getElementById("button3D").addEventListener("click", () => {
-        draw3D(
-          x.geometry_meter_list,
-          x.elevation_smooth,
-          x.terrain_elevation_file_path
-        );
-      });
-      // 3Dドライバービュー
       document
-        .getElementById("button3dDriverView")
-        .addEventListener("click", () => {
-          draw3dDriverView(
+        .getElementById("button3D")
+        .addEventListener("click", async () => {
+          toggleLoading();
+          await draw3D(
             x.geometry_meter_list,
             x.elevation_smooth,
             x.terrain_elevation_file_path
           );
+          toggleLoading();
+        });
+      // 3Dドライバービュー
+      document
+        .getElementById("button3dDriverView")
+        .addEventListener("click", async () => {
+          toggleLoading();
+          await draw3dDriverView(
+            x.geometry_meter_list,
+            x.elevation_smooth,
+            x.terrain_elevation_file_path
+          );
+          toggleLoading();
         });
     });
     polylines.push(line);
@@ -350,4 +360,11 @@ const generateLabelIcon = (value) => {
     iconAnchor: [iconSize[0] / 2, iconSize[1] / 2], // アイコンのアンカーポイント
   });
   return myCustomIcon;
+};
+
+const toggleLoading = () => {
+  const isLoading = document.getElementById("loading").style.display === "flex";
+  document.getElementById("loading").style.display = isLoading
+    ? "none"
+    : "flex";
 };
