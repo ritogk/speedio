@@ -45,6 +45,39 @@
         color: white;
         font-size: 13px;
       }
+      /* ローディングオーバーレイ */
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgb(74 74 74 / 80%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      /* スピナーのスタイル */
+      .spinner {
+        width: 70px;
+        height: 70px;
+        border: 5px solid #ccc;
+        border-top-color: #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      /* スピナーのアニメーション */
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
@@ -259,6 +292,10 @@
       </div>
     </div>
     <div id="map"></div>
+    <!-- ローディングスピナー -->
+    <div id="loading" class="loading-overlay">
+      <div class="spinner"></div>
+    </div>
     <script type="importmap">
       {
         "imports": {
