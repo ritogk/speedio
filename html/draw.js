@@ -42,7 +42,7 @@ export const init = async () => {
   });
 
   // ポリラインの初期太さ
-  const initialWeight = 3;
+  const initialWeight = 2;
   // ズーム終了時にポリラインの太さを調整する処理
   map.on("zoomend", () => {
     const zoomLevel = map.getZoom();
@@ -364,7 +364,19 @@ const generateStyle = (value) => {
   };
 
   const generateOpacity = (value) => {
-    return 0.5;
+    if (value < 0.5) {
+      return 0.1;
+    } else if (value < 0.6) {
+      return 0.2;
+    } else if (value < 0.7) {
+      return 0.3;
+    } else if (value < 0.8) {
+      return 0.4;
+    } else if (value < 0.9) {
+      return 0.5;
+    } else {
+      return 0.6;
+    }
   };
 
   return {
