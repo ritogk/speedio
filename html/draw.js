@@ -50,7 +50,6 @@ export const init = async () => {
       if (polyline instanceof L.Polyline) {
         // Polylineのみ対象にする
         const newWeight = initialWeight * zoomLevel; // ズームレベルに応じて太さを調整
-        console.log(newWeight);
         polyline.setStyle({ weight: newWeight });
       }
     });
