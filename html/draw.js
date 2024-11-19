@@ -5,6 +5,11 @@ import { draw3D } from "./3d.js";
 import { draw3D as draw3dDriverView } from "./3d_driver_view.js";
 import { drawGraph } from "./graph.js";
 
+let isSmartPhone = false;
+if (navigator.userAgent.match(/iPhone|Android.+Mobile/)) {
+  isSmartPhone = true;
+}
+
 let map;
 export const init = async () => {
   // 地図を初期化し、指定位置を中心にする
@@ -158,8 +163,11 @@ export const drawTargets = (value) => {
     const polyline = x.geometry_list;
     const scoreNormalization = x.score_normalization;
     const style = generateStyle(scoreNormalization);
+
     const line = L.polyline(polyline, style)
-      .bindPopup(generateHtml(x), { maxWidth: 1100 })
+      .bindPopup(generateHtml(x, isSmartPhone), {
+        maxWidth: 1100,
+      })
       .addTo(map);
     line.on("popupopen", (e) => {
       // 標高グラフ
