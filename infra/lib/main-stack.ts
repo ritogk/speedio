@@ -36,6 +36,7 @@ export class MainStack extends cdk.Stack {
         origin:
           // S3 バケットへの OAC によるアクセス制御を設定
           cloudfront_origins.S3BucketOrigin.withOriginAccessControl(bucket),
+        compress: true,
       },
       certificate: certificate,
       domainNames: [subDomain],
