@@ -11,3 +11,6 @@ elevation.json
 geometry_data.json
 
 *.json
+
+targets_gzip/*
+terrain_elevations_gzip/*
