@@ -41,5 +41,5 @@ done
 
 # S3にアップロード（Content-TypeとContent-Encodingを指定）
 find "$TERRAIN_ELEVATIONS_DEST_DIR" -type f -name "*.json" | while read -r file; do
-   aws s3 cp "$file" "${S3_BUCKET}/targets/${file#$TERRAIN_ELEVATIONS_DEST_DIR/}" --content-type application/json --content-encoding gzip
+   aws s3 cp "$file" "${S3_BUCKET}/terrain_elevations/${file#$TERRAIN_ELEVATIONS_DEST_DIR/}" --content-type application/json --content-encoding gzip
 done
