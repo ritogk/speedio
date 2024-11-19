@@ -1,5 +1,9 @@
-export const generateHtml = (x) => {
-  return `<div style="padding: 10px; background:white;transform: scale(1.7); transform-origin: top left; box-sizing: border-box;">
+export const generateHtml = (x, isSmartPhone) => {
+  return `${
+    !isSmartPhone
+      ? "<div>"
+      : '<div style="padding: 10px; background:white;transform: scale(1.7); transform-origin: top left; box-sizing: border-box;">'
+  }
         <span style="font-weight:bold;">スコア_内訳</span>
         <table style="width:100%;" border="1">
           <tr style="background:bisque;">
