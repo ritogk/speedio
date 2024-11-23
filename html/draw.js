@@ -148,13 +148,29 @@ export const draw = () => {
   clearMarkers();
 };
 
+let mergedTargets = [];
 /**
  * 対象の道路を描画する
  * @param {target.jsonんの内容} value
  */
 export const drawTargets = (value) => {
+  // レイヤーをリセット
+  polylines.forEach((line) => map.removeLayer(line));
+  polylines.length = 0;
+
+  mergedTargets = [...mergedTargets, ...value];
+  // 重複を削除
+  mergedTargets = mergedTargets.filter(
+    (x, i, self) =>
+      self.findIndex(
+        (y) =>
+          y.geometry_list[0][0] === x.geometry_list[0][0] &&
+          y.geometry_list[0][1] === x.geometry_list[0][1]
+      ) === i
+  );
+
   // スコア計算
-  let targets = calcScore([...value]);
+  let targets = calcScore(mergedTargets);
 
   // フィルタリング
   targets = filter([...targets]);
@@ -204,29 +220,29 @@ export const drawTargets = (value) => {
     polylines.push(line);
   });
 
-  // 曲がり角にマーカーを表示
-  targets.forEach((x) => {
-    // 曲がり角
-    const turn_points = x.turn_points;
-    turn_points.forEach((turn_point) => {
-      const lat = turn_point[1];
-      const lng = turn_point[0];
+  // // 曲がり角にマーカーを表示
+  // targets.forEach((x) => {
+  //   // 曲がり角
+  //   const turn_points = x.turn_points;
+  //   turn_points.forEach((turn_point) => {
+  //     const lat = turn_point[1];
+  //     const lng = turn_point[0];
 
-      const iconSize = [20, 20];
-      const value = "角";
-      const myCustomIcon = L.divIcon({
-        className: "my-custom-icon", // カスタムスタイルのクラス名
-        html: `<div style="background-color: mediumvioletred; border-radius: 50%; color: white;text-align: center;">${value}</div>`, // 表示したい数値
-        iconSize: iconSize, // アイコンのサイズ
-        iconAnchor: [iconSize[0] / 2, iconSize[1] / 2], // アイコンのアンカーポイント
-      });
+  //     const iconSize = [20, 20];
+  //     const value = "角";
+  //     const myCustomIcon = L.divIcon({
+  //       className: "my-custom-icon", // カスタムスタイルのクラス名
+  //       html: `<div style="background-color: mediumvioletred; border-radius: 50%; color: white;text-align: center;">${value}</div>`, // 表示したい数値
+  //       iconSize: iconSize, // アイコンのサイズ
+  //       iconAnchor: [iconSize[0] / 2, iconSize[1] / 2], // アイコンのアンカーポイント
+  //     });
 
-      const marker = L.marker([lat, lng], {
-        icon: myCustomIcon,
-      }).addTo(map);
-      polylines.push(marker);
-    });
-  });
+  //     const marker = L.marker([lat, lng], {
+  //       icon: myCustomIcon,
+  //     }).addTo(map);
+  //     polylines.push(marker);
+  //   });
+  // });
 
   // 上位20件の中心座標にランクを表示
   const ranks = targets
