@@ -1,5 +1,6 @@
 import os
 from osgeo import gdal
+from convert_tif_epsg_4326 import output_path as input_directory, output_merge_tif_path as output_directory
 
 def find_tiff_files(directory):
     tiff_files = []
@@ -39,7 +40,4 @@ def main(input_directory, output_directory):
     print(f"All TIFF files have been merged into {output_file}")
 
 # 使用例
-input_directory = './4326'
-output_directory = './merged'
-
 main(input_directory, output_directory)
