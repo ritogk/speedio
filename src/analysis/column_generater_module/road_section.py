@@ -196,13 +196,11 @@ def merge_continuous_section_section(road_sections):
     return merged_lst
 
 # ステアリング角度を調整する
-def adjust_steering_angle(steering_angle, points, elevation, distance, coords):
+def adjust_steering_angle(steering_angle, points, elevation, distance, coords) -> tuple[float, float]:
     # 標高の変化量を計算する。始点と終点を間の値を使っているためindex番号をずらす。
     point_st = points[1]
     point_end = points[-2]
     coords = list(coords)
-
-    # row.geometry.coords
     
     index_st = coords.index(point_st)
     index_end = coords.index(point_end)
