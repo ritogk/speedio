@@ -12,15 +12,15 @@ output_jpd2011_tif_path = output_path + '/jpd2011'
 output_merge_tif_path = output_path + '/merge_tif'
 def main():
     folder_list = [
-        # "FG-GML-chubu-DEM10-Z001",
-        # "FG-GML-chugoku-DEM10-Z001",
-        # "FG-GML-hokkaido-DEM10-Z001",
-        # "FG-GML-hokuriku-DEM10-Z001",
-        # "FG-GML-kanto123-DEM10-Z001",
-        # "FG-GML-kinki-DEM10-Z001",
+        "FG-GML-chubu-DEM10-Z001",
+        "FG-GML-chugoku-DEM10-Z001",
+        "FG-GML-hokkaido-DEM10-Z001",
+        "FG-GML-hokuriku-DEM10-Z001",
+        "FG-GML-kanto123-DEM10-Z001",
+        "FG-GML-kinki-DEM10-Z001",
         "FG-GML-kyushu_okinawa-DEM10-Z001",
-        # "FG-GML-shikoku-DEM10-Z001",
-        # "FG-GML-tohoku-DEM10-Z001"
+        "FG-GML-shikoku-DEM10-Z001",
+        "FG-GML-tohoku-DEM10-Z001"
     ]
 
     jpd2000_epsg = 4612
