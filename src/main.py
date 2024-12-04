@@ -121,7 +121,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     execution_timer_ins.stop()
 
-    # 座標間の標高の変化量を求める
+    # 座標毎の標高値を求める
     tif_path = f"{os.path.dirname(os.path.abspath(__file__))}/../elevation.tif"
     execution_timer_ins.start("🏔️ calc elevation")
     gdf_edges["elevation"] = column_generater.elevation.generate(gdf_edges, tif_path)
@@ -209,7 +209,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     )
     execution_timer_ins.stop()
 
-    # 100m単位の標高の区間リストを生成する
+    # 指定単位の標高の区間リストを生成する(z軸の凹凸の判定に使用)
     execution_timer_ins.start("🏔️ calc elevation_segment_list")
     gdf_edges["elevation_segment_list"] = column_generater.elevation_segment_list.generate(
         gdf_edges
@@ -249,6 +249,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     gdf_edges["alpsmap_avg_width"] = avg_width
     execution_timer_ins.stop()
 
+    # 自作した道幅のデータを取得
     execution_timer_ins.start("🛣️ fetch locations")
     gdf_edges['locations'] = column_generater.locations.generate(gdf_edges)
     execution_timer_ins.stop()
@@ -313,6 +314,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     execution_timer_ins.stop()
 
+    # 周辺の建物の数をカウント
     execution_timer_ins.start("🏚️ calc building_nearby_cnt")
     gdf_edges["building_nearby_cnt"] = column_generater.building_nearby_cnt.generate(gdf_edges)
     execution_timer_ins.stop()
@@ -459,12 +461,12 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "terrain_elevation_file_path",
     ]
 
-    output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/targets/{prefecture_code}/target.json"
-    os.makedirs(os.path.dirname(output_dir), exist_ok=True)
-    gdf_edges[output_columns].to_json(output_dir, orient="records")
+    # output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/targets/{prefecture_code}/target.json"
+    # os.makedirs(os.path.dirname(output_dir), exist_ok=True)
+    # gdf_edges[output_columns].to_json(output_dir, orient="records")
 
-    output_dir_bk = f"{os.path.dirname(os.path.abspath(__file__))}/../html/json_bk/{datetime.now().strftime('%Y-%m-%d-%H-%M')}.json"
-    os.makedirs(os.path.dirname(output_dir_bk), exist_ok=True)
-    gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
+    # output_dir_bk = f"{os.path.dirname(os.path.abspath(__file__))}/../html/json_bk/{datetime.now().strftime('%Y-%m-%d-%H-%M')}.json"
+    # os.makedirs(os.path.dirname(output_dir_bk), exist_ok=True)
+    # gdf_edges[output_columns].to_json(output_dir_bk, orient="records")
 
     return gdf_edges

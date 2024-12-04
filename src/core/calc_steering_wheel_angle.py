@@ -15,6 +15,7 @@ def calc_steering_wheel_angle(p1: np.ndarray
 
     angle = 0
     try:
+        # 3点を通る円の中心と半径を計算
         center, radius = calc_circle_center_and_radius(p1 ,p2, p3)
         angle = steering_angle(wheel_base, radius, steering_ratio)
         # 一般的はステアリングがまっすぐの状態で左右に1.7回転切れる。よって片側の回転角度の最大値は612度。
