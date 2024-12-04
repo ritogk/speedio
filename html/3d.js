@@ -21,6 +21,7 @@ export const draw3D = async (
   const generateRenderer = (width, height) => {
     const renderer = new THREE.WebGLRenderer();
     renderer.shadowMap.enabled = true; // 影を有効化
+    // スムースシェーディングを有効にする
     renderer.setSize(width, height);
     document.body.appendChild(renderer.domElement);
     return renderer;
@@ -256,6 +257,8 @@ export const draw3D = async (
         const v2 = gridData[y][x + 1];
         const v3 = gridData[y + 1][x + 1];
 
+        // ★ここで面の頂点がつながっていないのが原因。
+
         // 1つ目の三角形
         vertices.push(...v0);
         vertices.push(...v1);
@@ -278,6 +281,18 @@ export const draw3D = async (
 
     // 面の表面を表すベクトルを自動計算
     geometry.computeVertexNormals(); // 法線を自動計算
+
+    // const json = geometry.toJSON();
+    // const jsonString = JSON.stringify(json, null, 2);
+    // // JSONデータをBlobに変換
+    // const blob = new Blob([jsonString], { type: "application/json" });
+    // // ダウンロードリンクを生成
+    // const link = document.createElement("a");
+    // link.href = URL.createObjectURL(blob);
+    // link.download = "geometry.json";
+    // link.textContent = "Download Geometry";
+    // // ページにリンクを追加
+    // document.body.appendChild(link);
 
     // マテリアルを作成
     const material = new THREE.MeshStandardMaterial({
