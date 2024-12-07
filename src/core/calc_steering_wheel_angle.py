@@ -1,5 +1,12 @@
 import numpy as np
-from pyproj import Transformer
+
+## 3座標を自動車が走行するのに必要なステアリング舵角の求め方
+# 1. linestring内から座標を3つ抜きだす
+# 2. 抜き出した座標が円の外周と重なる円を作り半径を求める
+# 3. 半径(斜辺)と自動車のホイールベース(底辺)から直角三角形のθを求める。
+# 4. タイヤの舵角(90° - θ)を求める
+# 5. タイヤの舵角をステアリングの舵角に変換する
+# 上記を1座標ずらしながら全座座標間の計算を行えばステアリング舵角の推移が求まる
 
 # 3座標を通過するステアリングホイールの角度を計算する
 # p1, p2, p3は平面直角座標系であること
@@ -56,8 +63,8 @@ def calc_circle_center_and_radius(p1, p2, p3):
 
 # ステアリング切れ角を計算
 def steering_angle(wheelbase, radius, steering_ratio):
-    tire_angle = np.arctan(wheelbase / radius) * (180 / np.pi)  # タイヤの回転角度を度に変換
-    steering_wheel_angle = tire_angle * steering_ratio  # ステアリングホイールの回転角度
+    tire_angle = 90 - (np.arccos(wheelbase / radius) * (180 / np.pi))  # タイヤの舵角を計算. (180 / np.pi)はラジアンから度に変換するため
+    steering_wheel_angle = tire_angle * steering_ratio  # タイヤの舵角をステアリングの舵角に変換
     return steering_wheel_angle
 
 # 3点の方向を計算
