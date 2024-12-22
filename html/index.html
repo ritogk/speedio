@@ -8,6 +8,7 @@
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
     />
+    <link rel="icon" sizes="16x16" href="./icon.png" type="image/png">
     <style>
       body {
         margin: 0;
@@ -49,7 +50,6 @@
       }
 
       #SubArea {
-        display: none;
         position: absolute;
         bottom: 0;
         right: 0;
@@ -421,14 +421,14 @@
     <script src="./draw.js" type="module"></script>
     <!-- Leaflet JavaScriptのリンク -->
     <script type="module">
-      import { draw, init, addPin } from "./draw.js";
+      import { draw, drawTargets, init, addPin } from "./draw.js";
       window.onload = () => {
         init();
         draw();
         document
           .getElementById("searchButton")
           .addEventListener("click", () => {
-            draw();
+            drawTargets([]);
           });
         document.getElementById("addButton").addEventListener("click", () => {
           const address = document.getElementById("address").value;
@@ -449,7 +449,7 @@
         document
           .getElementById("weightButton")
           .addEventListener("click", () => {
-            draw();
+            drawTargets([]);
           });
         document
           .getElementById("toggleButton")
