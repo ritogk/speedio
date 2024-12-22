@@ -46,6 +46,11 @@ python3 merge_tif.py
 # 6. elevation.tifにリネームしてプロジェクトのルートにおく
 ```
 
+## run
+```
+python3 run.py
+```
+
 ## conda env update
 
 ```
