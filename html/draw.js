@@ -102,10 +102,10 @@ const setupPrefecturesLayer = async () => {
       layer.on("mouseover", () => layer.setStyle({ color: "red" }));
       layer.on("mouseout", () => layer.setStyle({ color: "blue" }));
       layer.on("click", async () => {
-        // 以前に選択されていたポリゴンを元の色に戻す
-        if (selectedPolygon) {
-          selectedPolygon.setStyle({ fillOpacity: 0.2 });
-        }
+        // // 以前に選択されていたポリゴンを元の色に戻す
+        // if (selectedPolygon) {
+        //   selectedPolygon.setStyle({ fillOpacity: 0.2 });
+        // }
         // 新しいポリゴンを透明にし、選択されたポリゴンとして設定
         layer.setStyle({ fillOpacity: 0.0 });
         selectedPolygon = layer;
@@ -186,6 +186,7 @@ export const drawTargets = (value) => {
       })
       .addTo(map);
     line.on("popupopen", (e) => {
+      console.log(x);
       // 標高グラフ
       document
         .getElementById("buttonElevationGraph")
