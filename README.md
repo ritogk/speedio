@@ -2,7 +2,7 @@
 
 峠道を抽出するスクリプト
 
-## 抽出した峠道
+## 抽出したワインディング
 
 ![image](https://github.com/user-attachments/assets/8798ffff-2cfc-4f02-8c32-f0050b1f1b5d)
 ![image](https://github.com/user-attachments/assets/3ba63bd5-7745-4d5a-a40f-edf74b11e8a8)
