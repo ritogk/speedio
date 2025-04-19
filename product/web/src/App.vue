@@ -60,9 +60,41 @@ const getUser = async () => {
   try {
     const user = await Auth.currentAuthenticatedUser()
     console.log('Current user:', user)
-    alert(user)
+
+    const session = await Auth.currentSession()
+    const jwt = session.getIdToken().getJwtToken()
+    console.log('JWT Token:', jwt)
   } catch (err) {
     console.error('Error getting current user', err)
+  }
+}
+
+const forgotPassword = async (email: string) => {
+  try {
+    const result = await Auth.forgotPassword(email)
+    console.log('Forgot password result:', result)
+  } catch (err) {
+    console.error('Error in forgot password', err)
+  }
+}
+
+const forgotPasswordSubmit = async (email: string, code: string, newPassword: string) => {
+  try {
+    const result = await Auth.forgotPasswordSubmit(email, code, newPassword)
+    console.log('Forgot password submit result:', result)
+  } catch (err) {
+    console.error('Error in forgot password submit', err)
+  }
+}
+
+// ユーザー削除
+const deleteUser = async () => {
+  try {
+    const user = await Auth.currentAuthenticatedUser()
+    await Auth.deleteUser()
+    console.log('User deleted:', user)
+  } catch (err) {
+    console.error('Error deleting user', err)
   }
 }
 </script>
@@ -76,5 +108,14 @@ const getUser = async () => {
   <input v-model="code" placeholder="Code" /><br />
   <button @click="confirm(email, code)">Confirm</button><br />
   <button @click="getUser">Get User</button><br />
+
+  <p>パスワードの再設定</p>
+  <p>forgotPassword</p>
+  <button @click="forgotPassword(email)">Forgot Password</button><br />
+  <button @click="forgotPasswordSubmit(email, code, password)">Forgot Password Submit</button><br />
+
+  <p>ユーザー削除</p>
+  <button @click="deleteUser">Delete User</button><br />
+
   <RouterView />
 </template>
