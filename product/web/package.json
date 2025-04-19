@@ -15,6 +15,7 @@
     "openapi-d:generate": "npx openapicmd typegen ../api/public/openapi.yml > ./src/types/openapi.d.ts"
   },
   "dependencies": {
+    "@aws-amplify/auth": "^5.6.15",
     "@tanstack/vue-query": "^5.32.0",
     "axios": "^1.6.8",
     "openapi-client-axios": "^7.5.4",

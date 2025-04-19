@@ -12,6 +12,9 @@ export default ({ mode }: { mode: string }) => {
   const apiPrefix = '/' + process.env.VITE_API_PREFIX
   return defineConfig({
     plugins: [vue(), VueDevTools()],
+    define: {
+      global: 'globalThis'
+    },
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url))
