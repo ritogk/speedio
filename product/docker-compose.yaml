@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  cognito-local:
+    image: jagregory/cognito-local:5.0.0
+    container_name: cognito-local
+    ports:
+      - "9229:9229"
+    environment:
+      - PORT=9229
+      - CODE=123456
+    volumes:
+      - ./docker/cognito-local:/app/.cognito

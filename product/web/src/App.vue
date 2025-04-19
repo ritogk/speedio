@@ -5,15 +5,20 @@ import { Auth, type CognitoUser } from '@aws-amplify/auth'
 
 // v6系の以降もやる。
 // https://tech.route06.co.jp/entry/2024/04/08/122004
+// https://qiita.com/KOH6/items/c9dac90658468a4cb609
 Auth.configure({
-  region: 'ap-northeast-1',
-  userPoolId: 'ap-northeast-1_06J03gwlt',
-  userPoolWebClientId: '33an35ja55hq5kk7i1g5ec2hrq',
-  endpoint: '', // localstackの場合は変える必要あり
-  // USER_SRP_AUTHとUSER_PASSWORD_AUTHの違いは?
-  // パスワードなしでログインもできるのか。
-  authenticationFlowType: 'USER_SRP_AUTH'
+  region: import.meta.env.VITE_COGNITO_REGION,
+  userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID,
+  userPoolWebClientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
+  endpoint: import.meta.env.VITE_COGNITO_ENDPOINT ?? '',
+  authenticationFlowType: import.meta.env.VITE_COGNITO_AUTHENTICATION_FLOW_TYPE
 })
+
+// console.log(import.meta.env.VITE_COGNITO_REGION)
+// console.log(import.meta.env.VITE_COGNITO_USER_POOL_ID)
+// console.log(import.meta.env.VITE_COGNITO_CLIENT_ID)
+// console.log(import.meta.env.VITE_COGNITO_ENDPOINT)
+// console.log(import.meta.env.VITE_COGNITO_AUTHENTICATION_FLOW_TYPE)
 
 const email = ref('')
 const password = ref('')

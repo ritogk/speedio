@@ -1,0 +1,18 @@
+{
+  "UserPoolName": "ap-northeast-1_06J03gwlt",
+  "UserPoolId": "local_123456789",
+  "Clients": [
+    {
+      "ClientName": "local-client",
+      "ClientId": "33an35ja55hq5kk7i1g5ec2hrq"
+    }
+  ],
+  "UserPoolDefaults": {
+    "UsernameAttributes": ["email"],
+    "AutoVerifiedAttributes": ["email"]
+  },
+  "LambdaClient": {
+    "endpoint": "http://localstack:4566",
+    "region": "ap-northeast-1"
+  }
+}

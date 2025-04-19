@@ -1,0 +1,43 @@
+{
+  "Clients": {
+    "ayr4r9bn5bg6rnpjj7h2i7v42": {
+      "UserPoolId": "local_6naChxAn",
+      "ClientName": "spa-app",
+      "ClientId": "ayr4r9bn5bg6rnpjj7h2i7v42",
+      "LastModifiedDate": "2025-04-19T07:30:46.608Z",
+      "CreationDate": "2025-04-19T06:30:18.831Z",
+      "RefreshTokenValidity": 5,
+      "AccessTokenValidity": 60,
+      "IdTokenValidity": 60,
+      "TokenValidityUnits": {
+        "AccessToken": "minutes",
+        "IdToken": "minutes",
+        "RefreshToken": "days"
+      },
+      "ExplicitAuthFlows": [
+        "ALLOW_REFRESH_TOKEN_AUTH",
+        "ALLOW_USER_AUTH",
+        "ALLOW_USER_PASSWORD_AUTH"
+      ],
+      "SupportedIdentityProviders": [
+        "COGNITO"
+      ],
+      "CallbackURLs": [
+        "https://d84l1y8p4kdic.cloudfront.net"
+      ],
+      "AllowedOAuthFlows": [
+        "code"
+      ],
+      "AllowedOAuthScopes": [
+        "email",
+        "openid",
+        "phone"
+      ],
+      "AllowedOAuthFlowsUserPoolClient": true,
+      "PreventUserExistenceErrors": "ENABLED",
+      "EnableTokenRevocation": true,
+      "EnablePropagateAdditionalUserContextData": false,
+      "AuthSessionValidity": 3
+    }
+  }
+}
