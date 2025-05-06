@@ -347,11 +347,6 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     execution_timer_ins.stop()
 
-    # google map urlを生成する
-    execution_timer_ins.start("🔗 create google_map_url")
-    gdf_edges["google_map_url"] = column_generater.google_map_url.generate(gdf_edges)
-    execution_timer_ins.stop()
-
     # geometry_check_list
     execution_timer_ins.start("🔗 create geometry_check_list")
     gdf_edges["geometry_check_list"] = column_generater.geometry_check_list.generate(
@@ -385,7 +380,6 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "street_view_url_list",
         "geometry_list",
         "geometry_check_list",
-        "google_map_url",
         "score",
         "lanes",
         "gsi_min_width",
@@ -443,7 +437,6 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "score_corner_balance",
         "score_building",
         "score_tunnel_outside",
-        "google_map_url",
         "google_earth_url",
         "street_view_url",
         "lanes",
