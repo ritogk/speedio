@@ -1,3 +1,4 @@
+import { generateGoogleMapUrl } from "./generateGoogleMapUrl.js";
 export const generateHtml = (x, isSmartPhone) => {
   return `${
     isSmartPhone
@@ -104,9 +105,9 @@ export const generateHtml = (x, isSmartPhone) => {
           </tr>
         </table>
 
-        <button class="large-button" onclick="window.open('${
-          x.google_map_url
-        }', '_blank')"
+        <button class="large-button" onclick="window.open('${generateGoogleMapUrl(
+          x.geometry_list
+        )}', '_blank')"
         >GoogleMapで表示</button><br>
 
         <button id="button3D" class="large-button">3Dで表示</button><br>
@@ -129,9 +130,9 @@ export const generateHtml = (x, isSmartPhone) => {
         <table style="width:100%;" border="1">
           <tr>
               <td>googlemap</td>
-              <td><a href="${
-                x.google_map_url
-              }" target="_blank">mapRouteUrl</a></td>
+              <td><a href="${generateGoogleMapUrl(
+                x.geometry_list
+              )}" target="_blank">mapRouteUrl</a></td>
           </tr>
           <tr>
               <td>street_viewer</td>
