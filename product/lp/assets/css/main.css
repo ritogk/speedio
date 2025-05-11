@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+@layer base {
+  @theme {
+    --font-sans: InterVariable, sans-serif;
+  }
+}
