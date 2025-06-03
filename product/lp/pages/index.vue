@@ -1,3 +1,134 @@
+<script setup>
+import { ref } from "vue";
+import { Dialog, DialogPanel } from "@headlessui/vue";
+import {
+  ArrowPathIcon,
+  Bars3Icon,
+  CloudArrowUpIcon,
+  FingerPrintIcon,
+  LockClosedIcon,
+  XMarkIcon,
+} from "@heroicons/vue/24/outline";
+import { CheckIcon } from "@heroicons/vue/20/solid";
+
+import { content } from "./content";
+
+const navigation = [
+  { name: "Product", href: "#" },
+  { name: "Features", href: "#" },
+  { name: "Marketplace", href: "#" },
+  { name: "Company", href: "#" },
+];
+const features = [
+  {
+    name: "Push to deploy",
+    description:
+      "Morbi viverra dui mi arcu sed. Tellus semper adipiscing suspendisse semper morbi. Odio urna massa nunc massa.",
+    icon: CloudArrowUpIcon,
+  },
+  {
+    name: "SSL certificates",
+    description:
+      "Sit quis amet rutrum tellus ullamcorper ultricies libero dolor eget. Sem sodales gravida quam turpis enim lacus amet.",
+    icon: LockClosedIcon,
+  },
+  {
+    name: "Simple queues",
+    description:
+      "Quisque est vel vulputate cursus. Risus proin diam nunc commodo. Lobortis auctor congue commodo diam neque.",
+    icon: ArrowPathIcon,
+  },
+  {
+    name: "Advanced security",
+    description:
+      "Arcu egestas dolor vel iaculis in ipsum mauris. Tincidunt mattis aliquet hac quis. Id hac maecenas ac donec pharetra eget.",
+    icon: FingerPrintIcon,
+  },
+];
+const tiers = [
+  {
+    name: "Freelancer",
+    id: "tier-freelancer",
+    href: "#",
+    priceMonthly: "$19",
+    description: "The essentials to provide your best work for clients.",
+    features: [
+      "5 products",
+      "Up to 1,000 subscribers",
+      "Basic analytics",
+      "48-hour support response time",
+    ],
+    mostPopular: false,
+  },
+  {
+    name: "Startup",
+    id: "tier-startup",
+    href: "#",
+    priceMonthly: "$49",
+    description: "A plan that scales with your rapidly growing business.",
+    features: [
+      "25 products",
+      "Up to 10,000 subscribers",
+      "Advanced analytics",
+      "24-hour support response time",
+      "Marketing automations",
+    ],
+    mostPopular: true,
+  },
+  {
+    name: "Enterprise",
+    id: "tier-enterprise",
+    href: "#",
+    priceMonthly: "$99",
+    description: "Dedicated support and infrastructure for your company.",
+    features: [
+      "Unlimited products",
+      "Unlimited subscribers",
+      "Advanced analytics",
+      "1-hour, dedicated support response time",
+      "Marketing automations",
+    ],
+    mostPopular: false,
+  },
+];
+const faqs = [
+  {
+    id: 1,
+    question: "What's the best thing about Switzerland?",
+    answer:
+      "I don't know, but the flag is a big plus. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas cupiditate laboriosam fugiat.",
+  },
+  // More questions...
+];
+const footerNavigation = {
+  solutions: [
+    { name: "Hosting", href: "#" },
+    { name: "Data services", href: "#" },
+    { name: "Uptime monitoring", href: "#" },
+    { name: "Enterprise services", href: "#" },
+    { name: "Analytics", href: "#" },
+  ],
+  support: [
+    { name: "Submit ticket", href: "#" },
+    { name: "Documentation", href: "#" },
+    { name: "Guides", href: "#" },
+  ],
+  company: [
+    { name: "About", href: "#" },
+    { name: "Blog", href: "#" },
+    { name: "Jobs", href: "#" },
+    { name: "Press", href: "#" },
+  ],
+  legal: [
+    { name: "Terms of service", href: "#" },
+    { name: "Privacy policy", href: "#" },
+    { name: "License", href: "#" },
+  ],
+};
+
+const mobileMenuOpen = ref(false);
+</script>
+
 <template>
   <div class="bg-white">
     <!-- Header -->
@@ -125,17 +256,16 @@
         </div>
         <div class="py-24 sm:py-32 lg:pb-40">
           <div class="mx-auto max-w-7xl px-6 lg:px-8">
-            <div class="mx-auto max-w-2xl text-center">
+            <div class="mx-auto max-w-3xl text-center">
               <h1
-                class="text-5xl font-semibold tracking-tight text-balance text-gray-900 sm:text-7xl"
+                class="text-5xl font-semibold tracking-tight text-balance text-gray-900 sm:text-7xl whitespace-pre-line"
               >
-                Deploy to the cloud with confidence
+                {{ content.title }}
               </h1>
               <p
-                class="mt-8 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8"
+                class="mt-8 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 whitespace-pre-line"
               >
-                Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui
-                lorem cupidatat commodo. Elit sunt amet fugiat veniam occaecat.
+                {{ content.subTitle }}
               </p>
               <div class="mt-10 flex items-center justify-center gap-x-6">
                 <a
@@ -194,6 +324,17 @@
       </div>
 
       <!-- Logo cloud -->
+      <div class="py-24 sm:py-32 lg:pb-40">
+        <div class="mx-auto max-w-7xl px-6 lg:px-8">
+          <div class="mx-auto max-w-2xl text-center">
+            <h1
+              class="text-3xl font-semibold tracking-tight text-balance text-gray-900 sm:text-5xl"
+            >
+              対応サービス(GoogleMap, YahooMap...)
+            </h1>
+          </div>
+        </div>
+      </div>
       <div class="mx-auto max-w-7xl px-6 lg:px-8">
         <div
           class="mx-auto grid max-w-lg grid-cols-4 items-center gap-x-8 gap-y-12 sm:max-w-xl sm:grid-cols-6 sm:gap-x-10 sm:gap-y-14 lg:mx-0 lg:max-w-none lg:grid-cols-5"
@@ -253,18 +394,15 @@
       <!-- Feature section -->
       <div class="mx-auto mt-32 max-w-7xl px-6 sm:mt-56 lg:px-8">
         <div class="mx-auto max-w-2xl lg:text-center">
-          <h2 class="text-base/7 font-semibold text-indigo-600">
-            Deploy faster
-          </h2>
           <p
             class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl lg:text-balance"
           >
-            Everything you need to deploy your app
+            なにができるのか?
           </p>
           <p class="mt-6 text-lg/8 text-pretty text-gray-600">
-            Quis tellus eget adipiscing convallis sit sit eget aliquet quis.
-            Suspendisse eget egestas a elementum pulvinar et feugiat blandit at.
-            In mi viverra elit nunc.
+            - 事前に用意された数万の峠道を自由に運転できる<br />
+            - 自分の好みにあった峠を選べる<br />
+            - 近場の峠道を数クリックでナビゲート<br />
           </p>
         </div>
         <div class="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
@@ -296,183 +434,78 @@
         </div>
       </div>
 
-      <!-- Testimonial section -->
-      <div class="mx-auto mt-32 max-w-7xl sm:mt-56 sm:px-6 lg:px-8">
-        <div
-          class="relative overflow-hidden bg-gray-900 px-6 py-20 shadow-xl sm:rounded-3xl sm:px-10 sm:py-24 md:px-12 lg:px-20"
-        >
-          <img
-            class="absolute inset-0 size-full object-cover brightness-150 saturate-0"
-            src="https://images.unsplash.com/photo-1601381718415-a05fb0a261f3?ixid=MXwxMjA3fDB8MHxwcm9maWxlLXBhZ2V8ODl8fHxlbnwwfHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1216&q=80"
-            alt=""
-          />
-          <div class="absolute inset-0 bg-gray-900/90 mix-blend-multiply" />
-          <div
-            class="absolute -top-56 -left-80 transform-gpu blur-3xl"
-            aria-hidden="true"
-          >
-            <div
-              class="aspect-1097/845 w-[68.5625rem] bg-linear-to-r from-[#ff4694] to-[#776fff] opacity-[0.45]"
-              style="
-                clip-path: polygon(
-                  74.1% 44.1%,
-                  100% 61.6%,
-                  97.5% 26.9%,
-                  85.5% 0.1%,
-                  80.7% 2%,
-                  72.5% 32.5%,
-                  60.2% 62.4%,
-                  52.4% 68.1%,
-                  47.5% 58.3%,
-                  45.2% 34.5%,
-                  27.5% 76.7%,
-                  0.1% 64.9%,
-                  17.9% 100%,
-                  27.6% 76.8%,
-                  76.1% 97.7%,
-                  74.1% 44.1%
-                );
-              "
-            />
-          </div>
-          <div
-            class="hidden md:absolute md:bottom-16 md:left-[50rem] md:block md:transform-gpu md:blur-3xl"
-            aria-hidden="true"
-          >
-            <div
-              class="aspect-1097/845 w-[68.5625rem] bg-linear-to-r from-[#ff4694] to-[#776fff] opacity-25"
-              style="
-                clip-path: polygon(
-                  74.1% 44.1%,
-                  100% 61.6%,
-                  97.5% 26.9%,
-                  85.5% 0.1%,
-                  80.7% 2%,
-                  72.5% 32.5%,
-                  60.2% 62.4%,
-                  52.4% 68.1%,
-                  47.5% 58.3%,
-                  45.2% 34.5%,
-                  27.5% 76.7%,
-                  0.1% 64.9%,
-                  17.9% 100%,
-                  27.6% 76.8%,
-                  76.1% 97.7%,
-                  74.1% 44.1%
-                );
-              "
-            />
-          </div>
-          <div class="relative mx-auto max-w-2xl lg:mx-0">
-            <img
-              class="h-12 w-auto"
-              src="https://tailwindcss.com/plus-assets/img/logos/workcation-logo-white.svg"
-              alt=""
-            />
-            <figure>
-              <blockquote
-                class="mt-6 text-lg font-semibold text-white sm:text-xl/8"
-              >
-                <p>
-                  “Amet amet eget scelerisque tellus sit neque faucibus non
-                  eleifend. Integer eu praesent at a. Ornare arcu gravida
-                  natoque erat et cursus tortor consequat at. Vulputate gravida
-                  sociis enim nullam ultricies habitant malesuada lorem ac.”
-                </p>
-              </blockquote>
-              <figcaption class="mt-6 text-base text-white">
-                <div class="font-semibold">Judith Black</div>
-                <div class="mt-1">CEO of Tuple</div>
-              </figcaption>
-            </figure>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pricing section -->
+      <!-- 料金プランセクション -->
       <div class="py-24 sm:pt-48">
         <div class="mx-auto max-w-7xl px-6 lg:px-8">
           <div class="mx-auto max-w-2xl lg:text-center">
-            <h2 class="text-base/7 font-semibold text-indigo-600">Pricing</h2>
+            <h2 class="text-base/7 font-semibold text-indigo-600">
+              料金プラン
+            </h2>
             <p
               class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl lg:text-balance"
             >
-              Pricing that grows with you
+              すべての機能が完全無料
             </p>
             <p class="mt-6 text-lg/8 text-pretty text-gray-600">
-              Quis tellus eget adipiscing convallis sit sit eget aliquet quis.
-              Suspendisse eget egestas a elementum pulvinar et feugiat blandit
-              at. In mi viverra elit nunc.
+              登録もクレジットカードも不要。すべての機能を今すぐ無料でご利用いただけます。
             </p>
           </div>
-          <div
-            class="isolate mx-auto mt-16 grid max-w-md grid-cols-1 gap-y-8 sm:mt-20 lg:mx-0 lg:max-w-none lg:grid-cols-3"
-          >
+
+          <!-- 枠の横幅を制限 -->
+          <div class="mx-auto mt-16 max-w-sm sm:mt-20">
             <div
-              v-for="(tier, tierIdx) in tiers"
-              :key="tier.id"
-              :class="[
-                tier.mostPopular ? 'lg:z-10 lg:rounded-b-none' : 'lg:mt-8',
-                tierIdx === 0 ? 'lg:rounded-r-none' : '',
-                tierIdx === tiers.length - 1 ? 'lg:rounded-l-none' : '',
-                'flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 xl:p-10',
-              ]"
+              class="flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 xl:p-10"
             >
               <div>
                 <div class="flex items-center justify-between gap-x-4">
                   <h3
-                    :id="tier.id"
-                    :class="[
-                      tier.mostPopular ? 'text-indigo-600' : 'text-gray-900',
-                      'text-lg/8 font-semibold',
-                    ]"
+                    id="free-plan"
+                    class="text-indigo-600 text-lg/8 font-semibold"
                   >
-                    {{ tier.name }}
+                    フリープラン
                   </h3>
-                  <p
-                    v-if="tier.mostPopular"
-                    class="rounded-full bg-indigo-600/10 px-2.5 py-1 text-xs/5 font-semibold text-indigo-600"
-                  >
-                    Most popular
-                  </p>
                 </div>
                 <p class="mt-4 text-sm/6 text-gray-600">
-                  {{ tier.description }}
+                  すべての機能に無制限でアクセスできます。
                 </p>
                 <p class="mt-6 flex items-baseline gap-x-1">
                   <span
                     class="text-4xl font-semibold tracking-tight text-gray-900"
-                    >{{ tier.priceMonthly }}</span
+                    >¥0</span
                   >
-                  <span class="text-sm/6 font-semibold text-gray-600"
-                    >/month</span
-                  >
+                  <span class="text-sm/6 font-semibold text-gray-600">/月</span>
                 </p>
                 <ul role="list" class="mt-8 space-y-3 text-sm/6 text-gray-600">
-                  <li
-                    v-for="feature in tier.features"
-                    :key="feature"
-                    class="flex gap-x-3"
-                  >
+                  <li class="flex gap-x-3">
                     <CheckIcon
                       class="h-6 w-5 flex-none text-indigo-600"
                       aria-hidden="true"
                     />
-                    {{ feature }}
+                    すべての機能にアクセス可能
+                  </li>
+                  <li class="flex gap-x-3">
+                    <CheckIcon
+                      class="h-6 w-5 flex-none text-indigo-600"
+                      aria-hidden="true"
+                    />
+                    ユーザー数無制限
+                  </li>
+                  <li class="flex gap-x-3">
+                    <CheckIcon
+                      class="h-6 w-5 flex-none text-indigo-600"
+                      aria-hidden="true"
+                    />
+                    サポート付き
                   </li>
                 </ul>
               </div>
               <a
-                :href="tier.href"
-                :aria-describedby="tier.id"
-                :class="[
-                  tier.mostPopular
-                    ? 'bg-indigo-600 text-white shadow-xs hover:bg-indigo-500'
-                    : 'text-indigo-600 ring-1 ring-indigo-200 ring-inset hover:ring-indigo-300',
-                  'mt-8 block rounded-md px-3 py-2 text-center text-sm/6 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
-                ]"
-                >Buy plan</a
+                href="/signup"
+                aria-describedby="free-plan"
+                class="mt-8 block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
+                今すぐ無料で始める
+              </a>
             </div>
           </div>
         </div>
@@ -656,132 +689,3 @@
     </footer>
   </div>
 </template>
-
-<script setup>
-import { ref } from "vue";
-import { Dialog, DialogPanel } from "@headlessui/vue";
-import {
-  ArrowPathIcon,
-  Bars3Icon,
-  CloudArrowUpIcon,
-  FingerPrintIcon,
-  LockClosedIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
-import { CheckIcon } from "@heroicons/vue/20/solid";
-
-const navigation = [
-  { name: "Product", href: "#" },
-  { name: "Features", href: "#" },
-  { name: "Marketplace", href: "#" },
-  { name: "Company", href: "#" },
-];
-const features = [
-  {
-    name: "Push to deploy",
-    description:
-      "Morbi viverra dui mi arcu sed. Tellus semper adipiscing suspendisse semper morbi. Odio urna massa nunc massa.",
-    icon: CloudArrowUpIcon,
-  },
-  {
-    name: "SSL certificates",
-    description:
-      "Sit quis amet rutrum tellus ullamcorper ultricies libero dolor eget. Sem sodales gravida quam turpis enim lacus amet.",
-    icon: LockClosedIcon,
-  },
-  {
-    name: "Simple queues",
-    description:
-      "Quisque est vel vulputate cursus. Risus proin diam nunc commodo. Lobortis auctor congue commodo diam neque.",
-    icon: ArrowPathIcon,
-  },
-  {
-    name: "Advanced security",
-    description:
-      "Arcu egestas dolor vel iaculis in ipsum mauris. Tincidunt mattis aliquet hac quis. Id hac maecenas ac donec pharetra eget.",
-    icon: FingerPrintIcon,
-  },
-];
-const tiers = [
-  {
-    name: "Freelancer",
-    id: "tier-freelancer",
-    href: "#",
-    priceMonthly: "$19",
-    description: "The essentials to provide your best work for clients.",
-    features: [
-      "5 products",
-      "Up to 1,000 subscribers",
-      "Basic analytics",
-      "48-hour support response time",
-    ],
-    mostPopular: false,
-  },
-  {
-    name: "Startup",
-    id: "tier-startup",
-    href: "#",
-    priceMonthly: "$49",
-    description: "A plan that scales with your rapidly growing business.",
-    features: [
-      "25 products",
-      "Up to 10,000 subscribers",
-      "Advanced analytics",
-      "24-hour support response time",
-      "Marketing automations",
-    ],
-    mostPopular: true,
-  },
-  {
-    name: "Enterprise",
-    id: "tier-enterprise",
-    href: "#",
-    priceMonthly: "$99",
-    description: "Dedicated support and infrastructure for your company.",
-    features: [
-      "Unlimited products",
-      "Unlimited subscribers",
-      "Advanced analytics",
-      "1-hour, dedicated support response time",
-      "Marketing automations",
-    ],
-    mostPopular: false,
-  },
-];
-const faqs = [
-  {
-    id: 1,
-    question: "What's the best thing about Switzerland?",
-    answer:
-      "I don't know, but the flag is a big plus. Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas cupiditate laboriosam fugiat.",
-  },
-  // More questions...
-];
-const footerNavigation = {
-  solutions: [
-    { name: "Hosting", href: "#" },
-    { name: "Data services", href: "#" },
-    { name: "Uptime monitoring", href: "#" },
-    { name: "Enterprise services", href: "#" },
-    { name: "Analytics", href: "#" },
-  ],
-  support: [
-    { name: "Submit ticket", href: "#" },
-    { name: "Documentation", href: "#" },
-    { name: "Guides", href: "#" },
-  ],
-  company: [
-    { name: "About", href: "#" },
-    { name: "Blog", href: "#" },
-    { name: "Jobs", href: "#" },
-    { name: "Press", href: "#" },
-  ],
-  legal: [
-    { name: "Terms of service", href: "#" },
-    { name: "Privacy policy", href: "#" },
-    { name: "License", href: "#" },
-  ],
-};
-
-const mobileMenuOpen = ref(false);
-</script>
