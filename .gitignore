@@ -19,3 +19,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+.history
+
+src/shape
