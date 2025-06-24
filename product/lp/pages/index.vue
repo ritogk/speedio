@@ -273,22 +273,26 @@ const mobileMenuOpen = ref(false);
                   class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   >Get started</a
                 >
-                <a href="#" class="text-sm/6 font-semibold text-gray-900"
-                  >Learn more <span aria-hidden="true">→</span></a
-                >
               </div>
             </div>
             <div class="mt-16 flow-root sm:mt-24">
               <div
                 class="-m-2 rounded-xl bg-gray-900/5 p-2 ring-1 ring-gray-900/10 ring-inset lg:-m-4 lg:rounded-2xl lg:p-4"
               >
-                <img
-                  src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
-                  alt="App screenshot"
-                  width="2432"
-                  height="1442"
-                  class="rounded-md shadow-2xl ring-1 ring-gray-900/10"
-                />
+                <p>ここに縦長のスクショを3つ貼る</p>
+                <div
+                  class="flex flex-col gap-4 sm:flex-row sm:justify-center sm:gap-6"
+                >
+                  <div
+                    class="h-[480px] w-[240px] rounded-md bg-blue-500 shadow-2xl ring-1 ring-gray-900/10"
+                  ></div>
+                  <div
+                    class="h-[480px] w-[240px] rounded-md bg-green-500 shadow-2xl ring-1 ring-gray-900/10"
+                  ></div>
+                  <div
+                    class="h-[480px] w-[240px] rounded-md bg-pink-500 shadow-2xl ring-1 ring-gray-900/10"
+                  ></div>
+                </div>
               </div>
             </div>
           </div>
@@ -323,14 +327,14 @@ const mobileMenuOpen = ref(false);
         </div>
       </div>
 
-      <!-- Logo cloud -->
+      <!-- 使用データ -->
       <div class="py-24 sm:py-32 lg:pb-40">
         <div class="mx-auto max-w-7xl px-6 lg:px-8">
           <div class="mx-auto max-w-2xl text-center">
             <h1
               class="text-3xl font-semibold tracking-tight text-balance text-gray-900 sm:text-5xl"
             >
-              対応サービス(GoogleMap, YahooMap...)
+              使用した日本国土のデータ
             </h1>
           </div>
         </div>
@@ -339,6 +343,11 @@ const mobileMenuOpen = ref(false);
         <div
           class="mx-auto grid max-w-lg grid-cols-4 items-center gap-x-8 gap-y-12 sm:max-w-xl sm:grid-cols-6 sm:gap-x-10 sm:gap-y-14 lg:mx-0 lg:max-w-none lg:grid-cols-5"
         >
+          <div>道路の形状</div>
+          <div>交差点</div>
+          <div>道路周辺の建物</div>
+          <div>標高モデル</div>
+          <div>道路の道幅</div>
           <img
             class="col-span-2 max-h-12 w-full object-contain lg:col-span-1"
             src="https://tailwindcss.com/plus-assets/img/logos/158x48/transistor-logo-gray-900.svg"
@@ -375,6 +384,41 @@ const mobileMenuOpen = ref(false);
             height="48"
           />
         </div>
+      </div>
+
+      <!-- Logo cloud -->
+      <div class="py-24 sm:py-32 lg:pb-40">
+        <div class="mx-auto max-w-7xl px-6 lg:px-8">
+          <div class="mx-auto max-w-2xl text-center">
+            <h1
+              class="text-3xl font-semibold tracking-tight text-balance text-gray-900 sm:text-5xl"
+            >
+              さまざまなカーナビアプリに対応
+            </h1>
+          </div>
+        </div>
+      </div>
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div
+          class="mx-auto grid max-w-lg grid-cols-4 items-center gap-x-8 gap-y-12 sm:max-w-xl sm:grid-cols-6 sm:gap-x-10 sm:gap-y-14 lg:mx-0 lg:max-w-none lg:grid-cols-5"
+        >
+          <div>google-map</div>
+          <div>yahooカーナビ</div>
+          <img
+            class="col-span-2 max-h-12 w-full object-contain lg:col-span-1"
+            src="https://tailwindcss.com/plus-assets/img/logos/158x48/transistor-logo-gray-900.svg"
+            alt="Transistor"
+            width="158"
+            height="48"
+          />
+          <img
+            class="col-span-2 max-h-12 w-full object-contain lg:col-span-1"
+            src="https://tailwindcss.com/plus-assets/img/logos/158x48/reform-logo-gray-900.svg"
+            alt="Reform"
+            width="158"
+            height="48"
+          />
+        </div>
         <div class="mt-16 flex justify-center">
           <p
             class="relative rounded-full px-4 py-1.5 text-sm/6 text-gray-600 ring-1 ring-gray-900/10 ring-inset hover:ring-gray-900/20"
@@ -397,143 +441,18 @@ const mobileMenuOpen = ref(false);
           <p
             class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl lg:text-balance"
           >
-            なにができるのか?
+            ご利用の流れ?
           </p>
           <p class="mt-6 text-lg/8 text-pretty text-gray-600">
-            - 事前に用意された数万の峠道を自由に運転できる<br />
-            - 自分の好みにあった峠を選べる<br />
-            - 近場の峠道を数クリックでナビゲート<br />
+            1. 近場の峠道をさがす
+          </p>
+          <p class="mt-6 text-lg/8 text-pretty text-gray-600">
+            2. このみの峠道を絞り込み選ぶ
+          </p>
+          <p class="mt-6 text-lg/8 text-pretty text-gray-600">
+            3. 実際に運転する
           </p>
         </div>
-        <div class="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
-          <dl
-            class="grid max-w-xl grid-cols-1 gap-x-8 gap-y-10 lg:max-w-none lg:grid-cols-2 lg:gap-y-16"
-          >
-            <div
-              v-for="feature in features"
-              :key="feature.name"
-              class="relative pl-16"
-            >
-              <dt class="text-base/7 font-semibold text-gray-900">
-                <div
-                  class="absolute top-0 left-0 flex size-10 items-center justify-center rounded-lg bg-indigo-600"
-                >
-                  <component
-                    :is="feature.icon"
-                    class="size-6 text-white"
-                    aria-hidden="true"
-                  />
-                </div>
-                {{ feature.name }}
-              </dt>
-              <dd class="mt-2 text-base/7 text-gray-600">
-                {{ feature.description }}
-              </dd>
-            </div>
-          </dl>
-        </div>
-      </div>
-
-      <!-- 料金プランセクション -->
-      <div class="py-24 sm:pt-48">
-        <div class="mx-auto max-w-7xl px-6 lg:px-8">
-          <div class="mx-auto max-w-2xl lg:text-center">
-            <h2 class="text-base/7 font-semibold text-indigo-600">
-              料金プラン
-            </h2>
-            <p
-              class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl lg:text-balance"
-            >
-              すべての機能が完全無料
-            </p>
-            <p class="mt-6 text-lg/8 text-pretty text-gray-600">
-              登録もクレジットカードも不要。すべての機能を今すぐ無料でご利用いただけます。
-            </p>
-          </div>
-
-          <!-- 枠の横幅を制限 -->
-          <div class="mx-auto mt-16 max-w-sm sm:mt-20">
-            <div
-              class="flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 xl:p-10"
-            >
-              <div>
-                <div class="flex items-center justify-between gap-x-4">
-                  <h3
-                    id="free-plan"
-                    class="text-indigo-600 text-lg/8 font-semibold"
-                  >
-                    フリープラン
-                  </h3>
-                </div>
-                <p class="mt-4 text-sm/6 text-gray-600">
-                  すべての機能に無制限でアクセスできます。
-                </p>
-                <p class="mt-6 flex items-baseline gap-x-1">
-                  <span
-                    class="text-4xl font-semibold tracking-tight text-gray-900"
-                    >¥0</span
-                  >
-                  <span class="text-sm/6 font-semibold text-gray-600">/月</span>
-                </p>
-                <ul role="list" class="mt-8 space-y-3 text-sm/6 text-gray-600">
-                  <li class="flex gap-x-3">
-                    <CheckIcon
-                      class="h-6 w-5 flex-none text-indigo-600"
-                      aria-hidden="true"
-                    />
-                    すべての機能にアクセス可能
-                  </li>
-                  <li class="flex gap-x-3">
-                    <CheckIcon
-                      class="h-6 w-5 flex-none text-indigo-600"
-                      aria-hidden="true"
-                    />
-                    ユーザー数無制限
-                  </li>
-                  <li class="flex gap-x-3">
-                    <CheckIcon
-                      class="h-6 w-5 flex-none text-indigo-600"
-                      aria-hidden="true"
-                    />
-                    サポート付き
-                  </li>
-                </ul>
-              </div>
-              <a
-                href="/signup"
-                aria-describedby="free-plan"
-                class="mt-8 block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                今すぐ無料で始める
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FAQs -->
-      <div
-        class="mx-auto max-w-2xl px-6 pb-8 sm:pt-12 sm:pb-24 lg:max-w-7xl lg:px-8 lg:pb-32"
-      >
-        <h2
-          class="text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl"
-        >
-          Frequently asked questions
-        </h2>
-        <dl class="mt-20 divide-y divide-gray-900/10">
-          <div
-            v-for="faq in faqs"
-            :key="faq.id"
-            class="py-8 first:pt-0 last:pb-0 lg:grid lg:grid-cols-12 lg:gap-8"
-          >
-            <dt class="text-base/7 font-semibold text-gray-900 lg:col-span-5">
-              {{ faq.question }}
-            </dt>
-            <dd class="mt-4 lg:col-span-7 lg:mt-0">
-              <p class="text-base/7 text-gray-600">{{ faq.answer }}</p>
-            </dd>
-          </div>
-        </dl>
       </div>
 
       <!-- CTA section -->
