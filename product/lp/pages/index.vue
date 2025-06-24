@@ -284,13 +284,13 @@ const mobileMenuOpen = ref(false);
                   class="flex flex-col gap-4 sm:flex-row sm:justify-center sm:gap-6"
                 >
                   <div
-                    class="h-[480px] w-[240px] rounded-md bg-blue-500 shadow-2xl ring-1 ring-gray-900/10"
+                    class="h-[480px] w-[240px] rounded-md bg-gray-300 shadow-2xl ring-1 ring-gray-900/10"
                   ></div>
                   <div
-                    class="h-[480px] w-[240px] rounded-md bg-green-500 shadow-2xl ring-1 ring-gray-900/10"
+                    class="h-[480px] w-[240px] rounded-md bg-gray-300 shadow-2xl ring-1 ring-gray-900/10"
                   ></div>
                   <div
-                    class="h-[480px] w-[240px] rounded-md bg-pink-500 shadow-2xl ring-1 ring-gray-900/10"
+                    class="h-[480px] w-[240px] rounded-md bg-gray-300 shadow-2xl ring-1 ring-gray-900/10"
                   ></div>
                 </div>
               </div>
