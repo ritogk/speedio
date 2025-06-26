@@ -1,5 +1,5 @@
-// import target from "./target.json" with { type: "json" };
 import * as L from "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm";
+
 import { generateHtml } from "./popup.js";
 import { draw3D } from "./3d.js";
 import { draw3D as draw3dDriverView } from "./3d_driver_view.js";
@@ -46,19 +46,19 @@ export const init = async () => {
       });
   });
 
-  // ポリラインの初期太さ
-  const initialWeight = 2;
-  // ズーム終了時にポリラインの太さを調整する処理
-  map.on("zoomend", () => {
-    const zoomLevel = map.getZoom();
-    polylines.forEach((polyline) => {
-      if (polyline instanceof L.Polyline) {
-        // Polylineのみ対象にする
-        const newWeight = initialWeight * zoomLevel; // ズームレベルに応じて太さを調整
-        polyline.setStyle({ weight: newWeight });
-      }
-    });
-  });
+  // // ポリラインの初期太さ
+  // const initialWeight = 2;
+  // // ズーム終了時にポリラインの太さを調整する処理
+  // map.on("zoomend", () => {
+  //   const zoomLevel = map.getZoom();
+  //   polylines.forEach((polyline) => {
+  //     if (polyline instanceof L.Polyline) {
+  //       // Polylineのみ対象にする
+  //       const newWeight = initialWeight * zoomLevel; // ズームレベルに応じて太さを調整
+  //       polyline.setStyle({ weight: newWeight });
+  //     }
+  //   });
+  // });
 
   await setupPrefecturesLayer();
 
@@ -180,45 +180,106 @@ export const drawTargets = (value) => {
     const scoreNormalization = x.score_normalization;
     const style = generateStyle(scoreNormalization);
 
-    const line = L.polyline(polyline, style)
-      .bindPopup(generateHtml(x, isSmartPhone), {
-        maxWidth: 1100,
+    const colorByCornerLevel = {
+      weak: "orange",
+      medium: "green",
+      strong: "red",
+    };
+
+    // road_section を元に描画
+    (x.road_section || []).forEach((section) => {
+      // Leafletは [lat, lng] の順
+      const rawPoints = section.points.map(([lng, lat]) => [lat, lng]);
+      const latlngs = rawPoints;
+
+      const level = section.corner_level || "weak";
+      const color = colorByCornerLevel[level.toLowerCase()] || "gray";
+
+      const line = L.polyline(latlngs, {
+        ...style,
+        color,
       })
-      .addTo(map);
-    line.on("popupopen", (e) => {
-      console.log(x);
-      // 標高グラフ
-      document
-        .getElementById("buttonElevationGraph")
-        .addEventListener("click", () => {
-          drawGraph(x.elevation_segment_list);
-        });
-      // 3D通常ビュー
-      document
-        .getElementById("button3D")
-        .addEventListener("click", async () => {
-          toggleLoading();
-          await draw3D(
-            x.geometry_meter_list,
-            x.elevation_smooth,
-            x.terrain_elevation_file_path
-          );
-          toggleLoading();
-        });
-      // 3Dドライバービュー
-      document
-        .getElementById("button3dDriverView")
-        .addEventListener("click", async () => {
-          toggleLoading();
-          await draw3dDriverView(
-            x.geometry_meter_list,
-            x.elevation_smooth,
-            x.terrain_elevation_file_path
-          );
-          toggleLoading();
-        });
+        .bindPopup(generateHtml(x, isSmartPhone), {
+          maxWidth: 500,
+        })
+        .addTo(map);
+
+      line.on("popupopen", () => {
+        console.log(x);
+
+        document
+          .getElementById("buttonElevationGraph")
+          ?.addEventListener("click", () => {
+            drawGraph(x.elevation_segment_list);
+          });
+
+        document
+          .getElementById("button3D")
+          ?.addEventListener("click", async () => {
+            toggleLoading();
+            await draw3D(
+              x.geometry_meter_list,
+              x.elevation_smooth,
+              x.terrain_elevation_file_path
+            );
+            toggleLoading();
+          });
+
+        document
+          .getElementById("button3dDriverView")
+          ?.addEventListener("click", async () => {
+            toggleLoading();
+            await draw3dDriverView(
+              x.geometry_meter_list,
+              x.elevation_smooth,
+              x.terrain_elevation_file_path
+            );
+            toggleLoading();
+          });
+      });
+
+      polylines.push(line);
     });
-    polylines.push(line);
+
+    // const line = L.polyline(polyline, style)
+    //   .bindPopup(generateHtml(x, isSmartPhone), {
+    //     maxWidth: 1100,
+    //   })
+    //   .addTo(map);
+    // line.on("popupopen", (e) => {
+    //   console.log(x);
+    //   // 標高グラフ
+    //   document
+    //     .getElementById("buttonElevationGraph")
+    //     .addEventListener("click", () => {
+    //       drawGraph(x.elevation_segment_list);
+    //     });
+    //   // 3D通常ビュー
+    //   document
+    //     .getElementById("button3D")
+    //     .addEventListener("click", async () => {
+    //       toggleLoading();
+    //       await draw3D(
+    //         x.geometry_meter_list,
+    //         x.elevation_smooth,
+    //         x.terrain_elevation_file_path
+    //       );
+    //       toggleLoading();
+    //     });
+    //   // 3Dドライバービュー
+    //   document
+    //     .getElementById("button3dDriverView")
+    //     .addEventListener("click", async () => {
+    //       toggleLoading();
+    //       await draw3dDriverView(
+    //         x.geometry_meter_list,
+    //         x.elevation_smooth,
+    //         x.terrain_elevation_file_path
+    //       );
+    //       toggleLoading();
+    //     });
+    // });
+    // polylines.push(line);
   });
 
   // // 曲がり角にマーカーを表示
@@ -379,6 +440,7 @@ const generateStyle = (value) => {
   r = Math.round(255 * value);
 
   const generateWeight = (value) => {
+    return 8;
     if (value < 0.3) return 3;
     if (value < 0.5) return 5;
     if (value < 0.7) return 7;

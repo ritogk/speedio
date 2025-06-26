@@ -3,9 +3,15 @@ from pandas import Series
 from geopy.distance import geodesic
 import matplotlib.pyplot as plt
 import copy
+from typing import Literal
 
 STRAIGHT_DISTANCE = 100
 STRAIGHT_ANGLE = 7
+WEEK_CORNER_ANGLE_MIN = STRAIGHT_ANGLE
+WEEK_CORNER_ANGLE_MAX = 45
+MEDIUM_CORNER_ANGLE_MIN = 45
+MEDIUM_CORNER_ANGLE_MAX = 80
+STRONG_CORNER_ANGLE_MIN = 80
 #
 # 右左コーナー、ストレートの情報を抽出する
 # ストレートはステアリング角度が8度以下で50m以上の区間とする。
@@ -54,6 +60,7 @@ def generate(gdf: GeoDataFrame) -> Series:
                 'steering_direction': steering_angle_info[0]['direction'],
                 'points': points,
                 'section_info': steering_angle_info,
+                'corner_level': generate_corner_level(max_steering_angle),
                 'distance': distance,
                 'elevation_height': elevation_height,
             })
@@ -196,7 +203,7 @@ def merge_continuous_section_section(road_sections):
     return merged_lst
 
 # ステアリング角度を調整する
-def adjust_steering_angle(steering_angle, points, elevation, distance, coords) -> tuple[float, float]:
+def adjust_steering_angle(steering_angle, points, elevation, distance, coords) -> str |:
     # 標高の変化量を計算する。始点と終点を間の値を使っているためindex番号をずらす。
     point_st = points[1]
     point_end = points[-2]
@@ -218,3 +225,20 @@ def adjust_steering_angle(steering_angle, points, elevation, distance, coords) -
     elevation_height_and_distance_ratio = elevation_height / distance
     adjusted_steering_angle = steering_angle * scale_to_range(elevation_height_and_distance_ratio)
     return adjusted_steering_angle, elevation_height
+
+WEEK_CORNER_ANGLE_MIN = STRAIGHT_ANGLE
+WEEK_CORNER_ANGLE_MAX = 45
+MEDIUM_CORNER_ANGLE_MIN = 45
+MEDIUM_CORNER_ANGLE_MAX = 80
+STRONG_CORNER_ANGLE_MIN = 80
+
+# コーナーレベルを計算する
+def generate_corner_level(max_steering_angle: int) -> Literal['none', 'week', 'medium', 'strong']:
+    if max_steering_angle < WEEK_CORNER_ANGLE_MIN:
+        return 'none'
+    elif WEEK_CORNER_ANGLE_MIN <= max_steering_angle < MEDIUM_CORNER_ANGLE_MIN:
+        return 'week'
+    elif MEDIUM_CORNER_ANGLE_MIN <= max_steering_angle < STRONG_CORNER_ANGLE_MIN:
+        return 'medium'
+    else:
+        return 'strong'
