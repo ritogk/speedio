@@ -1,13 +1,7 @@
 from geopandas import GeoDataFrame
 from pandas import Series
 from geopy.distance import geodesic
-from .road_section import STRAIGHT_ANGLE
-
-WEEK_CORNER_ANGLE_MIN = STRAIGHT_ANGLE
-WEEK_CORNER_ANGLE_MAX = 45
-MEDIUM_CORNER_ANGLE_MIN = 45
-MEDIUM_CORNER_ANGLE_MAX = 80
-STRONG_CORNER_ANGLE_MIN = 80
+from .road_section import STRAIGHT_ANGLE, WEEK_CORNER_ANGLE_MIN, WEEK_CORNER_ANGLE_MAX, MEDIUM_CORNER_ANGLE_MIN, MEDIUM_CORNER_ANGLE_MAX, STRONG_CORNER_ANGLE_MIN
 
 # 各コーナー種別の間のゾーン値(±5度)
 # コーナー種別が切替る間を段階的に評価するために必要
