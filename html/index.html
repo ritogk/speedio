@@ -190,6 +190,37 @@
       #graphCloseButton:hover {
         background-color: #0056b3;
       }
+
+      #LegendArea {
+        position: absolute;
+        left: 10px;
+        bottom: 10px;
+        z-index: 2000;
+        background: rgba(255,255,255,0.9);
+        border-radius: 8px;
+        padding: 10px 10px;
+        font-size: 15px;
+        color: #222;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        min-width: 130px;
+      }
+      #LegendArea ul {
+        margin: 0;
+        padding: 0 0 0 0.7em;
+      }
+      #LegendArea li {
+        list-style: none;
+        margin-bottom: 4px;
+        font-size: 15px;
+      }
+      #LegendArea .legend-color {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        margin-right: 4px;
+        border-radius: 4px;
+        vertical-align: middle;
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
@@ -421,6 +452,15 @@
     <div id="graphArea" hidden>
       <canvas id="graphElevationCanvas" width="1000" height="600" style="background-color: white;"></canvas>
       <button id="graphCloseButton">Close</button>
+    </div>
+
+    <div id="LegendArea">
+      <ul>
+        <li><span class="legend-color" style="background:#ff0000;"></span>高速コーナー</li>
+        <li><span class="legend-color" style="background:orange;"></span>中速コーナー</li>
+        <li><span class="legend-color" style="background:limegreen;"></span>低速コーナー</li>
+        <li><span class="legend-color" style="background:gainsboro;"></span>ストレート</li>
+      </ul>
     </div>
 
     <script type="importmap">

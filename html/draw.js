@@ -180,9 +180,45 @@ export const drawTargets = (value) => {
     const scoreNormalization = x.score_normalization;
     const style = generateStyle(scoreNormalization);
 
+    // 標高値
+    // x.elevation_unevenness.forEach((elevation_unevennes) => {
+    //   const marker = L.marker(elevation_unevennes.point, {
+    //     icon: generateElevationLabelIcon(
+    //       Math.floor(elevation_unevennes.prominence),
+    //       "darkblue",
+    //       style.opacity + style.opacity / 3
+    //     ),
+    //   }).addTo(map);
+    //   polylines.push(marker);
+    // });
+
+    // polylineのアウトラインを描画
+    const outlineStyle2 = {
+      weight: 15,
+      color: "black",
+      opacity: style.opacity,
+    };
+
+    polylines.push(L.polyline(polyline, outlineStyle2).addTo(map));
+    const outlineStyle = {
+      weight: 11,
+      color: "white",
+      opacity: style.opacity,
+    };
+    polylines.push(L.polyline(polyline, outlineStyle).addTo(map));
+
+    // const startMarker = L.marker(polyline[0], { title: "開始位置" })
+    //   .addTo(map)
+    //   .bindPopup("開始位置");
+    // const endMarker = L.marker(polyline[polyline.length - 1], {
+    //   title: "終了位置",
+    // })
+    //   .addTo(map)
+    //   .bindPopup("終了位置");
+
     const colorByCornerLevel = {
-      weak: "orange",
-      medium: "green",
+      weak: "forestgreen",
+      medium: "orange",
       strong: "red",
     };
 
@@ -193,7 +229,7 @@ export const drawTargets = (value) => {
       const latlngs = rawPoints;
 
       const level = section.corner_level || "weak";
-      const color = colorByCornerLevel[level.toLowerCase()] || "gray";
+      const color = colorByCornerLevel[level.toLowerCase()] || "white";
 
       const line = L.polyline(latlngs, {
         ...style,
@@ -440,7 +476,7 @@ const generateStyle = (value) => {
   r = Math.round(255 * value);
 
   const generateWeight = (value) => {
-    return 8;
+    return 12;
     if (value < 0.3) return 3;
     if (value < 0.5) return 5;
     if (value < 0.7) return 7;
@@ -457,11 +493,11 @@ const generateStyle = (value) => {
     } else if (value < 0.7) {
       return 0.3;
     } else if (value < 0.8) {
-      return 0.4;
+      return 0.45;
     } else if (value < 0.9) {
-      return 0.5;
+      return 0.65;
     } else {
-      return 0.6;
+      return 0.85;
     }
   };
 
@@ -473,11 +509,29 @@ const generateStyle = (value) => {
   };
 };
 
-const generateLabelIcon = (value) => {
+const generateLabelIcon = (
+  value,
+  backgroundColor = "darkslateblue",
+  opacity = 1
+) => {
   const iconSize = [20, 20];
   const myCustomIcon = L.divIcon({
     className: "my-custom-icon", // カスタムスタイルのクラス名
-    html: `<div style="background-color: darkslateblue; border-radius: 50%; color: white;text-align: center;">${value}</div>`, // 表示したい数値
+    html: `<div style="background-color: ${backgroundColor}; border-radius: 50%; color: white;text-align: center; opacity: ${opacity};">${value}</div>`, // 表示したい数値
+    iconSize: iconSize, // アイコンのサイズ
+    iconAnchor: [iconSize[0] / 2, iconSize[1] / 2], // アイコンのアンカーポイント
+  });
+  return myCustomIcon;
+};
+
+const generateElevationLabelIcon = (value) => {
+  const iconSize = [20, 20];
+  const myCustomIcon = L.divIcon({
+    className: "my-custom-icon", // カスタムスタイルのクラス名
+    html: `<div style="color: black;text-align: center;text-shadow:1px 1px 0 #FFF, -1px -1px 0 #FFF,
+              -1px 1px 0 #FFF, 1px -1px 0 #FFF,
+              0px 1px 0 #FFF,  0-1px 0 #FFF,
+              -1px 0 0 #FFF, 1px 0 0 #FFF;">${value}</div>`, // 表示したい数値
     iconSize: iconSize, // アイコンのサイズ
     iconAnchor: [iconSize[0] / 2, iconSize[1] / 2], // アイコンのアンカーポイント
   });
