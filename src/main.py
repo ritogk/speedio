@@ -216,6 +216,14 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     )
     execution_timer_ins.stop()
 
+    # 上り下りのポイントを求める
+    execution_timer_ins.start("🏔️ calc elevation_unevenness")
+    elevation_unevenness = column_generater.elevation_unevenness.generate(
+        gdf_edges
+    )
+    gdf_edges["elevation_unevenness"] = elevation_unevenness
+    execution_timer_ins.stop()
+
     # 標高のバンプ数求める。
     execution_timer_ins.start("🏔️ calc elevation_unevenness_count")
     elevation_unevenness_count = column_generater.elevation_unevenness_count.generate(
@@ -424,6 +432,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "elevation_height",
         "elevation_smooth",
         "elevation_segment_list",
+        "elevation_unevenness",
         "elevation_unevenness_count",
         "angle_deltas",
         "score_elevation",
@@ -441,7 +450,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "street_view_url",
         "lanes",
         "turn_points",
-        # "road_section",
+        "road_section",
         "tunnel",
         "bridge",
         "steering_wheel_angle_info",

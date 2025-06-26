@@ -203,7 +203,7 @@ def merge_continuous_section_section(road_sections):
     return merged_lst
 
 # ステアリング角度を調整する
-def adjust_steering_angle(steering_angle, points, elevation, distance, coords) -> str |:
+def adjust_steering_angle(steering_angle, points, elevation, distance, coords) -> tuple[float, float]:
     # 標高の変化量を計算する。始点と終点を間の値を使っているためindex番号をずらす。
     point_st = points[1]
     point_end = points[-2]
@@ -226,18 +226,12 @@ def adjust_steering_angle(steering_angle, points, elevation, distance, coords) -
     adjusted_steering_angle = steering_angle * scale_to_range(elevation_height_and_distance_ratio)
     return adjusted_steering_angle, elevation_height
 
-WEEK_CORNER_ANGLE_MIN = STRAIGHT_ANGLE
-WEEK_CORNER_ANGLE_MAX = 45
-MEDIUM_CORNER_ANGLE_MIN = 45
-MEDIUM_CORNER_ANGLE_MAX = 80
-STRONG_CORNER_ANGLE_MIN = 80
-
 # コーナーレベルを計算する
-def generate_corner_level(max_steering_angle: int) -> Literal['none', 'week', 'medium', 'strong']:
+def generate_corner_level(max_steering_angle: int) -> Literal['none', 'weak', 'medium', 'strong']:
     if max_steering_angle < WEEK_CORNER_ANGLE_MIN:
         return 'none'
     elif WEEK_CORNER_ANGLE_MIN <= max_steering_angle < MEDIUM_CORNER_ANGLE_MIN:
-        return 'week'
+        return 'weak'
     elif MEDIUM_CORNER_ANGLE_MIN <= max_steering_angle < STRONG_CORNER_ANGLE_MIN:
         return 'medium'
     else:
