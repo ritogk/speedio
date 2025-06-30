@@ -59,6 +59,10 @@ export const generateHtml = (x, isSmartPhone) => {
               <td>score_corner_balance</td>
               <td>${truncateToTwoDecimals(x.score_corner_balance)}</td>
           </tr>
+          <tr style="background: mistyrose">
+              <td>score_center_line_section</td>
+              <td>${truncateToTwoDecimals(x.score_center_line_section)}</td>
+          </tr>
         </table>
 
         <span style="font-weight:bold;">child_score</span>

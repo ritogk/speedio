@@ -47,12 +47,12 @@ export class Location {
 
   @Column({
     type: 'boolean',
-    default: false,
+    nullable: true,
   })
   @ApiProperty({
-    description: '見通しが悪い事を表すフラグ',
+    description: 'センターラインの有無を表すフラグ',
   })
-  is_blind: boolean;
+  has_center_line?: boolean;
 
   @CreateDateColumn()
   @ApiProperty({ description: '作成日時' })

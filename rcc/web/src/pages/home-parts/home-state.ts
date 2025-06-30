@@ -112,7 +112,7 @@ const useHomeState = (): UseHomeStateType => {
   }
 
   // ジオメトリーをフィルタリングするフラグ
-  const isFilterGeometry = ref(true)
+  const isFilterGeometry = ref(false)
   const changeFilterGeometry = () => {
     isFilterGeometry.value = !isFilterGeometry.value
   }
