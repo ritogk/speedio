@@ -421,6 +421,9 @@ const calcScore = (targets) => {
       none: Number(document.getElementById("wightCornerNone").value),
     },
     corner_balance: Number(document.getElementById("wightCornerBalance").value),
+    center_line_section: Number(
+      document.getElementById("weightCenterLineSection").value
+    ),
   };
 
   // スコア計算
@@ -436,7 +439,8 @@ const calcScore = (targets) => {
           x.score_corner_medium * WEIGHTS.corner.medium +
           x.score_corner_strong * WEIGHTS.corner.strong +
           x.score_corner_none * WEIGHTS.corner.none) +
-        x.score_corner_balance * WEIGHTS.corner_balance) /
+        x.score_corner_balance * WEIGHTS.corner_balance +
+        x.score_center_line_section * WEIGHTS.center_line_section) /
       Object.keys(WEIGHTS).length;
     return x;
   });

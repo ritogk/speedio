@@ -16,6 +16,7 @@ WEIGHTS = {
         "corner_none": 1.3
     },
     "corner_balance": 1,
+    "center_line_section": 1.3,
 }
 
 
@@ -35,6 +36,7 @@ def generate(gdf: GeoDataFrame) -> Series:
                 + x["score_corner_none"] * WEIGHTS["corner"]["corner_none"]
             )
             + x["score_corner_balance"] * WEIGHTS["corner_balance"]
+            + x["score_center_line_section"] * WEIGHTS["center_line_section"]
         ) / len(WEIGHTS)
 
     series = gdf.apply(func, axis=1)

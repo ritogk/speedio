@@ -20,8 +20,7 @@ export class CreateLocationDto {
   @IsEnum(RoadWidthType)
   road_width_type: RoadWidthType;
 
-  @ApiProperty({ description: 'ブラインドありを表すフラグ' })
-  @IsNotEmpty()
+  @ApiProperty({ description: 'センターラインの有無' })
   @IsBoolean()
-  is_blind: boolean;
+  has_center_line: boolean;
 }

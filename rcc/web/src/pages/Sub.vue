@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide, computed, ref } from 'vue'
+import { provide, computed, ref, watch } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
 import {
   useHomeState,
@@ -46,6 +46,19 @@ const initGoogleService = async (polyline: PointType[], point: PointType): Promi
     }
   })
 }
+
+const selectedLocation = computed(() => {
+  if (!locations.value) return null
+  if (!selectedGeometryPoint.value) return null
+  return (
+    locations.value.find((location) => {
+      return (
+        location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
+        location.point.coordinates[0] === selectedGeometryPoint.value.longitude
+      )
+    }) ?? null
+  )
+})
 
 const homeState = useHomeState()
 provide(UseHomeStateKey, homeState)
@@ -269,26 +282,29 @@ const findClosestPointIndex = (points: PointType[], targetXY: PointType): number
 const points = computed(() => {
   // selectedGeometryとdata.valueをもとに生成
   return selectedGeometry.value.map((point) => {
-    const check =
-      locations.value?.some((location) => {
-        if (
-          location.point.coordinates[1] === point.latitude &&
-          location.point.coordinates[0] === point.longitude
-        ) {
-          point.roadWidthType = location.road_width_type
-          return true
-        }
-        return false
-      }) ?? false
+    const location = locations.value?.find((location) => {
+      return (
+        location.point.coordinates[1] === point.latitude &&
+        location.point.coordinates[0] === point.longitude
+      )
+    })
+    const roadWidthType = location?.road_width_type
+    const hasCenterLine = location?.has_center_line
 
     return {
-      check: check,
-      label: check ? '済' : '未',
+      check: location,
+      label: location ? '済' : '未',
       latitude: point.latitude,
       longitude: point.longitude,
-      roadWidthType: point.roadWidthType
+      roadWidthType: roadWidthType,
+      hasCenterLine: hasCenterLine
     }
   })
+})
+
+const currentPoint = computed(() => {
+  // 現在のジオメトリのポイントを取得
+  return points.value[selectedGeometryPointIndex.value]
 })
 
 // 対象ジオメトリの評価済の座標数数
@@ -326,7 +342,7 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
       id: location.id,
       location: {
         road_width_type: selectedRoadType.value,
-        is_blind: false
+        has_center_line: false
       }
     })
   } else {
@@ -335,7 +351,48 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
       latitude: selectedGeometryPoint.value.latitude,
       longitude: selectedGeometryPoint.value.longitude,
       road_width_type: selectedRoadType.value,
-      is_blind: false
+      has_center_line: false
+    })
+  }
+
+  // 最後のポイントの場合はジオメトリーを切り替える
+  if (selectedGeometryPointIndex.value + 2 === selectedGeometry.value.length) {
+    handleGeometryMove(selectedGeometryIndex.value + 1)
+  } else {
+    handlePointMove(selectedGeometryPointIndex.value + 1)
+  }
+  selectedBeforeRoadType.value = selectedRoadType.value
+  selectedRoadType.value = 'ONE_LANE'
+}
+
+/**
+ * センターラインの更新ハンドラー
+ * @param roadWidthType
+ */
+const handleCenterlineClick = async (hasCenterLine: boolean) => {
+  if (!locations.value) return
+  // locationsに含まれる座標の場合は更新
+  const location = locations.value.find((location) => {
+    return (
+      location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
+      location.point.coordinates[0] === selectedGeometryPoint.value.longitude
+    )
+  })
+  if (location) {
+    // 更新
+    await patchLocations.mutateAsync({
+      id: location.id,
+      location: {
+        has_center_line: hasCenterLine
+      }
+    })
+  } else {
+    // 新規
+    await postLocations.mutateAsync({
+      latitude: selectedGeometryPoint.value.latitude,
+      longitude: selectedGeometryPoint.value.longitude,
+      road_width_type: selectedGeometryPoint.value.roadWidthType,
+      has_center_line: hasCenterLine
     })
   }
 
@@ -363,15 +420,17 @@ const handleChangeFilterGeometryClick = () => {
 //   e.preventDefault()
 // })
 onKeyStroke(['z'], (e) => {
-  handleRoadTypeClick('TWO_LANE')
+  handleCenterlineClick(true)
+  // handleRoadTypeClick('TWO_LANE')
   e.preventDefault()
 })
 onKeyStroke(['x'], (e) => {
-  handleRoadTypeClick('ONE_LANE_SPACIOUS')
+  handleCenterlineClick(false)
+  // handleRoadTypeClick('ONE_LANE_SPACIOUS')
   e.preventDefault()
 })
 onKeyStroke(['c'], (e) => {
-  handleRoadTypeClick('ONE_LANE')
+  // handleRoadTypeClick('ONE_LANE')
   e.preventDefault()
 })
 
@@ -433,44 +492,69 @@ const geometryPointPageNoJump = ref(1)
       <div id="pano" style="flex: 5; background-color: gray; height: 1000px">street_view_area</div>
       <div style="width: 100%">
         <div class="button-container">
-          <button
-            class="button-style"
-            data-tooltip="2車線かつ路肩あり"
-            style="background: palegreen"
-            @click="handleRoadTypeClick('TWO_LANE_SHOULDER')"
-            hidden
-          >
-            <span v-show="selectedRoadType === 'TWO_LANE_SHOULDER'" style="color: red">★</span>
-            1
-          </button>
-          <button
-            class="button-style"
-            data-tooltip="2車線かつ路肩なし"
-            style="background: palegreen"
-            @click="handleRoadTypeClick('TWO_LANE')"
-          >
-            <span v-show="selectedRoadType === 'TWO_LANE'" style="color: red">★</span>
-            2
-          </button>
-          <button
-            class="button-style"
-            data-tooltip="1車線かつ2台が余裕を持って通行可能"
-            style="background: bisque"
-            @click="handleRoadTypeClick('ONE_LANE_SPACIOUS')"
-          >
-            <span v-show="selectedRoadType === 'ONE_LANE_SPACIOUS'" style="color: red">★</span>
-            3
-          </button>
-          <button
-            class="button-style"
-            data-tooltip="1車線かつ1台のみ通行可能"
-            style="background: bisque"
-            @click="handleRoadTypeClick('ONE_LANE')"
-          >
-            <span v-show="selectedRoadType === 'ONE_LANE'" style="color: red">★</span>
-            4
-          </button>
-          -
+          <!-- 道幅 -->
+          <span style="display: none">
+            <button
+              class="button-style"
+              data-tooltip="2車線かつ路肩あり"
+              style="background: palegreen"
+              @click="handleRoadTypeClick('TWO_LANE_SHOULDER')"
+              hidden
+            >
+              <span v-show="selectedRoadType === 'TWO_LANE_SHOULDER'" style="color: red">★</span>
+              1
+            </button>
+            <button
+              class="button-style"
+              data-tooltip="2車線かつ路肩なし"
+              style="background: palegreen"
+              @click="handleRoadTypeClick('TWO_LANE')"
+            >
+              <span v-show="selectedRoadType === 'TWO_LANE'" style="color: red">★</span>
+              2
+            </button>
+            <button
+              class="button-style"
+              data-tooltip="1車線かつ2台が余裕を持って通行可能"
+              style="background: bisque"
+              @click="handleRoadTypeClick('ONE_LANE_SPACIOUS')"
+            >
+              <span v-show="selectedRoadType === 'ONE_LANE_SPACIOUS'" style="color: red">★</span>
+              3
+            </button>
+            <button
+              class="button-style"
+              data-tooltip="1車線かつ1台のみ通行可能"
+              style="background: bisque"
+              @click="handleRoadTypeClick('ONE_LANE')"
+            >
+              <span v-show="selectedRoadType === 'ONE_LANE'" style="color: red">★</span>
+              4
+            </button>
+            -
+          </span>
+          <!-- center-line-->
+          <div style="background: red" v-show="currentPoint?.roadWidthType == 'TWO_LANE'">--</div>
+          <span>
+            <button
+              class="button-style"
+              data-tooltip="center-lineあり"
+              style="background: bisque"
+              @click="handleCenterlineClick(true)"
+            >
+              <span v-show="selectedLocation?.has_center_line" style="color: red">★</span>
+              yes
+            </button>
+            <button
+              class="button-style"
+              data-tooltip="center-lineなし"
+              style="background: bisque"
+              @click="handleCenterlineClick(false)"
+            >
+              <span v-show="!selectedLocation?.has_center_line" style="color: red">★</span>
+              no
+            </button>
+          </span>
           <button
             class="button-style"
             data-tooltip="戻る"
@@ -487,6 +571,7 @@ const geometryPointPageNoJump = ref(1)
           >
             ▶
           </button>
+
           <span style="margin-left: 10px"
             >{{ selectedGeometryPointIndex + 1 }}/{{ selectedGeometry.length }}</span
           >
@@ -504,6 +589,7 @@ const geometryPointPageNoJump = ref(1)
             <th>DB</th>
             <th>地理座標</th>
             <th>路面状態</th>
+            <th>ｾﾝﾀｰﾗｲﾝ</th>
           </tr>
         </thead>
         <tbody>
@@ -525,7 +611,14 @@ const geometryPointPageNoJump = ref(1)
               {{ point.label }}
             </td>
             <td>{{ point.latitude }}, {{ point.longitude }}</td>
-            <td>{{ point.roadWidthType }}</td>
+            <td
+              :style="{
+                backgroundColor: point.roadWidthType !== 'TWO_LANE' ? 'gray' : 'transparent'
+              }"
+            >
+              {{ point.roadWidthType }}
+            </td>
+            <td>{{ point.hasCenterLine }}</td>
           </tr>
         </tbody>
       </table>
