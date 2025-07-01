@@ -9,5 +9,6 @@ export const generateGoogleMapUrl = (geometry_list) => {
   const endLng = endPoint[1];
   const centerLat = centerPoint[0];
   const centerLng = centerPoint[1];
-  return `https://www.google.co.jp/maps/dir/My+Location/${startLat},${startLng}/${centerLat},${centerLng}/${endLat},${endLng}`;
+  return `https://www.google.co.jp/maps/dir/${startLat},${startLng}/${centerLat},${centerLng}/${endLat},${endLng}`;
+  // return `https://www.google.co.jp/maps/dir/My+Location/${startLat},${startLng}/${centerLat},${centerLng}/${endLat},${endLng}`;
 };

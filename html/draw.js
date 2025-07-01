@@ -234,88 +234,55 @@ export const drawTargets = (value) => {
       const line = L.polyline(latlngs, {
         ...style,
         color,
-      })
-        .bindPopup(generateHtml(x, isSmartPhone), {
-          maxWidth: 500,
-        })
-        .addTo(map);
-
-      line.on("popupopen", () => {
-        console.log(x);
-
-        document
-          .getElementById("buttonElevationGraph")
-          ?.addEventListener("click", () => {
-            drawGraph(x.elevation_segment_list);
-          });
-
-        document
-          .getElementById("button3D")
-          ?.addEventListener("click", async () => {
-            toggleLoading();
-            await draw3D(
-              x.geometry_meter_list,
-              x.elevation_smooth,
-              x.terrain_elevation_file_path
-            );
-            toggleLoading();
-          });
-
-        document
-          .getElementById("button3dDriverView")
-          ?.addEventListener("click", async () => {
-            toggleLoading();
-            await draw3dDriverView(
-              x.geometry_meter_list,
-              x.elevation_smooth,
-              x.terrain_elevation_file_path
-            );
-            toggleLoading();
-          });
-      });
-
+      }).addTo(map);
       polylines.push(line);
     });
 
-    // const line = L.polyline(polyline, style)
-    //   .bindPopup(generateHtml(x, isSmartPhone), {
-    //     maxWidth: 1100,
-    //   })
-    //   .addTo(map);
-    // line.on("popupopen", (e) => {
-    //   console.log(x);
-    //   // 標高グラフ
-    //   document
-    //     .getElementById("buttonElevationGraph")
-    //     .addEventListener("click", () => {
-    //       drawGraph(x.elevation_segment_list);
-    //     });
-    //   // 3D通常ビュー
-    //   document
-    //     .getElementById("button3D")
-    //     .addEventListener("click", async () => {
-    //       toggleLoading();
-    //       await draw3D(
-    //         x.geometry_meter_list,
-    //         x.elevation_smooth,
-    //         x.terrain_elevation_file_path
-    //       );
-    //       toggleLoading();
-    //     });
-    //   // 3Dドライバービュー
-    //   document
-    //     .getElementById("button3dDriverView")
-    //     .addEventListener("click", async () => {
-    //       toggleLoading();
-    //       await draw3dDriverView(
-    //         x.geometry_meter_list,
-    //         x.elevation_smooth,
-    //         x.terrain_elevation_file_path
-    //       );
-    //       toggleLoading();
-    //     });
-    // });
-    // polylines.push(line);
+    // ポップアップopen判定用
+    polylines.push(
+      L.polyline(polyline, {
+        weight: 16,
+        color: "white",
+        opacity: 0,
+      })
+        .addTo(map)
+        .bindPopup(generateHtml(x, isSmartPhone), {
+          maxWidth: 500,
+        })
+        .on("popupopen", () => {
+          console.log(x);
+
+          document
+            .getElementById("buttonElevationGraph")
+            ?.addEventListener("click", () => {
+              drawGraph(x.elevation_segment_list);
+            });
+
+          document
+            .getElementById("button3D")
+            ?.addEventListener("click", async () => {
+              toggleLoading();
+              await draw3D(
+                x.geometry_meter_list,
+                x.elevation_smooth,
+                x.terrain_elevation_file_path
+              );
+              toggleLoading();
+            });
+
+          document
+            .getElementById("button3dDriverView")
+            ?.addEventListener("click", async () => {
+              toggleLoading();
+              await draw3dDriverView(
+                x.geometry_meter_list,
+                x.elevation_smooth,
+                x.terrain_elevation_file_path
+              );
+              toggleLoading();
+            });
+        })
+    );
   });
 
   // // 曲がり角にマーカーを表示
@@ -345,7 +312,7 @@ export const drawTargets = (value) => {
   // 上位20件の中心座標にランクを表示
   const ranks = targets
     .sort((a, b) => b.score_normalization - a.score_normalization)
-    .slice(0, 10);
+    .slice(0, 20);
   ranks.forEach((x, index) => {
     const center = Math.ceil(x.geometry_list.length / 2);
     const marker = L.marker(x.geometry_list[center], {
