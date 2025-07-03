@@ -312,7 +312,7 @@ export const drawTargets = (value) => {
   // 上位20件の中心座標にランクを表示
   const ranks = targets
     .sort((a, b) => b.score_normalization - a.score_normalization)
-    .slice(0, 20);
+    .slice(0, 10);
   ranks.forEach((x, index) => {
     const center = Math.ceil(x.geometry_list.length / 2);
     const marker = L.marker(x.geometry_list[center], {
