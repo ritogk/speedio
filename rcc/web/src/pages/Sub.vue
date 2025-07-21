@@ -307,17 +307,23 @@ const currentPoint = computed(() => {
   return points.value[selectedGeometryPointIndex.value]
 })
 
-// 対象ジオメトリの評価済の座標数数
+// locationsの座標をキーにしたMapを作成
+const locationMap = computed(() => {
+  if (!locations.value) return new Map()
+  return new Map(
+    locations.value.map(loc => [
+      `${loc.point.coordinates[1]},${loc.point.coordinates[0]}`,
+      true
+    ])
+  )
+})
+
+// 対象ジオメトリの評価済の座標数数（Mapで高速化）
 const selectedGeometryCheckCount = computed(() => {
-  return filteredGeometries.value[selectedGeometryIndex.value].filter((point) => {
-    if (!locations.value) return false
-    return locations.value.some((location) => {
-      return (
-        point.latitude === location.point.coordinates[1] &&
-        point.longitude === location.point.coordinates[0]
-      )
-    })
-  }).length
+  const map = locationMap.value
+  return filteredGeometries.value[selectedGeometryIndex.value].filter(point =>
+    map.has(`${point.latitude},${point.longitude}`)
+  ).length
 })
 
 const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
