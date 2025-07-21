@@ -221,86 +221,64 @@ export const draw3D = async (
     baseLon,
     baseElev
   ) => {
-    // // グリッドの座標と高さデータ（多次元配列: x, y, z）
-    // const baseLat = terrainData[0][0][0]; // 基準の緯度
-    // const baseLon = terrainData[0][0][1]; // 基準の経度
-    // const baseElev = terrainData[0][0][2]; // 基準の標高
-
-    // gridDataを基に各座標を基準からの相対的な座標に変換し、Vector3オブジェクトを作成
-    const gridData = terrainData.map((data) => {
-      // console.log(data);
-      return data.map((d) => {
-        // console.log(d);
-        const lat = d[0]; // 緯度
-        const lon = d[1]; // 経度
-        const elev = d[2]; // 標高
-
-        // 基準座標に対する相対座標を計算
-        const x = (lon - baseLon) / 10; // 経度の差をX座標として正規化
-        const y = (lat - baseLat) / 10; // 緯度の差をY座標として正規化
-        const z = (elev - baseElev) / 6; // 標高の差をZ座標として正規化
-
+    // 頂点リスト作成
+    const gridData = terrainData.map((data) =>
+      data.map((d) => {
+        const lat = d[0];
+        const lon = d[1];
+        const elev = d[2];
+        const x = (lon - baseLon) / 10;
+        const y = (lat - baseLat) / 10;
+        const z = (elev - baseElev) / 6;
         return [x, y, z];
-      });
-    });
-    // ジオメトリの作成
-    const geometry = new THREE.BufferGeometry();
+      })
+    );
+
+    const width = gridData[0].length;
+    const height = gridData.length;
+
+    // 1次元配列に変換
     const vertices = [];
-
-    // 頂点データを取得して三角形を作成
-    for (let y = 0; y < gridData.length - 1; y++) {
-      for (let x = 0; x < gridData[y].length - 1; x++) {
-        // 2つの三角形で1つの四角形を構成
-        const v0 = gridData[y][x];
-        const v1 = gridData[y + 1][x];
-        const v2 = gridData[y][x + 1];
-        const v3 = gridData[y + 1][x + 1];
-
-        // 1つ目の三角形
-        vertices.push(...v0);
-        vertices.push(...v1);
-        vertices.push(...v2);
-
-        // 2つ目の三角形
-        vertices.push(...v2);
-        vertices.push(...v1);
-        vertices.push(...v3);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        vertices.push(...gridData[y][x]);
       }
     }
 
+    // インデックス配列作成
+    const indices = [];
+    for (let y = 0; y < height - 1; y++) {
+      for (let x = 0; x < width - 1; x++) {
+        const i0 = y * width + x;
+        const i1 = (y + 1) * width + x;
+        const i2 = y * width + (x + 1);
+        const i3 = (y + 1) * width + (x + 1);
+
+        // 1つ目の三角形
+        indices.push(i0, i1, i2);
+        // 2つ目の三角形
+        indices.push(i2, i1, i3);
+      }
+    }
+
+    const geometry = new THREE.BufferGeometry();
     geometry.setAttribute(
       "position",
       new THREE.BufferAttribute(new Float32Array(vertices), 3)
     );
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
 
-    // 中心座標を計算 (X, Y, Zの範囲を取得して中心を計算)
-    geometry.computeBoundingBox();
-    const boundingBox = geometry.boundingBox;
-    const centerX = (boundingBox.max.x + boundingBox.min.x) / 2;
-    const centerY = (boundingBox.max.y + boundingBox.min.y) / 2;
-    const centerZ = (boundingBox.max.z + boundingBox.min.z) / 2;
-
-    // // ジオメトリの中心をシーンの中心に移動
-    // geometry.translate(-centerX, -centerY, -centerZ);
-
-    // 面の表面を表すベクトルを自動計算
-    geometry.computeVertexNormals(); // 法線を自動計算
-
-    // マテリアルを作成
     const material = new THREE.MeshStandardMaterial({
-      // side: THREE.DoubleSide,
-      color: 0x00ff00, // 緑色
-      roughness: 0.8, // ラフネス (0: つるつる, 1: ザラザラ)
-      metalness: 0.5, // 金属度 (0: 非金属, 1: 金属)
-      latShading: false, // スムースシェーディングを有効にする
-      transparent: true, // 透明を有効化
+      color: 0x00ff00,
+      roughness: 0.8,
+      metalness: 0.5,
+      flatShading: false, // ← 修正
+      transparent: true,
       opacity: 0.6,
     });
 
-    // メッシュを作成し、シーンに追加
     const mesh = new THREE.Mesh(geometry, material);
-    // mesh.receiveShadow = true; // 影を落とす
-
     return mesh;
   };
 
@@ -472,6 +450,8 @@ export const draw3D = async (
     baseLon,
     baseElev
   );
+  // boundingBoxを計算
+  terrainMesh.geometry.computeBoundingBox();
   group.add(terrainMesh);
 
   // 道のメッシュを作成
