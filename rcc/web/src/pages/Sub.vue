@@ -14,6 +14,7 @@ import { usePatchLocations } from '@/core/api/use-patch-locations'
 import { usePointList } from '@/composables/usePointList'
 import { useShortcuts } from '@/composables/useShortcuts'
 import { useGoogleMap } from '@/composables/useGoogleMap'
+import { useGeometry } from '@/composables/useGeometry'
 const apiKey = import.meta.env.VITE_API_KEY
 
 // useGoogleMap composable を利用
@@ -56,23 +57,28 @@ const {
   loadGeometries,
   isLoaded,
   originalGeometries,
-  filteredGeometries,
-  selectedGeometry,
-  selectedGeometryIndex,
-  changeSelectedGeometry,
-  changeFilterGeometry
+  geometries
 } = homeState
+
+const {
+  changeFilterGeometry,
+  filteredGeometries,
+  selectedGeometryIndex,
+  selectedGeometry,
+  changeSelectedGeometry
+} = useGeometry(geometries)
 
 /**
  * csv読込
  * @param e
- */
-const loadCsv = async (e: Event) => {
+ */ 
+const handleLoadCsv = async (e: Event) => {
   const target = e.target as HTMLInputElement
   const fileList = target.files as FileList
   if (!fileList.length) return
   const file = target.files?.[0]
   await loadGeometries(file)
+  changeSelectedGeometry(0)
 
   if (map === null && panorama === null && polyline === null) {
     await initGoogleService(
@@ -429,7 +435,7 @@ useShortcuts({
         >
           change
         </button>
-        <input type="file" @change="loadCsv" />
+        <input type="file" @change="handleLoadCsv" />
       </div>
     </div>
   </div>
