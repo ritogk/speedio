@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { provide, computed, ref, watch } from 'vue'
+import { provide, computed, ref, onMounted } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
 import {
   useHomeState,
   UseHomeStateKey,
-  type PointType,
   type RoadWidthType
 } from '@/pages/home-parts/useCsv'
 import { useGetLocations } from '@/core/api/use-get-locations'
@@ -29,6 +28,11 @@ const {
   getCheckNextPoint,
   calculateHeading
 } = useGoogleMap(apiKey)
+
+onMounted(async () => {
+  // Googleインスタンスのみ初期化（座標はダミー）
+  await initGoogleService([], { latitude: 0, longitude: 0, roadWidthType: 'ONE_LANE' })
+})
 
 const { data: locations, setQueryParams } = useGetLocations()
 const postLocations = usePostLocations()
@@ -80,12 +84,6 @@ const handleLoadCsv = async (e: Event) => {
   changeSelectedGeometry(0)
   changeSelectedGeometryPoint(0)
 
-  if (map === null && panorama === null && polyline === null) {
-    await initGoogleService(
-      filteredGeometries.value[selectedGeometryIndex.value],
-      selectedGeometryPoint.value
-    )
-  }
   const nextPoint = getCheckNextPoint(selectedGeometryPoint.value, originalGeometries.value)
   const heading = calculateHeading(selectedGeometryPoint.value, nextPoint)
   updatePanorama(selectedGeometryPoint.value, heading)
