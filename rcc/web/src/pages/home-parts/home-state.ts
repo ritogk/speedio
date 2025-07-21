@@ -51,7 +51,7 @@ const useHomeState = (): UseHomeStateType => {
             geometry_check_list: string //[number, number][]
             highway: string
             length: string
-            locations: string
+            locations_json: string
           }>
         ) => {
           originalGeometries.value = results.data
@@ -79,11 +79,13 @@ const useHomeState = (): UseHomeStateType => {
             })
             .map((geometry) => {
               // チェック済の情報をparse
-              const locations = JSON.parse(geometry.locations.replace(/'/g, '"')) as {
+              const locations = JSON.parse(geometry.locations_json.replace(/'/g, '"')) as {
                 latitude: number
                 longitude: number
                 road_condition: string
               }[]
+
+              // ✨️geometry_check_listをlocationsにかえればいいのでは?
               const geometry_list = JSON.parse(geometry.geometry_check_list)
               return geometry_list.map((point: any) => {
                 return {
@@ -112,7 +114,7 @@ const useHomeState = (): UseHomeStateType => {
   }
 
   // ジオメトリーをフィルタリングするフラグ
-  const isFilterGeometry = ref(false)
+  const isFilterGeometry = ref(true)
   const changeFilterGeometry = () => {
     isFilterGeometry.value = !isFilterGeometry.value
   }
