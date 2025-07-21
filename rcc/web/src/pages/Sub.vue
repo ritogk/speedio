@@ -13,40 +13,26 @@ import { usePatchLocations } from '@/core/api/use-patch-locations'
 
 import { usePointList } from '@/composables/usePointList'
 import { useShortcuts } from '@/composables/useShortcuts'
+import { useGoogleMap } from '@/composables/useGoogleMap'
 const apiKey = import.meta.env.VITE_API_KEY
 
-let map: google.maps.Map | null = null
-let marker: google.maps.Marker | null = null
-let polyline: google.maps.Polyline | null = null
-let panorama: google.maps.StreetViewPanorama | null = null
+// useGoogleMap composable を利用
+const {
+  map,
+  polyline,
+  panorama,
+  initGoogleService,
+  updateMap,
+  updateMapMarker,
+  updatePanorama,
+  getCheckNextPoint,
+  calculateHeading,
+  findClosestPointIndex
+} = useGoogleMap(apiKey)
 
 const { data: locations, setQueryParams } = useGetLocations()
 const postLocations = usePostLocations()
 const patchLocations = usePatchLocations()
-
-const initGoogleService = async (polyline: PointType[], point: PointType): Promise<void> => {
-  const loader = new Loader({
-    apiKey: apiKey,
-    version: 'weekly',
-    libraries: ['places']
-  })
-  // このへんの処理で初期値をセットしているが先の処理で更新しているので消したい。
-  const MapsLibrary = await loader.importLibrary('maps')
-  map = new MapsLibrary.Map(document.getElementById('map') as HTMLElement, {
-    center: { lat: point.latitude, lng: point.longitude },
-    zoom: 13
-  })
-  const resultPanorama = await loader.importLibrary('streetView')
-  const nextIndex = findClosestPointIndex(polyline, point) + 1
-  const nextPoint = filteredGeometries.value[selectedGeometryIndex.value][nextIndex]
-  panorama = new resultPanorama.StreetViewPanorama(document.getElementById('pano') as HTMLElement, {
-    position: { lat: point.latitude, lng: point.longitude },
-    pov: {
-      heading: calculateHeading(selectedGeometryPoint, nextPoint),
-      pitch: 10
-    }
-  })
-}
 
 const selectedLocation = computed(() => {
   if (!locations.value) return null
@@ -97,7 +83,9 @@ const loadCsv = async (e: Event) => {
       selectedGeometryPoint.value
     )
   }
-  updatePanorama(selectedGeometryPoint.value)
+  const nextPoint = getCheckNextPoint(selectedGeometryPoint.value, originalGeometries.value)
+  const heading = calculateHeading(selectedGeometryPoint.value, nextPoint)
+  updatePanorama(selectedGeometryPoint.value, heading)
   updateMap(selectedGeometry.value)
   updateMapMarker(selectedGeometryPoint.value)
 }
@@ -109,7 +97,9 @@ const loadCsv = async (e: Event) => {
 const handleGeometryMove = (index: number) => {
   changeSelectedGeometry(index)
   changeSelectedGeometryPoint(1)
-  updatePanorama(selectedGeometryPoint.value)
+  const nextPoint = getCheckNextPoint(selectedGeometryPoint.value, originalGeometries.value)
+  const heading = calculateHeading(selectedGeometryPoint.value, nextPoint)
+  updatePanorama(selectedGeometryPoint.value, heading)
   updateMap(selectedGeometry.value)
   updateMapMarker(selectedGeometryPoint.value)
 
@@ -142,143 +132,10 @@ const handleGeometryMove = (index: number) => {
  */
 const handlePointMove = (index: number) => {
   changeSelectedGeometryPoint(index)
-  updatePanorama(selectedGeometryPoint.value)
+  const nextPoint = getCheckNextPoint(selectedGeometryPoint.value, originalGeometries.value)
+  const heading = calculateHeading(selectedGeometryPoint.value, nextPoint)
+  updatePanorama(selectedGeometryPoint.value, heading)
   updateMapMarker(selectedGeometryPoint.value)
-}
-
-let oldPano = ''
-/**
- * street-viewの更新
- */
-const updatePanorama = (selectedGeometryPoint: PointType) => {
-  // チェック座標より１点先の座標を取得する。
-  const nextPoint = getCheckNextPoint(selectedGeometryPoint)
-
-  if (panorama) {
-    panorama.setPosition({
-      lat: selectedGeometryPoint.latitude,
-      lng: selectedGeometryPoint.longitude
-    })
-
-    // 直前の画像と変わったかどうかを判定
-    if (oldPano === panorama.getLocation().pano) {
-      alert('画像がありません。')
-      return
-    }
-    oldPano = panorama.getLocation().pano
-
-    panorama.setPov({
-      heading: calculateHeading(selectedGeometryPoint, nextPoint),
-      pitch: 10
-    })
-  }
-}
-
-/**
- * ストリートビューの視点用。チェック用座標の１点先の座標を取得する。
- * @param selectedGeometryPoint
- */
-const getCheckNextPoint = (selectedGeometryPoint: PointType) => {
-  // チェック座標より１点先の座標を取得する。
-  const originalGeometry = originalGeometries.value.find((geometry) => {
-    return geometry.some((point) => {
-      if (
-        point.latitude === selectedGeometryPoint.latitude &&
-        point.longitude === selectedGeometryPoint.longitude
-      ) {
-        return true
-      }
-      return false
-    })
-  })
-  if (!originalGeometry) return
-
-  const originalGeometryPointIndex = originalGeometry.find((point) => {
-    if (
-      point.latitude === selectedGeometryPoint.latitude &&
-      point.longitude === selectedGeometryPoint.longitude
-    ) {
-      return true
-    }
-    return false
-  })
-  if (!originalGeometryPointIndex) return
-
-  const nextIndex = findClosestPointIndex(originalGeometry, originalGeometryPointIndex) + 1
-  const nextPoint = originalGeometry[nextIndex]
-  return nextPoint
-}
-
-/**
- * ポリラインの更新
- */
-const updateMap = (geometry: PointType[]) => {
-  // ポリライン更新
-  polyline?.setMap(null)
-  polyline = new google.maps.Polyline({
-    path: geometry.map((point) => {
-      return { lat: point.latitude, lng: point.longitude }
-    }),
-    geodesic: true,
-    strokeColor: '#FF0000',
-    strokeOpacity: 1.0,
-    strokeWeight: 2
-  })
-  polyline.setMap(map)
-
-  // 中央座標の更新
-  map?.setCenter({
-    lat: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].latitude,
-    lng: selectedGeometry.value[Math.floor(selectedGeometry.value.length / 2)].longitude
-  })
-}
-
-/**
- * マーカーの更新
- * @param point
- */
-const updateMapMarker = (point: PointType) => {
-  marker?.setMap(null)
-  marker = new google.maps.Marker({
-    position: {
-      lat: point.latitude,
-      lng: point.longitude
-    },
-    map: map,
-    title: 'Hello World!'
-  })
-}
-
-/**
- * 座標間の視点を計算
- * @param point1
- * @param point2
- */
-const calculateHeading = (point1: any, point2: any): number => {
-  if (!point1 || !point2) return 0
-  const lat1 = (point1.latitude * Math.PI) / 180
-  const lat2 = (point2.latitude * Math.PI) / 180
-  const diffLong = ((point2.longitude - point1.longitude) * Math.PI) / 180
-
-  const x = Math.sin(diffLong) * Math.cos(lat2)
-  const y = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(diffLong)
-
-  return ((Math.atan2(x, y) * 180) / Math.PI + 360) % 360
-}
-
-/**
- * 指定座標に最も近いポイントのインデックスを取得
- * @param points
- * @param targetXY
- */
-const findClosestPointIndex = (points: PointType[], targetXY: PointType): number => {
-  const nextIndex = points.findIndex((point) => {
-    if (point.latitude === targetXY.latitude && point.longitude === targetXY.longitude) {
-      return true
-    }
-    return false
-  })
-  return nextIndex
 }
 
 // pointlist関連のロジックをusePointListで取得
