@@ -11,7 +11,8 @@ import { useGetLocations } from '@/core/api/use-get-locations'
 import { usePostLocations } from '@/core/api/use-post-locations'
 import { usePatchLocations } from '@/core/api/use-patch-locations'
 
-import { onKeyStroke } from '@vueuse/core'
+import { usePointList } from '@/composables/usePointList'
+import { useShortcuts } from '@/composables/useShortcuts'
 const apiKey = import.meta.env.VITE_API_KEY
 
 let map: google.maps.Map | null = null
@@ -62,6 +63,8 @@ const selectedLocation = computed(() => {
 
 const homeState = useHomeState()
 provide(UseHomeStateKey, homeState)
+
+const geometryPointPageNoJump = ref(1)
 
 const {
   loadGeometries,
@@ -278,53 +281,18 @@ const findClosestPointIndex = (points: PointType[], targetXY: PointType): number
   return nextIndex
 }
 
-// 一覧に表示するデータ
-const points = computed(() => {
-  // selectedGeometryとdata.valueをもとに生成
-  return selectedGeometry.value.map((point) => {
-    const location = locations.value?.find((location) => {
-      return (
-        location.point.coordinates[1] === point.latitude &&
-        location.point.coordinates[0] === point.longitude
-      )
-    })
-    const roadWidthType = location?.road_width_type
-    const hasCenterLine = location?.has_center_line
-
-    return {
-      check: location,
-      label: location ? '済' : '未',
-      latitude: point.latitude,
-      longitude: point.longitude,
-      roadWidthType: roadWidthType,
-      hasCenterLine: hasCenterLine
-    }
-  })
-})
-
-const currentPoint = computed(() => {
-  // 現在のジオメトリのポイントを取得
-  return points.value[selectedGeometryPointIndex.value]
-})
-
-// locationsの座標をキーにしたMapを作成
-const locationMap = computed(() => {
-  if (!locations.value) return new Map()
-  return new Map(
-    locations.value.map(loc => [
-      `${loc.point.coordinates[1]},${loc.point.coordinates[0]}`,
-      true
-    ])
-  )
-})
-
-// 対象ジオメトリの評価済の座標数数（Mapで高速化）
-const selectedGeometryCheckCount = computed(() => {
-  const map = locationMap.value
-  return filteredGeometries.value[selectedGeometryIndex.value].filter(point =>
-    map.has(`${point.latitude},${point.longitude}`)
-  ).length
-})
+// pointlist関連のロジックをusePointListで取得
+const {
+  points,
+  currentPoint,
+  selectedGeometryCheckCount
+} = usePointList(
+  selectedGeometry,
+  locations,
+  selectedGeometryPointIndex,
+  filteredGeometries,
+  selectedGeometryIndex
+)
 
 const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
 const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
@@ -421,75 +389,17 @@ const handleChangeFilterGeometryClick = () => {
   handleGeometryMove(0)
 }
 
-// onKeyStroke(['z'], (e) => {
-//   handleRoadTypeClick('TWO_LANE_SHOULDER')
-//   e.preventDefault()
-// })
-onKeyStroke(['z'], (e) => {
-  handleCenterlineClick(true)
-  // handleRoadTypeClick('TWO_LANE')
-  e.preventDefault()
+useShortcuts({
+  handleCenterlineClick,
+  handleRoadTypeClick,
+  handleGeometryMove,
+  handlePointMove,
+  selectedGeometryPointIndex,
+  selectedGeometryIndex,
+  selectedGeometry,
+  selectedRoadType,
+  selectedBeforeRoadType
 })
-onKeyStroke(['x'], (e) => {
-  handleCenterlineClick(false)
-  // handleRoadTypeClick('ONE_LANE_SPACIOUS')
-  e.preventDefault()
-})
-onKeyStroke(['c'], (e) => {
-  // handleRoadTypeClick('ONE_LANE')
-  e.preventDefault()
-})
-
-// 進む
-onKeyStroke(['\\'], (e) => {
-  // 最後のポイントの場合はジオメトリーを切り替える
-  if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
-    handleGeometryMove(selectedGeometryIndex.value + 1)
-  } else {
-    handlePointMove(selectedGeometryPointIndex.value + 1)
-  }
-  selectedBeforeRoadType.value = selectedRoadType.value
-  selectedRoadType.value = 'ONE_LANE'
-  e.preventDefault()
-})
-
-// 戻る
-onKeyStroke(['/'], (e) => {
-  // // 最初のポイントの場合はジオメトリーを切り替える
-  if (selectedGeometryPointIndex.value === 0) {
-    handleGeometryMove(selectedGeometryIndex.value - 1)
-  } else {
-    handlePointMove(selectedGeometryPointIndex.value - 1)
-  }
-
-  e.preventDefault()
-})
-
-// 3つ進む
-onKeyStroke(['End'], (e) => {
-  // 最後のポイントの場合はジオメトリーを切り替える
-  if (selectedGeometryPointIndex.value + 3 >= selectedGeometry.value.length) {
-    handleGeometryMove(selectedGeometryIndex.value + 3)
-  } else {
-    handlePointMove(selectedGeometryPointIndex.value + 3)
-  }
-  selectedBeforeRoadType.value = selectedRoadType.value
-  selectedRoadType.value = 'ONE_LANE'
-  e.preventDefault()
-})
-
-// ジオメトリ移動(進む)
-onKeyStroke([']'], (e) => {
-  handleGeometryMove(selectedGeometryIndex.value + 1)
-  e.preventDefault()
-})
-// ジオメトリ移動(戻る)
-onKeyStroke([':'], (e) => {
-  handleGeometryMove(selectedGeometryIndex.value - 1)
-  e.preventDefault()
-})
-
-const geometryPointPageNoJump = ref(1)
 </script>
 
 <template>
