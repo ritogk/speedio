@@ -1,5 +1,5 @@
 import { computed, ref, type Ref, shallowReadonly } from 'vue'
-import type { PointType, GeometryPointType } from '@/pages/home-parts/home-state'
+import type { PointType, GeometryPointType } from '@/pages/home-parts/useCsv'
 
 export const useGeometry = (
   geometries: Ref<GeometryPointType[][]>

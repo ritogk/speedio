@@ -1,6 +1,6 @@
     import { ref } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
-import type { PointType } from '@/pages/home-parts/home-state'
+import type { PointType } from '@/pages/home-parts/useCsv'
 
 export function useGoogleMap(apiKey: string) {
   // NOTE: googlemap系のオブジェクトをrefでラップすると正しく動作しなくなる。
@@ -156,7 +156,6 @@ export function useGoogleMap(apiKey: string) {
     updateMapMarker,
     updatePanorama,
     getCheckNextPoint,
-    calculateHeading,
-    findClosestPointIndex
+    calculateHeading
   }
 } 

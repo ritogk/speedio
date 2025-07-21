@@ -6,15 +6,15 @@ import {
   UseHomeStateKey,
   type PointType,
   type RoadWidthType
-} from '@/pages/home-parts/home-state'
+} from '@/pages/home-parts/useCsv'
 import { useGetLocations } from '@/core/api/use-get-locations'
 import { usePostLocations } from '@/core/api/use-post-locations'
 import { usePatchLocations } from '@/core/api/use-patch-locations'
 
-import { usePointList } from '@/composables/usePointList'
-import { useShortcuts } from '@/composables/useShortcuts'
-import { useGoogleMap } from '@/composables/useGoogleMap'
-import { useGeometry } from '@/composables/useGeometry'
+import { usePointList } from './home-parts/usePointList'
+import { useShortcuts } from './home-parts/useShortcuts'
+import { useGoogleMap } from './home-parts/useGoogleMap'
+import { useGeometry } from './home-parts/useGeometry'
 const apiKey = import.meta.env.VITE_API_KEY
 
 // useGoogleMap composable を利用
@@ -27,8 +27,7 @@ const {
   updateMapMarker,
   updatePanorama,
   getCheckNextPoint,
-  calculateHeading,
-  findClosestPointIndex
+  calculateHeading
 } = useGoogleMap(apiKey)
 
 const { data: locations, setQueryParams } = useGetLocations()
@@ -79,6 +78,7 @@ const handleLoadCsv = async (e: Event) => {
   const file = target.files?.[0]
   await loadGeometries(file)
   changeSelectedGeometry(0)
+  changeSelectedGeometryPoint(0)
 
   if (map === null && panorama === null && polyline === null) {
     await initGoogleService(
