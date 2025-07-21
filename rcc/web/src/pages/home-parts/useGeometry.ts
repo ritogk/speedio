@@ -12,8 +12,7 @@ export const useGeometry = (
   /**
    * チェック済の座標が70%以上のgeometryのみ表示させる
    */
-  const filteredGeometries = computed(() => {
-    debugger
+  const filteredGeometries = computed(() => { 
     if (!isFilterGeometry.value) return geometries.value
     const filtered_geometry = geometries.value.filter((geometry) => {
       const checkedCnt = geometry.filter((point) => {
