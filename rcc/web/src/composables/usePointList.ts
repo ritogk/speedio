@@ -1,14 +1,21 @@
-import { computed } from 'vue'
-import type { Ref } from 'vue'
+import { computed, ref, type Ref, watch } from 'vue'
 import type { PointType } from '@/pages/home-parts/home-state'
 
 export const usePointList = (
   selectedGeometry: Ref<PointType[]>,
   locations: Ref<any[] | undefined>,
-  selectedGeometryPointIndex: Ref<number>,
   filteredGeometries: Ref<PointType[][]>,
   selectedGeometryIndex: Ref<number>
 ) => {
+  // selectedGeometryPointIndexをusePointList内で管理
+  const selectedGeometryPointIndex = ref(0)
+  const changeSelectedGeometryPoint = (index: number) => {
+    selectedGeometryPointIndex.value = index
+  }
+  const selectedGeometryPoint = computed(() => {
+    return selectedGeometry.value[selectedGeometryPointIndex.value]
+  })
+
   const points = computed(() => {
     return selectedGeometry.value.map((point) => {
       const location = locations.value?.find((location) => {
@@ -29,10 +36,10 @@ export const usePointList = (
       }
     })
   })
-
   const currentPoint = computed(() => {
     return points.value[selectedGeometryPointIndex.value]
-  })
+  }) 
+
 
   const selectedGeometryCheckCount = computed(() => {
     if (!locations.value) return 0
@@ -50,6 +57,9 @@ export const usePointList = (
   return {
     points,
     currentPoint,
-    selectedGeometryCheckCount
+    selectedGeometryCheckCount,
+    selectedGeometryPointIndex,
+    changeSelectedGeometryPoint,
+    selectedGeometryPoint
   }
 } 

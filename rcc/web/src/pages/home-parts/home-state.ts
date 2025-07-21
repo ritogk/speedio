@@ -21,7 +21,6 @@ export type GeometryPointType = {
 type UseHomeStateType = {
   loadGeometries: (value: any) => Promise<void>
   changeSelectedGeometry: (index: number) => void
-  changeSelectedGeometryPoint: (index: number) => void
   changeFilterGeometry: () => void
   isLoaded: Readonly<Ref<boolean>>
   originalGeometries: Readonly<Ref<PointType[][]>>
@@ -29,7 +28,6 @@ type UseHomeStateType = {
   filteredGeometries: Readonly<Ref<GeometryPointType[][]>>
   selectedGeometryIndex: Readonly<Ref<number>>
   selectedGeometry: Readonly<Ref<PointType[]>>
-  selectedGeometryPointIndex: Readonly<Ref<number>>
   selectedGeometryPoint: Readonly<Ref<PointType>>
 }
 
@@ -40,7 +38,6 @@ const useHomeState = (): UseHomeStateType => {
   // チェック座標の座標を含む情報.
   const geometries: Ref<GeometryPointType[][]> = ref([[]])
   const selectedGeometryIndex: Ref<number> = ref(0)
-  const selectedGeometryPointIndex: Ref<number> = ref(0)
 
   const loadGeometries = async (file: File): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -100,7 +97,6 @@ const useHomeState = (): UseHomeStateType => {
             })
           isLoaded.value = true
           selectedGeometryIndex.value = 0
-          selectedGeometryPointIndex.value = 0
           resolve()
         },
         header: true,
@@ -153,10 +149,6 @@ const useHomeState = (): UseHomeStateType => {
     selectedGeometryIndex.value = index
   }
 
-  const changeSelectedGeometryPoint = (index: number) => {
-    selectedGeometryPointIndex.value = index
-  }
-
   return {
     loadGeometries,
     isLoaded: shallowReadonly(isLoaded),
@@ -164,7 +156,6 @@ const useHomeState = (): UseHomeStateType => {
     geometries: shallowReadonly(geometries),
     filteredGeometries: shallowReadonly(filteredGeometries),
     changeSelectedGeometry,
-    changeSelectedGeometryPoint,
     changeFilterGeometry,
     selectedGeometry: shallowReadonly(
       computed(() => filteredGeometries.value[selectedGeometryIndex.value])
@@ -173,10 +164,9 @@ const useHomeState = (): UseHomeStateType => {
     selectedGeometryPoint: shallowReadonly(
       computed(
         () =>
-          filteredGeometries.value[selectedGeometryIndex.value][selectedGeometryPointIndex.value]
+          filteredGeometries.value[selectedGeometryIndex.value][0]
       )
-    ),
-    selectedGeometryPointIndex: shallowReadonly(selectedGeometryPointIndex)
+    )
   }
 }
 

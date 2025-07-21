@@ -59,9 +59,6 @@ const {
   filteredGeometries,
   selectedGeometry,
   selectedGeometryIndex,
-  selectedGeometryPoint,
-  selectedGeometryPointIndex,
-  changeSelectedGeometryPoint,
   changeSelectedGeometry,
   changeFilterGeometry
 } = homeState
@@ -131,6 +128,7 @@ const handleGeometryMove = (index: number) => {
  * @param index
  */
 const handlePointMove = (index: number) => {
+  console.log('handlePointMove', index)
   changeSelectedGeometryPoint(index)
   const nextPoint = getCheckNextPoint(selectedGeometryPoint.value, originalGeometries.value)
   const heading = calculateHeading(selectedGeometryPoint.value, nextPoint)
@@ -142,11 +140,13 @@ const handlePointMove = (index: number) => {
 const {
   points,
   currentPoint,
-  selectedGeometryCheckCount
+  selectedGeometryCheckCount,
+  selectedGeometryPointIndex,
+  changeSelectedGeometryPoint,
+  selectedGeometryPoint
 } = usePointList(
   selectedGeometry,
   locations,
-  selectedGeometryPointIndex,
   filteredGeometries,
   selectedGeometryIndex
 )
