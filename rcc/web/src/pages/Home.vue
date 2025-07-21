@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide, computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { provide, ref, onMounted, onBeforeUnmount } from 'vue'
 import {
   useHomeState,
   UseHomeStateKey,
@@ -9,9 +9,9 @@ import {
 import { useGetLocations } from '@/core/api/use-get-locations'
 import { usePostLocations } from '@/core/api/use-post-locations'
 import { usePatchLocations } from '@/core/api/use-patch-locations'
-
-import { onKeyStroke } from '@vueuse/core'
-
+import { useGeometry } from '@/pages/home-parts/useGeometry'
+import { usePointList } from '@/pages/home-parts/usePointList'
+import { useShortcuts } from '@/pages/home-parts/useShortcuts'
 import 'leaflet/dist/leaflet.css'
 
 const { data: locations, setQueryParams } = useGetLocations()
@@ -25,26 +25,49 @@ const {
   loadGeometries,
   isLoaded,
   originalGeometries,
+  geometries
+} = homeState
+
+const {
+  changeFilterGeometry,
   filteredGeometries,
-  selectedGeometry,
   selectedGeometryIndex,
-  selectedGeometryPoint,
+  selectedGeometry,
+  changeSelectedGeometry
+} = useGeometry(geometries)
+
+const geometryPointPageNoJump = ref(1)
+
+const {
+  points,
+  currentPoint,
+  selectedGeometryCheckCount,
   selectedGeometryPointIndex,
   changeSelectedGeometryPoint,
-  changeSelectedGeometry,
-  changeFilterGeometry
-} = homeState
+  selectedGeometryPoint
+} = usePointList(
+  selectedGeometry,
+  locations,
+  filteredGeometries,
+  selectedGeometryIndex
+)
+
+const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
+const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
 
 /**
  * csv読込
  * @param e
  */
-const loadCsv = async (e: Event) => {
+const handleLoadCsv = async (e: Event) => {
   const target = e.target as HTMLInputElement
   const fileList = target.files as FileList
   if (!fileList.length) return
   const file = target.files?.[0]
   await loadGeometries(file)
+  changeSelectedGeometry(0)
+  changeSelectedGeometryPoint(0)
+  // 地図初期化
   const originalGeometry = findOriginalGeometry(selectedGeometryIndex.value)
   if (!originalGeometry) return
   updateMainMap(originalGeometry, selectedGeometryPoint.value)
@@ -64,7 +87,6 @@ const handleGeometryMove = (index: number) => {
   updateMainMap(originalGeometry, selectedGeometryPoint.value)
   updateMap(originalGeometry)
   updateMapMarker(selectedGeometryPoint.value)
-
   // geometryからバウンディングボックス生成
   const lineString = selectedGeometry.value.map((point) => {
     return [point.longitude, point.latitude]
@@ -79,7 +101,6 @@ const handleGeometryMove = (index: number) => {
     if (point[1] < minLatitude) minLatitude = point[1]
     if (point[1] > maxLatitude) maxLatitude = point[1]
   })
-  // apiを呼び出す。
   setQueryParams({
     maxLatitude: maxLatitude,
     minLatitude: minLatitude,
@@ -105,32 +126,24 @@ const handlePointMove = (index: number) => {
  */
 const updateMainMap = (selectedOriginalGeometry: PointType[], selectedGeometryPoint: PointType) => {
   if (!gsiMapMain || !gsiMapMainContainer.value) return
-
-  // gsiMapMainのポリラインとcircleを削除
-  gsiMapMain.eachLayer((layer) => {
+  gsiMapMain.eachLayer((layer: any) => {
     if (!gsiMapMain) return
     if (layer instanceof L.Polyline || layer instanceof L.Circle) {
       gsiMapMain.removeLayer(layer)
     }
   })
-
-  // 座標を移動
   gsiMapMain.setView([selectedGeometryPoint.latitude, selectedGeometryPoint.longitude], 18)
-
-  // polylineを描画
   const latlngs: L.LatLngTuple[] = selectedOriginalGeometry.map((point) => {
     return [point.latitude, point.longitude]
   })
   L.polyline(latlngs, { color: 'red', opacity: 0.1 }).addTo(gsiMapMain)
-
-  // チェック範囲の塩を描画
   L.circle([selectedGeometryPoint.latitude, selectedGeometryPoint.longitude], {
-    color: 'blue', // 外周の色
-    opacity: 0.3, // 外周の透明度
-    fillColor: 'blue', // 円内部の色
-    fillOpacity: 0.2, // デフォルトの透明度
-    radius: 10, // 円の半径
-    weight: 2 // 外周の幅を小さく設定
+    color: 'blue',
+    opacity: 0.3,
+    fillColor: 'blue',
+    fillOpacity: 0.2,
+    radius: 10,
+    weight: 2
   }).addTo(gsiMapMain)
 }
 
@@ -139,21 +152,16 @@ const updateMainMap = (selectedOriginalGeometry: PointType[], selectedGeometryPo
  */
 const updateMap = (geometry: PointType[]) => {
   if (!gsiMap || !gsiMapContainer.value) return
-
-  // gsiMapのポリラインとcircleを削除
-  gsiMap.eachLayer((layer) => {
+  gsiMap.eachLayer((layer: any) => {
     if (!gsiMap) return
     if (layer instanceof L.Polyline || layer instanceof L.Circle) {
       gsiMap.removeLayer(layer)
     }
   })
-
-  // polylineを描画
   const latlngs: L.LatLngTuple[] = geometry.map((point) => {
     return [point.latitude, point.longitude]
   })
   L.polyline(latlngs, { color: 'red', opacity: 0.5 }).addTo(gsiMap)
-
   gsiMap.fitBounds(L.polyline(latlngs).getBounds())
 }
 
@@ -163,60 +171,15 @@ const updateMap = (geometry: PointType[]) => {
  */
 const updateMapMarker = (point: PointType) => {
   if (!gsiMap || !gsiMapContainer.value) return
-
-  // マーカーを削除
-  gsiMap.eachLayer((layer) => {
+  gsiMap.eachLayer((layer: any) => {
     if (!gsiMap) return
     if (layer instanceof L.Marker) {
       gsiMap.removeLayer(layer)
     }
   })
-
-  // 特定の座標にマーカーを追加
   L.marker([point.latitude, point.longitude]).addTo(gsiMap)
 }
 
-// 一覧に表示するデータ
-const points = computed(() => {
-  // selectedGeometryとdata.valueをもとに生成
-  return selectedGeometry.value.map((point) => {
-    const check =
-      locations.value?.some((location) => {
-        if (
-          location.point.coordinates[1] === point.latitude &&
-          location.point.coordinates[0] === point.longitude
-        ) {
-          point.roadWidthType = location.road_width_type
-          return true
-        }
-        return false
-      }) ?? false
-
-    return {
-      check: check,
-      label: check ? '済' : '未',
-      latitude: point.latitude,
-      longitude: point.longitude,
-      roadWidthType: point.roadWidthType
-    }
-  })
-})
-
-// 対象ジオメトリの評価済の座標数数
-const selectedGeometryCheckCount = computed(() => {
-  return filteredGeometries.value[selectedGeometryIndex.value].filter((point) => {
-    if (!locations.value) return false
-    return locations.value.some((location) => {
-      return (
-        point.latitude === location.point.coordinates[1] &&
-        point.longitude === location.point.coordinates[0]
-      )
-    })
-  }).length
-})
-
-const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
-const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
 /**
  * 路面状態更新ハンドラー
  * @param roadWidthType
@@ -224,7 +187,6 @@ const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
 const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
   selectedRoadType.value = roadWidthType
   if (!locations.value) return
-  // locationsに含まれる座標の場合は更新
   const location = locations.value.find((location) => {
     return (
       location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
@@ -232,25 +194,21 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
     )
   })
   if (location) {
-    // 更新
     await patchLocations.mutateAsync({
       id: location.id,
       location: {
         road_width_type: selectedRoadType.value,
-        is_blind: false
+        has_center_line: false
       }
     })
   } else {
-    // 新規
     await postLocations.mutateAsync({
       latitude: selectedGeometryPoint.value.latitude,
       longitude: selectedGeometryPoint.value.longitude,
       road_width_type: selectedRoadType.value,
-      is_blind: false
+      has_center_line: false
     })
   }
-
-  // 最後のポイントの場合はジオメトリーを切り替える
   if (selectedGeometryPointIndex.value + 2 === selectedGeometry.value.length) {
     handleGeometryMove(selectedGeometryIndex.value + 1)
   } else {
@@ -265,7 +223,6 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
  */
 const handleChangeFilterGeometryClick = () => {
   changeFilterGeometry()
-  // filteredGeometriesの値が変わった後に各値を初期化する
   handleGeometryMove(0)
 }
 
@@ -286,76 +243,21 @@ const findOriginalGeometry = (geometryIndex: number) => {
   return originalGeometry
 }
 
-// onKeyStroke(['z'], (e) => {
-//   handleRoadTypeClick('TWO_LANE_SHOULDER')
-//   e.preventDefault()
-// })
-onKeyStroke(['z'], (e) => {
-  handleRoadTypeClick('TWO_LANE')
-  e.preventDefault()
-})
-onKeyStroke(['x'], (e) => {
-  handleRoadTypeClick('ONE_LANE_SPACIOUS')
-  e.preventDefault()
-})
-onKeyStroke(['c'], (e) => {
-  handleRoadTypeClick('ONE_LANE')
-  e.preventDefault()
+// --- ショートカット登録 ---
+useShortcuts({
+  handleCenterlineClick: () => {}, // Home.vueでは未実装
+  handleRoadTypeClick,
+  handleGeometryMove,
+  handlePointMove,
+  selectedGeometryPointIndex,
+  selectedGeometryIndex,
+  selectedGeometry,
+  selectedRoadType,
+  selectedBeforeRoadType
 })
 
-// 進む
-onKeyStroke(['\\'], (e) => {
-  // 最後のポイントの場合はジオメトリーを切り替える
-  if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
-    handleGeometryMove(selectedGeometryIndex.value + 1)
-  } else {
-    handlePointMove(selectedGeometryPointIndex.value + 1)
-  }
-  selectedBeforeRoadType.value = selectedRoadType.value
-  selectedRoadType.value = 'ONE_LANE'
-  e.preventDefault()
-})
-
-// 戻る
-onKeyStroke(['/'], (e) => {
-  // // 最初のポイントの場合はジオメトリーを切り替える
-  if (selectedGeometryPointIndex.value === 0) {
-    handleGeometryMove(selectedGeometryIndex.value - 1)
-  } else {
-    handlePointMove(selectedGeometryPointIndex.value - 1)
-  }
-
-  e.preventDefault()
-})
-
-// 3つ進む
-onKeyStroke(['End'], (e) => {
-  // 最後のポイントの場合はジオメトリーを切り替える
-  if (selectedGeometryPointIndex.value + 3 >= selectedGeometry.value.length) {
-    handleGeometryMove(selectedGeometryIndex.value + 3)
-  } else {
-    handlePointMove(selectedGeometryPointIndex.value + 3)
-  }
-  selectedBeforeRoadType.value = selectedRoadType.value
-  selectedRoadType.value = 'ONE_LANE'
-  e.preventDefault()
-})
-
-// ジオメトリ移動(進む)
-onKeyStroke([']'], (e) => {
-  handleGeometryMove(selectedGeometryIndex.value + 1)
-  e.preventDefault()
-})
-// ジオメトリ移動(戻る)
-onKeyStroke([':'], (e) => {
-  handleGeometryMove(selectedGeometryIndex.value - 1)
-  e.preventDefault()
-})
-
-const geometryPointPageNoJump = ref(1)
-
+// @ts-ignore
 import L from 'leaflet'
-
 const gsiMapMainContainer = ref(null)
 const gsiMapContainer = ref(null)
 let gsiMapMain: null | L.Map = null
@@ -368,7 +270,6 @@ const initMap = () => {
     attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html'>国土地理院</a>",
     maxZoom: 18
   }).addTo(gsiMapMain)
-
   gsiMap = L.map(gsiMapContainer.value).setView([34.826114, 137.5715965], 18)
   L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
     attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html'>国土地理院</a>",
@@ -538,7 +439,7 @@ onBeforeUnmount(() => {
         >
           change
         </button>
-        <input type="file" @change="loadCsv" />
+        <input type="file" @change="handleLoadCsv" />
       </div>
     </div>
   </div>
