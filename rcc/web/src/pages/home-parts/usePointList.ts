@@ -1,5 +1,5 @@
 import { computed, ref, type Ref, watch } from 'vue'
-import type { PointType } from '@/pages/home-parts/home-state'
+import type { PointType } from '@/pages/home-parts/useCsv'
 
 export const usePointList = (
   selectedGeometry: Ref<PointType[]>,

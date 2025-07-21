@@ -5,7 +5,7 @@ import {
   UseHomeStateKey,
   type PointType,
   type RoadWidthType
-} from '@/pages/home-parts/home-state'
+} from '@/pages/home-parts/useCsv'
 import { useGetLocations } from '@/core/api/use-get-locations'
 import { usePostLocations } from '@/core/api/use-post-locations'
 import { usePatchLocations } from '@/core/api/use-patch-locations'
