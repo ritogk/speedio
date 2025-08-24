@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide, ref, onMounted, onBeforeUnmount } from 'vue'
+import { provide, computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import {
   useHomeState,
   UseHomeStateKey,
@@ -9,10 +9,12 @@ import {
 import { useGetLocations } from '@/core/api/use-get-locations'
 import { usePostLocations } from '@/core/api/use-post-locations'
 import { usePatchLocations } from '@/core/api/use-patch-locations'
-import { useGeometry } from '@/pages/home-parts/useGeometry'
-import { usePointList } from '@/pages/home-parts/usePointList'
-import { useShortcuts } from '@/pages/home-parts/useShortcuts'
+import { usePointList } from './home-parts/usePointList'
+import { useShortcuts } from './home-parts/useShortcuts'
+import { useGeometry } from './home-parts/useGeometry'
+
 import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
 
 const { data: locations, setQueryParams } = useGetLocations()
 const postLocations = usePostLocations()
@@ -36,8 +38,7 @@ const {
   changeSelectedGeometry
 } = useGeometry(geometries)
 
-const geometryPointPageNoJump = ref(1)
-
+// ポイントリスト関連のロジックをusePointListで取得
 const {
   points,
   currentPoint,
@@ -52,14 +53,24 @@ const {
   selectedGeometryIndex
 )
 
-const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
-const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
+const selectedLocation = computed(() => {
+  if (!locations.value) return null
+  if (!selectedGeometryPoint.value) return null
+  return (
+    locations.value.find((location) => {
+      return (
+        location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
+        location.point.coordinates[0] === selectedGeometryPoint.value.longitude
+      )
+    }) ?? null
+  )
+})
 
 /**
  * csv読込
  * @param e
  */
-const handleLoadCsv = async (e: Event) => {
+const loadCsv = async (e: Event) => {
   const target = e.target as HTMLInputElement
   const fileList = target.files as FileList
   if (!fileList.length) return
@@ -67,7 +78,7 @@ const handleLoadCsv = async (e: Event) => {
   await loadGeometries(file)
   changeSelectedGeometry(0)
   changeSelectedGeometryPoint(0)
-  // 地図初期化
+  
   const originalGeometry = findOriginalGeometry(selectedGeometryIndex.value)
   if (!originalGeometry) return
   updateMainMap(originalGeometry, selectedGeometryPoint.value)
@@ -81,12 +92,13 @@ const handleLoadCsv = async (e: Event) => {
  */
 const handleGeometryMove = (index: number) => {
   changeSelectedGeometry(index)
-  changeSelectedGeometryPoint(1)
+  changeSelectedGeometryPoint(0)
   const originalGeometry = findOriginalGeometry(selectedGeometryIndex.value)
   if (!originalGeometry) return
   updateMainMap(originalGeometry, selectedGeometryPoint.value)
   updateMap(originalGeometry)
   updateMapMarker(selectedGeometryPoint.value)
+
   // geometryからバウンディングボックス生成
   const lineString = selectedGeometry.value.map((point) => {
     return [point.longitude, point.latitude]
@@ -101,6 +113,7 @@ const handleGeometryMove = (index: number) => {
     if (point[1] < minLatitude) minLatitude = point[1]
     if (point[1] > maxLatitude) maxLatitude = point[1]
   })
+  // apiを呼び出す。
   setQueryParams({
     maxLatitude: maxLatitude,
     minLatitude: minLatitude,
@@ -126,24 +139,32 @@ const handlePointMove = (index: number) => {
  */
 const updateMainMap = (selectedOriginalGeometry: PointType[], selectedGeometryPoint: PointType) => {
   if (!gsiMapMain || !gsiMapMainContainer.value) return
-  gsiMapMain.eachLayer((layer: any) => {
+
+  // gsiMapMainのポリラインとcircleを削除
+  gsiMapMain.eachLayer((layer: L.Layer) => {
     if (!gsiMapMain) return
     if (layer instanceof L.Polyline || layer instanceof L.Circle) {
       gsiMapMain.removeLayer(layer)
     }
   })
+
+  // 座標を移動
   gsiMapMain.setView([selectedGeometryPoint.latitude, selectedGeometryPoint.longitude], 18)
+
+  // polylineを描画
   const latlngs: L.LatLngTuple[] = selectedOriginalGeometry.map((point) => {
     return [point.latitude, point.longitude]
   })
   L.polyline(latlngs, { color: 'red', opacity: 0.1 }).addTo(gsiMapMain)
+
+  // チェック範囲の塩を描画
   L.circle([selectedGeometryPoint.latitude, selectedGeometryPoint.longitude], {
-    color: 'blue',
-    opacity: 0.3,
-    fillColor: 'blue',
-    fillOpacity: 0.2,
-    radius: 10,
-    weight: 2
+    color: 'blue', // 外周の色
+    opacity: 0.3, // 外周の透明度
+    fillColor: 'blue', // 円内部の色
+    fillOpacity: 0.2, // デフォルトの透明度
+    radius: 10, // 円の半径
+    weight: 2 // 外周の幅を小さく設定
   }).addTo(gsiMapMain)
 }
 
@@ -152,16 +173,21 @@ const updateMainMap = (selectedOriginalGeometry: PointType[], selectedGeometryPo
  */
 const updateMap = (geometry: PointType[]) => {
   if (!gsiMap || !gsiMapContainer.value) return
-  gsiMap.eachLayer((layer: any) => {
+
+  // gsiMapのポリラインとcircleを削除
+  gsiMap.eachLayer((layer: L.Layer) => {
     if (!gsiMap) return
     if (layer instanceof L.Polyline || layer instanceof L.Circle) {
       gsiMap.removeLayer(layer)
     }
   })
+
+  // polylineを描画
   const latlngs: L.LatLngTuple[] = geometry.map((point) => {
     return [point.latitude, point.longitude]
   })
   L.polyline(latlngs, { color: 'red', opacity: 0.5 }).addTo(gsiMap)
+
   gsiMap.fitBounds(L.polyline(latlngs).getBounds())
 }
 
@@ -171,15 +197,21 @@ const updateMap = (geometry: PointType[]) => {
  */
 const updateMapMarker = (point: PointType) => {
   if (!gsiMap || !gsiMapContainer.value) return
-  gsiMap.eachLayer((layer: any) => {
+
+  // マーカーを削除
+  gsiMap.eachLayer((layer: L.Layer) => {
     if (!gsiMap) return
     if (layer instanceof L.Marker) {
       gsiMap.removeLayer(layer)
     }
   })
+
+  // 特定の座標にマーカーを追加
   L.marker([point.latitude, point.longitude]).addTo(gsiMap)
 }
 
+const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
+const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
 /**
  * 路面状態更新ハンドラー
  * @param roadWidthType
@@ -187,6 +219,7 @@ const updateMapMarker = (point: PointType) => {
 const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
   selectedRoadType.value = roadWidthType
   if (!locations.value) return
+  // locationsに含まれる座標の場合は更新
   const location = locations.value.find((location) => {
     return (
       location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
@@ -194,6 +227,7 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
     )
   })
   if (location) {
+    // 更新
     await patchLocations.mutateAsync({
       id: location.id,
       location: {
@@ -202,6 +236,7 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
       }
     })
   } else {
+    // 新規
     await postLocations.mutateAsync({
       latitude: selectedGeometryPoint.value.latitude,
       longitude: selectedGeometryPoint.value.longitude,
@@ -209,6 +244,48 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
       has_center_line: false
     })
   }
+
+  // 最後のポイントの場合はジオメトリーを切り替える
+  if (selectedGeometryPointIndex.value + 2 === selectedGeometry.value.length) {
+    handleGeometryMove(selectedGeometryIndex.value + 1)
+  } else {
+    handlePointMove(selectedGeometryPointIndex.value + 1)
+  }
+  selectedBeforeRoadType.value = selectedRoadType.value
+  selectedRoadType.value = 'ONE_LANE'
+}
+
+/**
+ * センターラインの更新ハンドラー
+ */
+const handleCenterlineClick = async (hasCenterLine: boolean) => {
+  if (!locations.value) return
+  // locationsに含まれる座標の場合は更新
+  const location = locations.value.find((location) => {
+    return (
+      location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
+      location.point.coordinates[0] === selectedGeometryPoint.value.longitude
+    )
+  })
+  if (location) {
+    // 更新
+    await patchLocations.mutateAsync({
+      id: location.id,
+      location: {
+        has_center_line: hasCenterLine
+      }
+    })
+  } else {
+    // 新規
+    await postLocations.mutateAsync({
+      latitude: selectedGeometryPoint.value.latitude,
+      longitude: selectedGeometryPoint.value.longitude,
+      road_width_type: selectedGeometryPoint.value.roadWidthType,
+      has_center_line: hasCenterLine
+    })
+  }
+
+  // 最後のポイントの場合はジオメトリーを切り替える
   if (selectedGeometryPointIndex.value + 2 === selectedGeometry.value.length) {
     handleGeometryMove(selectedGeometryIndex.value + 1)
   } else {
@@ -223,6 +300,7 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
  */
 const handleChangeFilterGeometryClick = () => {
   changeFilterGeometry()
+  // filteredGeometriesの値が変わった後に各値を初期化する
   handleGeometryMove(0)
 }
 
@@ -243,9 +321,11 @@ const findOriginalGeometry = (geometryIndex: number) => {
   return originalGeometry
 }
 
-// --- ショートカット登録 ---
+const geometryPointPageNoJump = ref(1)
+
+// ショートカットキー関連の設定
 useShortcuts({
-  handleCenterlineClick: () => {}, // Home.vueでは未実装
+  handleCenterlineClick,
   handleRoadTypeClick,
   handleGeometryMove,
   handlePointMove,
@@ -256,8 +336,6 @@ useShortcuts({
   selectedBeforeRoadType
 })
 
-// @ts-ignore
-import L from 'leaflet'
 const gsiMapMainContainer = ref(null)
 const gsiMapContainer = ref(null)
 let gsiMapMain: null | L.Map = null
@@ -270,6 +348,7 @@ const initMap = () => {
     attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html'>国土地理院</a>",
     maxZoom: 18
   }).addTo(gsiMapMain)
+
   gsiMap = L.map(gsiMapContainer.value).setView([34.826114, 137.5715965], 18)
   L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {
     attribution: "<a href='https://maps.gsi.go.jp/development/ichiran.html'>国土地理院</a>",
@@ -284,6 +363,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (gsiMap) {
     gsiMap.remove()
+  }
+  if (gsiMapMain) {
+    gsiMapMain.remove()
   }
 })
 </script>
@@ -307,44 +389,71 @@ onBeforeUnmount(() => {
       </div>
       <div style="width: 100%">
         <div class="button-container">
-          <button
-            class="button-style"
-            data-tooltip="2車線かつ路肩あり"
-            style="background: palegreen"
-            @click="handleRoadTypeClick('TWO_LANE_SHOULDER')"
-            hidden
-          >
-            <span v-show="selectedRoadType === 'TWO_LANE_SHOULDER'" style="color: red">★</span>
-            1
-          </button>
-          <button
-            class="button-style"
-            data-tooltip="2車線かつ路肩なし"
-            style="background: palegreen"
-            @click="handleRoadTypeClick('TWO_LANE')"
-          >
-            <span v-show="selectedRoadType === 'TWO_LANE'" style="color: red">★</span>
-            2
-          </button>
-          <button
-            class="button-style"
-            data-tooltip="1車線かつ2台が余裕を持って通行可能"
-            style="background: bisque"
-            @click="handleRoadTypeClick('ONE_LANE_SPACIOUS')"
-          >
-            <span v-show="selectedRoadType === 'ONE_LANE_SPACIOUS'" style="color: red">★</span>
-            3
-          </button>
-          <button
-            class="button-style"
-            data-tooltip="1車線かつ1台のみ通行可能"
-            style="background: bisque"
-            @click="handleRoadTypeClick('ONE_LANE')"
-          >
-            <span v-show="selectedRoadType === 'ONE_LANE'" style="color: red">★</span>
-            4
-          </button>
-          -
+          <!-- 道幅 -->
+          <span>
+            <button
+              class="button-style"
+              data-tooltip="2車線かつ路肩あり"
+              style="background: palegreen"
+              @click="handleRoadTypeClick('TWO_LANE_SHOULDER')"
+              hidden
+            >
+              <span v-show="selectedRoadType === 'TWO_LANE_SHOULDER'" style="color: red">★</span>
+              1
+            </button>
+            <button
+              class="button-style"
+              data-tooltip="2車線かつ路肩なし"
+              style="background: palegreen"
+              @click="handleRoadTypeClick('TWO_LANE')"
+            >
+              <span v-show="selectedRoadType === 'TWO_LANE'" style="color: red">★</span>
+              2
+            </button>
+            <button
+              class="button-style"
+              data-tooltip="1車線かつ2台が余裕を持って通行可能"
+              style="background: bisque"
+              @click="handleRoadTypeClick('ONE_LANE_SPACIOUS')"
+            >
+              <span v-show="selectedRoadType === 'ONE_LANE_SPACIOUS'" style="color: red">★</span>
+              3
+            </button>
+            <button
+              class="button-style"
+              data-tooltip="1車線かつ1台のみ通行可能"
+              style="background: bisque"
+              @click="handleRoadTypeClick('ONE_LANE')"
+            >
+              <span v-show="selectedRoadType === 'ONE_LANE'" style="color: red">★</span>
+              4
+            </button>
+            -
+          </span>
+          
+          <!-- センターライン -->
+          <div style="background: red" v-show="currentPoint?.roadWidthType == 'TWO_LANE'">--</div>
+          <span>
+            <button
+              class="button-style"
+              data-tooltip="center-lineあり"
+              style="background: bisque"
+              @click="handleCenterlineClick(true)"
+            >
+              <span v-show="selectedLocation?.has_center_line" style="color: red">★</span>
+              yes
+            </button>
+            <button
+              class="button-style"
+              data-tooltip="center-lineなし"
+              style="background: bisque"
+              @click="handleCenterlineClick(false)"
+            >
+              <span v-show="!selectedLocation?.has_center_line" style="color: red">★</span>
+              no
+            </button>
+          </span>
+
           <button
             class="button-style"
             data-tooltip="戻る"
@@ -380,6 +489,7 @@ onBeforeUnmount(() => {
             <th>DB</th>
             <th>地理座標</th>
             <th>路面状態</th>
+            <th>ｾﾝﾀｰﾗｲﾝ</th>
           </tr>
         </thead>
         <tbody>
@@ -401,7 +511,14 @@ onBeforeUnmount(() => {
               {{ point.label }}
             </td>
             <td>{{ point.latitude }}, {{ point.longitude }}</td>
-            <td>{{ point.roadWidthType }}</td>
+            <td
+              :style="{
+                backgroundColor: point.roadWidthType !== 'TWO_LANE' ? 'gray' : 'transparent'
+              }"
+            >
+              {{ point.roadWidthType }}
+            </td>
+            <td>{{ point.hasCenterLine }}</td>
           </tr>
         </tbody>
       </table>
@@ -439,7 +556,7 @@ onBeforeUnmount(() => {
         >
           change
         </button>
-        <input type="file" @change="handleLoadCsv" />
+        <input type="file" @change="loadCsv" />
       </div>
     </div>
   </div>
