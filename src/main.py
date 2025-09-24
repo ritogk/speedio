@@ -280,6 +280,12 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
         lambda x: list(map(lambda y: [y[1], y[0]], x.coords))
     )
+    
+    # geometry_listを滑らかにする
+    execution_timer_ins.start("🌊 smooth geometry_list")
+    gdf_edges["smooth_geometry_list"] = column_generater.geometry_smooth.generate(gdf_edges)
+    print(gdf_edges["smooth_geometry_list"])
+    execution_timer_ins.stop()
     gdf_edges["geometry_meter_list"] = (
         column_generater.geometry_meter_list.generate(gdf_edges, plane_epsg_code)
     )
