@@ -262,6 +262,11 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     gdf_edges['locations'] = column_generater.locations.generate(gdf_edges)
     execution_timer_ins.stop()
 
+    # locationsをJSON形式に変換してlocations_jsonフィールドに追加
+    execution_timer_ins.start("📊 create locations_json")
+    gdf_edges['locations_json'] = gdf_edges['locations'].to_json(orient="records")
+    execution_timer_ins.stop()
+
     # alpsmapの道幅が3m以下のエッジを削除する
     count = len(gdf_edges)
     execution_timer_ins.start("🛣️ remove alpsmap_min_width edge")
@@ -396,7 +401,8 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "is_alpsmap",
         "alpsmap_min_width",
         "alpsmap_avg_width",
-        "locations"
+        "locations",
+        "locations_json"
     ]
 
     gdf_edges_balance = gdf_edges[(gdf_edges["score_corner_balance"] >= 0.5) & (gdf_edges['score_building'] >= 0.3)].sort_values("score", ascending=False).head(200)
