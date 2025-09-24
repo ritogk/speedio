@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { provide, computed, ref, onMounted } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
-import {
-  useHomeState,
-  UseHomeStateKey,
-  type RoadWidthType
-} from '@/pages/home-parts/useCsv'
+import { useHomeState, UseHomeStateKey, type RoadWidthType } from '@/pages/home-parts/useCsv'
 import { useGetLocations } from '@/core/api/use-get-locations'
 import { usePostLocations } from '@/core/api/use-post-locations'
 import { usePatchLocations } from '@/core/api/use-patch-locations'
@@ -56,12 +52,7 @@ provide(UseHomeStateKey, homeState)
 
 const geometryPointPageNoJump = ref(1)
 
-const {
-  loadGeometries,
-  isLoaded,
-  originalGeometries,
-  geometries
-} = homeState
+const { loadGeometries, isLoaded, originalGeometries, geometries } = homeState
 
 const {
   changeFilterGeometry,
@@ -74,7 +65,7 @@ const {
 /**
  * csv読込
  * @param e
- */ 
+ */
 const handleLoadCsv = async (e: Event) => {
   const target = e.target as HTMLInputElement
   const fileList = target.files as FileList
@@ -148,12 +139,7 @@ const {
   selectedGeometryPointIndex,
   changeSelectedGeometryPoint,
   selectedGeometryPoint
-} = usePointList(
-  selectedGeometry,
-  locations,
-  filteredGeometries,
-  selectedGeometryIndex
-)
+} = usePointList(selectedGeometry, locations, filteredGeometries, selectedGeometryIndex)
 
 const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
 const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
@@ -226,7 +212,11 @@ const handleCenterlineClick = async (hasCenterLine: boolean) => {
     await postLocations.mutateAsync({
       latitude: selectedGeometryPoint.value.latitude,
       longitude: selectedGeometryPoint.value.longitude,
-      road_width_type: selectedGeometryPoint.value.roadWidthType,
+      // あとで直す
+      road_width_type:
+        selectedGeometryPoint.value.roadWidthType == 'UNCONFIRMED'
+          ? 'TWO_LANE'
+          : selectedGeometryPoint.value.roadWidthType,
       has_center_line: hasCenterLine
     })
   }
