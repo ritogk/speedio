@@ -55,6 +55,12 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     execution_timer_ins.stop()
 
+    # # geometry_listを滑らかにする
+    # execution_timer_ins.start("🌊 smooth geometry")
+    # gdf_edges["geometry"] = column_generater.geometry_smooth.generate(gdf_edges)
+    # print(gdf_edges["geometry"])
+    # execution_timer_ins.stop()
+
     # 開始位置列を追加する
     execution_timer_ins.start("📍 calc start_point")
     gdf_edges["start_point"] = column_generater.start_point.generate(gdf_edges)
@@ -280,15 +286,12 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
         lambda x: list(map(lambda y: [y[1], y[0]], x.coords))
     )
-    
-    # geometry_listを滑らかにする
-    execution_timer_ins.start("🌊 smooth geometry_list")
-    gdf_edges["smooth_geometry_list"] = column_generater.geometry_smooth.generate(gdf_edges)
-    print(gdf_edges["smooth_geometry_list"])
-    execution_timer_ins.stop()
     gdf_edges["geometry_meter_list"] = (
         column_generater.geometry_meter_list.generate(gdf_edges, plane_epsg_code)
     )
+
+    # print(gdf_edges["geometry_list"].iloc[0])
+    # print(gdf_edges["geometry"].iloc[0])
 
     # ステアリングホイールの角度を計算する
     execution_timer_ins.start("🛞 calc steering_wheel_angle")
