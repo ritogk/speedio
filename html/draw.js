@@ -223,7 +223,7 @@ export const drawTargets = (value) => {
     };
 
     // road_section を元に描画
-    (x.road_section || []).forEach((section) => {
+    (x.road_section || []).forEach((section, index) => {
       // Leafletは [lat, lng] の順
       const rawPoints = section.points.map(([lng, lat]) => [lat, lng]);
       const latlngs = rawPoints;
@@ -235,7 +235,27 @@ export const drawTargets = (value) => {
         ...style,
         color,
       }).addTo(map);
+
+      const endMarker = L.marker(rawPoints[rawPoints.length - 1], {
+        icon: generateLabelIcon(index, "dimgray"),
+      });
+
+      // ズームレベルに応じて表示・非表示を切り替える
+      const updateMarkerVisibility = () => {
+        const zoom = map.getZoom();
+        const visible = zoom >= 15; // 13以上で表示
+        if (visible) {
+          if (!map.hasLayer(endMarker)) endMarker.addTo(map);
+        } else {
+          if (map.hasLayer(endMarker)) map.removeLayer(endMarker);
+        }
+      };
+
+      map.on("zoomend", updateMarkerVisibility);
+      updateMarkerVisibility();
+
       polylines.push(line);
+      polylines.push(endMarker);
     });
 
     // ポップアップopen判定用
