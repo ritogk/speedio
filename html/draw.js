@@ -192,20 +192,20 @@ export const drawTargets = (value) => {
     //   polylines.push(marker);
     // });
 
-    // polylineのアウトラインを描画
-    const outlineStyle2 = {
-      weight: 15,
-      color: "black",
-      opacity: style.opacity,
-    };
+    // // polylineのアウトラインを描画
+    // const outlineStyle2 = {
+    //   weight: 15,
+    //   color: "black",
+    //   opacity: style.opacity,
+    // };
 
-    polylines.push(L.polyline(polyline, outlineStyle2).addTo(map));
-    const outlineStyle = {
-      weight: 11,
-      color: "white",
-      opacity: style.opacity,
-    };
-    polylines.push(L.polyline(polyline, outlineStyle).addTo(map));
+    // polylines.push(L.polyline(polyline, outlineStyle2).addTo(map));
+    // const outlineStyle = {
+    //   weight: 11,
+    //   color: "white",
+    //   opacity: style.opacity,
+    // };
+    // polylines.push(L.polyline(polyline, outlineStyle).addTo(map));
 
     // const startMarker = L.marker(polyline[0], { title: "開始位置" })
     //   .addTo(map)

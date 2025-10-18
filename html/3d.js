@@ -1,5 +1,6 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js";
 import { OrbitControls } from "https://unpkg.com/three@0.164.1/examples/jsm/controls/OrbitControls.js";
+import { OBJExporter } from "https://unpkg.com/three@0.164.1/examples/jsm/exporters/OBJExporter.js";
 
 export const draw3D = async (
   coordinates,
@@ -223,6 +224,7 @@ export const draw3D = async (
     baseElev
   ) => {
     // 頂点リスト作成
+    debugger;
     const gridData = terrainData.map((data) =>
       data.map((d) => {
         const lat = d[0];
@@ -404,6 +406,11 @@ export const draw3D = async (
   const baseLon = terrainData[0][0][1]; // 基準の経度
   const baseElev = terrainData[0][0][2]; // 基準の標高
 
+  print("基準のlat, lon");
+  print(baseLat);
+  print(baseLon);
+  debugger;
+
   // 地形メッシュの作成
   const terrainMesh = await generateTerrainMesh(
     terrainData,
@@ -414,6 +421,18 @@ export const draw3D = async (
   // boundingBoxを計算
   terrainMesh.geometry.computeBoundingBox();
   group.add(terrainMesh);
+
+  // terrainMeshをファイルに出力してDLする
+  const exporterTerrain = new OBJExporter();
+  const objDataTerrain = exporterTerrain.parse(terrainMesh);
+  const blobTerrain = new Blob([objDataTerrain], { type: "text/plain" });
+  const urlTerrain = URL.createObjectURL(blobTerrain);
+  const aTerrain = document.createElement("a");
+  aTerrain.href = urlTerrain;
+  aTerrain.download = "terrainMesh.obj";
+  aTerrain.click();
+  URL.revokeObjectURL(urlTerrain);
+  console.log("terrainMesh.objをダウンロードしました");
 
   // 道のメッシュを作成
   const {
@@ -428,6 +447,17 @@ export const draw3D = async (
   group.add(leftLineMesh);
   group.add(rightLineMesh);
   group.add(centerLineMesh);
+
+  // roadMeshをファイルに出力してDLする
+  const exporter = new OBJExporter();
+  const objData = exporter.parse(roadMesh);
+  const blob = new Blob([objData], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "roadMesh.obj";
+  a.click();
+  URL.revokeObjectURL(url);
 
   // group.add(verticalLineMaxZMeth);
   // group.add(verticalLineMinZMeth);

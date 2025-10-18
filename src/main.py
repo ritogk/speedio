@@ -282,6 +282,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     execution_timer_ins.stop()
 
+    print(plane_epsg_code)
     # # LINESTRINGを緯度と経度のリストに変換する.coords[0]とcoords[1]を入り変えたリストを返す
     gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
         lambda x: list(map(lambda y: [y[1], y[0]], x.coords))
