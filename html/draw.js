@@ -196,14 +196,14 @@ export const drawTargets = (value) => {
     const outlineStyle2 = {
       weight: 15,
       color: "black",
-      opacity: style.opacity,
+      opacity: style.opacity + 0.1,
     };
 
     polylines.push(L.polyline(polyline, outlineStyle2).addTo(map));
     const outlineStyle = {
       weight: 11,
       color: "white",
-      opacity: style.opacity,
+      opacity: style.opacity + 0.4,
     };
     polylines.push(L.polyline(polyline, outlineStyle).addTo(map));
 
@@ -240,19 +240,20 @@ export const drawTargets = (value) => {
         icon: generateLabelIcon(index, "dimgray"),
       });
 
-      // ズームレベルに応じて表示・非表示を切り替える
-      const updateMarkerVisibility = () => {
-        const zoom = map.getZoom();
-        const visible = zoom >= 15; // 13以上で表示
-        if (visible) {
-          if (!map.hasLayer(endMarker)) endMarker.addTo(map);
-        } else {
-          if (map.hasLayer(endMarker)) map.removeLayer(endMarker);
-        }
-      };
+      // MEMO: 重いので一旦無効化
+      // // ズームレベルに応じて表示・非表示を切り替える
+      // const updateMarkerVisibility = () => {
+      //   const zoom = map.getZoom();
+      //   const visible = zoom >= 15; // 13以上で表示
+      //   if (visible) {
+      //     if (!map.hasLayer(endMarker)) endMarker.addTo(map);
+      //   } else {
+      //     if (map.hasLayer(endMarker)) map.removeLayer(endMarker);
+      //   }
+      // };
 
-      map.on("zoomend", updateMarkerVisibility);
-      updateMarkerVisibility();
+      // map.on("zoomend", updateMarkerVisibility);
+      // updateMarkerVisibility();
 
       polylines.push(line);
       polylines.push(endMarker);
@@ -329,14 +330,26 @@ export const drawTargets = (value) => {
   //   });
   // });
 
-  // 上位20件の中心座標にランクを表示
-  const ranks = targets
+  // 上位50件の中心座標にランクを表示（1～50位まで連番）
+  const sortedTargets = targets
     .sort((a, b) => b.score_normalization - a.score_normalization)
-    .slice(0, 10);
-  ranks.forEach((x, index) => {
+    .slice(0, 50);
+  
+  // 各区切りの色を定義
+  const colorByRank = (rank) => {
+    if (rank <= 10) return "darkslateblue";
+    if (rank <= 20) return "steelblue";
+    if (rank <= 30) return "seagreen";
+    if (rank <= 40) return "chocolate";
+    return "indianred";
+  };
+
+  // 1～50位までのマーカーを表示
+  sortedTargets.forEach((x, index) => {
+    const rank = index + 1;
     const center = Math.ceil(x.geometry_list.length / 2);
     const marker = L.marker(x.geometry_list[center], {
-      icon: generateLabelIcon(index + 1),
+      icon: generateLabelIcon(rank, colorByRank(rank)),
     }).addTo(map);
     polylines.push(marker);
   });
