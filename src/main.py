@@ -96,6 +96,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     
     # gdf_edgesがemptyの場合は終了する
     if gdf_edges.empty:
+        print("gdf_edges is empty. exit process.")
         return gdf_edges
 
     # 曲がり角の候補を取得する
