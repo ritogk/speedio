@@ -23,12 +23,14 @@ def interpolate_points(line: LineString, interval: int, length:int) -> list[list
     for index, point in enumerate(line.coords):
         # x, y = point
         if index + 1 >= len(line.coords):
-            if distance != 0:
+            if distance >= 0:
                 points.append(line.coords[-1])
             continue
         next_point = line.coords[index + 1]
         distance += geodesic((point[1], point[0]), (next_point[1], next_point[0])).meters
         if distance > interval:
             points.append(next_point)
+            # 500以上を持ち越す。0以下の場合は0にリセットが正しいが、そうすると全ての座標のマップングをし直す必要があるため、持ち越しとする
+            # distance = distance - interval if distance - interval > 0 else 0
             distance = 0
     return points
