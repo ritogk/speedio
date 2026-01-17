@@ -31,12 +31,26 @@ const MAP_CAMERA_ENABLED_DEFAULT = true;
  * 地図用SVGに経路を描画し、インデックスに応じて現在位置と再生済み区間を更新するモジュール。
  * @param {number[][]} coords [lat, lon] の配列
  * @param {SVGSVGElement} pathSvg 対象SVG要素
- * @param {{ cameraEnabled?: boolean, cameraZoom?: number }} [options]
+ * @param {{
+ *   cameraEnabled?: boolean,
+ *   cameraZoom?: number,
+ *   basePathWeight?: number,
+ *   playedPathWeight?: number,
+ *   markerRadius?: number,
+ *   markerStrokeWidth?: number,
+ * }} [options]
  */
 export function createMapGraph(
 	coords,
 	pathSvg,
-	{ cameraEnabled = MAP_CAMERA_ENABLED_DEFAULT, cameraZoom = MAP_CAMERA_ZOOM_DEFAULT } = {}
+	{
+		cameraEnabled = MAP_CAMERA_ENABLED_DEFAULT,
+		cameraZoom = MAP_CAMERA_ZOOM_DEFAULT,
+		basePathWeight = MAP_BASE_PATH_WEIGHT,
+		playedPathWeight = MAP_PLAYED_PATH_WEIGHT,
+		markerRadius = MAP_MARKER_RADIUS,
+		markerStrokeWidth = MAP_MARKER_STROKE_WIDTH,
+	} = {}
 ) {
 	if (!pathSvg || !coords || coords.length === 0) {
 		return {
@@ -149,7 +163,7 @@ export function createMapGraph(
 	baseGlowPolyline.setAttribute(
 		"stroke-width",
 		// 元のラインよりわずかに太い程度に抑える
-		String(MAP_BASE_PATH_WEIGHT * 1.6)
+		String(basePathWeight * 1.6)
 	);
 	baseGlowPolyline.setAttribute("stroke-linecap", "round");
 	baseGlowPolyline.setAttribute("stroke-linejoin", "round");
@@ -169,7 +183,7 @@ export function createMapGraph(
 	basePolyline.setAttribute("fill", "none");
 	// 実線の色を白に（やや細め）
 	basePolyline.setAttribute("stroke", MAP_BASE_STROKE_COLOR);
-	basePolyline.setAttribute("stroke-width", String(MAP_BASE_PATH_WEIGHT * 0.7));
+	basePolyline.setAttribute("stroke-width", String(basePathWeight * 0.7));
 	basePolyline.setAttribute("stroke-linecap", "round");
 	basePolyline.setAttribute("stroke-linejoin", "round");
 	basePolyline.setAttribute("opacity", String(MAP_BASE_STROKE_OPACITY));
@@ -182,7 +196,7 @@ export function createMapGraph(
 	);
 	playedPolyline.setAttribute("fill", "none");
 	playedPolyline.setAttribute("stroke", MAP_PLAYED_PATH_COLOR);
-	playedPolyline.setAttribute("stroke-width", String(MAP_PLAYED_PATH_WEIGHT));
+	playedPolyline.setAttribute("stroke-width", String(playedPathWeight));
 	playedPolyline.setAttribute("stroke-linecap", "round");
 	playedPolyline.setAttribute("stroke-linejoin", "round");
 	playedPolyline.setAttribute("opacity", String(MAP_PLAYED_OPACITY));
@@ -193,9 +207,9 @@ export function createMapGraph(
 		"http://www.w3.org/2000/svg",
 		"circle"
 	);
-	currentMarker.setAttribute("r", String(MAP_MARKER_RADIUS));
+	currentMarker.setAttribute("r", String(markerRadius));
 	currentMarker.setAttribute("stroke", MAP_MARKER_STROKE_COLOR);
-	currentMarker.setAttribute("stroke-width", String(MAP_MARKER_STROKE_WIDTH));
+	currentMarker.setAttribute("stroke-width", String(markerStrokeWidth));
 	currentMarker.setAttribute("fill", MAP_CURRENT_MARKER_COLOR);
 	pathSvg.appendChild(currentMarker);
 

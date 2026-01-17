@@ -118,7 +118,11 @@ export function setupController(
 	// ミニマップ（現在位置を中心にズーム＆追従）
 	const mapGraphMini = createMapGraph(coords, mapSvgMini, {
 		cameraEnabled: true,
-		cameraZoom: 2.5,
+		cameraZoom: 6,
+		basePathWeight: 2,
+		playedPathWeight: 3,
+		markerRadius: 3,
+		markerStrokeWidth: 1,
 	});
 	const elevationGraph = createElevationGraph(elevations, n, elevSvg);
 	const videoModule = createVideoModule({

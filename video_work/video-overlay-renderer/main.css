@@ -102,24 +102,23 @@ header .meta {
 	position: relative;
 	background: transparent;
 	display: flex;
+	flex-direction: column;
 	align-items: stretch;
-	justify-content: center;
+	justify-content: flex-start;
 	flex: 0 0 auto;
 }
 
 #path-view-full {
 	width: 100%;
-	height: 100%;
+	height: 260px;
 	display: block;
 	background: transparent;
 }
 
 #path-view-mini {
-	position: absolute;
-	bottom: 12px;
-	right: 12px;
-	width: 220px;
-	height: 165px;
+	margin-top: 8px;
+	width: 100%;
+	height: 160px;
 	display: block;
 	background: transparent;
 }
