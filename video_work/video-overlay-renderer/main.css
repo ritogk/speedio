@@ -94,7 +94,8 @@ header .meta {
 	display: flex;
 	flex-direction: column;
 	min-height: 100%;
-	justify-content: flex-end;
+	/* full マップを右上、minimap を右下に配置する */
+	justify-content: space-between;
 	order: 2;
 }
 /* Path view (地図なしの2Dビュー) */
@@ -129,7 +130,14 @@ header .meta {
 	flex-direction: column;
 	min-height: 100%;
 	order: 1;
+	/* 左カラムは従来どおり下側に操作系を寄せる */
 	justify-content: flex-end;
+}
+
+.left-bottom {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
 }
 
 .controls {
