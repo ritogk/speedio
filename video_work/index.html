@@ -11,7 +11,7 @@
 				padding: 0;
 				height: 100%;
 				font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-				background: #0f172a;
+				background: #000;
 				color: #e5e7eb;
 			}
 
@@ -19,6 +19,19 @@
 				display: flex;
 				flex-direction: column;
 				height: 100%;
+				position: relative;
+				z-index: 1;
+				background: transparent;
+			}
+
+			#bg-video {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				z-index: 0;
 			}
 
 			header {
@@ -58,7 +71,7 @@
 			/* Path view (地図なしの2Dビュー) */
 			#map-container {
 				position: relative;
-				background: radial-gradient(circle at top, #020617 0, #020617 40%, #020617 100%);
+				background: transparent;
 				display: flex;
 				align-items: stretch;
 				justify-content: center;
@@ -69,7 +82,7 @@
 				width: 100%;
 				height: 100%;
 				display: block;
-				background: radial-gradient(circle at top, #020617 0, #020617 40%, #020617 100%);
+				background: transparent;
 			}
 
 			/* Right pane */
@@ -159,7 +172,7 @@
 
 			.chart-wrapper {
 				flex: 0 0 auto;
-				background: #020617;
+				background: transparent;
 				border-radius: 8px;
 				border: 1px solid #111827;
 				padding: 6px 8px 10px;
@@ -236,6 +249,7 @@
 		</style>
 	</head>
 	<body>
+		<video id="bg-video" src="363.mp4" autoplay muted loop playsinline></video>
 		<div class="app-root">
 			<header>
 				<h1>区間移動 × 標高 × 時間 可視化</h1>
@@ -443,6 +457,7 @@
 				const slider = document.getElementById("index-slider");
 				const timeLabelAbs = document.getElementById("time-label-abs");
 				const playbackElapsed = document.getElementById("playback-elapsed");
+				const bgVideo = document.getElementById("bg-video");
 
 				const statusIndex = document.getElementById("status-index");
 				const statusElev = document.getElementById("status-elev");
@@ -510,7 +525,7 @@
 				pathBg.setAttribute("y", "0");
 				pathBg.setAttribute("width", String(pathWidth));
 				pathBg.setAttribute("height", String(pathHeight));
-				pathBg.setAttribute("fill", "#020617");
+				pathBg.setAttribute("fill", "none");
 				pathSvg.appendChild(pathBg);
 
 				// 全区間パス
@@ -578,7 +593,7 @@
 				bg.setAttribute("y", "0");
 				bg.setAttribute("width", String(width));
 				bg.setAttribute("height", String(height));
-				bg.setAttribute("fill", "#020617");
+				bg.setAttribute("fill", "none");
 				svg.appendChild(bg);
 
 				// 軸っぽいライン
@@ -728,6 +743,9 @@
 						playing = false;
 						playBtn.disabled = false;
 						pauseBtn.disabled = true;
+						if (bgVideo && !bgVideo.paused) {
+							bgVideo.pause();
+						}
 						stopAnimation();
 						return;
 					}
@@ -744,6 +762,14 @@
 					playing = true;
 					playBtn.disabled = true;
 					pauseBtn.disabled = false;
+					if (bgVideo && bgVideo.paused) {
+						try {
+							bgVideo.muted = true;
+							bgVideo.play();
+						} catch (e) {
+							console.warn("背景動画の再生に失敗しました", e);
+						}
+					}
 					playStartRealMs = performance.now();
 					playStartDataMs = tsDates[currentIndex].getTime();
 					rafId = requestAnimationFrame(tick);
@@ -754,6 +780,9 @@
 					stopAnimation();
 					playBtn.disabled = false;
 					pauseBtn.disabled = true;
+					if (bgVideo && !bgVideo.paused) {
+						bgVideo.pause();
+					}
 				}
 
 				playBtn.addEventListener("click", handlePlay);
