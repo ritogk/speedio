@@ -89,7 +89,7 @@ header .meta {
 	min-height: 0;
 }
 
-.left-pane {
+.right-panel {
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
@@ -113,8 +113,7 @@ header .meta {
 	background: transparent;
 }
 
-/* Right pane */
-.right-pane {
+.left-panel {
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
@@ -262,7 +261,7 @@ header .meta {
 		grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr);
 	}
 
-	.left-pane {
+	.right-panel {
 		border-right: none;
 		border-bottom: 1px solid #111827;
 	}
