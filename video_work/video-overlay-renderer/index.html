@@ -10,6 +10,8 @@
 				<div id="error" class="error-banner" style="display: none"></div>
 				<div class="main-layout">
 					<div class="right-panel">
+						<!-- 右カラムの一番上に full マップを固定表示 -->
+						<svg id="path-view-full" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
 						<div class="chart-container">
 							<div class="chart-header">
 								<span>標高プロファイル</span>
@@ -41,12 +43,11 @@
 						</div>
 
 						<div id="map-container">
-							<svg id="path-view-full" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
 							<svg id="path-view-mini" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
 						</div>
 					</div>
 					<div class="left-panel">
-						<div id="video-time-setup" class="video-setup">
+							<div id="video-time-setup" class="video-setup">
 							<span>動画開始位置</span>
 							<input id="video-start-input" type="text" placeholder="mm:ss または 秒" value="56"/>
 							<button id="video-start-apply">OK</button>
@@ -65,11 +66,11 @@
 						</div>
 					</div>
 
-					<div class="status-bar">
-						<span>Index: <strong id="status-index">-</strong></span>
-						<span>標高: <strong id="status-elev">- m</strong></span>
-						<span>座標: <strong id="status-latlon">-</strong></span>
-					</div>
+						<div class="status-bar">
+							<span>Index: <strong id="status-index">-</strong></span>
+							<span>標高: <strong id="status-elev">- m</strong></span>
+							<span>座標: <strong id="status-latlon">-</strong></span>
+						</div>
 				</div>
 			</div>
 		</div>
