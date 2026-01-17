@@ -1,1 +1,1 @@
-python -m http.server 8000
+npx http-server -p 8000 -c-1
