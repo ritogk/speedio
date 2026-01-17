@@ -97,7 +97,6 @@ header .meta {
 	grid-column: 2;
 	justify-content: flex-end;
 }
-
 /* Path view (地図なしの2Dビュー) */
 #map-container {
 	position: relative;
@@ -120,7 +119,6 @@ header .meta {
 	flex-direction: column;
 	min-height: 0;
 	grid-column: 1;
-	border-right: 1px solid #111827;
 }
 
 .controls {
@@ -262,7 +260,6 @@ header .meta {
 		grid-template-columns: minmax(0, 1fr);
 		grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr);
 	}
-
 	.right-panel {
 		border-right: none;
 		border-bottom: 1px solid #111827;
