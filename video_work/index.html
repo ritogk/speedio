@@ -528,13 +528,6 @@
 				let videoStartConfigured = false;
 				let videoStartSeconds = 0;
 
-				bgVideo.addEventListener("error", () => console.log("video error", bgVideo.error));
-["loadedmetadata","loadeddata","canplay","seeked","seeking","timeupdate"].forEach(ev=>{
-  bgVideo.addEventListener(ev, ()=> {
-    console.log(ev, "t=", bgVideo.currentTime, "readyState=", bgVideo.readyState, "seekable=", bgVideo.seekable.length ? `[${bgVideo.seekable.start(0)}..${bgVideo.seekable.end(0)}]` : "none");
-  });
-});
-
 				const statusIndex = document.getElementById("status-index");
 				const statusElev = document.getElementById("status-elev");
 				const statusLatLon = document.getElementById("status-latlon");
@@ -807,7 +800,8 @@
 				let playStartRealMs = 0; // 再生開始時刻（ブラウザ時間）
 				let playStartDataMs = minMillis; // 再生開始時のデータ時間（timestamp 基準）
 
-				function setIndex(i) {
+				function setIndex(i, options) {
+					const { syncVideo = false } = options || {};
 					i = Math.max(0, Math.min(n - 1, i));
 					currentIndex = i;
 					slider.value = String(i);
@@ -846,6 +840,21 @@
 					statusLatLon.textContent = `${coord[0].toFixed(6)}, ${coord[1].toFixed(6)}`;
 					timeLabelAbs.textContent = formatTimeLabel(ts);
 					updatePlaybackElapsed(ts.getTime());
+
+					// ユーザー操作によるシーク時は動画の位置も同期
+					if (syncVideo && bgVideo && videoStartConfigured) {
+						try {
+							const elapsedFromStartSec = (ts.getTime() - minMillis) / 1000;
+							let target = videoStartSeconds + elapsedFromStartSec;
+							if (Number.isFinite(bgVideo.duration) && bgVideo.duration > 0) {
+								const maxSeek = Math.max(0, bgVideo.duration - 0.1);
+								target = Math.min(Math.max(0, target), maxSeek);
+							}
+							bgVideo.currentTime = target;
+						} catch (e) {
+							console.warn("動画シーク同期に失敗しました", e);
+						}
+					}
 				}
 
 				function stopAnimation() {
@@ -937,19 +946,20 @@
 				playBtn.addEventListener("click", handlePlay);
 				pauseBtn.addEventListener("click", handlePause);
 
-				slider.addEventListener("input", () => {
+					slider.addEventListener("input", () => {
 					// スライダーを動かしたら一旦停止
 					playing = false;
 					stopAnimation();
 					playBtn.disabled = false;
 					pauseBtn.disabled = true;
 
-					const idx = Number(slider.value) || 0;
-					setIndex(idx);
+						const idx = Number(slider.value) || 0;
+						// スライダーによるシークでは動画も同期させる
+						setIndex(idx, { syncVideo: true });
 				});
 
-				// 初期表示
-				setIndex(0);
+					// 初期表示（動画同期は不要）
+					setIndex(0);
 			}
 
 			window.addEventListener("load", init);
