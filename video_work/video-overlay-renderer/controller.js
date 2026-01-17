@@ -114,6 +114,9 @@ export function setupController(
 	const mapGraphFull = createMapGraph(coords, mapSvgFull, {
 		cameraEnabled: false,
 		cameraZoom: 1,
+		// full map では再生済ライン・現在地マーカーは表示しない
+		showPlayedPath: false,
+		showCurrentMarker: false,
 	});
 	// ミニマップ（現在位置を中心にズーム＆追従）
 	const mapGraphMini = createMapGraph(coords, mapSvgMini, {
