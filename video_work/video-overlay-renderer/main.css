@@ -84,6 +84,7 @@ header .meta {
 	grid-template-columns: minmax(0, 2fr) minmax(0, 1.6fr);
 	/* 1 行を画面高いっぱいに広げて、左右ペインを下まで伸ばす */
 	grid-template-rows: minmax(0, 1fr);
+	height: 100vh;
 	align-items: stretch;
 	gap: 0;
 	min-height: 0;
@@ -94,6 +95,7 @@ header .meta {
 	flex-direction: column;
 	min-height: 0;
 	grid-column: 2;
+	justify-content: flex-end;
 }
 
 /* Path view (地図なしの2Dビュー) */
@@ -103,7 +105,7 @@ header .meta {
 	display: flex;
 	align-items: stretch;
 	justify-content: center;
-	flex: 1;
+	flex: 0 0 auto;
 }
 
 #path-view {
