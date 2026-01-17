@@ -15,17 +15,6 @@ const SEGMENT_TS_URL = "segment_points_with_timestamps.json";
 // 1 = 実時間, >1 = 早送り
 const PLAYBACK_SPEED = 1;
 
-// マップ表示に使うスタイル
-const MAP_STYLE = {
-	basePathColor: "#4b5563",
-	basePathWeight: 4,
-	playedPathColor: "#f97316",
-	// 通過ラインは未通過ラインより少し細く
-	playedPathWeight: 3,
-	// 現在位置マーカーの色（黄色 → 赤）
-	currentMarkerColor: "#ef4444",
-};
-
 async function init() {
 	try {
 		const [coords, elevations, segmentTs] = await Promise.all([
@@ -166,7 +155,7 @@ function setupUI(coords, elevations, tsDates) {
 	// モジュール初期化
 	const mapSvg = document.getElementById("path-view");
 	const elevSvg = document.getElementById("elevation-chart");
-	const mapGraph = createMapGraph(coords, mapSvg, MAP_STYLE);
+	const mapGraph = createMapGraph(coords, mapSvg);
 	const elevationGraph = createElevationGraph(elevations, n, elevSvg);
 	const videoModule = createVideoModule({
 		bgVideo,

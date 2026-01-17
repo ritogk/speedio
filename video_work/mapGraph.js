@@ -1,21 +1,45 @@
 // 地図グラフモジュール
 
+// 調整頻度の高いレイアウト・スタイル系定数
+const MAP_SVG_WIDTH = 800;
+const MAP_SVG_HEIGHT = 600;
+const MAP_MARGIN = 30;
+const MAP_GLOW_STD_DEVIATION = 1.8;
+const MAP_BASE_GLOW_OPACITY = 0.5;
+const MAP_BASE_STROKE_COLOR = "#ffffff";
+const MAP_BASE_STROKE_OPACITY = 0.8;
+const MAP_PLAYED_OPACITY = 0.95;
+const MAP_MARKER_RADIUS = 5;
+const MAP_MARKER_STROKE_COLOR = "#111827";
+const MAP_MARKER_STROKE_WIDTH = 2;
+
+// 地図の描画スタイル（色・太さなど）はこのモジュールで管理
+const DEFAULT_MAP_STYLE = {
+	basePathColor: "#4b5563",
+	basePathWeight: 4,
+	playedPathColor: "#f97316",
+	// 通過ラインは未通過ラインより少し細く
+	playedPathWeight: 3,
+	// 現在位置マーカーの色（黄色 → 赤）
+	currentMarkerColor: "#ef4444",
+};
+
 /**
  * 地図用SVGに経路を描画し、インデックスに応じて現在位置と再生済み区間を更新するモジュール。
  * @param {number[][]} coords [lat, lon] の配列
  * @param {SVGSVGElement} pathSvg 対象SVG要素
- * @param {Object} style MAP_STYLE 相当のスタイル設定
+ * @param {Object} [style] スタイル設定（省略時はモジュール内のデフォルトを使用）
  */
-export function createMapGraph(coords, pathSvg, style) {
+export function createMapGraph(coords, pathSvg, style = DEFAULT_MAP_STYLE) {
 	if (!pathSvg || !coords || coords.length === 0) {
 		return {
 			update() {},
 		};
 	}
 
-	const pathWidth = 800;
-	const pathHeight = 600;
-	const pathMargin = 30;
+	const pathWidth = MAP_SVG_WIDTH;
+	const pathHeight = MAP_SVG_HEIGHT;
+	const pathMargin = MAP_MARGIN;
 	pathSvg.setAttribute("viewBox", `0 0 ${pathWidth} ${pathHeight}`);
 
 	// フィルタ定義
@@ -34,7 +58,7 @@ export function createMapGraph(coords, pathSvg, style) {
 		"feGaussianBlur"
 	);
 	// ぼかしを弱めに
-	pathGlowBlur.setAttribute("stdDeviation", "1.8");
+	pathGlowBlur.setAttribute("stdDeviation", String(MAP_GLOW_STD_DEVIATION));
 	pathGlowFilter.appendChild(pathGlowBlur);
 	pathDefs.appendChild(pathGlowFilter);
 	pathSvg.appendChild(pathDefs);
@@ -98,7 +122,7 @@ export function createMapGraph(coords, pathSvg, style) {
 	baseGlowPolyline.setAttribute("stroke-linecap", "round");
 	baseGlowPolyline.setAttribute("stroke-linejoin", "round");
 	// 少しだけ強めの不透明度にして白っぽさを出す
-	baseGlowPolyline.setAttribute("opacity", "0.5");
+	baseGlowPolyline.setAttribute("opacity", String(MAP_BASE_GLOW_OPACITY));
 	baseGlowPolyline.setAttribute("filter", "url(#white-glow-map)");
 	pathSvg.appendChild(baseGlowPolyline);
 
@@ -112,11 +136,11 @@ export function createMapGraph(coords, pathSvg, style) {
 	);
 	basePolyline.setAttribute("fill", "none");
 	// 実線の色を白に（やや細め）
-	basePolyline.setAttribute("stroke", "#ffffff");
+	basePolyline.setAttribute("stroke", MAP_BASE_STROKE_COLOR);
 	basePolyline.setAttribute("stroke-width", String(style.basePathWeight * 0.7));
 	basePolyline.setAttribute("stroke-linecap", "round");
 	basePolyline.setAttribute("stroke-linejoin", "round");
-	basePolyline.setAttribute("opacity", "0.8");
+	basePolyline.setAttribute("opacity", String(MAP_BASE_STROKE_OPACITY));
 	pathSvg.appendChild(basePolyline);
 
 	// 再生済みパス
@@ -129,7 +153,7 @@ export function createMapGraph(coords, pathSvg, style) {
 	playedPolyline.setAttribute("stroke-width", String(style.playedPathWeight));
 	playedPolyline.setAttribute("stroke-linecap", "round");
 	playedPolyline.setAttribute("stroke-linejoin", "round");
-	playedPolyline.setAttribute("opacity", "0.95");
+	playedPolyline.setAttribute("opacity", String(MAP_PLAYED_OPACITY));
 	pathSvg.appendChild(playedPolyline);
 
 	// 現在位置マーカー
@@ -137,9 +161,9 @@ export function createMapGraph(coords, pathSvg, style) {
 		"http://www.w3.org/2000/svg",
 		"circle"
 	);
-	currentMarker.setAttribute("r", "5");
-	currentMarker.setAttribute("stroke", "#111827");
-	currentMarker.setAttribute("stroke-width", "2");
+	currentMarker.setAttribute("r", String(MAP_MARKER_RADIUS));
+	currentMarker.setAttribute("stroke", MAP_MARKER_STROKE_COLOR);
+	currentMarker.setAttribute("stroke-width", String(MAP_MARKER_STROKE_WIDTH));
 	currentMarker.setAttribute("fill", style.currentMarkerColor);
 	pathSvg.appendChild(currentMarker);
 
