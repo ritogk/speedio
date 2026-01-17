@@ -95,6 +95,7 @@ header .meta {
 	flex-direction: column;
 	min-height: 100%;
 	justify-content: flex-end;
+	order: 2;
 }
 /* Path view (地図なしの2Dビュー) */
 #map-container {
@@ -118,6 +119,8 @@ header .meta {
 	display: flex;
 	flex-direction: column;
 	min-height: 100%;
+	order: 1;
+	justify-content: flex-end;
 }
 
 .controls {
