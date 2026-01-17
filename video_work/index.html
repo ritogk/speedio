@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8" />
+		<title>区間移動時間・標高 可視化ビューア</title>
+
+		<!-- Leaflet CSS -->
+		<link
+			rel="stylesheet"
+			href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+			integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+			crossorigin=""
+		/>
+
+		<style>
+			html,
+			body {
+				margin: 0;
+				padding: 0;
+				height: 100%;
+				font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+				background: #0f172a;
+				color: #e5e7eb;
+			}
+
+			.app-root {
+				display: flex;
+				flex-direction: column;
+				height: 100%;
+			}
+
+			header {
+				padding: 8px 16px;
+				background: #020617;
+				border-bottom: 1px solid #1e293b;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+			}
+
+			header h1 {
+				font-size: 16px;
+				margin: 0;
+			}
+
+			header .meta {
+				font-size: 12px;
+				color: #9ca3af;
+			}
+
+			.main-layout {
+				flex: 1;
+				display: grid;
+				grid-template-columns: minmax(0, 2fr) minmax(0, 1.6fr);
+				gap: 0;
+				min-height: 0;
+			}
+
+			/* Map */
+			#map-container {
+				position: relative;
+				border-right: 1px solid #111827;
+			}
+
+			#map {
+				position: absolute;
+				inset: 0;
+			}
+
+			/* Right pane */
+			.right-pane {
+				display: flex;
+				flex-direction: column;
+				min-height: 0;
+			}
+
+			.controls {
+				padding: 8px 12px;
+				border-bottom: 1px solid #111827;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				background: #020617;
+			}
+
+			.controls button {
+				padding: 6px 12px;
+				border-radius: 999px;
+				border: none;
+				font-size: 13px;
+				cursor: pointer;
+				background: #16a34a;
+				color: #ecfdf5;
+			}
+
+			.controls button.secondary {
+				background: #374151;
+				color: #e5e7eb;
+			}
+
+			.controls button:disabled {
+				opacity: 0.5;
+				cursor: default;
+			}
+
+			.controls .slider {
+				flex: 1;
+				display: flex;
+				align-items: center;
+				gap: 6px;
+			}
+
+			.controls input[type="range"] {
+				flex: 1;
+			}
+
+			.controls .time-label {
+				font-size: 11px;
+				color: #9ca3af;
+				min-width: 130px;
+				text-align: right;
+			}
+
+			.status-bar {
+				padding: 4px 12px;
+				font-size: 11px;
+				color: #9ca3af;
+				display: flex;
+				gap: 16px;
+			}
+
+			.status-bar span strong {
+				color: #e5e7eb;
+			}
+
+			.chart-container {
+				flex: 1;
+				padding: 4px 8px 8px;
+				display: flex;
+				flex-direction: column;
+				gap: 4px;
+				min-height: 0;
+			}
+
+			.chart-header {
+				font-size: 12px;
+				color: #9ca3af;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.chart-wrapper {
+				flex: 1;
+				background: radial-gradient(circle at top, #1f2937 0, #020617 60%);
+				border-radius: 8px;
+				border: 1px solid #111827;
+				padding: 6px 8px 10px;
+				display: flex;
+				flex-direction: column;
+				min-height: 0;
+			}
+
+			#elevation-chart {
+				flex: 1;
+				min-height: 0;
+			}
+
+			.chart-caption {
+				margin-top: 4px;
+				font-size: 11px;
+				color: #6b7280;
+			}
+
+			.legend {
+				display: flex;
+				gap: 12px;
+				font-size: 11px;
+				margin-top: 2px;
+			}
+
+			.legend-item {
+				display: inline-flex;
+				align-items: center;
+				gap: 4px;
+			}
+
+			.legend-color {
+				width: 10px;
+				height: 3px;
+				border-radius: 999px;
+			}
+
+			.legend-color.path-total {
+				background: #4b5563;
+			}
+
+			.legend-color.path-played {
+				background: #f97316;
+			}
+
+			.legend-color.chart-elev {
+				background: linear-gradient(90deg, #22d3ee, #4ade80);
+			}
+
+			.legend-color.chart-cursor {
+				background: #fbbf24;
+			}
+
+			.error-banner {
+				padding: 6px 10px;
+				font-size: 12px;
+				background: rgba(127, 29, 29, 0.6);
+				border-bottom: 1px solid #7f1d1d;
+				color: #fecaca;
+			}
+
+			@media (max-width: 900px) {
+				.main-layout {
+					grid-template-columns: minmax(0, 1fr);
+					grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr);
+				}
+
+				#map-container {
+					border-right: none;
+					border-bottom: 1px solid #111827;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="app-root">
+			<header>
+				<h1>区間移動 × 標高 × 時間 可視化</h1>
+				<div class="meta">coords_segment / elevation_segment / segment_timestamps を連動表示</div>
+			</header>
+
+			<div id="error" class="error-banner" style="display: none"></div>
+
+			<div class="main-layout">
+				<div id="map-container">
+					<div id="map"></div>
+				</div>
+
+				<div class="right-pane">
+					<div class="controls">
+						<button id="play-btn">▶ 再生</button>
+						<button id="pause-btn" class="secondary" disabled>⏸ 一時停止</button>
+
+						<div class="slider">
+							<input id="index-slider" type="range" min="0" max="0" value="0" step="1" />
+						</div>
+
+						<div class="time-label">
+							<div id="playback-elapsed">00:00 / 00:00</div>
+							<div id="time-label-abs">--:--:--</div>
+						</div>
+					</div>
+
+					<div class="status-bar">
+						<span>Index: <strong id="status-index">-</strong></span>
+						<span>標高: <strong id="status-elev">- m</strong></span>
+						<span>座標: <strong id="status-latlon">-</strong></span>
+					</div>
+
+					<div class="chart-container">
+						<div class="chart-header">
+							<span>標高プロファイル</span>
+							<span id="chart-range" style="font-size: 11px; color: #6b7280"></span>
+						</div>
+
+						<div class="chart-wrapper">
+							<svg id="elevation-chart" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
+							<div class="legend">
+								<div class="legend-item">
+									<span class="legend-color path-total"></span>
+									<span>全区間（地図）</span>
+								</div>
+								<div class="legend-item">
+									<span class="legend-color path-played"></span>
+									<span>再生済み区間（地図）</span>
+								</div>
+								<div class="legend-item">
+									<span class="legend-color chart-elev"></span>
+									<span>標高 (m)</span>
+								</div>
+								<div class="legend-item">
+									<span class="legend-color chart-cursor"></span>
+									<span>現在位置</span>
+								</div>
+							</div>
+							<div class="chart-caption">スライダー or 再生ボタンで、時間に沿って位置と標高が同期して動きます。</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Leaflet JS -->
+		<script
+			src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+			integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+			crossorigin=""
+		></script>
+
+		<script>
+			// ===============================
+			// 設定（必要であればここだけ編集）
+			// ===============================
+
+			// データファイルのパス
+			const COORDS_URL = "coords_segment_list.json";
+			const ELEVATION_URL = "elevation_segment_list.json";
+			const SEGMENT_TS_URL = "segment_points_with_timestamps.json";
+
+			// 再生スピード倍率
+			// 1 = 現実世界と同じ速度（timestamp の秒数と画面上の秒が一致）
+			// >1 = 早送り, <1 = スロー
+			const PLAYBACK_SPEED = 1;
+
+			// どんなに間隔が短い点でも、最低このミリ秒で次の点へ進む
+			const MIN_FRAME_DURATION_MS = 80;
+
+			// マップ表示に使うスタイル
+			const MAP_STYLE = {
+				basePathColor: "#4b5563",
+				basePathWeight: 4,
+				playedPathColor: "#f97316",
+				playedPathWeight: 5,
+				currentMarkerColor: "#facc15",
+			};
+
+			// ===============================
+			// ユーティリティ
+			// ===============================
+
+			function showError(message) {
+				const el = document.getElementById("error");
+				el.textContent = message;
+				el.style.display = "block";
+			}
+
+			function formatTimeLabel(date) {
+				if (!date) return "--:--:--";
+				const y = date.getFullYear();
+				const m = String(date.getMonth() + 1).padStart(2, "0");
+				const d = String(date.getDate()).padStart(2, "0");
+				const hh = String(date.getHours()).padStart(2, "0");
+				const mm = String(date.getMinutes()).padStart(2, "0");
+				const ss = String(date.getSeconds()).padStart(2, "0");
+				return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+			}
+
+			function lerp(a, b, t) {
+				return a + (b - a) * t;
+			}
+
+			// ===============================
+			// メインロジック
+			// ===============================
+
+			async function loadJson(url) {
+				const res = await fetch(url);
+				if (!res.ok) {
+					throw new Error(`${url} の読み込みに失敗しました (${res.status})`);
+				}
+				return res.json();
+			}
+
+			async function init() {
+				try {
+					const [coords, elevations, segmentTs] = await Promise.all([
+						loadJson(COORDS_URL),
+						loadJson(ELEVATION_URL),
+						loadJson(SEGMENT_TS_URL),
+					]);
+
+					if (!Array.isArray(coords) || !Array.isArray(elevations) || !Array.isArray(segmentTs)) {
+						showError("JSON フォーマットが配列ではありません。");
+						return;
+					}
+
+					const length = Math.min(coords.length, elevations.length, segmentTs.length);
+					if (length === 0) {
+						showError("有効なデータがありません。");
+						return;
+					}
+
+					if (coords.length !== elevations.length || coords.length !== segmentTs.length) {
+						showError(
+							`配列長が一致しません: coords=${coords.length}, elevation=${elevations.length}, ts=${segmentTs.length}。 ` +
+								`最小の ${length} 個のみを使用します。`
+						);
+					}
+
+					const slicedCoords = coords.slice(0, length);
+					const slicedElev = elevations.slice(0, length);
+					const slicedTs = segmentTs.slice(0, length);
+
+					// timestamp を Date に変換しつつ、壊れているものは除外したうえで
+					// 時系列順にソートして UI に渡す
+					const combined = [];
+					for (let i = 0; i < length; i++) {
+						const tsStr = slicedTs[i].timestamp;
+						const tsDate = new Date(tsStr);
+						if (!tsStr || Number.isNaN(tsDate.getTime())) {
+							console.warn("無効な timestamp をスキップします", slicedTs[i]);
+							continue;
+						}
+						combined.push({
+							coord: slicedCoords[i],
+							elev: slicedElev[i],
+							ts: tsDate,
+						});
+					}
+
+					if (combined.length === 0) {
+						showError("有効な timestamp を含むデータがありません。");
+						return;
+					}
+
+					combined.sort((a, b) => a.ts - b.ts);
+
+					const sortedCoords = combined.map((c) => c.coord);
+					const sortedElev = combined.map((c) => c.elev);
+					const tsDates = combined.map((c) => c.ts);
+
+					setupUI(sortedCoords, sortedElev, tsDates);
+				} catch (err) {
+					console.error(err);
+					showError(err.message || String(err));
+				}
+			}
+
+			function setupUI(coords, elevations, tsDates) {
+				const n = coords.length;
+
+				// DOM 取得
+				const playBtn = document.getElementById("play-btn");
+				const pauseBtn = document.getElementById("pause-btn");
+				const slider = document.getElementById("index-slider");
+				const timeLabelAbs = document.getElementById("time-label-abs");
+				const playbackElapsed = document.getElementById("playback-elapsed");
+
+				const statusIndex = document.getElementById("status-index");
+				const statusElev = document.getElementById("status-elev");
+				const statusLatLon = document.getElementById("status-latlon");
+				const chartRange = document.getElementById("chart-range");
+
+				slider.max = String(n - 1);
+				slider.value = "0";
+
+				// 時間レンジ表示（データの起点と終点の timestamp 差）
+				const start = tsDates[0];
+				const end = tsDates[tsDates.length - 1];
+				const minMillis = start.getTime();
+				const maxMillis = end.getTime();
+				const elapsedSec = (maxMillis - minMillis) / 1000;
+				const mm = Math.floor(elapsedSec / 60);
+				const ss = Math.round(elapsedSec % 60)
+					.toString()
+					.padStart(2, "0");
+				chartRange.textContent = `${formatTimeLabel(start)} → ${formatTimeLabel(end)} (約 ${mm}:${ss} 経過)`;
+
+				function formatMmSs(totalSec) {
+					const s = Math.max(0, Math.floor(totalSec));
+					const m = Math.floor(s / 60);
+					const rem = String(s % 60).padStart(2, "0");
+					return `${m}:${rem}`;
+				}
+
+				function updatePlaybackElapsed(currentMs) {
+					const clamped = Math.max(minMillis, Math.min(maxMillis, currentMs));
+					const elapsedNow = (clamped - minMillis) / 1000;
+					playbackElapsed.textContent = `${formatMmSs(elapsedNow)} / ${formatMmSs(elapsedSec)}`;
+				}
+
+				// マップ初期化
+				const map = L.map("map", {
+					zoomControl: true,
+					attributionControl: false,
+				});
+
+				// ベースレイヤ（OSM）
+				L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+					maxZoom: 19,
+					attribution: "&copy; OpenStreetMap contributors",
+				}).addTo(map);
+
+				// coords は [lat, lon]
+				const latlngs = coords.map((c) => L.latLng(c[0], c[1]));
+
+				const basePolyline = L.polyline(latlngs, {
+					color: MAP_STYLE.basePathColor,
+					weight: MAP_STYLE.basePathWeight,
+					opacity: 0.8,
+				}).addTo(map);
+
+				const playedPolyline = L.polyline([], {
+					color: MAP_STYLE.playedPathColor,
+					weight: MAP_STYLE.playedPathWeight,
+					opacity: 0.95,
+				}).addTo(map);
+
+				map.fitBounds(basePolyline.getBounds(), { padding: [20, 20] });
+
+				const currentMarker = L.circleMarker(latlngs[0], {
+					radius: 6,
+					color: "#111827",
+					weight: 2,
+					fillColor: MAP_STYLE.currentMarkerColor,
+					fillOpacity: 0.95,
+				}).addTo(map);
+
+				// 標高チャート初期化
+				const svg = document.getElementById("elevation-chart");
+				const width = 800;
+				const height = 220;
+				const paddingLeft = 24;
+				const paddingRight = 6;
+				const paddingTop = 10;
+				const paddingBottom = 18;
+
+				const chartWidth = width - paddingLeft - paddingRight;
+				const chartHeight = height - paddingTop - paddingBottom;
+
+				const minElev = Math.min(...elevations);
+				const maxElev = Math.max(...elevations);
+
+				const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+				bg.setAttribute("x", "0");
+				bg.setAttribute("y", "0");
+				bg.setAttribute("width", String(width));
+				bg.setAttribute("height", String(height));
+				bg.setAttribute("fill", "url(#bgGradient)");
+				svg.appendChild(bg);
+
+				// グラデーション定義
+				const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+				const lg = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+				lg.setAttribute("id", "elevGradient");
+				lg.setAttribute("x1", "0%");
+				lg.setAttribute("y1", "0%");
+				lg.setAttribute("x2", "100%");
+				lg.setAttribute("y2", "0%");
+
+				const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+				stop1.setAttribute("offset", "0%");
+				stop1.setAttribute("stop-color", "#22d3ee");
+				const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+				stop2.setAttribute("offset", "100%");
+				stop2.setAttribute("stop-color", "#4ade80");
+				lg.appendChild(stop1);
+				lg.appendChild(stop2);
+
+				const bgGrad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
+				bgGrad.setAttribute("id", "bgGradient");
+				bgGrad.setAttribute("cx", "50%");
+				bgGrad.setAttribute("cy", "0%");
+				bgGrad.setAttribute("r", "90%");
+				const bgStop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+				bgStop1.setAttribute("offset", "0%");
+				bgStop1.setAttribute("stop-color", "#1f2937");
+				const bgStop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+				bgStop2.setAttribute("offset", "100%");
+				bgStop2.setAttribute("stop-color", "#020617");
+				bgGrad.appendChild(bgStop1);
+				bgGrad.appendChild(bgStop2);
+
+				defs.appendChild(lg);
+				defs.appendChild(bgGrad);
+				svg.appendChild(defs);
+
+				// 軸っぽいライン
+				const axis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+				axis.setAttribute("x1", paddingLeft);
+				axis.setAttribute("x2", width - paddingRight);
+				axis.setAttribute("y1", height - paddingBottom);
+				axis.setAttribute("y2", height - paddingBottom);
+				axis.setAttribute("stroke", "#4b5563");
+				axis.setAttribute("stroke-width", "1");
+				axis.setAttribute("stroke-linecap", "round");
+				svg.appendChild(axis);
+
+				// 標高線のパス
+				const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+				const dParts = [];
+				for (let i = 0; i < n; i++) {
+					const x = paddingLeft + (i / Math.max(1, n - 1)) * chartWidth;
+					const t = (elevations[i] - minElev) / Math.max(1, maxElev - minElev);
+					const y = paddingTop + (1 - t) * chartHeight;
+					dParts.push(`${i === 0 ? "M" : "L"}${x},${y}`);
+				}
+				path.setAttribute("d", dParts.join(" "));
+				path.setAttribute("fill", "none");
+				path.setAttribute("stroke", "url(#elevGradient)");
+				path.setAttribute("stroke-width", "2");
+				svg.appendChild(path);
+
+				// 現在位置カーソル
+				const cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
+				cursor.setAttribute("y1", paddingTop - 2);
+				cursor.setAttribute("y2", height - paddingBottom + 2);
+				cursor.setAttribute("stroke", "#fbbf24");
+				cursor.setAttribute("stroke-width", "2");
+				cursor.setAttribute("stroke-linecap", "round");
+				svg.appendChild(cursor);
+
+				// 標高範囲のラベル
+				const elevMinText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+				elevMinText.setAttribute("x", paddingLeft);
+				elevMinText.setAttribute("y", height - 2);
+				elevMinText.setAttribute("fill", "#6b7280");
+				elevMinText.setAttribute("font-size", "10");
+				elevMinText.textContent = `${minElev.toFixed(0)} m`;
+				svg.appendChild(elevMinText);
+
+				const elevMaxText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+				elevMaxText.setAttribute("x", paddingLeft);
+				elevMaxText.setAttribute("y", paddingTop + 10);
+				elevMaxText.setAttribute("fill", "#9ca3af");
+				elevMaxText.setAttribute("font-size", "10");
+				elevMaxText.textContent = `${maxElev.toFixed(0)} m`;
+				svg.appendChild(elevMaxText);
+
+				// インデックス変更処理 & 再生状態
+				let currentIndex = 0;
+				let playing = false;
+				let rafId = null;
+				let playStartRealMs = 0; // 再生開始時刻（ブラウザ時間）
+				let playStartDataMs = minMillis; // 再生開始時のデータ時間（timestamp 基準）
+
+				function setIndex(i, centerMap = false) {
+					i = Math.max(0, Math.min(n - 1, i));
+					currentIndex = i;
+					slider.value = String(i);
+
+					const latlng = latlngs[i];
+					currentMarker.setLatLng(latlng);
+
+					// 再生済みパス更新
+					const playedLatLngs = latlngs.slice(0, i + 1);
+					playedPolyline.setLatLngs(playedLatLngs);
+
+					if (centerMap) {
+						map.panTo(latlng, { animate: true, duration: 0.25 });
+					}
+
+					// 標高カーソル更新
+					const x = paddingLeft + (i / Math.max(1, n - 1)) * chartWidth;
+					cursor.setAttribute("x1", x);
+					cursor.setAttribute("x2", x);
+
+					const elev = elevations[i];
+					const ts = tsDates[i];
+
+					statusIndex.textContent = `${i + 1} / ${n}`;
+					statusElev.textContent = `${elev.toFixed(1)} m`;
+					statusLatLon.textContent = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+					timeLabelAbs.textContent = formatTimeLabel(ts);
+					updatePlaybackElapsed(ts.getTime());
+				}
+
+				function stopAnimation() {
+					if (rafId != null) {
+						cancelAnimationFrame(rafId);
+						rafId = null;
+					}
+				}
+
+				function tick() {
+					if (!playing) return;
+
+					const now = performance.now();
+					const elapsedRealSec = (now - playStartRealMs) / 1000;
+					// PLAYBACK_SPEED 倍速でデータ時間を進める
+					const targetDataMs = Math.min(
+						maxMillis,
+						playStartDataMs + elapsedRealSec * PLAYBACK_SPEED * 1000
+					);
+
+					// 現在のデータ時間を超えた index まで進める
+					let advanced = false;
+					while (
+						currentIndex < n - 1 &&
+						tsDates[currentIndex + 1].getTime() <= targetDataMs
+					) {
+						currentIndex += 1;
+						setIndex(currentIndex, true);
+						advanced = true;
+					}
+
+					// 再生中は常に「今の仮想時間」に合わせて時計表示を更新
+					const virtualDate = new Date(targetDataMs);
+					timeLabelAbs.textContent = formatTimeLabel(virtualDate);
+					updatePlaybackElapsed(targetDataMs);
+
+					// 終端まで到達したら停止
+					if (targetDataMs >= maxMillis || currentIndex >= n - 1) {
+						playing = false;
+						playBtn.disabled = false;
+						pauseBtn.disabled = true;
+						stopAnimation();
+						return;
+					}
+
+					rafId = requestAnimationFrame(tick);
+				}
+
+				function handlePlay() {
+					if (playing) return;
+					// 終端にいたら先頭から
+					if (currentIndex >= n - 1) {
+						setIndex(0, true);
+					}
+					playing = true;
+					playBtn.disabled = true;
+					pauseBtn.disabled = false;
+					playStartRealMs = performance.now();
+					playStartDataMs = tsDates[currentIndex].getTime();
+					rafId = requestAnimationFrame(tick);
+				}
+
+				function handlePause() {
+					playing = false;
+					stopAnimation();
+					playBtn.disabled = false;
+					pauseBtn.disabled = true;
+				}
+
+				playBtn.addEventListener("click", handlePlay);
+				pauseBtn.addEventListener("click", handlePause);
+
+				slider.addEventListener("input", () => {
+					// スライダーを動かしたら一旦停止
+					playing = false;
+					stopAnimation();
+					playBtn.disabled = false;
+					pauseBtn.disabled = true;
+
+					const idx = Number(slider.value) || 0;
+					setIndex(idx, true);
+				});
+
+				// 初期表示
+				setIndex(0, true);
+			}
+
+			window.addEventListener("load", init);
+		</script>
+	</body>
+	</html>
+
