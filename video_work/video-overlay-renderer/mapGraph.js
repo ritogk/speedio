@@ -54,6 +54,8 @@ export function createMapGraph(
 		markerStrokeWidth = MAP_MARKER_STROKE_WIDTH,
 		showPlayedPath = true,
 		showCurrentMarker = true,
+		// true にするとミニマップを進行方向が常に上になるように回転させる
+		rotateToHeading = false,
 	} = {}
 ) {
 	if (!pathSvg || !coords || coords.length === 0) {
@@ -152,6 +154,13 @@ export function createMapGraph(
 	pathBg.setAttribute("filter", "url(#panel-blur-map)");
 	pathSvg.appendChild(pathBg);
 
+	// 経路やマーカーをまとめて回転させるためのグループ
+	const pathGroup = document.createElementNS(
+		"http://www.w3.org/2000/svg",
+		"g"
+	);
+	pathSvg.appendChild(pathGroup);
+
 	// 全区間パス（白いグロー + 実線）
 	const baseGlowPolyline = document.createElementNS(
 		"http://www.w3.org/2000/svg",
@@ -174,7 +183,7 @@ export function createMapGraph(
 	// 少しだけ強めの不透明度にして白っぽさを出す
 	baseGlowPolyline.setAttribute("opacity", String(MAP_BASE_GLOW_OPACITY));
 	baseGlowPolyline.setAttribute("filter", "url(#white-glow-map)");
-	pathSvg.appendChild(baseGlowPolyline);
+	pathGroup.appendChild(baseGlowPolyline);
 
 	const basePolyline = document.createElementNS(
 		"http://www.w3.org/2000/svg",
@@ -191,7 +200,7 @@ export function createMapGraph(
 	basePolyline.setAttribute("stroke-linecap", "round");
 	basePolyline.setAttribute("stroke-linejoin", "round");
 	basePolyline.setAttribute("opacity", String(MAP_BASE_STROKE_OPACITY));
-	pathSvg.appendChild(basePolyline);
+	pathGroup.appendChild(basePolyline);
 
 	// 再生済みパス（オプションで非表示にできる）
 	let playedPolyline = null;
@@ -206,7 +215,7 @@ export function createMapGraph(
 		playedPolyline.setAttribute("stroke-linecap", "round");
 		playedPolyline.setAttribute("stroke-linejoin", "round");
 		playedPolyline.setAttribute("opacity", String(MAP_PLAYED_OPACITY));
-		pathSvg.appendChild(playedPolyline);
+		pathGroup.appendChild(playedPolyline);
 	}
 
 	// 現在位置マーカー（オプションで非表示にできる）
@@ -220,7 +229,7 @@ export function createMapGraph(
 		currentMarker.setAttribute("stroke", MAP_MARKER_STROKE_COLOR);
 		currentMarker.setAttribute("stroke-width", String(markerStrokeWidth));
 		currentMarker.setAttribute("fill", MAP_CURRENT_MARKER_COLOR);
-		pathSvg.appendChild(currentMarker);
+		pathGroup.appendChild(currentMarker);
 	}
 
 	function update(index) {
@@ -237,6 +246,34 @@ export function createMapGraph(
 				.map((p) => `${p.x},${p.y}`)
 				.join(" ");
 			playedPolyline.setAttribute("points", playedPoints);
+		}
+
+		// ミニマップを進行方向が上向きになるように回転
+		if (rotateToHeading) {
+			// 前後の点から進行方向ベクトルを計算
+			const prevIdx = i > 0 ? i - 1 : i;
+			const nextIdx = i < projectedPoints.length - 1 ? i + 1 : i;
+			const prevPt = projectedPoints[prevIdx];
+			const nextPt = projectedPoints[nextIdx];
+			let dx = nextPt.x - prevPt.x;
+			let dy = nextPt.y - prevPt.y;
+			const len = Math.hypot(dx, dy);
+			if (len > 1e-6) {
+				dx /= len;
+				dy /= len;
+				// 現在の方向角
+				const angleRad = Math.atan2(dy, dx);
+				// 進行方向が上（画面座標で -Y 方向）を向くように回転
+				const angleDeg = -90 - (angleRad * 180) / Math.PI;
+				pathGroup.setAttribute(
+					"transform",
+					`rotate(${angleDeg}, ${pt.x}, ${pt.y})`
+				);
+			} else {
+				pathGroup.removeAttribute("transform");
+			}
+		} else {
+			pathGroup.removeAttribute("transform");
 		}
 
 		// レースゲームのミニマップ風に、現在位置を中心にズーム＆追従

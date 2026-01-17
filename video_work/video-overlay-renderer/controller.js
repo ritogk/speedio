@@ -114,18 +114,19 @@ export function setupController(
 	const mapGraphFull = createMapGraph(coords, mapSvgFull, {
 		cameraEnabled: false,
 		cameraZoom: 1,
-		// full map では再生済ライン・現在地マーカーは表示しない
-		showPlayedPath: false,
-		showCurrentMarker: false,
+		showPlayedPath: true,
+		showCurrentMarker: true,
 	});
 	// ミニマップ（現在位置を中心にズーム＆追従）
 	const mapGraphMini = createMapGraph(coords, mapSvgMini, {
 		cameraEnabled: true,
-		cameraZoom: 6,
-		basePathWeight: 2,
-		playedPathWeight: 3,
-		markerRadius: 3,
-		markerStrokeWidth: 1,
+		cameraZoom: 12,
+		basePathWeight: 1.1,
+		playedPathWeight: 1.3,
+		markerRadius: 1.3,
+		markerStrokeWidth: 0.5,
+		// ミニマップは進行方向が常に上になるように回転
+		rotateToHeading: true,
 	});
 	const elevationGraph = createElevationGraph(elevations, n, elevSvg);
 	const videoModule = createVideoModule({
