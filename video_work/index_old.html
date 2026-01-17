@@ -4,6 +4,14 @@
 		<meta charset="UTF-8" />
 		<title>区間移動時間・標高 可視化ビューア</title>
 
+		<!-- Leaflet CSS -->
+		<link
+			rel="stylesheet"
+			href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+			integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+			crossorigin=""
+		/>
+
 		<style>
 			html,
 			body {
@@ -48,21 +56,15 @@
 				min-height: 0;
 			}
 
-			/* Path view (地図なしの2Dビュー) */
+			/* Map */
 			#map-container {
 				position: relative;
 				border-right: 1px solid #111827;
-				background: radial-gradient(circle at top, #020617 0, #020617 40%, #020617 100%);
-				display: flex;
-				align-items: stretch;
-				justify-content: center;
 			}
 
-			#path-view {
-				width: 100%;
-				height: 100%;
-				display: block;
-				background: radial-gradient(circle at top, #020617 0, #020617 40%, #020617 100%);
+			#map {
+				position: absolute;
+				inset: 0;
 			}
 
 			/* Right pane */
@@ -237,7 +239,7 @@
 
 			<div class="main-layout">
 				<div id="map-container">
-					<svg id="path-view" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
+					<div id="map"></div>
 				</div>
 
 				<div class="right-pane">
@@ -293,6 +295,13 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Leaflet JS -->
+		<script
+			src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+			integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+			crossorigin=""
+		></script>
 
 		<script>
 			// ===============================
@@ -466,85 +475,42 @@
 					playbackElapsed.textContent = `${formatMmSs(elapsedNow)} / ${formatMmSs(elapsedSec)}`;
 				}
 
-				// 2D パスビュー初期化（緯度経度を平面に投影）
-				const pathSvg = document.getElementById("path-view");
-				const pathWidth = 800;
-				const pathHeight = 600;
-				const pathMargin = 30;
-				pathSvg.setAttribute("viewBox", `0 0 ${pathWidth} ${pathHeight}`);
+				// マップ初期化
+				const map = L.map("map", {
+					zoomControl: true,
+					attributionControl: false,
+				});
 
-				const lats = coords.map((c) => c[0]);
-				const lons = coords.map((c) => c[1]);
-				const minLat = Math.min(...lats);
-				const maxLat = Math.max(...lats);
-				const minLon = Math.min(...lons);
-				const maxLon = Math.max(...lons);
+				// ベースレイヤ（OSM）
+				L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+					maxZoom: 19,
+					attribution: "&copy; OpenStreetMap contributors",
+				}).addTo(map);
 
-				function projectCoord(coord) {
-					const [lat, lon] = coord;
-					const lonSpan = maxLon - minLon || 1;
-					const latSpan = maxLat - minLat || 1;
-					const x =
-						((lon - minLon) / lonSpan) * (pathWidth - pathMargin * 2) + pathMargin;
-					const y =
-						((maxLat - lat) / latSpan) * (pathHeight - pathMargin * 2) + pathMargin;
-					return { x, y };
-				}
+				// coords は [lat, lon]
+				const latlngs = coords.map((c) => L.latLng(c[0], c[1]));
 
-				const projectedPoints = coords.map(projectCoord);
+				const basePolyline = L.polyline(latlngs, {
+					color: MAP_STYLE.basePathColor,
+					weight: MAP_STYLE.basePathWeight,
+					opacity: 0.8,
+				}).addTo(map);
 
-				// 背景
-				const pathBg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-				pathBg.setAttribute("x", "0");
-				pathBg.setAttribute("y", "0");
-				pathBg.setAttribute("width", String(pathWidth));
-				pathBg.setAttribute("height", String(pathHeight));
-				pathBg.setAttribute("fill", "#020617");
-				pathSvg.appendChild(pathBg);
+				const playedPolyline = L.polyline([], {
+					color: MAP_STYLE.playedPathColor,
+					weight: MAP_STYLE.playedPathWeight,
+					opacity: 0.95,
+				}).addTo(map);
 
-				// 全区間パス
-				const basePolyline = document.createElementNS(
-					"http://www.w3.org/2000/svg",
-					"polyline"
-				);
-				basePolyline.setAttribute(
-					"points",
-					projectedPoints.map((p) => `${p.x},${p.y}`).join(" ")
-				);
-				basePolyline.setAttribute("fill", "none");
-				basePolyline.setAttribute("stroke", MAP_STYLE.basePathColor);
-				basePolyline.setAttribute("stroke-width", String(MAP_STYLE.basePathWeight));
-				basePolyline.setAttribute("stroke-linecap", "round");
-				basePolyline.setAttribute("stroke-linejoin", "round");
-				basePolyline.setAttribute("opacity", "0.8");
-				pathSvg.appendChild(basePolyline);
+				map.fitBounds(basePolyline.getBounds(), { padding: [20, 20] });
 
-				// 再生済みパス
-				const playedPolyline = document.createElementNS(
-					"http://www.w3.org/2000/svg",
-					"polyline"
-				);
-				playedPolyline.setAttribute("fill", "none");
-				playedPolyline.setAttribute("stroke", MAP_STYLE.playedPathColor);
-				playedPolyline.setAttribute(
-					"stroke-width",
-					String(MAP_STYLE.playedPathWeight)
-				);
-				playedPolyline.setAttribute("stroke-linecap", "round");
-				playedPolyline.setAttribute("stroke-linejoin", "round");
-				playedPolyline.setAttribute("opacity", "0.95");
-				pathSvg.appendChild(playedPolyline);
-
-				// 現在位置マーカー
-				const currentMarker = document.createElementNS(
-					"http://www.w3.org/2000/svg",
-					"circle"
-				);
-				currentMarker.setAttribute("r", "5");
-				currentMarker.setAttribute("stroke", "#111827");
-				currentMarker.setAttribute("stroke-width", "2");
-				currentMarker.setAttribute("fill", MAP_STYLE.currentMarkerColor);
-				pathSvg.appendChild(currentMarker);
+				const currentMarker = L.circleMarker(latlngs[0], {
+					radius: 6,
+					color: "#111827",
+					weight: 2,
+					fillColor: MAP_STYLE.currentMarkerColor,
+					fillOpacity: 0.95,
+				}).addTo(map);
 
 				// 標高チャート初期化
 				const svg = document.getElementById("elevation-chart");
@@ -664,22 +630,21 @@
 				let playStartRealMs = 0; // 再生開始時刻（ブラウザ時間）
 				let playStartDataMs = minMillis; // 再生開始時のデータ時間（timestamp 基準）
 
-				function setIndex(i) {
+				function setIndex(i, centerMap = false) {
 					i = Math.max(0, Math.min(n - 1, i));
 					currentIndex = i;
 					slider.value = String(i);
 
-					// 2D パスビューの現在位置更新
-					const pt = projectedPoints[i];
-					currentMarker.setAttribute("cx", String(pt.x));
-					currentMarker.setAttribute("cy", String(pt.y));
+					const latlng = latlngs[i];
+					currentMarker.setLatLng(latlng);
 
 					// 再生済みパス更新
-					const playedPoints = projectedPoints
-						.slice(0, i + 1)
-						.map((p) => `${p.x},${p.y}`)
-						.join(" ");
-					playedPolyline.setAttribute("points", playedPoints);
+					const playedLatLngs = latlngs.slice(0, i + 1);
+					playedPolyline.setLatLngs(playedLatLngs);
+
+					if (centerMap) {
+						map.panTo(latlng, { animate: true, duration: 0.25 });
+					}
 
 					// 標高カーソル更新
 					const x = paddingLeft + (i / Math.max(1, n - 1)) * chartWidth;
@@ -688,11 +653,10 @@
 
 					const elev = elevations[i];
 					const ts = tsDates[i];
-					const coord = coords[i];
 
 					statusIndex.textContent = `${i + 1} / ${n}`;
 					statusElev.textContent = `${elev.toFixed(1)} m`;
-					statusLatLon.textContent = `${coord[0].toFixed(6)}, ${coord[1].toFixed(6)}`;
+					statusLatLon.textContent = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
 					timeLabelAbs.textContent = formatTimeLabel(ts);
 					updatePlaybackElapsed(ts.getTime());
 				}
@@ -722,7 +686,7 @@
 						tsDates[currentIndex + 1].getTime() <= targetDataMs
 					) {
 						currentIndex += 1;
-						setIndex(currentIndex);
+						setIndex(currentIndex, true);
 						advanced = true;
 					}
 
@@ -747,7 +711,7 @@
 					if (playing) return;
 					// 終端にいたら先頭から
 					if (currentIndex >= n - 1) {
-						setIndex(0);
+						setIndex(0, true);
 					}
 					playing = true;
 					playBtn.disabled = true;
@@ -775,11 +739,11 @@
 					pauseBtn.disabled = true;
 
 					const idx = Number(slider.value) || 0;
-					setIndex(idx);
+					setIndex(idx, true);
 				});
 
 				// 初期表示
-				setIndex(0);
+				setIndex(0, true);
 			}
 
 			window.addEventListener("load", init);
