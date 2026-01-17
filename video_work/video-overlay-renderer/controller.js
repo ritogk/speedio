@@ -121,10 +121,10 @@ export function setupController(
 	const mapGraphMini = createMapGraph(coords, mapSvgMini, {
 		cameraEnabled: true,
 		cameraZoom: 12,
-		basePathWeight: 1.1,
-		playedPathWeight: 1.3,
-		markerRadius: 1.3,
-		markerStrokeWidth: 0.5,
+		basePathWeight: 0.7,
+		playedPathWeight: 0.9,
+		markerRadius: 1.1,
+		markerStrokeWidth: 0.4,
 		// ミニマップは進行方向が常に上になるように回転
 		rotateToHeading: true,
 	});
