@@ -46,14 +46,24 @@ export function createMapGraph(coords, pathSvg, style) {
 	const minLon = Math.min(...lons);
 	const maxLon = Math.max(...lons);
 
+	// データの縦横比を保ったまま、描画領域いっぱいに収まるようにスケールを計算
+	const lonSpan = maxLon - minLon || 1;
+	const latSpan = maxLat - minLat || 1;
+	const innerWidth = pathWidth - pathMargin * 2;
+	const innerHeight = pathHeight - pathMargin * 2;
+	// 両方向で共通のスケール（＝縮尺）を使うことで、形が縦横に伸び縮みしないようにする
+	const scale = Math.min(innerWidth / lonSpan, innerHeight / latSpan);
+	// 余白分は中心に寄せる
+	const usedWidth = lonSpan * scale;
+	const usedHeight = latSpan * scale;
+	const offsetX = pathMargin + (innerWidth - usedWidth) / 2;
+	const offsetY = pathMargin + (innerHeight - usedHeight) / 2;
+
 	function projectCoord(coord) {
 		const [lat, lon] = coord;
-		const lonSpan = maxLon - minLon || 1;
-		const latSpan = maxLat - minLat || 1;
-		const x =
-			((lon - minLon) / lonSpan) * (pathWidth - pathMargin * 2) + pathMargin;
-		const y =
-			((maxLat - lat) / latSpan) * (pathHeight - pathMargin * 2) + pathMargin;
+		const x = (lon - minLon) * scale + offsetX;
+		// 緯度は北が上になるように maxLat からの差分で計算
+		const y = (maxLat - lat) * scale + offsetY;
 		return { x, y };
 	}
 
