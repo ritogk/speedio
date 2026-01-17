@@ -258,7 +258,7 @@ const handleRoadTypeClick = async (roadWidthType: RoadWidthType) => {
 /**
  * センターラインの更新ハンドラー
  */
-const handleCenterlineClick = async (hasCenterLine: boolean) => {
+const handleCenterlineClick = async (hasCenterLine: boolean, roadWidthType: RoadWidthType) => {
   if (!locations.value) return
   // locationsに含まれる座標の場合は更新
   const location = locations.value.find((location) => {
@@ -272,7 +272,8 @@ const handleCenterlineClick = async (hasCenterLine: boolean) => {
     await patchLocations.mutateAsync({
       id: location.id,
       location: {
-        has_center_line: hasCenterLine
+        has_center_line: hasCenterLine,
+        road_width_type: roadWidthType
       }
     })
   } else {
@@ -280,7 +281,7 @@ const handleCenterlineClick = async (hasCenterLine: boolean) => {
     await postLocations.mutateAsync({
       latitude: selectedGeometryPoint.value.latitude,
       longitude: selectedGeometryPoint.value.longitude,
-      road_width_type: selectedGeometryPoint.value.roadWidthType,
+      road_width_type: roadWidthType,
       has_center_line: hasCenterLine
     })
   }
@@ -438,7 +439,7 @@ onBeforeUnmount(() => {
               class="button-style"
               data-tooltip="center-lineあり"
               style="background: bisque"
-              @click="handleCenterlineClick(true)"
+              @click="handleCenterlineClick(true, 'TWO_LANE')"
             >
               <span v-show="selectedLocation?.has_center_line" style="color: red">★</span>
               yes
@@ -447,10 +448,19 @@ onBeforeUnmount(() => {
               class="button-style"
               data-tooltip="center-lineなし"
               style="background: bisque"
-              @click="handleCenterlineClick(false)"
+              @click="handleCenterlineClick(false, 'ONE_LANE_SPACIOUS')"
             >
               <span v-show="!selectedLocation?.has_center_line" style="color: red">★</span>
-              no
+              no(1)
+            </button>
+            <button
+              class="button-style"
+              data-tooltip="center-lineなし"
+              style="background: bisque"
+              @click="handleCenterlineClick(false, 'ONE_LANE')"
+            >
+              <span v-show="!selectedLocation?.has_center_line" style="color: red">★</span>
+              no(2)
             </button>
           </span>
 
