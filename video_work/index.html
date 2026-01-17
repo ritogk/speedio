@@ -33,17 +33,16 @@
 			}
 
 			.video-setup {
-				position: absolute;
-				top: 10px;
-				right: 12px;
+				/* スライダー上に配置するため、通常フロー内の小さな行として表示 */
+				position: static;
+				margin: 4px 12px 0;
 				background: rgba(15, 23, 42, 0.85);
 				border-radius: 8px;
-				padding: 6px 8px;
-				display: flex;
+				padding: 4px 8px;
+				display: inline-flex;
 				align-items: center;
 				gap: 6px;
-				font-size: 12px;
-				z-index: 2;
+				font-size: 11px;
 			}
 
 			.video-setup input {
@@ -272,18 +271,12 @@
 			}
 		</style>
 	</head>
-	<body>
-		<video id="bg-video" src="363.mp4" muted playsinline preload="metadata"></video>
-		<div class="app-root">
-			<div id="error" class="error-banner" style="display: none"></div>
+		<body>
+			<video id="bg-video" src="363.mp4" muted playsinline preload="metadata"></video>
+			<div class="app-root">
+				<div id="error" class="error-banner" style="display: none"></div>
 
-			<div class="main-layout">
-				<div id="video-time-setup" class="video-setup">
-					<span>動画開始位置</span>
-					<input id="video-start-input" type="text" placeholder="mm:ss または 秒" />
-					<button id="video-start-apply">OK</button>
-				</div>
-
+				<div class="main-layout">
 				<div class="left-pane">
 					<div class="chart-container">
 						<div class="chart-header">
@@ -320,8 +313,13 @@
 					</div>
 				</div>
 
-				<div class="right-pane">
-					<div class="controls">
+					<div class="right-pane">
+						<div id="video-time-setup" class="video-setup">
+							<span>動画開始位置</span>
+							<input id="video-start-input" type="text" placeholder="mm:ss または 秒" />
+							<button id="video-start-apply">OK</button>
+						</div>
+						<div class="controls">
 						<button id="play-btn">▶ 再生</button>
 						<button id="pause-btn" class="secondary" disabled>⏸ 一時停止</button>
 
@@ -517,6 +515,16 @@
 				const videoStartApply = document.getElementById("video-start-apply");
 				let videoStartConfigured = false;
 				let videoStartSeconds = 0;
+
+				// 初期フォーカスを開始位置入力に当てる
+				if (videoStartInput) {
+					try {
+						videoStartInput.focus();
+						videoStartInput.select();
+					} catch (e) {
+						console.warn("開始位置入力へのフォーカスに失敗しました", e);
+					}
+				}
 
 				const statusIndex = document.getElementById("status-index");
 				const statusElev = document.getElementById("status-elev");
