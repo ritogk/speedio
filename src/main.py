@@ -48,6 +48,14 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     print(f"  📑 row: {len(gdf_edges)}")
     execution_timer_ins.stop()
 
+    # # LINESTRINGを緯度と経度のリストに変換する.coords[0]とcoords[1]を入り変えたリストを返す
+    gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
+        lambda x: list(map(lambda y: [y[1], y[0]], x.coords))
+    )
+    gdf_edges["geometry_meter_list"] = (
+        column_generater.geometry_meter_list.generate(gdf_edges, plane_epsg_code)
+    )
+
     # 不要なエッジを削除
     execution_timer_ins.start("🛣️ remove reverse edge")
     count = len(gdf_edges)
@@ -223,6 +231,13 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     )
     execution_timer_ins.stop()
 
+    # 指定単位の標高の区間リストを生成する(ジオメトリの座標リスト)
+    execution_timer_ins.start("🏔️ calc coords_segment_list")
+    gdf_edges["coords_segment_list"] = column_generater.coords_segment_list.generate(
+        gdf_edges
+    )
+    execution_timer_ins.stop()
+
     # 上り下りのポイントを求める
     execution_timer_ins.start("🏔️ calc elevation_unevenness")
     elevation_unevenness = column_generater.elevation_unevenness.generate(
@@ -282,14 +297,6 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     ]
     print(f"  📑 row: {count}, 🗑️ deleted: {count - len(gdf_edges)}")
     execution_timer_ins.stop()
-
-    # # LINESTRINGを緯度と経度のリストに変換する.coords[0]とcoords[1]を入り変えたリストを返す
-    gdf_edges["geometry_list"] = gdf_edges["geometry"].apply(
-        lambda x: list(map(lambda y: [y[1], y[0]], x.coords))
-    )
-    gdf_edges["geometry_meter_list"] = (
-        column_generater.geometry_meter_list.generate(gdf_edges, plane_epsg_code)
-    )
 
     # print(gdf_edges["geometry_list"].iloc[0])
     # print(gdf_edges["geometry"].iloc[0])
@@ -451,6 +458,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "elevation_segment_list",
         "elevation_unevenness",
         "elevation_unevenness_count",
+        "coords_segment_list",
         "angle_deltas",
         "score_elevation",
         "score_elevation_unevenness",
