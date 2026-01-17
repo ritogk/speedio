@@ -379,8 +379,10 @@
 				basePathColor: "#4b5563",
 				basePathWeight: 4,
 				playedPathColor: "#f97316",
-				playedPathWeight: 5,
-				currentMarkerColor: "#facc15",
+				// 通過ラインは未通過ラインより少し細く
+				playedPathWeight: 3,
+				// 現在位置マーカーの色（黄色 → 赤）
+				currentMarkerColor: "#ef4444",
 			};
 
 			// ===============================
@@ -636,6 +638,30 @@
 				const pathMargin = 30;
 				pathSvg.setAttribute("viewBox", `0 0 ${pathWidth} ${pathHeight}`);
 
+				// 地図ライン用の白いぼかし（グロー）フィルタ定義
+				const pathDefs = document.createElementNS(
+					"http://www.w3.org/2000/svg",
+					"defs"
+				);
+				const pathGlowFilter = document.createElementNS(
+					"http://www.w3.org/2000/svg",
+					"filter"
+				);
+				pathGlowFilter.setAttribute("id", "white-glow-map");
+				pathGlowFilter.setAttribute("x", "-50%");
+				pathGlowFilter.setAttribute("y", "-50%");
+				pathGlowFilter.setAttribute("width", "200%");
+				pathGlowFilter.setAttribute("height", "200%");
+				const pathGlowBlur = document.createElementNS(
+					"http://www.w3.org/2000/svg",
+					"feGaussianBlur"
+				);
+				// ぼかしをさらに弱めに
+				pathGlowBlur.setAttribute("stdDeviation", "1.8");
+				pathGlowFilter.appendChild(pathGlowBlur);
+				pathDefs.appendChild(pathGlowFilter);
+				pathSvg.appendChild(pathDefs);
+
 				const lats = coords.map((c) => c[0]);
 				const lons = coords.map((c) => c[1]);
 				const minLat = Math.min(...lats);
@@ -665,7 +691,30 @@
 				pathBg.setAttribute("fill", "none");
 				pathSvg.appendChild(pathBg);
 
-				// 全区間パス
+				// 全区間パス（白いグロー + 実線）
+				const baseGlowPolyline = document.createElementNS(
+					"http://www.w3.org/2000/svg",
+					"polyline"
+				);
+				baseGlowPolyline.setAttribute(
+					"points",
+					projectedPoints.map((p) => `${p.x},${p.y}`).join(" ")
+				);
+				baseGlowPolyline.setAttribute("fill", "none");
+				// グローは元のライン色（グレー）
+				baseGlowPolyline.setAttribute("stroke", MAP_STYLE.basePathColor);
+				baseGlowPolyline.setAttribute(
+					"stroke-width",
+					// 元のラインよりわずかに太い程度に抑える
+					String(MAP_STYLE.basePathWeight * 1.6)
+				);
+				baseGlowPolyline.setAttribute("stroke-linecap", "round");
+				baseGlowPolyline.setAttribute("stroke-linejoin", "round");
+				// 少しだけ強めの不透明度にして白っぽさを出す
+				baseGlowPolyline.setAttribute("opacity", "0.5");
+				baseGlowPolyline.setAttribute("filter", "url(#white-glow-map)");
+				pathSvg.appendChild(baseGlowPolyline);
+
 				const basePolyline = document.createElementNS(
 					"http://www.w3.org/2000/svg",
 					"polyline"
@@ -675,8 +724,12 @@
 					projectedPoints.map((p) => `${p.x},${p.y}`).join(" ")
 				);
 				basePolyline.setAttribute("fill", "none");
-				basePolyline.setAttribute("stroke", MAP_STYLE.basePathColor);
-				basePolyline.setAttribute("stroke-width", String(MAP_STYLE.basePathWeight));
+				// 実線の色を白に（やや細め）
+				basePolyline.setAttribute("stroke", "#ffffff");
+				basePolyline.setAttribute(
+					"stroke-width",
+					String(MAP_STYLE.basePathWeight * 0.7)
+				);
 				basePolyline.setAttribute("stroke-linecap", "round");
 				basePolyline.setAttribute("stroke-linejoin", "round");
 				basePolyline.setAttribute("opacity", "0.8");
@@ -725,6 +778,30 @@
 				const minElev = Math.min(...elevations);
 				const maxElev = Math.max(...elevations);
 
+				// 標高ライン用の白いグロー用フィルタ定義
+				const chartDefs = document.createElementNS(
+					"http://www.w3.org/2000/svg",
+					"defs"
+				);
+				const chartGlowFilter = document.createElementNS(
+					"http://www.w3.org/2000/svg",
+					"filter"
+				);
+				chartGlowFilter.setAttribute("id", "white-glow-elev");
+				chartGlowFilter.setAttribute("x", "-50%");
+				chartGlowFilter.setAttribute("y", "-50%");
+				chartGlowFilter.setAttribute("width", "200%");
+				chartGlowFilter.setAttribute("height", "200%");
+				const chartGlowBlur = document.createElementNS(
+					"http://www.w3.org/2000/svg",
+					"feGaussianBlur"
+				);
+				// 標高側もぼかしをさらに弱めに
+				chartGlowBlur.setAttribute("stdDeviation", "1.5");
+				chartGlowFilter.appendChild(chartGlowBlur);
+				chartDefs.appendChild(chartGlowFilter);
+				svg.appendChild(chartDefs);
+
 				const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 				bg.setAttribute("x", "0");
 				bg.setAttribute("y", "0");
@@ -754,10 +831,30 @@
 					dParts.push(`${i === 0 ? "M" : "L"}${x},${y}`);
 					elevPoints.push({ x, y });
 				}
+				// 白いグローのパス（ベースラインの背後）
+				const baseGlowPath = document.createElementNS(
+					"http://www.w3.org/2000/svg",
+					"path"
+				);
+				baseGlowPath.setAttribute("d", dParts.join(" "));
+				baseGlowPath.setAttribute("fill", "none");
+				// グローは元のライン色（グレー）
+				baseGlowPath.setAttribute("stroke", "#4b5563");
+				// 太さをさらに細くして控えめに
+				baseGlowPath.setAttribute("stroke-width", "3");
+				baseGlowPath.setAttribute("stroke-linecap", "round");
+				baseGlowPath.setAttribute("stroke-linejoin", "round");
+				// こちらも少しだけ強めの不透明度にして白っぽさを出す
+				baseGlowPath.setAttribute("opacity", "0.5");
+				baseGlowPath.setAttribute("filter", "url(#white-glow-elev)");
+				svg.appendChild(baseGlowPath);
+
 				basePath.setAttribute("d", dParts.join(" "));
 				basePath.setAttribute("fill", "none");
-				basePath.setAttribute("stroke", "#4b5563");
-				basePath.setAttribute("stroke-width", "2");
+				// 実線の色を白に
+				basePath.setAttribute("stroke", "#ffffff");
+				// 少しだけ細く
+				basePath.setAttribute("stroke-width", "1.5");
 				svg.appendChild(basePath);
 
 				// 再生済み部分のパス（オレンジ）
