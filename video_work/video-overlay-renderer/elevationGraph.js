@@ -3,6 +3,8 @@
 // 調整頻度の高いレイアウト・スタイル系定数
 const ELEVATION_SVG_WIDTH = 800;
 const ELEVATION_SVG_HEIGHT = 220;
+// 標高の縦方向スケール（1より小さくすると低く見える）
+const ELEVATION_VERTICAL_SCALE = 0.6;
 const ELEVATION_PADDING_LEFT = 24;
 const ELEVATION_PADDING_RIGHT = 6;
 const ELEVATION_PADDING_TOP = 10;
@@ -43,7 +45,9 @@ export function createElevationGraph(elevations, n, svg) {
 	const paddingBottom = ELEVATION_PADDING_BOTTOM;
 
 	const chartWidth = width - paddingLeft - paddingRight;
-	const chartHeight = height - paddingTop - paddingBottom;
+	const chartHeightFull = height - paddingTop - paddingBottom;
+	const chartHeight = chartHeightFull * ELEVATION_VERTICAL_SCALE;
+	const verticalOffset = chartHeightFull - chartHeight;
 	const elevPoints = [];
 
 	const minElev = Math.min(...elevations);
@@ -120,7 +124,8 @@ export function createElevationGraph(elevations, n, svg) {
 	for (let i = 0; i < n; i++) {
 		const x = paddingLeft + (i / Math.max(1, n - 1)) * chartWidth;
 		const t = (elevations[i] - minElev) / Math.max(1, maxElev - minElev);
-		const y = paddingTop + (1 - t) * chartHeight;
+		// 縦方向の振れ幅をスケールし、下端側に寄せる
+		const y = paddingTop + verticalOffset + (1 - t) * chartHeight;
 		dParts.push(`${i === 0 ? "M" : "L"}${x},${y}`);
 		elevPoints.push({ x, y });
 	}
