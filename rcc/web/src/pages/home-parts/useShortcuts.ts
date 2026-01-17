@@ -1,9 +1,12 @@
 import { onKeyStroke } from '@vueuse/core'
 import type { Ref } from 'vue'
+import {
+  type RoadWidthType
+} from '@/pages/home-parts/useCsv'
 
 export const useShortcuts = (options: {
-  handleCenterlineClick: (hasCenterLine: boolean) => void,
-  handleRoadTypeClick: (roadWidthType: any) => void,
+  handleCenterlineClick: (hasCenterLine: boolean, roadWidthType: RoadWidthType) => void,
+  handleRoadTypeClick: (roadWidthType: RoadWidthType) => void,
   handleGeometryMove: (index: number) => void,
   handlePointMove: (index: number) => void,
   selectedGeometryPointIndex: Ref<number>,
@@ -26,16 +29,17 @@ export const useShortcuts = (options: {
 
   // zキー: センターラインあり
   onKeyStroke(['z'], (e) => {
-    handleCenterlineClick(true)
+    handleCenterlineClick(true, 'TWO_LANE')
     e.preventDefault()
   })
   // xキー: センターラインなし
   onKeyStroke(['x'], (e) => {
-    handleCenterlineClick(false)
+    handleCenterlineClick(false, 'ONE_LANE_SPACIOUS')
     e.preventDefault()
   })
-  // cキー: 予備（未使用）
+  // cキー: センターラインなし
   onKeyStroke(['c'], (e) => {
+    handleCenterlineClick(false, 'ONE_LANE')
     e.preventDefault()
   })
   // \\キー: 進む（最後のポイントならジオメトリー切替）
