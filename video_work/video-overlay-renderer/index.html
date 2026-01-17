@@ -8,43 +8,42 @@
 			<video id="bg-video" src="data/363.mp4" muted playsinline preload="metadata"></video>
 			<div class="app-root">
 				<div id="error" class="error-banner" style="display: none"></div>
-
 				<div class="main-layout">
-				<div class="right-panel">
-					<div class="chart-container">
-						<div class="chart-header">
-							<span>標高プロファイル</span>
-							<span id="chart-range" style="font-size: 11px; color: #6b7280"></span>
-						</div>
-
-						<div class="chart-wrapper">
-							<svg id="elevation-chart" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
-							<div class="legend">
-								<div class="legend-item">
-									<span class="legend-color path-total"></span>
-									<span>全区間（地図）</span>
-								</div>
-								<div class="legend-item">
-									<span class="legend-color path-played"></span>
-									<span>再生済み区間（地図）</span>
-								</div>
-								<div class="legend-item">
-									<span class="legend-color chart-elev"></span>
-									<span>標高 (m)</span>
-								</div>
-								<div class="legend-item">
-									<span class="legend-color chart-cursor"></span>
-									<span>現在位置</span>
-								</div>
+					<div class="right-panel">
+						<div class="chart-container">
+							<div class="chart-header">
+								<span>標高プロファイル</span>
+								<span id="chart-range" style="font-size: 11px; color: #6b7280"></span>
 							</div>
-							<div class="chart-caption">スライダー or 再生ボタンで、時間に沿って位置と標高が同期して動きます。</div>
+
+							<div class="chart-wrapper">
+								<svg id="elevation-chart" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
+								<div class="legend">
+									<div class="legend-item">
+										<span class="legend-color path-total"></span>
+										<span>全区間（地図）</span>
+									</div>
+									<div class="legend-item">
+										<span class="legend-color path-played"></span>
+										<span>再生済み区間（地図）</span>
+									</div>
+									<div class="legend-item">
+										<span class="legend-color chart-elev"></span>
+										<span>標高 (m)</span>
+									</div>
+									<div class="legend-item">
+										<span class="legend-color chart-cursor"></span>
+										<span>現在位置</span>
+									</div>
+								</div>
+								<div class="chart-caption">スライダー or 再生ボタンで、時間に沿って位置と標高が同期して動きます。</div>
+							</div>
+						</div>
+
+						<div id="map-container">
+							<svg id="path-view" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
 						</div>
 					</div>
-
-					<div id="map-container">
-						<svg id="path-view" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
-					</div>
-				</div>
 					<div class="left-panel">
 						<div id="video-time-setup" class="video-setup">
 							<span>動画開始位置</span>
