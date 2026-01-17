@@ -82,6 +82,9 @@ header .meta {
 	flex: 1;
 	display: grid;
 	grid-template-columns: minmax(0, 2fr) minmax(0, 1.6fr);
+	/* 1 行を画面高いっぱいに広げて、左右ペインを下まで伸ばす */
+	grid-template-rows: minmax(0, 1fr);
+	align-items: stretch;
 	gap: 0;
 	min-height: 0;
 }
