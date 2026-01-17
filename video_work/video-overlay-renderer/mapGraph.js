@@ -12,6 +12,8 @@ const MAP_PLAYED_OPACITY = 0.95;
 const MAP_MARKER_RADIUS = 5;
 const MAP_MARKER_STROKE_COLOR = "#111827";
 const MAP_MARKER_STROKE_WIDTH = 2;
+// 背景パネル（黒ぼかし）の不透明度：小さいほど透ける
+const MAP_PANEL_OPACITY = 0.2;
 
 // 地図の描画スタイル（色・太さなど）はこのモジュールで管理
 const DEFAULT_MAP_STYLE = {
@@ -119,9 +121,9 @@ export function createMapGraph(coords, pathSvg, style = DEFAULT_MAP_STYLE) {
 	pathBg.setAttribute("y", String(panelInset));
 	pathBg.setAttribute("width", String(pathWidth - panelInset * 2));
 	pathBg.setAttribute("height", String(pathHeight - panelInset * 2));
-	// 地図パネルもさらに少しだけ薄くして、下の動画をもう少し透かす
+	// 地図パネルの透明度は定数で調整
 	pathBg.setAttribute("fill", "#000000");
-	pathBg.setAttribute("fill-opacity", "0.3");
+	pathBg.setAttribute("fill-opacity", String(MAP_PANEL_OPACITY));
 	pathBg.setAttribute("rx", "24");
 	pathBg.setAttribute("ry", "24");
 	pathBg.setAttribute("filter", "url(#panel-blur-map)");
