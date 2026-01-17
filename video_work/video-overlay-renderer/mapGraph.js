@@ -38,6 +38,8 @@ const MAP_CAMERA_ENABLED_DEFAULT = true;
  *   playedPathWeight?: number,
  *   markerRadius?: number,
  *   markerStrokeWidth?: number,
+ *   showPlayedPath?: boolean,
+ *   showCurrentMarker?: boolean,
  * }} [options]
  */
 export function createMapGraph(
@@ -50,6 +52,8 @@ export function createMapGraph(
 		playedPathWeight = MAP_PLAYED_PATH_WEIGHT,
 		markerRadius = MAP_MARKER_RADIUS,
 		markerStrokeWidth = MAP_MARKER_STROKE_WIDTH,
+		showPlayedPath = true,
+		showCurrentMarker = true,
 	} = {}
 ) {
 	if (!pathSvg || !coords || coords.length === 0) {
@@ -189,41 +193,51 @@ export function createMapGraph(
 	basePolyline.setAttribute("opacity", String(MAP_BASE_STROKE_OPACITY));
 	pathSvg.appendChild(basePolyline);
 
-	// 再生済みパス
-	const playedPolyline = document.createElementNS(
-		"http://www.w3.org/2000/svg",
-		"polyline"
-	);
-	playedPolyline.setAttribute("fill", "none");
-	playedPolyline.setAttribute("stroke", MAP_PLAYED_PATH_COLOR);
-	playedPolyline.setAttribute("stroke-width", String(playedPathWeight));
-	playedPolyline.setAttribute("stroke-linecap", "round");
-	playedPolyline.setAttribute("stroke-linejoin", "round");
-	playedPolyline.setAttribute("opacity", String(MAP_PLAYED_OPACITY));
-	pathSvg.appendChild(playedPolyline);
+	// 再生済みパス（オプションで非表示にできる）
+	let playedPolyline = null;
+	if (showPlayedPath) {
+		playedPolyline = document.createElementNS(
+			"http://www.w3.org/2000/svg",
+			"polyline"
+		);
+		playedPolyline.setAttribute("fill", "none");
+		playedPolyline.setAttribute("stroke", MAP_PLAYED_PATH_COLOR);
+		playedPolyline.setAttribute("stroke-width", String(playedPathWeight));
+		playedPolyline.setAttribute("stroke-linecap", "round");
+		playedPolyline.setAttribute("stroke-linejoin", "round");
+		playedPolyline.setAttribute("opacity", String(MAP_PLAYED_OPACITY));
+		pathSvg.appendChild(playedPolyline);
+	}
 
-	// 現在位置マーカー
-	const currentMarker = document.createElementNS(
-		"http://www.w3.org/2000/svg",
-		"circle"
-	);
-	currentMarker.setAttribute("r", String(markerRadius));
-	currentMarker.setAttribute("stroke", MAP_MARKER_STROKE_COLOR);
-	currentMarker.setAttribute("stroke-width", String(markerStrokeWidth));
-	currentMarker.setAttribute("fill", MAP_CURRENT_MARKER_COLOR);
-	pathSvg.appendChild(currentMarker);
+	// 現在位置マーカー（オプションで非表示にできる）
+	let currentMarker = null;
+	if (showCurrentMarker) {
+		currentMarker = document.createElementNS(
+			"http://www.w3.org/2000/svg",
+			"circle"
+		);
+		currentMarker.setAttribute("r", String(markerRadius));
+		currentMarker.setAttribute("stroke", MAP_MARKER_STROKE_COLOR);
+		currentMarker.setAttribute("stroke-width", String(markerStrokeWidth));
+		currentMarker.setAttribute("fill", MAP_CURRENT_MARKER_COLOR);
+		pathSvg.appendChild(currentMarker);
+	}
 
 	function update(index) {
 		const i = Math.max(0, Math.min(projectedPoints.length - 1, index));
 		const pt = projectedPoints[i];
-		currentMarker.setAttribute("cx", String(pt.x));
-		currentMarker.setAttribute("cy", String(pt.y));
+		if (currentMarker) {
+			currentMarker.setAttribute("cx", String(pt.x));
+			currentMarker.setAttribute("cy", String(pt.y));
+		}
 
-		const playedPoints = projectedPoints
-			.slice(0, i + 1)
-			.map((p) => `${p.x},${p.y}`)
-			.join(" ");
-		playedPolyline.setAttribute("points", playedPoints);
+		if (playedPolyline) {
+			const playedPoints = projectedPoints
+				.slice(0, i + 1)
+				.map((p) => `${p.x},${p.y}`)
+				.join(" ");
+			playedPolyline.setAttribute("points", playedPoints);
+		}
 
 		// レースゲームのミニマップ風に、現在位置を中心にズーム＆追従
 		if (cameraEnabled && cameraZoom > 1) {
