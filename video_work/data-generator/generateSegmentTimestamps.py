@@ -9,13 +9,13 @@ from pathlib import Path
 # ========================
 
 # 入力となる GPS CSV ファイル
-INPUT_CSV_PATH = Path("gps_363_2026-01-11.csv")
+INPUT_CSV_PATH = Path("../video-overlay-renderer/data/gps_363_2026-01-11.csv")
 
 # 入力となる区間ポイント群 JSON（coords_segment_list.json）
-INPUT_SEGMENT_JSON_PATH = Path("coords_segment_list.json")
+INPUT_SEGMENT_JSON_PATH = Path("../video-overlay-renderer/data/coords_segment_list.json")
 
-# 出力する JSON ファイル
-OUTPUT_JSON_PATH = Path("segment_points_with_timestamps.json")
+# 出力する JSON ファイル（data ディレクトリ配下に出力）
+OUTPUT_JSON_PATH = Path("../video-overlay-renderer/data/segment_points_with_timestamps.json")
 
 # CSV のカラム名
 CSV_COL_TIMESTAMP = "timestamp"

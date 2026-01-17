@@ -4,9 +4,10 @@
 import { loadJson, showError } from "./utils.js";
 
 // 設定（ファイルパス）
-const COORDS_URL = "coords_segment_list.json";
-const ELEVATION_URL = "elevation_segment_list.json";
-const SEGMENT_TS_URL = "segment_points_with_timestamps.json";
+const COORDS_URL = "data/coords_segment_list.json";
+const ELEVATION_URL = "data/elevation_segment_list.json";
+// タイムスタンプ付き区間ポイントは data ディレクトリ配下に配置
+const SEGMENT_TS_URL = "data/segment_points_with_timestamps.json";
 
 /**
  * データをロードして、長さ調整・timestamp ソート済みの配列を返す。
