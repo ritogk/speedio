@@ -23,6 +23,8 @@ const ELEVATION_CURSOR_COLOR = "rgba(251, 191, 36, 0.4)";
 const ELEVATION_CURSOR_WIDTH = 2;
 const ELEVATION_CURSOR_MARGIN_TOP = 2;
 const ELEVATION_CURSOR_MARGIN_BOTTOM = 2;
+// 背景パネル（黒ぼかし）の不透明度：小さいほど透ける
+const ELEVATION_PANEL_OPACITY = 0.2;
 
 /**
  * 標高SVGにプロファイルを描画し、インデックスに応じてカーソルと再生済み区間を更新するモジュール。
@@ -99,9 +101,9 @@ export function createElevationGraph(elevations, n, svg) {
 	bg.setAttribute("y", String(panelInset));
 	bg.setAttribute("width", String(width - panelInset * 2));
 	bg.setAttribute("height", String(height - panelInset * 2));
-	// 背景をさらに少しだけ薄くして、動画をもう少し透かす
+	// 背景パネルの透明度は定数で調整
 	bg.setAttribute("fill", "#000000");
-	bg.setAttribute("fill-opacity", "0.3");
+	bg.setAttribute("fill-opacity", String(ELEVATION_PANEL_OPACITY));
 	bg.setAttribute("rx", "16");
 	bg.setAttribute("ry", "16");
 	bg.setAttribute("filter", "url(#panel-blur-elev)");
