@@ -49,7 +49,7 @@ export function createElevationGraph(elevations, n, svg) {
 	const minElev = Math.min(...elevations);
 	const maxElev = Math.max(...elevations);
 
-	// 標高ライン用の白いグロー用フィルタ定義
+	// 標高ライン用の白いグロー用フィルタ定義 + パネル用のぼかしフィルタ
 	const chartDefs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
 	const chartGlowFilter = document.createElementNS(
 		"http://www.w3.org/2000/svg",
@@ -68,14 +68,39 @@ export function createElevationGraph(elevations, n, svg) {
 	chartGlowBlur.setAttribute("stdDeviation", String(ELEVATION_GLOW_STD_DEVIATION));
 	chartGlowFilter.appendChild(chartGlowBlur);
 	chartDefs.appendChild(chartGlowFilter);
+
+	// 背景パネル用の黒ぼかしフィルタ
+	const panelBlurFilter = document.createElementNS(
+		"http://www.w3.org/2000/svg",
+		"filter"
+	);
+	panelBlurFilter.setAttribute("id", "panel-blur-elev");
+	panelBlurFilter.setAttribute("x", "-10%");
+	panelBlurFilter.setAttribute("y", "-10%");
+	panelBlurFilter.setAttribute("width", "120%");
+	panelBlurFilter.setAttribute("height", "120%");
+	const panelBlur = document.createElementNS(
+		"http://www.w3.org/2000/svg",
+		"feGaussianBlur"
+	);
+	panelBlur.setAttribute("stdDeviation", "6");
+	panelBlurFilter.appendChild(panelBlur);
+	chartDefs.appendChild(panelBlurFilter);
+
 	svg.appendChild(chartDefs);
 
 	const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-	bg.setAttribute("x", "0");
-	bg.setAttribute("y", "0");
-	bg.setAttribute("width", String(width));
-	bg.setAttribute("height", String(height));
-	bg.setAttribute("fill", "none");
+	const panelInset = 8;
+	bg.setAttribute("x", String(panelInset));
+	bg.setAttribute("y", String(panelInset));
+	bg.setAttribute("width", String(width - panelInset * 2));
+	bg.setAttribute("height", String(height - panelInset * 2));
+	// 背景をさらに少しだけ薄くして、動画をもう少し透かす
+	bg.setAttribute("fill", "#000000");
+	bg.setAttribute("fill-opacity", "0.3");
+	bg.setAttribute("rx", "16");
+	bg.setAttribute("ry", "16");
+	bg.setAttribute("filter", "url(#panel-blur-elev)");
 	svg.appendChild(bg);
 
 	// 軸っぽいライン

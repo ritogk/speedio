@@ -42,7 +42,7 @@ export function createMapGraph(coords, pathSvg, style = DEFAULT_MAP_STYLE) {
 	const pathMargin = MAP_MARGIN;
 	pathSvg.setAttribute("viewBox", `0 0 ${pathWidth} ${pathHeight}`);
 
-	// フィルタ定義
+	// フィルタ定義（ルート用の白グロー + 背景パネル用の黒ぼかし）
 	const pathDefs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
 	const pathGlowFilter = document.createElementNS(
 		"http://www.w3.org/2000/svg",
@@ -61,6 +61,25 @@ export function createMapGraph(coords, pathSvg, style = DEFAULT_MAP_STYLE) {
 	pathGlowBlur.setAttribute("stdDeviation", String(MAP_GLOW_STD_DEVIATION));
 	pathGlowFilter.appendChild(pathGlowBlur);
 	pathDefs.appendChild(pathGlowFilter);
+
+	// 背景パネル用の黒ぼかしフィルタ
+	const panelBlurFilter = document.createElementNS(
+		"http://www.w3.org/2000/svg",
+		"filter"
+	);
+	panelBlurFilter.setAttribute("id", "panel-blur-map");
+	panelBlurFilter.setAttribute("x", "-10%");
+	panelBlurFilter.setAttribute("y", "-10%");
+	panelBlurFilter.setAttribute("width", "120%");
+	panelBlurFilter.setAttribute("height", "120%");
+	const panelBlur = document.createElementNS(
+		"http://www.w3.org/2000/svg",
+		"feGaussianBlur"
+	);
+	panelBlur.setAttribute("stdDeviation", "6");
+	panelBlurFilter.appendChild(panelBlur);
+	pathDefs.appendChild(panelBlurFilter);
+
 	pathSvg.appendChild(pathDefs);
 
 	const lats = coords.map((c) => c[0]);
@@ -93,13 +112,19 @@ export function createMapGraph(coords, pathSvg, style = DEFAULT_MAP_STYLE) {
 
 	const projectedPoints = coords.map(projectCoord);
 
-	// 背景
+	// 背景（少し内側に縮めて角丸を目立たせる）
 	const pathBg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-	pathBg.setAttribute("x", "0");
-	pathBg.setAttribute("y", "0");
-	pathBg.setAttribute("width", String(pathWidth));
-	pathBg.setAttribute("height", String(pathHeight));
-	pathBg.setAttribute("fill", "none");
+	const panelInset = 18;
+	pathBg.setAttribute("x", String(panelInset));
+	pathBg.setAttribute("y", String(panelInset));
+	pathBg.setAttribute("width", String(pathWidth - panelInset * 2));
+	pathBg.setAttribute("height", String(pathHeight - panelInset * 2));
+	// 地図パネルもさらに少しだけ薄くして、下の動画をもう少し透かす
+	pathBg.setAttribute("fill", "#000000");
+	pathBg.setAttribute("fill-opacity", "0.3");
+	pathBg.setAttribute("rx", "24");
+	pathBg.setAttribute("ry", "24");
+	pathBg.setAttribute("filter", "url(#panel-blur-map)");
 	pathSvg.appendChild(pathBg);
 
 	// 全区間パス（白いグロー + 実線）
