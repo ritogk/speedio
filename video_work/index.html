@@ -194,18 +194,15 @@
 			}
 
 			.chart-header {
-				font-size: 12px;
-				color: #9ca3af;
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
+				display: none;
 			}
 
 			.chart-wrapper {
 				flex: 0 0 auto;
 				background: transparent;
 				border-radius: 8px;
-				border: 1px solid #111827;
+				/* 外枠ボーダーは不要なので消す */
+				border: none;
 				padding: 6px 8px 10px;
 				display: flex;
 				flex-direction: column;
@@ -218,16 +215,12 @@
 			}
 
 			.chart-caption {
-				margin-top: 4px;
-				font-size: 11px;
-				color: #6b7280;
+				display: none;
 			}
 
 			.legend {
-				display: flex;
-				gap: 12px;
-				font-size: 11px;
-				margin-top: 2px;
+				/* 凡例（色情報）は非表示にする */
+				display: none;
 			}
 
 			.legend-item {
@@ -868,22 +861,7 @@
 				cursor.setAttribute("stroke-linecap", "round");
 				svg.appendChild(cursor);
 
-				// 標高範囲のラベル
-				const elevMinText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-				elevMinText.setAttribute("x", paddingLeft);
-				elevMinText.setAttribute("y", height - 2);
-				elevMinText.setAttribute("fill", "#6b7280");
-				elevMinText.setAttribute("font-size", "10");
-				elevMinText.textContent = `${minElev.toFixed(0)} m`;
-				svg.appendChild(elevMinText);
-
-				const elevMaxText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-				elevMaxText.setAttribute("x", paddingLeft);
-				elevMaxText.setAttribute("y", paddingTop + 10);
-				elevMaxText.setAttribute("fill", "#9ca3af");
-				elevMaxText.setAttribute("font-size", "10");
-				elevMaxText.textContent = `${maxElev.toFixed(0)} m`;
-				svg.appendChild(elevMaxText);
+				// 標高範囲のラベル（簡素化のため非表示にするので DOM 追加は行わない）
 
 				// インデックス変更処理 & 再生状態
 				let currentIndex = 0;
