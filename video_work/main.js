@@ -295,6 +295,8 @@ function setupUI(coords, elevations, tsDates) {
 		stopAnimation();
 		if (playBtn) playBtn.disabled = false;
 		if (pauseBtn) pauseBtn.disabled = true;
+		// 動画側も必ず一時停止して状態をそろえる
+		videoModule.pause();
 
 		const idx = Number(slider.value) || 0;
 		setIndex(idx, { syncVideo: true });
