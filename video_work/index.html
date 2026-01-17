@@ -513,6 +513,8 @@
 				const videoTimeSetup = document.getElementById("video-time-setup");
 				const videoStartInput = document.getElementById("video-start-input");
 				const videoStartApply = document.getElementById("video-start-apply");
+				const controls = document.querySelector(".controls");
+				const statusBar = document.querySelector(".status-bar");
 				let videoStartConfigured = false;
 				let videoStartSeconds = 0;
 
@@ -626,6 +628,38 @@
 						}
 					});
 				}
+
+				// キーボードの「z」キーでシークUIと再生/一時停止エリア、ステータスバーの表示/非表示を切り替え
+				window.addEventListener("keydown", (ev) => {
+					if (ev.key === "z" || ev.key === "Z") {
+						if (!videoTimeSetup || !controls) return;
+						const hidden =
+							videoTimeSetup.style.display === "none" ||
+							controls.style.display === "none" ||
+							(statusBar && statusBar.style.display === "none");
+						if (hidden) {
+							videoTimeSetup.style.display = "inline-flex";
+							controls.style.display = "flex";
+							if (statusBar) {
+								statusBar.style.display = "flex";
+							}
+							if (videoStartInput) {
+								try {
+									videoStartInput.focus();
+									videoStartInput.select();
+								} catch (e) {
+									console.warn("開始位置入力へのフォーカスに失敗しました", e);
+								}
+							}
+						} else {
+							videoTimeSetup.style.display = "none";
+							controls.style.display = "none";
+							if (statusBar) {
+								statusBar.style.display = "none";
+							}
+						}
+					}
+				});
 
 				// 2D パスビュー初期化（緯度経度を平面に投影）
 				const pathSvg = document.getElementById("path-view");
