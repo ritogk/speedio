@@ -1,5 +1,27 @@
 // 標高グラフモジュール
 
+// 調整頻度の高いレイアウト・スタイル系定数
+const ELEVATION_SVG_WIDTH = 800;
+const ELEVATION_SVG_HEIGHT = 220;
+const ELEVATION_PADDING_LEFT = 24;
+const ELEVATION_PADDING_RIGHT = 6;
+const ELEVATION_PADDING_TOP = 10;
+const ELEVATION_PADDING_BOTTOM = 18;
+const ELEVATION_GLOW_STD_DEVIATION = 1.5;
+const ELEVATION_AXIS_COLOR = "#4b5563";
+const ELEVATION_AXIS_STROKE_WIDTH = 1;
+const ELEVATION_BASE_COLOR = "#ffffff";
+const ELEVATION_BASE_STROKE_WIDTH = 1.5;
+const ELEVATION_BASE_GLOW_COLOR = "#4b5563";
+const ELEVATION_BASE_GLOW_WIDTH = 3;
+const ELEVATION_BASE_GLOW_OPACITY = 0.5;
+const ELEVATION_PLAYED_COLOR = "#f97316";
+const ELEVATION_PLAYED_WIDTH = 2;
+const ELEVATION_CURSOR_COLOR = "#fbbf24";
+const ELEVATION_CURSOR_WIDTH = 2;
+const ELEVATION_CURSOR_MARGIN_TOP = 2;
+const ELEVATION_CURSOR_MARGIN_BOTTOM = 2;
+
 /**
  * 標高SVGにプロファイルを描画し、インデックスに応じてカーソルと再生済み区間を更新するモジュール。
  * @param {number[]} elevations 標高配列
@@ -13,12 +35,12 @@ export function createElevationGraph(elevations, n, svg) {
 		};
 	}
 
-	const width = 800;
-	const height = 220;
-	const paddingLeft = 24;
-	const paddingRight = 6;
-	const paddingTop = 10;
-	const paddingBottom = 18;
+	const width = ELEVATION_SVG_WIDTH;
+	const height = ELEVATION_SVG_HEIGHT;
+	const paddingLeft = ELEVATION_PADDING_LEFT;
+	const paddingRight = ELEVATION_PADDING_RIGHT;
+	const paddingTop = ELEVATION_PADDING_TOP;
+	const paddingBottom = ELEVATION_PADDING_BOTTOM;
 
 	const chartWidth = width - paddingLeft - paddingRight;
 	const chartHeight = height - paddingTop - paddingBottom;
@@ -43,7 +65,7 @@ export function createElevationGraph(elevations, n, svg) {
 		"feGaussianBlur"
 	);
 	// 標高側もぼかしを弱めに
-	chartGlowBlur.setAttribute("stdDeviation", "1.5");
+	chartGlowBlur.setAttribute("stdDeviation", String(ELEVATION_GLOW_STD_DEVIATION));
 	chartGlowFilter.appendChild(chartGlowBlur);
 	chartDefs.appendChild(chartGlowFilter);
 	svg.appendChild(chartDefs);
@@ -62,8 +84,8 @@ export function createElevationGraph(elevations, n, svg) {
 	axis.setAttribute("x2", width - paddingRight);
 	axis.setAttribute("y1", height - paddingBottom);
 	axis.setAttribute("y2", height - paddingBottom);
-	axis.setAttribute("stroke", "#4b5563");
-	axis.setAttribute("stroke-width", "1");
+	axis.setAttribute("stroke", ELEVATION_AXIS_COLOR);
+	axis.setAttribute("stroke-width", String(ELEVATION_AXIS_STROKE_WIDTH));
 	axis.setAttribute("stroke-linecap", "round");
 	svg.appendChild(axis);
 
@@ -82,36 +104,36 @@ export function createElevationGraph(elevations, n, svg) {
 	baseGlowPath.setAttribute("d", dParts.join(" "));
 	baseGlowPath.setAttribute("fill", "none");
 	// グローは元のライン色（グレー）
-	baseGlowPath.setAttribute("stroke", "#4b5563");
+	baseGlowPath.setAttribute("stroke", ELEVATION_BASE_GLOW_COLOR);
 	// 太さを控えめに
-	baseGlowPath.setAttribute("stroke-width", "3");
+	baseGlowPath.setAttribute("stroke-width", String(ELEVATION_BASE_GLOW_WIDTH));
 	baseGlowPath.setAttribute("stroke-linecap", "round");
 	baseGlowPath.setAttribute("stroke-linejoin", "round");
-	baseGlowPath.setAttribute("opacity", "0.5");
+	baseGlowPath.setAttribute("opacity", String(ELEVATION_BASE_GLOW_OPACITY));
 	baseGlowPath.setAttribute("filter", "url(#white-glow-elev)");
 	svg.appendChild(baseGlowPath);
 
 	basePath.setAttribute("d", dParts.join(" "));
 	basePath.setAttribute("fill", "none");
 	// 実線の色を白に
-	basePath.setAttribute("stroke", "#ffffff");
+	basePath.setAttribute("stroke", ELEVATION_BASE_COLOR);
 	// 少しだけ細く
-	basePath.setAttribute("stroke-width", "1.5");
+	basePath.setAttribute("stroke-width", String(ELEVATION_BASE_STROKE_WIDTH));
 	svg.appendChild(basePath);
 
 	// 再生済み部分のパス（オレンジ）
 	const playedElevPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
 	playedElevPath.setAttribute("fill", "none");
-	playedElevPath.setAttribute("stroke", "#f97316");
-	playedElevPath.setAttribute("stroke-width", "2");
+	playedElevPath.setAttribute("stroke", ELEVATION_PLAYED_COLOR);
+	playedElevPath.setAttribute("stroke-width", String(ELEVATION_PLAYED_WIDTH));
 	svg.appendChild(playedElevPath);
 
 	// 現在位置カーソル
 	const cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
-	cursor.setAttribute("y1", paddingTop - 2);
-	cursor.setAttribute("y2", height - paddingBottom + 2);
-	cursor.setAttribute("stroke", "#fbbf24");
-	cursor.setAttribute("stroke-width", "2");
+	cursor.setAttribute("y1", paddingTop - ELEVATION_CURSOR_MARGIN_TOP);
+	cursor.setAttribute("y2", height - paddingBottom + ELEVATION_CURSOR_MARGIN_BOTTOM);
+	cursor.setAttribute("stroke", ELEVATION_CURSOR_COLOR);
+	cursor.setAttribute("stroke-width", String(ELEVATION_CURSOR_WIDTH));
 	cursor.setAttribute("stroke-linecap", "round");
 	svg.appendChild(cursor);
 

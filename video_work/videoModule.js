@@ -1,5 +1,9 @@
 // 動画制御モジュール
 
+// 調整頻度の高いパラメータ定数
+const VIDEO_MAX_SEEK_MARGIN = 0.1; // duration から少し手前までシークするためのマージン(秒)
+const VIDEO_ERROR_MESSAGE = "時間は mm:ss または 秒数 で入力してください。";
+
 import { parseTimeToSeconds } from "./utils.js";
 
 /**
@@ -32,7 +36,7 @@ export function createVideoModule(options) {
 		const raw = videoStartInput.value;
 		const sec = parseTimeToSeconds(raw);
 		if (Number.isNaN(sec) || sec < 0) {
-			alert("時間は mm:ss または 秒数 で入力してください。");
+			alert(VIDEO_ERROR_MESSAGE);
 			return;
 		}
 		try {
@@ -41,7 +45,7 @@ export function createVideoModule(options) {
 				// duration が取得できている場合は範囲内にクランプ
 				let target = videoStartSeconds;
 				if (Number.isFinite(bgVideo.duration) && bgVideo.duration > 0) {
-					const maxSeek = Math.max(0, bgVideo.duration - 0.1);
+					const maxSeek = Math.max(0, bgVideo.duration - VIDEO_MAX_SEEK_MARGIN);
 					target = Math.min(target, maxSeek);
 				}
 				bgVideo.currentTime = target;
@@ -77,7 +81,7 @@ export function createVideoModule(options) {
 			const elapsedFromStartSec = (ts.getTime() - minMillis) / 1000;
 			let target = videoStartSeconds + elapsedFromStartSec;
 			if (Number.isFinite(bgVideo.duration) && bgVideo.duration > 0) {
-				const maxSeek = Math.max(0, bgVideo.duration - 0.1);
+				const maxSeek = Math.max(0, bgVideo.duration - VIDEO_MAX_SEEK_MARGIN);
 				target = Math.min(Math.max(0, target), maxSeek);
 			}
 			bgVideo.currentTime = target;

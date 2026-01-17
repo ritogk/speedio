@@ -1,5 +1,8 @@
 // キーボードショートカット用モジュール
 
+// 調整頻度の高いキー設定
+const TOGGLE_UI_KEYS = ["z", "Z"];
+
 /**
  * z / Z キーでシークUI・再生/一時停止エリア・ステータスバーの表示/非表示を切り替える。
  * @param {Object} opts
@@ -12,7 +15,7 @@ export function registerZKeyToggle({ videoTimeSetup, controls, statusBar, videoS
 	if (!videoTimeSetup || !controls) return;
 
 	window.addEventListener("keydown", (ev) => {
-		if (ev.key === "z" || ev.key === "Z") {
+		if (TOGGLE_UI_KEYS.includes(ev.key)) {
 			const hidden =
 				videoTimeSetup.style.display === "none" ||
 				controls.style.display === "none" ||
