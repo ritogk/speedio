@@ -17,7 +17,7 @@ const ELEVATION_BASE_GLOW_WIDTH = 3;
 const ELEVATION_BASE_GLOW_OPACITY = 0.5;
 const ELEVATION_PLAYED_COLOR = "#f97316";
 const ELEVATION_PLAYED_WIDTH = 2;
-const ELEVATION_CURSOR_COLOR = "#fbbf24";
+const ELEVATION_CURSOR_COLOR = "rgba(251, 191, 36, 0.4)";
 const ELEVATION_CURSOR_WIDTH = 2;
 const ELEVATION_CURSOR_MARGIN_TOP = 2;
 const ELEVATION_CURSOR_MARGIN_BOTTOM = 2;
@@ -98,6 +98,27 @@ export function createElevationGraph(elevations, n, svg) {
 		const y = paddingTop + (1 - t) * chartHeight;
 		dParts.push(`${i === 0 ? "M" : "L"}${x},${y}`);
 		elevPoints.push({ x, y });
+	}
+
+	// データ端位置に縦ライン（軸と同色）
+	// グラフの見え方に合わせて、配列先頭側の x に描画
+	if (elevPoints.length > 0) {
+		const edge = elevPoints[0];
+		const edgeLine = document.createElementNS(
+			"http://www.w3.org/2000/svg",
+			"line"
+		);
+		edgeLine.setAttribute("x1", String(edge.x));
+		edgeLine.setAttribute("x2", String(edge.x));
+		edgeLine.setAttribute("y1", String(paddingTop));
+		edgeLine.setAttribute("y2", String(height - paddingBottom));
+		edgeLine.setAttribute("stroke", ELEVATION_AXIS_COLOR);
+		edgeLine.setAttribute(
+			"stroke-width",
+			String(ELEVATION_AXIS_STROKE_WIDTH)
+		);
+		edgeLine.setAttribute("stroke-linecap", "round");
+		svg.appendChild(edgeLine);
 	}
 	// 白いグローのパス（ベースラインの背後）
 	const baseGlowPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
