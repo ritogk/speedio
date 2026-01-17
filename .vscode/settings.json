@@ -8,5 +8,6 @@
       "approve": true,
       "matchCommandLine": true
     }
-  }
+  },
+  "editor.colorDecorators": true
 }
