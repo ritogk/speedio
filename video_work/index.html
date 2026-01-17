@@ -2,8 +2,6 @@
 <html lang="ja">
 	<head>
 		<meta charset="UTF-8" />
-		<title>区間移動時間・標高 可視化ビューア</title>
-
 		<style>
 			html,
 			body {
@@ -32,6 +30,39 @@
 				height: 100%;
 				object-fit: cover;
 				z-index: 0;
+			}
+
+			.video-setup {
+				position: absolute;
+				top: 10px;
+				right: 12px;
+				background: rgba(15, 23, 42, 0.85);
+				border-radius: 8px;
+				padding: 6px 8px;
+				display: flex;
+				align-items: center;
+				gap: 6px;
+				font-size: 12px;
+				z-index: 2;
+			}
+
+			.video-setup input {
+				width: 80px;
+				padding: 2px 4px;
+				border-radius: 4px;
+				border: 1px solid #4b5563;
+				background: rgba(15, 23, 42, 0.9);
+				color: #e5e7eb;
+			}
+
+			.video-setup button {
+				padding: 4px 8px;
+				border-radius: 999px;
+				border: none;
+				font-size: 11px;
+				cursor: pointer;
+				background: #16a34a;
+				color: #ecfdf5;
 			}
 
 			header {
@@ -249,7 +280,7 @@
 		</style>
 	</head>
 	<body>
-		<video id="bg-video" src="363.mp4" autoplay muted loop playsinline></video>
+		<video id="bg-video" src="363.mp4" muted playsinline preload="metadata"></video>
 		<div class="app-root">
 			<header>
 				<h1>区間移動 × 標高 × 時間 可視化</h1>
@@ -259,6 +290,12 @@
 			<div id="error" class="error-banner" style="display: none"></div>
 
 			<div class="main-layout">
+				<div id="video-time-setup" class="video-setup">
+					<span>動画開始位置</span>
+					<input id="video-start-input" type="text" placeholder="mm:ss または 秒" />
+					<button id="video-start-apply">OK</button>
+				</div>
+
 				<div class="left-pane">
 					<div class="chart-container">
 						<div class="chart-header">
@@ -371,6 +408,33 @@
 				return a + (b - a) * t;
 			}
 
+			function parseTimeToSeconds(input) {
+				if (!input) return NaN;
+				const trimmed = input.trim();
+				if (!trimmed) return NaN;
+
+				// mm:ss or hh:mm:ss 形式
+				if (trimmed.includes(":")) {
+					const parts = trimmed.split(":").map((p) => Number(p));
+					if (parts.some((n) => Number.isNaN(n))) return NaN;
+					let seconds = 0;
+					if (parts.length === 2) {
+						const [m, s] = parts;
+						seconds = m * 60 + s;
+					} else if (parts.length === 3) {
+						const [h, m, s] = parts;
+						seconds = h * 3600 + m * 60 + s;
+					} else {
+						return NaN;
+					}
+					return seconds;
+				}
+
+				// 生の秒数
+				const asNumber = Number(trimmed);
+				return Number.isNaN(asNumber) ? NaN : asNumber;
+			}
+
 			// ===============================
 			// メインロジック
 			// ===============================
@@ -458,11 +522,35 @@
 				const timeLabelAbs = document.getElementById("time-label-abs");
 				const playbackElapsed = document.getElementById("playback-elapsed");
 				const bgVideo = document.getElementById("bg-video");
+				const videoTimeSetup = document.getElementById("video-time-setup");
+				const videoStartInput = document.getElementById("video-start-input");
+				const videoStartApply = document.getElementById("video-start-apply");
+				let videoStartConfigured = false;
+				let videoStartSeconds = 0;
+
+				bgVideo.addEventListener("error", () => console.log("video error", bgVideo.error));
+["loadedmetadata","loadeddata","canplay","seeked","seeking","timeupdate"].forEach(ev=>{
+  bgVideo.addEventListener(ev, ()=> {
+    console.log(ev, "t=", bgVideo.currentTime, "readyState=", bgVideo.readyState, "seekable=", bgVideo.seekable.length ? `[${bgVideo.seekable.start(0)}..${bgVideo.seekable.end(0)}]` : "none");
+  });
+});
 
 				const statusIndex = document.getElementById("status-index");
 				const statusElev = document.getElementById("status-elev");
 				const statusLatLon = document.getElementById("status-latlon");
 				const chartRange = document.getElementById("chart-range");
+
+				// 初期状態では動画は停止・再生ボタンは無効
+				if (bgVideo) {
+					try {
+						bgVideo.pause();
+						bgVideo.currentTime = 0;
+					} catch (e) {
+						console.warn("背景動画の初期化に失敗しました", e);
+					}
+				}
+				playBtn.disabled = true;
+				pauseBtn.disabled = true;
 
 				slider.max = String(n - 1);
 				slider.value = "0";
@@ -490,6 +578,62 @@
 					const clamped = Math.max(minMillis, Math.min(maxMillis, currentMs));
 					const elapsedNow = (clamped - minMillis) / 1000;
 					playbackElapsed.textContent = `${formatMmSs(elapsedNow)} / ${formatMmSs(elapsedSec)}`;
+				}
+
+				// 動画開始位置入力の適用処理
+				function applyVideoStart() {
+					if (!bgVideo || !videoStartInput) return;
+					const raw = videoStartInput.value;
+					const sec = parseTimeToSeconds(raw);
+					if (Number.isNaN(sec) || sec < 0) {
+						alert("時間は mm:ss または 秒数 で入力してください。");
+						return;
+					}
+					try {
+						videoStartSeconds = sec;
+						const seek = () => {
+							// duration が取得できている場合は範囲内にクランプ
+							let target = videoStartSeconds;
+							if (Number.isFinite(bgVideo.duration) && bgVideo.duration > 0) {
+								const maxSeek = Math.max(0, bgVideo.duration - 0.1);
+								target = Math.min(target, maxSeek);
+							}
+							bgVideo.currentTime = target;
+							bgVideo.pause();
+							videoStartConfigured = true;
+							playBtn.disabled = false;
+							pauseBtn.disabled = true;
+							if (videoTimeSetup) {
+								videoTimeSetup.style.display = "none";
+							}
+						};
+
+						if (bgVideo.readyState >= 1) {
+							seek();
+						} else {
+							bgVideo.addEventListener(
+								"loadedmetadata",
+								() => {
+									seek();
+								},
+								{ once: true }
+							);
+							bgVideo.load();
+						}
+					} catch (e) {
+						console.warn("動画シークに失敗しました", e);
+					}
+				}
+
+				if (videoStartApply) {
+					videoStartApply.addEventListener("click", applyVideoStart);
+				}
+				if (videoStartInput) {
+					videoStartInput.addEventListener("keydown", (ev) => {
+						if (ev.key === "Enter") {
+							applyVideoStart();
+						}
+					});
 				}
 
 				// 2D パスビュー初期化（緯度経度を平面に投影）
@@ -755,6 +899,7 @@
 
 				function handlePlay() {
 					if (playing) return;
+					if (!videoStartConfigured) return;
 					// 終端にいたら先頭から
 					if (currentIndex >= n - 1) {
 						setIndex(0);
@@ -762,8 +907,12 @@
 					playing = true;
 					playBtn.disabled = true;
 					pauseBtn.disabled = false;
-					if (bgVideo && bgVideo.paused) {
+					if (bgVideo) {
 						try {
+							// 再生開始前に設定された開始秒にシーク
+							if (!Number.isNaN(videoStartSeconds) && videoStartSeconds >= 0) {
+								bgVideo.currentTime = videoStartSeconds;
+							}
 							bgVideo.muted = true;
 							bgVideo.play();
 						} catch (e) {
