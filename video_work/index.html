@@ -48,14 +48,21 @@
 				min-height: 0;
 			}
 
+			.left-pane {
+				display: flex;
+				flex-direction: column;
+				min-height: 0;
+				grid-column: 2;
+			}
+
 			/* Path view (地図なしの2Dビュー) */
 			#map-container {
 				position: relative;
-				border-right: 1px solid #111827;
 				background: radial-gradient(circle at top, #020617 0, #020617 40%, #020617 100%);
 				display: flex;
 				align-items: stretch;
 				justify-content: center;
+				flex: 1;
 			}
 
 			#path-view {
@@ -70,6 +77,8 @@
 				display: flex;
 				flex-direction: column;
 				min-height: 0;
+				grid-column: 1;
+				border-right: 1px solid #111827;
 			}
 
 			.controls {
@@ -132,8 +141,8 @@
 			}
 
 			.chart-container {
-				flex: 1;
-				padding: 4px 8px 8px;
+				flex: 0 0 auto;
+				padding: 4px 8px 4px;
 				display: flex;
 				flex-direction: column;
 				gap: 4px;
@@ -219,7 +228,7 @@
 					grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr);
 				}
 
-				#map-container {
+				.left-pane {
 					border-right: none;
 					border-bottom: 1px solid #111827;
 				}
@@ -236,31 +245,7 @@
 			<div id="error" class="error-banner" style="display: none"></div>
 
 			<div class="main-layout">
-				<div id="map-container">
-					<svg id="path-view" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
-				</div>
-
-				<div class="right-pane">
-					<div class="controls">
-						<button id="play-btn">▶ 再生</button>
-						<button id="pause-btn" class="secondary" disabled>⏸ 一時停止</button>
-
-						<div class="slider">
-							<input id="index-slider" type="range" min="0" max="0" value="0" step="1" />
-						</div>
-
-						<div class="time-label">
-							<div id="playback-elapsed">00:00 / 00:00</div>
-							<div id="time-label-abs">--:--:--</div>
-						</div>
-					</div>
-
-					<div class="status-bar">
-						<span>Index: <strong id="status-index">-</strong></span>
-						<span>標高: <strong id="status-elev">- m</strong></span>
-						<span>座標: <strong id="status-latlon">-</strong></span>
-					</div>
-
+				<div class="left-pane">
 					<div class="chart-container">
 						<div class="chart-header">
 							<span>標高プロファイル</span>
@@ -289,6 +274,32 @@
 							</div>
 							<div class="chart-caption">スライダー or 再生ボタンで、時間に沿って位置と標高が同期して動きます。</div>
 						</div>
+					</div>
+
+					<div id="map-container">
+						<svg id="path-view" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
+					</div>
+				</div>
+
+				<div class="right-pane">
+					<div class="controls">
+						<button id="play-btn">▶ 再生</button>
+						<button id="pause-btn" class="secondary" disabled>⏸ 一時停止</button>
+
+						<div class="slider">
+							<input id="index-slider" type="range" min="0" max="0" value="0" step="1" />
+						</div>
+
+						<div class="time-label">
+							<div id="playback-elapsed">00:00 / 00:00</div>
+							<div id="time-label-abs">--:--:--</div>
+						</div>
+					</div>
+
+					<div class="status-bar">
+						<span>Index: <strong id="status-index">-</strong></span>
+						<span>標高: <strong id="status-elev">- m</strong></span>
+						<span>座標: <strong id="status-latlon">-</strong></span>
 					</div>
 				</div>
 			</div>
