@@ -107,9 +107,19 @@ export function setupController(
 	}
 
 	// モジュール初期化
-	const mapSvg = document.getElementById("path-view");
+	const mapSvgFull = document.getElementById("path-view-full");
+	const mapSvgMini = document.getElementById("path-view-mini");
 	const elevSvg = document.getElementById("elevation-chart");
-	const mapGraph = createMapGraph(coords, mapSvg);
+	// 全体表示マップ（ズームなし）
+	const mapGraphFull = createMapGraph(coords, mapSvgFull, {
+		cameraEnabled: false,
+		cameraZoom: 1,
+	});
+	// ミニマップ（現在位置を中心にズーム＆追従）
+	const mapGraphMini = createMapGraph(coords, mapSvgMini, {
+		cameraEnabled: true,
+		cameraZoom: 2.5,
+	});
 	const elevationGraph = createElevationGraph(elevations, n, elevSvg);
 	const videoModule = createVideoModule({
 		bgVideo,
@@ -154,8 +164,9 @@ export function setupController(
 		if (timeLabelAbs) timeLabelAbs.textContent = formatTimeLabel(ts);
 		updatePlaybackElapsed(ts.getTime());
 
-		// ビジュアル更新
-		mapGraph.update(i);
+		// ビジュアル更新（全体マップ + ズームマップ）
+		mapGraphFull.update(i);
+		mapGraphMini.update(i);
 		elevationGraph.update(i);
 
 		// 動画同期

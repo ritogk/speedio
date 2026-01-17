@@ -23,13 +23,21 @@ const MAP_BASE_PATH_WEIGHT = 4;
 // 再生済みラインのスタイル
 const MAP_PLAYED_PATH_COLOR = "#f97316";
 const MAP_PLAYED_PATH_WEIGHT = 5;
+// カメラ風ズーム設定のデフォルト（1ならズームなし）
+const MAP_CAMERA_ZOOM_DEFAULT = 2.5;
+const MAP_CAMERA_ENABLED_DEFAULT = true;
 
 /**
  * 地図用SVGに経路を描画し、インデックスに応じて現在位置と再生済み区間を更新するモジュール。
  * @param {number[][]} coords [lat, lon] の配列
  * @param {SVGSVGElement} pathSvg 対象SVG要素
+ * @param {{ cameraEnabled?: boolean, cameraZoom?: number }} [options]
  */
-export function createMapGraph(coords, pathSvg) {
+export function createMapGraph(
+	coords,
+	pathSvg,
+	{ cameraEnabled = MAP_CAMERA_ENABLED_DEFAULT, cameraZoom = MAP_CAMERA_ZOOM_DEFAULT } = {}
+) {
 	if (!pathSvg || !coords || coords.length === 0) {
 		return {
 			update() {},
@@ -202,6 +210,26 @@ export function createMapGraph(coords, pathSvg) {
 			.map((p) => `${p.x},${p.y}`)
 			.join(" ");
 		playedPolyline.setAttribute("points", playedPoints);
+
+		// レースゲームのミニマップ風に、現在位置を中心にズーム＆追従
+		if (cameraEnabled && cameraZoom > 1) {
+			const viewW = pathWidth / cameraZoom;
+			const viewH = pathHeight / cameraZoom;
+			let viewX = pt.x - viewW / 2;
+			let viewY = pt.y - viewH / 2;
+
+			// viewBox が SVG 全体からはみ出しすぎないようにクランプ
+			viewX = Math.max(0, Math.min(pathWidth - viewW, viewX));
+			viewY = Math.max(0, Math.min(pathHeight - viewH, viewY));
+
+			pathSvg.setAttribute(
+				"viewBox",
+				`${viewX} ${viewY} ${viewW} ${viewH}`
+			);
+		} else {
+			// ズーム無効時は全体表示
+			pathSvg.setAttribute("viewBox", `0 0 ${pathWidth} ${pathHeight}`);
+		}
 	}
 
 	return { update };
