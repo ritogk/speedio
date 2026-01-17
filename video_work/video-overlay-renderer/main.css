@@ -248,33 +248,6 @@ header .meta {
 	display: none;
 }
 
-.legend-item {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-}
-
-.legend-color {
-	width: 10px;
-	height: 3px;
-	border-radius: 999px;
-}
-
-.legend-color.path-total {
-	background: #4b5563;
-}
-
-.legend-color.path-played {
-	background: #f97316;
-}
-
-.legend-color.chart-elev {
-	background: #4b5563;
-}
-
-.legend-color.chart-cursor {
-	background: #fbbf24;
-}
 
 .error-banner {
 	padding: 6px 10px;
