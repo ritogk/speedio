@@ -38,6 +38,7 @@ const MAP_CAMERA_ENABLED_DEFAULT = true;
  *   playedPathWeight?: number,
  *   markerRadius?: number,
  *   markerStrokeWidth?: number,
+ *   markerColor?: string,
  *   showPlayedPath?: boolean,
  *   showCurrentMarker?: boolean,
  * }} [options]
@@ -52,6 +53,7 @@ export function createMapGraph(
 		playedPathWeight = MAP_PLAYED_PATH_WEIGHT,
 		markerRadius = MAP_MARKER_RADIUS,
 		markerStrokeWidth = MAP_MARKER_STROKE_WIDTH,
+		markerColor = MAP_CURRENT_MARKER_COLOR,
 		showPlayedPath = true,
 		showCurrentMarker = true,
 		// true にするとミニマップを進行方向が常に上になるように回転させる
@@ -228,7 +230,7 @@ export function createMapGraph(
 		currentMarker.setAttribute("r", String(markerRadius));
 		currentMarker.setAttribute("stroke", MAP_MARKER_STROKE_COLOR);
 		currentMarker.setAttribute("stroke-width", String(markerStrokeWidth));
-		currentMarker.setAttribute("fill", MAP_CURRENT_MARKER_COLOR);
+		currentMarker.setAttribute("fill", markerColor);
 		pathGroup.appendChild(currentMarker);
 	}
 
