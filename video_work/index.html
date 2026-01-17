@@ -149,8 +149,8 @@
 			}
 
 			.chart-wrapper {
-				flex: 1;
-				background: radial-gradient(circle at top, #1f2937 0, #020617 60%);
+				flex: 0 0 auto;
+				background: #020617;
 				border-radius: 8px;
 				border: 1px solid #111827;
 				padding: 6px 8px 10px;
@@ -160,8 +160,8 @@
 			}
 
 			#elevation-chart {
-				flex: 1;
-				min-height: 0;
+				flex: 0 0 auto;
+				height: 220px;
 			}
 
 			.chart-caption {
@@ -198,7 +198,7 @@
 			}
 
 			.legend-color.chart-elev {
-				background: linear-gradient(90deg, #22d3ee, #4ade80);
+				background: #4b5563;
 			}
 
 			.legend-color.chart-cursor {
@@ -557,6 +557,7 @@
 
 				const chartWidth = width - paddingLeft - paddingRight;
 				const chartHeight = height - paddingTop - paddingBottom;
+				const elevPoints = [];
 
 				const minElev = Math.min(...elevations);
 				const maxElev = Math.max(...elevations);
@@ -566,44 +567,8 @@
 				bg.setAttribute("y", "0");
 				bg.setAttribute("width", String(width));
 				bg.setAttribute("height", String(height));
-				bg.setAttribute("fill", "url(#bgGradient)");
+				bg.setAttribute("fill", "#020617");
 				svg.appendChild(bg);
-
-				// グラデーション定義
-				const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-				const lg = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
-				lg.setAttribute("id", "elevGradient");
-				lg.setAttribute("x1", "0%");
-				lg.setAttribute("y1", "0%");
-				lg.setAttribute("x2", "100%");
-				lg.setAttribute("y2", "0%");
-
-				const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-				stop1.setAttribute("offset", "0%");
-				stop1.setAttribute("stop-color", "#22d3ee");
-				const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-				stop2.setAttribute("offset", "100%");
-				stop2.setAttribute("stop-color", "#4ade80");
-				lg.appendChild(stop1);
-				lg.appendChild(stop2);
-
-				const bgGrad = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
-				bgGrad.setAttribute("id", "bgGradient");
-				bgGrad.setAttribute("cx", "50%");
-				bgGrad.setAttribute("cy", "0%");
-				bgGrad.setAttribute("r", "90%");
-				const bgStop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-				bgStop1.setAttribute("offset", "0%");
-				bgStop1.setAttribute("stop-color", "#1f2937");
-				const bgStop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-				bgStop2.setAttribute("offset", "100%");
-				bgStop2.setAttribute("stop-color", "#020617");
-				bgGrad.appendChild(bgStop1);
-				bgGrad.appendChild(bgStop2);
-
-				defs.appendChild(lg);
-				defs.appendChild(bgGrad);
-				svg.appendChild(defs);
 
 				// 軸っぽいライン
 				const axis = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -616,20 +581,28 @@
 				axis.setAttribute("stroke-linecap", "round");
 				svg.appendChild(axis);
 
-				// 標高線のパス
-				const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+				// 標高線のパス（ベース）
+				const basePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
 				const dParts = [];
 				for (let i = 0; i < n; i++) {
 					const x = paddingLeft + (i / Math.max(1, n - 1)) * chartWidth;
 					const t = (elevations[i] - minElev) / Math.max(1, maxElev - minElev);
 					const y = paddingTop + (1 - t) * chartHeight;
 					dParts.push(`${i === 0 ? "M" : "L"}${x},${y}`);
+					elevPoints.push({ x, y });
 				}
-				path.setAttribute("d", dParts.join(" "));
-				path.setAttribute("fill", "none");
-				path.setAttribute("stroke", "url(#elevGradient)");
-				path.setAttribute("stroke-width", "2");
-				svg.appendChild(path);
+				basePath.setAttribute("d", dParts.join(" "));
+				basePath.setAttribute("fill", "none");
+				basePath.setAttribute("stroke", "#4b5563");
+				basePath.setAttribute("stroke-width", "2");
+				svg.appendChild(basePath);
+
+				// 再生済み部分のパス（オレンジ）
+				const playedElevPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+				playedElevPath.setAttribute("fill", "none");
+				playedElevPath.setAttribute("stroke", "#f97316");
+				playedElevPath.setAttribute("stroke-width", "2");
+				svg.appendChild(playedElevPath);
 
 				// 現在位置カーソル
 				const cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -681,10 +654,18 @@
 						.join(" ");
 					playedPolyline.setAttribute("points", playedPoints);
 
-					// 標高カーソル更新
+					// 標高カーソル & 再生済み標高ライン更新
 					const x = paddingLeft + (i / Math.max(1, n - 1)) * chartWidth;
 					cursor.setAttribute("x1", x);
 					cursor.setAttribute("x2", x);
+
+					const elevDParts = [];
+					for (let j = 0; j <= i; j++) {
+						const pt = elevPoints[j];
+						if (!pt) continue;
+						elevDParts.push(`${j === 0 ? "M" : "L"}${pt.x},${pt.y}`);
+					}
+					playedElevPath.setAttribute("d", elevDParts.join(" "));
 
 					const elev = elevations[i];
 					const ts = tsDates[i];
