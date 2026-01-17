@@ -2,5 +2,11 @@
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true
+  },
+  "chat.tools.terminal.autoApprove": {
+    "/^cd /home/ubuntu/speedio && python - <<'PY'\nimport json\np='video_work/segment_timestamp_list\\.json'\nwith open\\(p,'r',encoding='utf-8'\\) as f:\n    d=json\\.load\\(f\\)\nprint\\('meta\\.segment_points:', d\\['meta'\\]\\['segment_points'\\]\\)\nprint\\('len\\(points\\):', len\\(d\\['points'\\]\\)\\)\nprint\\('len\\(segments\\):', len\\(d\\['segments'\\]\\)\\)\nprint\\('first point source_index:', d\\['points'\\]\\[0\\]\\.get\\('source_index'\\)\\)\nprint\\('last point source_index:', d\\['points'\\]\\[-1\\]\\.get\\('source_index'\\)\\)\nPY$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
   }
 }
