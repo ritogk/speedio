@@ -104,15 +104,19 @@ header .meta {
 	order: 2;
 }
 /* Path view (地図なしの2Dビュー) */
-#map-container {
+#mini-map-container {
 	position: relative;
-	background: transparent;
+	/* minimap 全体を丸くくり抜くコンテナ */
+	width: var(--minimap-size);
+	height: var(--minimap-size);
+	border-radius: 9999px;
+	overflow: hidden;
 	display: flex;
-	flex-direction: column;
-	/* minimap を右下に寄せる */
-	align-items: flex-end;
-	justify-content: flex-end;
+	align-items: center;
+	justify-content: center;
 	flex: 0 0 auto;
+	/* 境界をふんわり見せるための外側ぼかし */
+	box-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
 }
 
 #path-view-full {
@@ -122,11 +126,10 @@ header .meta {
 	background: transparent;
 }
 
-#path-view-mini {
-	margin-top: 8px;
-	/* 調整しやすいよう固定サイズの正方形にする */
-	width: var(--minimap-size);
-	height: var(--minimap-size);
+#mini-map-container #path-view-mini {
+	/* コンテナいっぱいに収まる正方形の SVG として描画 */
+	width: 100%;
+	height: 100%;
 	display: block;
 	background: transparent;
 }
