@@ -1,74 +1,21 @@
-import { loadJson, showError, formatTimeLabel } from "./utils.js";
+import { showError, formatTimeLabel } from "./utils.js";
 import { createMapGraph } from "./mapGraph.js";
 import { createElevationGraph } from "./elevationGraph.js";
 import { createVideoModule } from "./videoModule.js";
 import { registerZKeyToggle } from "./keyboardShortcuts.js";
+import { loadSortedTrackData } from "./dataLoader.js";
 
 // ===============================
 // 設定
 // ===============================
-
-const COORDS_URL = "coords_segment_list.json";
-const ELEVATION_URL = "elevation_segment_list.json";
-const SEGMENT_TS_URL = "segment_points_with_timestamps.json";
 
 // 1 = 実時間, >1 = 早送り
 const PLAYBACK_SPEED = 1;
 
 async function init() {
 	try {
-		const [coords, elevations, segmentTs] = await Promise.all([
-			loadJson(COORDS_URL),
-			loadJson(ELEVATION_URL),
-			loadJson(SEGMENT_TS_URL),
-		]);
-
-		if (!Array.isArray(coords) || !Array.isArray(elevations) || !Array.isArray(segmentTs)) {
-			showError("JSON フォーマットが配列ではありません。");
-			return;
-		}
-
-		const length = Math.min(coords.length, elevations.length, segmentTs.length);
-		if (length === 0) {
-			showError("有効なデータがありません。");
-			return;
-		}
-
-		if (coords.length !== elevations.length || coords.length !== segmentTs.length) {
-			showError(
-				`配列長が一致しません: coords=${coords.length}, elevation=${
-					elevations.length
-				}, ts=${segmentTs.length}。 最小の ${length} 個のみを使用します。`
-			);
-		}
-
-		const slicedCoords = coords.slice(0, length);
-		const slicedElev = elevations.slice(0, length);
-		const slicedTs = segmentTs.slice(0, length);
-
-		const combined = [];
-		for (let i = 0; i < length; i++) {
-			const tsStr = slicedTs[i].timestamp;
-			const tsDate = new Date(tsStr);
-			if (!tsStr || Number.isNaN(tsDate.getTime())) {
-				console.warn("無効な timestamp をスキップします", slicedTs[i]);
-				continue;
-			}
-			combined.push({ coord: slicedCoords[i], elev: slicedElev[i], ts: tsDate });
-		}
-
-		if (combined.length === 0) {
-			showError("有効な timestamp を含むデータがありません。");
-			return;
-		}
-
-		combined.sort((a, b) => a.ts - b.ts);
-
-		const sortedCoords = combined.map((c) => c.coord);
-		const sortedElev = combined.map((c) => c.elev);
-		const tsDates = combined.map((c) => c.ts);
-
-		setupUI(sortedCoords, sortedElev, tsDates);
+		const { coords, elevations, tsDates } = await loadSortedTrackData();
+		setupUI(coords, elevations, tsDates);
 	} catch (err) {
 		console.error(err);
 		showError(err.message || String(err));
