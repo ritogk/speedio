@@ -20,6 +20,7 @@ from .core.terrain_elevation_generator import write_terrain_elevations_file, gen
 def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefecture_code:str) -> GeoDataFrame:
     env = getEnv()
     consider_gsi_width = env["CONSIDER_GSI_WIDTH"]
+    create_video = env["CREATE_VIDEO"]
 
     execution_timer_ins = ExecutionTimer()
     # ベースとなるグラフを取得する
@@ -232,18 +233,25 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     execution_timer_ins.stop()
 
     # 指定単位の標高の区間リストを生成する(ジオメトリの座標リスト)
-    execution_timer_ins.start("🏔️ calc video_coords_segment_list")
-    gdf_edges["video_coords_segment_list"] = column_generater.video_coords_segment_list.generate(
-        gdf_edges
-    )
-    execution_timer_ins.stop()
+    if create_video:
+        execution_timer_ins.start("🏔️ calc video_coords_segment_list")
+        gdf_edges["video_coords_segment_list"] = column_generater.video_coords_segment_list.generate(
+            gdf_edges
+        )
+        execution_timer_ins.stop()
+    else:
+        # 動画を作成しない場合は空リストを設定して重い処理をスキップ
+        gdf_edges["video_coords_segment_list"] = [[] for _ in range(len(gdf_edges))]
 
     # 指定単位の標高の区間リストを生成する(ジオメトリの標高リスト)
-    execution_timer_ins.start("🏔️ calc video_elevation_segment_list")
-    gdf_edges["video_elevation_segment_list"] = column_generater.video_elevation_segment_list.generate(
-        gdf_edges
-    )
-    execution_timer_ins.stop()
+    if create_video:
+        execution_timer_ins.start("🏔️ calc video_elevation_segment_list")
+        gdf_edges["video_elevation_segment_list"] = column_generater.video_elevation_segment_list.generate(
+            gdf_edges
+        )
+        execution_timer_ins.stop()
+    else:
+        gdf_edges["video_elevation_segment_list"] = [[] for _ in range(len(gdf_edges))]
 
     # 上り下りのポイントを求める
     execution_timer_ins.start("🏔️ calc elevation_unevenness")
