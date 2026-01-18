@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml
+  xmlns="http://www.opengis.net/kml/2.2"
+  xmlns:gx="http://www.google.com/kml/ext/2.2"
+>
+<Document>
+    <name>Route Tour (Fast Transition)</name>
+
+    <gx:Tour>
+      <name>Japan to Route (Fast)</name>
+      <gx:Playlist>
+
+        <!-- Japan overview (short) -->
+        <gx:FlyTo>
+          <gx:duration>1.2</gx:duration>
+          <gx:flyToMode>smooth</gx:flyToMode>
+          <LookAt>
+            <longitude>138.2</longitude>
+            <latitude>38.2</latitude>
+            <altitude>0</altitude>
+            <heading>0</heading>
+            <tilt>0</tilt>
+            <gx:fovy>30</gx:fovy>
+            <range>2800000</range>
+            <altitudeMode>relativeToGround</altitudeMode>
+          </LookAt>
+        </gx:FlyTo>
+
+      </gx:Playlist>
+    </gx:Tour>
+
+    <!-- Route line -->
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffffffff</color>
+          <width>4</width>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          140.1975132084877,35.56220877722052,0
+          140.1922278736135,35.5304726726874,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+
+    <!-- Start marker -->
+    <Placemark>
+      <name>Start</name>
+      <Style>
+        <IconStyle>
+          <color>ff0000ff</color>
+          <scale>1.2</scale>
+          <Icon>
+            <href>https://maps.google.com/mapfiles/kml/paddle/red-circle.png</href>
+          </Icon>
+        </IconStyle>
+      </Style>
+      <Point>
+        <coordinates>140.1975132084877,35.56220877722052,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <!-- End marker -->
+    <Placemark>
+      <name>End</name>
+      <Style>
+        <IconStyle>
+          <color>ffff0000</color>
+          <scale>1.2</scale>
+          <Icon>
+            <href>https://maps.google.com/mapfiles/kml/paddle/blu-circle.png</href>
+          </Icon>
+        </IconStyle>
+      </Style>
+      <Point>
+        <coordinates>140.1922278736135,35.5304726726874,0</coordinates>
+      </Point>
+    </Placemark>
+
+  </Document>
+</kml>
