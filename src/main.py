@@ -143,6 +143,11 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     gdf_edges["elevation"] = column_generater.elevation.generate(gdf_edges, tif_path)
     execution_timer_ins.stop()
 
+    # 各ラインの最小標高値を求める
+    execution_timer_ins.start("🏔️ calc min_elevation")
+    gdf_edges["min_elevation"] = column_generater.min_elevation.generate_min_elevation(gdf_edges)
+    execution_timer_ins.stop()
+
     # トンネルのデータを取得する
     execution_timer_ins.start("🗾 load osm tunnel data", ExecutionType.FETCH)
     graph_tunnel = graph_tunnel_feather.fetch_graph(search_area_polygon)
@@ -503,6 +508,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "road_section_cnt",
         "tunnel_length",
         "terrain_elevation_file_path",
+        "min_elevation",
     ]
 
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/targets/{prefecture_code}/target.json"
