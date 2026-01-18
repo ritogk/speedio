@@ -102,6 +102,7 @@ header .meta {
 	/* full マップを右上、minimap を右下に配置する */
 	justify-content: space-between;
 	order: 2;
+	opacity: 0.8;
 }
 /* Path view (地図なしの2Dビュー) */
 #mini-map-container {
