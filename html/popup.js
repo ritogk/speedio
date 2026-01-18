@@ -80,6 +80,10 @@ export const generateHtml = (x, isSmartPhone) => {
               <td>${truncateToTwoDecimals(x.elevation_height)}</td>
           </tr>
           <tr>
+              <td>min_elevation</td>
+              <td>${truncateToTwoDecimals(x.min_elevation)}</td>
+          </tr>
+          <tr>
               <td>elevation_unevenness_count</td>
               <td>${truncateToTwoDecimals(x.elevation_unevenness_count)}</td>
           </tr>

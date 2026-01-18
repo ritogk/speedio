@@ -3,6 +3,7 @@ from .column_generater_module import end_point
 from .column_generater_module import connection_node_cnt
 from .column_generater_module import angle_deltas
 from .column_generater_module import elevation
+from .column_generater_module import min_elevation
 from .column_generater_module import elevation_smooth
 from .column_generater_module import elevation_height
 from .column_generater_module import elevation_fluctuation
