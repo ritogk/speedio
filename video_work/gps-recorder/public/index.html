@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>GPS Recorder</title>
+  </head>
+  <body>
+    <button id="start">start</button>
+    <button id="stop">stop</button>
+    <button id="download">download</button>
+    <div id="status" style="margin: 10px; font-weight: bold; color: blue">
+      状態: 未記録
+    </div>
+
+    <script>
+      let watchId = null;
+      const records = [];
+
+      let isWatched = false;
+
+      function updateStatus() {
+        const statusDiv = document.getElementById("status");
+        if (isWatched) {
+          statusDiv.textContent = "状態: 記録中";
+          statusDiv.style.color = "red";
+        } else if (records.length > 0) {
+          statusDiv.textContent = "状態: 記録済";
+          statusDiv.style.color = "green";
+        } else {
+          statusDiv.textContent = "状態: 未記録";
+          statusDiv.style.color = "blue";
+        }
+      }
+
+      document.getElementById("start").onclick = () => {
+        isWatched = true;
+        updateStatus();
+        if (navigator.geolocation) {
+          watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+              const { latitude, longitude } = pos.coords;
+              const timestamp = new Date(pos.timestamp).toISOString();
+              records.push({ timestamp, latitude, longitude });
+              console.log(`${timestamp}: ${latitude}, ${longitude}`);
+            },
+            (err) => console.error(err),
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+          );
+        } else {
+          alert("このブラウザは位置情報をサポートしていません");
+        }
+      };
+
+      document.getElementById("stop").onclick = () => {
+        isWatched = false;
+        updateStatus();
+        if (watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+          watchId = null;
+        }
+      };
+
+      document.getElementById("download").onclick = () => {
+        const header = "timestamp,latitude,longitude\n";
+        const csv =
+          header +
+          records
+            .map((r) => `${r.timestamp},${r.latitude},${r.longitude}`)
+            .join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "gps_records.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      // 初期状態表示
+      updateStatus();
+    </script>
+  </body>
+</html>
