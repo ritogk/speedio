@@ -28,50 +28,10 @@ const MAP_CAMERA_ZOOM_DEFAULT = 2.5;
 const MAP_CAMERA_ENABLED_DEFAULT = true;
 
 /**
- * 地図用SVGに経路を描画し、インデックスに応じて現在位置と再生済み区間を更新するモジュール。
- * @param {number[][]} coords [lat, lon] の配列
- * @param {SVGSVGElement} pathSvg 対象SVG要素
- * @param {{
- *   cameraEnabled?: boolean,
- *   cameraZoom?: number,
- *   basePathWeight?: number,
- *   playedPathWeight?: number,
- *   markerRadius?: number,
- *   markerStrokeWidth?: number,
- *   markerColor?: string,
- *   showPlayedPath?: boolean,
- *   showCurrentMarker?: boolean,
- * }} [options]
+ * ベースマップ用のフィルタ定義（白グロー + 背景パネルぼかし）を作成する。
+ * ベースマップ（背景・全区間ライン）で共通利用する。
  */
-export function createMapGraph(
-	coords,
-	pathSvg,
-	{
-		cameraEnabled = MAP_CAMERA_ENABLED_DEFAULT,
-		cameraZoom = MAP_CAMERA_ZOOM_DEFAULT,
-		basePathWeight = MAP_BASE_PATH_WEIGHT,
-		playedPathWeight = MAP_PLAYED_PATH_WEIGHT,
-		markerRadius = MAP_MARKER_RADIUS,
-		markerStrokeWidth = MAP_MARKER_STROKE_WIDTH,
-		markerColor = MAP_CURRENT_MARKER_COLOR,
-		showPlayedPath = true,
-		showCurrentMarker = true,
-		// true にするとミニマップを進行方向が常に上になるように回転させる
-		rotateToHeading = false,
-	} = {}
-) {
-	if (!pathSvg || !coords || coords.length === 0) {
-		return {
-			update() {},
-		};
-	}
-
-	const pathWidth = MAP_SVG_WIDTH;
-	const pathHeight = MAP_SVG_HEIGHT;
-	const pathMargin = MAP_MARGIN;
-	pathSvg.setAttribute("viewBox", `0 0 ${pathWidth} ${pathHeight}`);
-
-	// フィルタ定義（ルート用の白グロー + 背景パネル用の黒ぼかし）
+function createMapFilters() {
 	const pathDefs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
 	const pathGlowFilter = document.createElementNS(
 		"http://www.w3.org/2000/svg",
@@ -109,8 +69,14 @@ export function createMapGraph(
 	panelBlurFilter.appendChild(panelBlur);
 	pathDefs.appendChild(panelBlurFilter);
 
-	pathSvg.appendChild(pathDefs);
+	return pathDefs;
+}
 
+/**
+ * 座標配列から SVG 上の投影座標（ベースマップの基準）を計算する。
+ * ベースマップ（全区間の形）を決める責務。
+ */
+function projectRouteCoords(coords, pathWidth, pathHeight, pathMargin) {
 	const lats = coords.map((c) => c[0]);
 	const lons = coords.map((c) => c[1]);
 	const minLat = Math.min(...lats);
@@ -139,9 +105,15 @@ export function createMapGraph(
 		return { x, y };
 	}
 
-	const projectedPoints = coords.map(projectCoord);
+	return coords.map(projectCoord);
+}
 
-	// 背景（少し内側に縮めて角丸を目立たせる）
+/**
+ * ベースマップ（背景パネル + 全区間ライン）を構築する。
+ * ベースマップ部分はインデックスに依存せず、静的に描画される。
+ */
+function createBaseMap({ pathSvg, pathWidth, pathHeight, projectedPoints, basePathWeight }) {
+	// 背景パネル（少し内側に縮めて角丸を目立たせる）
 	const pathBg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 	const panelInset = 18;
 	pathBg.setAttribute("x", String(panelInset));
@@ -204,6 +176,23 @@ export function createMapGraph(
 	basePolyline.setAttribute("opacity", String(MAP_BASE_STROKE_OPACITY));
 	pathGroup.appendChild(basePolyline);
 
+	return { pathGroup };
+}
+
+/**
+ * 走行ラインと現在位置マーカーのレイヤーを作成する。
+ * ここが「走行ライン」責務を持ち、update 時にインデックスに応じて更新される。
+ */
+function createRunLayer({
+	pathGroup,
+	projectedPoints,
+	playedPathWeight,
+	markerRadius,
+	markerStrokeWidth,
+	markerColor,
+	showPlayedPath,
+	showCurrentMarker,
+}) {
 	// 再生済みパス（オプションで非表示にできる）
 	let playedPolyline = null;
 	if (showPlayedPath) {
@@ -234,9 +223,10 @@ export function createMapGraph(
 		pathGroup.appendChild(currentMarker);
 	}
 
-	function update(index) {
+	function updateRunLayer(index) {
 		const i = Math.max(0, Math.min(projectedPoints.length - 1, index));
 		const pt = projectedPoints[i];
+
 		if (currentMarker) {
 			currentMarker.setAttribute("cx", String(pt.x));
 			currentMarker.setAttribute("cy", String(pt.y));
@@ -250,34 +240,59 @@ export function createMapGraph(
 			playedPolyline.setAttribute("points", playedPoints);
 		}
 
-		// ミニマップを進行方向が上向きになるように回転
-		if (rotateToHeading) {
-			// 前後の点から進行方向ベクトルを計算
-			const prevIdx = i > 0 ? i - 1 : i;
-			const nextIdx = i < projectedPoints.length - 1 ? i + 1 : i;
-			const prevPt = projectedPoints[prevIdx];
-			const nextPt = projectedPoints[nextIdx];
-			let dx = nextPt.x - prevPt.x;
-			let dy = nextPt.y - prevPt.y;
-			const len = Math.hypot(dx, dy);
-			if (len > 1e-6) {
-				dx /= len;
-				dy /= len;
-				// 現在の方向角
-				const angleRad = Math.atan2(dy, dx);
-				// 進行方向が上（画面座標で -Y 方向）を向くように回転
-				const angleDeg = -90 - (angleRad * 180) / Math.PI;
-				pathGroup.setAttribute(
-					"transform",
-					`rotate(${angleDeg}, ${pt.x}, ${pt.y})`
-				);
-			} else {
-				pathGroup.removeAttribute("transform");
-			}
+		return { index: i, point: pt };
+	}
+
+	return { updateRunLayer };
+}
+
+/**
+ * ミニマップ / フルマップ共通のビューポート制御（回転 + カメラ追従）。
+ *
+ * - rotateToHeading: ミニマップ向け（進行方向が常に上）
+ * - cameraEnabled + cameraZoom: ミニマップ用のズーム＆追従。フルマップでは無効化。
+ */
+function createViewportController({
+	pathSvg,
+	pathGroup,
+	projectedPoints,
+	pathWidth,
+	pathHeight,
+	rotateToHeading,
+	cameraEnabled,
+	cameraZoom,
+}) {
+	function applyHeadingRotation(index, pt) {
+		if (!rotateToHeading) {
+			pathGroup.removeAttribute("transform");
+			return;
+		}
+
+		// 前後の点から進行方向ベクトルを計算
+		const prevIdx = index > 0 ? index - 1 : index;
+		const nextIdx = index < projectedPoints.length - 1 ? index + 1 : index;
+		const prevPt = projectedPoints[prevIdx];
+		const nextPt = projectedPoints[nextIdx];
+		let dx = nextPt.x - prevPt.x;
+		let dy = nextPt.y - prevPt.y;
+		const len = Math.hypot(dx, dy);
+		if (len > 1e-6) {
+			dx /= len;
+			dy /= len;
+			// 現在の方向角
+			const angleRad = Math.atan2(dy, dx);
+			// 進行方向が上（画面座標で -Y 方向）を向くように回転
+			const angleDeg = -90 - (angleRad * 180) / Math.PI;
+			pathGroup.setAttribute(
+				"transform",
+				`rotate(${angleDeg}, ${pt.x}, ${pt.y})`
+			);
 		} else {
 			pathGroup.removeAttribute("transform");
 		}
+	}
 
+	function applyCameraView(pt) {
 		// レースゲームのミニマップ風に、現在位置を中心にズーム＆追従
 		if (cameraEnabled && cameraZoom > 1) {
 			const viewW = pathWidth / cameraZoom;
@@ -294,9 +309,117 @@ export function createMapGraph(
 				`${viewX} ${viewY} ${viewW} ${viewH}`
 			);
 		} else {
-			// ズーム無効時は全体表示
+			// ズーム無効時は全体表示（フルマップ）
 			pathSvg.setAttribute("viewBox", `0 0 ${pathWidth} ${pathHeight}`);
 		}
+	}
+
+	function updateViewport(index, pt) {
+		applyHeadingRotation(index, pt);
+		applyCameraView(pt);
+	}
+
+	return { updateViewport };
+}
+
+/**
+ * 地図用SVGに経路を描画し、インデックスに応じて現在位置と再生済み区間を更新するモジュール。
+ *
+ * ベースマップ（背景 + 全区間）、走行ラインレイヤー（再生済み + 現在位置）、
+ * ビューポート制御（ミニマップ/フルマップ）に責務分割している。
+ *
+ * @param {number[][]} coords [lat, lon] の配列
+ * @param {SVGSVGElement} pathSvg 対象SVG要素
+ * @param {{
+ *   cameraEnabled?: boolean,
+ *   cameraZoom?: number,
+ *   basePathWeight?: number,
+ *   playedPathWeight?: number,
+ *   markerRadius?: number,
+ *   markerStrokeWidth?: number,
+ *   markerColor?: string,
+ *   showPlayedPath?: boolean,
+ *   showCurrentMarker?: boolean,
+ *   rotateToHeading?: boolean,
+ * }} [options]
+ */
+export function createMapGraph(
+	coords,
+	pathSvg,
+	{
+		cameraEnabled = MAP_CAMERA_ENABLED_DEFAULT,
+		cameraZoom = MAP_CAMERA_ZOOM_DEFAULT,
+		basePathWeight = MAP_BASE_PATH_WEIGHT,
+		playedPathWeight = MAP_PLAYED_PATH_WEIGHT,
+		markerRadius = MAP_MARKER_RADIUS,
+		markerStrokeWidth = MAP_MARKER_STROKE_WIDTH,
+		markerColor = MAP_CURRENT_MARKER_COLOR,
+		showPlayedPath = true,
+		showCurrentMarker = true,
+		// true にするとミニマップを進行方向が常に上になるように回転させる
+		rotateToHeading = false,
+	} = {}
+) {
+	if (!pathSvg || !coords || coords.length === 0) {
+		return {
+			update() {},
+		};
+	}
+
+	const pathWidth = MAP_SVG_WIDTH;
+	const pathHeight = MAP_SVG_HEIGHT;
+	const pathMargin = MAP_MARGIN;
+
+	// 初期 viewBox（フルマップ全体表示）。カメラ制御で上書きされる場合あり。
+	pathSvg.setAttribute("viewBox", `0 0 ${pathWidth} ${pathHeight}`);
+
+	// ==== ベースマップ：フィルタ + 投影 + 背景 + 全区間ライン ====
+	const pathDefs = createMapFilters();
+	pathSvg.appendChild(pathDefs);
+
+	const projectedPoints = projectRouteCoords(
+		coords,
+		pathWidth,
+		pathHeight,
+		pathMargin
+	);
+
+	const { pathGroup } = createBaseMap({
+		pathSvg,
+		pathWidth,
+		pathHeight,
+		projectedPoints,
+		basePathWeight,
+	});
+
+	// ==== 走行ライン：再生済みライン + 現在位置マーカー ====
+	const { updateRunLayer } = createRunLayer({
+		pathGroup,
+		projectedPoints,
+		playedPathWeight,
+		markerRadius,
+		markerStrokeWidth,
+		markerColor,
+		showPlayedPath,
+		showCurrentMarker,
+	});
+
+	// ==== ミニマップ / フルマップ：ビューポート制御 ====
+	const { updateViewport } = createViewportController({
+		pathSvg,
+		pathGroup,
+		projectedPoints,
+		pathWidth,
+		pathHeight,
+		rotateToHeading,
+		cameraEnabled,
+		cameraZoom,
+	});
+
+	function update(index) {
+		// 走行ラインを更新し、その結果得られる現在位置でビューポートを制御
+		const { index: clampedIndex, point } = updateRunLayer(index);
+		updateViewport(clampedIndex, point);
 	}
 
 	return { update };
