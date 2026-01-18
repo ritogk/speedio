@@ -232,8 +232,15 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     execution_timer_ins.stop()
 
     # 指定単位の標高の区間リストを生成する(ジオメトリの座標リスト)
-    execution_timer_ins.start("🏔️ calc coords_segment_list")
-    gdf_edges["coords_segment_list"] = column_generater.coords_segment_list.generate(
+    execution_timer_ins.start("🏔️ calc video_coords_segment_list")
+    gdf_edges["video_coords_segment_list"] = column_generater.video_coords_segment_list.generate(
+        gdf_edges
+    )
+    execution_timer_ins.stop()
+
+    # 指定単位の標高の区間リストを生成する(ジオメトリの標高リスト)
+    execution_timer_ins.start("🏔️ calc video_elevation_segment_list")
+    gdf_edges["video_elevation_segment_list"] = column_generater.video_elevation_segment_list.generate(
         gdf_edges
     )
     execution_timer_ins.stop()
@@ -458,7 +465,8 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "elevation_segment_list",
         "elevation_unevenness",
         "elevation_unevenness_count",
-        "coords_segment_list",
+        "video_coords_segment_list",
+        "video_elevation_segment_list",
         "angle_deltas",
         "score_elevation",
         "score_elevation_unevenness",
