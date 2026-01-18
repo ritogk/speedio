@@ -1,5 +1,5 @@
 // データロード用モジュール
-// JSON ファイルの取得とソート済みデータ配列の生成を担当
+// JSON ファイルの取得と長さ調整済みデータ配列の生成を担当
 
 import { loadJson, showError } from "./utils.js";
 
@@ -10,7 +10,7 @@ const ELEVATION_URL = "data/elevation_segment_list.json";
 const SEGMENT_TS_URL = "data/segment_points_with_timestamps.json";
 
 /**
- * データをロードして、長さ調整・timestamp ソート済みの配列を返す。
+ * データをロードして、長さ調整済みの配列を返す。
  * エラー時は showError を呼び、throw で呼び出し側に通知する。
  *
  * @returns {Promise<{ coords: number[][], elevations: number[], tsDates: Date[] }>}
@@ -64,7 +64,14 @@ export async function loadSortedTrackData() {
 		throw new Error(msg);
 	}
 
-	combined.sort((a, b) => a.ts - b.ts);
+	// 先頭と末尾の timestamp を比較して、明らかに逆順なら全体を反転する
+	// （shape はそのまま・進行方向だけ揃える）
+	const firstTs = combined[0].ts.getTime();
+	const lastTs = combined[combined.length - 1].ts.getTime();
+	if (firstTs > lastTs) {
+		console.warn("track data appears reversed by timestamp order. Reversing arrays.");
+		combined.reverse();
+	}
 
 	const sortedCoords = combined.map((c) => c.coord);
 	const sortedElev = combined.map((c) => c.elev);
