@@ -13,6 +13,7 @@ def getEnv():
     AREA_PREFECTURE_NAME = os.getenv("AREA_PREFECTURE_NAME")
     CONSIDER_GSI_WIDTH = os.getenv("CONSIDER_GSI_WIDTH")
     SHOW_CORNER = os.getenv("SHOW_CORNER")
+    CREATE_VIDEO = os.getenv("CREATE_VIDEO")
     return {
         "USE_CUSTOM_AREA": True if USE_CUSTOM_AREA == "1" else False,
         "CUSTOM_AREA_POINT_ST": CUSTOM_AREA_POINT_ST.replace(" ", "").split(","),
@@ -21,4 +22,5 @@ def getEnv():
         "AREA_PREFECTURE_NAME": AREA_PREFECTURE_NAME,
         "CONSIDER_GSI_WIDTH": True if CONSIDER_GSI_WIDTH == "1" else False,
         "SHOW_CORNER": True if SHOW_CORNER == "1" else False,
+        "CREATE_VIDEO": True if CREATE_VIDEO == "1" else False,
     }
