@@ -126,7 +126,7 @@ export function setupController(
 		markerRadius: 1.1,
 		markerStrokeWidth: 0.4,
 		// ミニマップは進行方向が常に上になるように回転
-		rotateToHeading: true,
+		rotateToHeading: false,
 	});
 	const elevationGraph = createElevationGraph(elevations, n, elevSvg);
 	const videoModule = createVideoModule({
