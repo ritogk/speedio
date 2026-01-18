@@ -210,27 +210,39 @@ function createRunLayer({
 	}
 
 	// 現在位置マーカー（オプションで非表示にできる）
-	let currentMarker = null;
+	let directionArrow = null;
 	if (showCurrentMarker) {
-		currentMarker = document.createElementNS(
+		// 進行方向を示す矢印（現在位置の点の代わり）
+		directionArrow = document.createElementNS(
 			"http://www.w3.org/2000/svg",
-			"circle"
+			"path"
 		);
-		currentMarker.setAttribute("r", String(markerRadius));
-		currentMarker.setAttribute("stroke", MAP_MARKER_STROKE_COLOR);
-		currentMarker.setAttribute("stroke-width", String(markerStrokeWidth));
-		currentMarker.setAttribute("fill", markerColor);
-		pathGroup.appendChild(currentMarker);
+		// 上向き（-Y 方向）を基準とした、マーカー半径ベースの小さな矢印形状
+		const arrowLength = markerRadius * 1.9; // 先端までの長さ
+		const arrowWidth = markerRadius * 1.0; // 左右の幅
+		const arrowTail = arrowLength * 0.35; // 尾の位置
+		const arrowPathD = [
+			`M 0 ${-arrowLength}`,
+			`L ${arrowWidth} ${arrowTail}`,
+			"L 0 0",
+			`L ${-arrowWidth} ${arrowTail}`,
+			"Z",
+		].join(" ");
+		directionArrow.setAttribute("d", arrowPathD);
+		directionArrow.setAttribute("fill", markerColor);
+		directionArrow.setAttribute("stroke", MAP_MARKER_STROKE_COLOR);
+		directionArrow.setAttribute(
+			"stroke-width",
+			String(markerStrokeWidth * 0.4)
+		);
+		directionArrow.setAttribute("stroke-linejoin", "round");
+		directionArrow.setAttribute("opacity", "0");
+		pathGroup.appendChild(directionArrow);
 	}
 
 	function updateRunLayer(index) {
 		const i = Math.max(0, Math.min(projectedPoints.length - 1, index));
 		const pt = projectedPoints[i];
-
-		if (currentMarker) {
-			currentMarker.setAttribute("cx", String(pt.x));
-			currentMarker.setAttribute("cy", String(pt.y));
-		}
 
 		if (playedPolyline) {
 			const playedPoints = projectedPoints
@@ -238,6 +250,31 @@ function createRunLayer({
 				.map((p) => `${p.x},${p.y}`)
 				.join(" ");
 			playedPolyline.setAttribute("points", playedPoints);
+		}
+
+		// 前後の点から進行方向ベクトルを計算し、矢印を回転・配置
+		if (directionArrow && projectedPoints.length > 1) {
+			const prevIdx = i > 0 ? i - 1 : i;
+			const nextIdx = i < projectedPoints.length - 1 ? i + 1 : i;
+			const prevPt = projectedPoints[prevIdx];
+			const nextPt = projectedPoints[nextIdx];
+			let dx = nextPt.x - prevPt.x;
+			let dy = nextPt.y - prevPt.y;
+			const len = Math.hypot(dx, dy);
+			if (len > 1e-6) {
+				dx /= len;
+				dy /= len;
+				// 進行方向ベクトルに合わせて、上向き基準の矢印を回転
+				const angleRad = Math.atan2(dy, dx);
+				const angleDeg = (angleRad * 180) / Math.PI + 90;
+				directionArrow.setAttribute(
+					"transform",
+					`translate(${pt.x}, ${pt.y}) rotate(${angleDeg})`
+				);
+				directionArrow.setAttribute("opacity", "1");
+			} else {
+				directionArrow.setAttribute("opacity", "0");
+			}
 		}
 
 		return { index: i, point: pt };

@@ -123,7 +123,7 @@ export function setupController(
 		cameraZoom: 12,
 		basePathWeight: 0.7,
 		playedPathWeight: 0.9,
-		markerRadius: 1.1,
+		markerRadius: 1.5,
 		markerStrokeWidth: 0.4,
 		// ミニマップは進行方向が常に上になるように回転
 		rotateToHeading: false,
