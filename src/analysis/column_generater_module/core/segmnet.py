@@ -19,51 +19,42 @@ def generate_segment_list(line: LineString, interval: int, length:int) -> list[P
     return segment_points
 
 
+from bisect import bisect_left
 # linestringから指定した間隔の点を生成してオリジナルの座標のindex番号を取得する
-def generate_segment_original_index_list(line: LineString, interval: int, length:int) -> list[int]:
-    point_indexs = []
-
+def generate_segment_original_index_list(
+    line: LineString, interval: int, length: int
+) -> list[int]:
     coords = list(line.coords)
-    
-    # 指定間隔の座標を作成
+    if len(coords) == 0:
+        return []
+
+    # segment points（あなたの関数を使用）
     segment_points = generate_segment_list(line, interval, length)
 
-    # 1. セグメントのポリゴンを作成 ※1
-    # 2. そこに該当する座標を取得 ※2
-    # 3. ※2に最も近い座標を取得
-    for i in range(len(coords) - 1):
-        point_st = coords[i]
-        point_ed = coords[i + 1]
-        target_line_coords = [point_st, point_ed]
-        # 幅を0.5m増やしたポリゴンを作成
-        # ※交差するようなラインは重なる可能性があるので余分なデータが取得される可能性あり
-        polygon = create_vertical_polygon(target_line_coords, 0.5)
-        # segment_pointsからポリゴン内の座標を取得
-        polygon_in_segment_points = []
-        for point in segment_points:
-            if polygon.contains(point):
-                polygon_in_segment_points.append(point)
+    # 元頂点の「始点からの累積距離」を作る（chainage）
+    chainages = [0.0]
+    for i in range(1, len(coords)):
+        chainages.append(chainages[-1] + LineString([coords[i-1], coords[i]]).length)
 
-        if len(polygon_in_segment_points) == 0:
-            pass
+    # segment point -> 最近傍の頂点 index
+    idxs = []
+    for p in segment_points:
+        # p が Point ならそのまま、tuple なら Point 化
+        if not isinstance(p, Point):
+            p = Point(p)
+
+        s = line.project(p)  # 線の始点からの距離（同じ単位）
+
+        j = bisect_left(chainages, s)
+        if j <= 0:
+            idxs.append(0)
+        elif j >= len(chainages):
+            idxs.append(len(chainages) - 1)
         else:
-            # 対象座標と始点と終点までの距離を測り最も近い座標のindex番号を取得
-            point_st_p = Point(point_st)
-            point_ed_p = Point(point_ed)
+            # j-1 と j のどっちが近いか（同距離は前側優先）
+            if (s - chainages[j-1]) <= (chainages[j] - s):
+                idxs.append(j-1)
+            else:
+                idxs.append(j)
 
-            work_list = []
-            for p in polygon_in_segment_points:
-                distance_st = point_st_p.distance(p)
-                distance_ed = point_ed_p.distance(p)
-                if distance_st < distance_ed:
-                    work_list.append(i)
-                    # point_indexs.append(i)
-                    # target.append({"index":i, "point":p})
-                else:
-                    work_list.append(i + 1)
-                    # point_indexs.append(i + 1)
-                    # target.append({"index":i+1, "point":p})
-            # 昇順に並び替え
-            work_list.sort()
-            point_indexs += work_list
-    return point_indexs
+    return idxs

@@ -4,8 +4,7 @@ from tqdm import tqdm
 import pandas as pd
 from .core.segmnet import generate_segment_original_index_list
 
-INTERVAL = 50
-WINDOW_SIZE = 5
+INTERVAL = 1
 
 def generate(gdf: GeoDataFrame) -> Series:
     def func(x):

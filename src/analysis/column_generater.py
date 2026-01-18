@@ -40,4 +40,5 @@ from .column_generater_module import tunnel_length
 from .column_generater_module import elevation_unevenness
 from .column_generater_module import score_center_line_section
 from .column_generater_module import geometry_smooth
-from .column_generater_module import coords_segment_list
+from .column_generater_module import video_coords_segment_list
+from .column_generater_module import video_elevation_segment_list
