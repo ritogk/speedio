@@ -9,15 +9,19 @@
 			<div class="app-root">
 				<div id="error" class="error-banner" style="display: none"></div>
 				<div class="main-layout">
+					<!-- right-panel -->
 					<div class="right-panel">
 						<!-- 右カラムの一番上に full マップを固定表示 -->
-						<svg id="path-view-full" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
+						<div id="full-map-container">
+							<svg id="path-view-full" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
+						</div>
+						
 						<div class="chart-container">
 							<div class="chart-header">
 								<span>標高プロファイル</span>
 								<span id="chart-range" style="font-size: 11px; color: #6b7280"></span>
 							</div>
-
+							<!-- 標高チャート -->
 							<div class="chart-wrapper">
 								<svg id="elevation-chart" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
 								<div class="legend">
@@ -41,11 +45,12 @@
 								<div class="chart-caption">スライダー or 再生ボタンで、時間に沿って位置と標高が同期して動きます。</div>
 							</div>
 						</div>
-
+						<!-- ミニマップ -->
 						<div id="mini-map-container">
 							<svg id="path-view-mini" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
 						</div>
 					</div>
+					<!-- left-panel -->
 					<div class="left-panel">
 							<div id="video-time-setup" class="video-setup">
 							<span>動画開始位置</span>

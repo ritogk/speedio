@@ -97,7 +97,7 @@ header .meta {
 	flex: 0 0 30%;
 	max-width: 30%;
 	display: flex;
-	flex-direction: column;
+	flex-direction: column-reverse;
 	min-height: 100%;
 	/* full マップを右上、minimap を右下に配置する */
 	justify-content: space-between;
@@ -118,6 +118,16 @@ header .meta {
 	flex: 0 0 auto;
 	/* 境界をふんわり見せるための外側ぼかし */
 	box-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+	display: none;
+}
+
+#full-map-container {
+	width: 100%;
+	height: auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 8px;
 }
 
 #path-view-full {
@@ -211,12 +221,7 @@ header .meta {
 }
 
 .chart-container {
-	flex: 0 0 auto;
-	padding: 4px 8px 4px;
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	min-height: 0;
+	display: none !important;
 }
 
 .chart-header {
@@ -238,6 +243,7 @@ header .meta {
 #elevation-chart {
 	flex: 0 0 auto;
 	height: 220px;
+	display: none;
 }
 
 .chart-caption {
