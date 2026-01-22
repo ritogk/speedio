@@ -373,6 +373,25 @@
             </button>
           </div>
         </div>
+        <!-- 周辺検索エリア -->
+        <div id="aroundSearchArea" style="padding-bottom: 5px">
+          <div>
+            <input
+              type="text"
+              id="searchCoordinates"
+              placeholder="latitude,longitude"
+              style="width: 230px; margin-right: 4px;"
+            />
+            <input
+              type="text"
+              id="searchRadiusKm"
+              placeholder="km"
+              value="20"
+              style="width: 80px;"
+            />
+          </div>
+          <button id="searchAroundButton" style="width: 335px">Search around</button>
+        </div>
         <!-- ピン追加 -->
         <div id="pinArea" style="padding-bottom: 5px">
           <div>
@@ -489,7 +508,7 @@
     <script src="./draw.js" type="module"></script>
     <!-- Leaflet JavaScriptのリンク -->
     <script type="module">
-      import { draw, drawTargets, init, addPin } from "./draw.js";
+      import { draw, drawTargets, init, addPin, setLocationFilterCenter } from "./draw.js";
       window.onload = () => {
         init();
         draw();
@@ -528,6 +547,57 @@
             } else {
               subArea.style.display = "none";
             }
+          });
+
+        document
+          .getElementById("searchAroundButton")
+          ?.addEventListener("click", () => {
+            const inputText =
+              document.getElementById("searchCoordinates").value ||
+              document.getElementById("coordinates").value;
+
+            const text = inputText.trim();
+            if (!text) {
+              alert("座標を入力してください（緯度,経度）");
+              return;
+            }
+
+            let parts = [];
+            if (text.includes(",")) {
+              parts = text
+                .replace(/[()]/g, "")
+                .replace(/\s+/g, "")
+                .split(",");
+            } else {
+              parts = text
+                .replace(/[()]/g, "")
+                .trim()
+                .split(/\s+/);
+            }
+
+            if (parts.length < 2) {
+              alert("緯度,経度 の形式で入力してください");
+              return;
+            }
+
+            const lat = parseFloat(parts[0]);
+            const lng = parseFloat(parts[1]);
+
+            if (Number.isNaN(lat) || Number.isNaN(lng)) {
+              alert("緯度・経度は数値で入力してください");
+              return;
+            }
+
+            const radiusText = document.getElementById("searchRadiusKm")?.value || "20";
+            const radiusKm = parseFloat(radiusText);
+            if (Number.isNaN(radiusKm) || radiusKm <= 0) {
+              alert("半径(km)には 0 より大きい数値を入力してください");
+              return;
+            }
+
+            setLocationFilterCenter(lat, lng, radiusKm);
+            // 既に読み込まれている target 群 (mergedTargets) を元に再描画
+            drawTargets([]);
           });
       };
     </script>

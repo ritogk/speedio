@@ -149,6 +149,11 @@ export const draw = () => {
 };
 
 let mergedTargets = [];
+let locationFilter = null;
+
+export const setLocationFilterCenter = (lat, lng, radiusKm = 20) => {
+  locationFilter = { lat, lng, radiusKm };
+};
 /**
  * 対象の道路を描画する
  * @param {target.jsonんの内容} value
@@ -174,6 +179,13 @@ export const drawTargets = (value) => {
 
   // フィルタリング
   targets = filter([...targets]);
+
+   // 位置情報フィルタ（指定がある場合のみ）
+  if (locationFilter) {
+    targets = targets.filter((x) =>
+      isTargetWithinRadius(x, locationFilter.lat, locationFilter.lng, locationFilter.radiusKm)
+    );
+  }
 
   targets.forEach((x) => {
     const polyline = x.geometry_list;
@@ -401,6 +413,33 @@ const filter = (targets) => {
       ? targets
       : targets.filter((x) => x[filterKey3] <= Number(filterKey3maxValue));
   return targets;
+};
+
+const haversineDistance = (lat1, lng1, lat2, lng2) => {
+  const R = 6371; // 地球半径 (km)
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const isTargetWithinRadius = (target, centerLat, centerLng, radiusKm) => {
+  if (!target.geometry_list || !target.geometry_list.length) {
+    return false;
+  }
+  const points = target.geometry_list;
+  const centerIndex = Math.floor(points.length / 2);
+  const [lat, lng] = points[centerIndex];
+  const distance = haversineDistance(lat, lng, centerLat, centerLng);
+  return distance <= radiusKm;
 };
 
 const calcScore = (targets) => {
