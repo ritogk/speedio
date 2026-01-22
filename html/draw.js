@@ -87,14 +87,21 @@ export const init = async () => {
   });
 };
 
+// キャッシュを無効化して JSON を取得する共通関数
+const fetchJsonNoCache = async (url) => {
+  const separator = url.includes("?") ? "&" : "?";
+  const noCacheUrl = `${url}${separator}_=${Date.now()}`;
+  const response = await fetch(noCacheUrl, { cache: "no-store" });
+  return response.json();
+};
+
 const loadedPrefectures = [];
 // 都道府県レイヤーの設定
 const setupPrefecturesLayer = async () => {
   let selectedPolygon = null;
   const prefecturesMultiPolygonPath = "./prefectures.geojson";
   toggleLoading();
-  const response = await fetch(prefecturesMultiPolygonPath);
-  const data = await response.json();
+  const data = await fetchJsonNoCache(prefecturesMultiPolygonPath);
   toggleLoading();
   L.geoJSON(data, {
     style: { color: "blue", weight: 1 },
@@ -116,10 +123,11 @@ const setupPrefecturesLayer = async () => {
           return;
         }
         loadedPrefectures.push(prefValue);
-        // target.jsonを読み込む
+        // target.jsonを読み込む（キャッシュ無効）
         toggleLoading();
-        const response = await fetch(`./targets/${prefValue}/target.json`);
-        const target = await response.json();
+        const target = await fetchJsonNoCache(
+          `./targets/${prefValue}/target.json`
+        );
         drawTargets(target);
         toggleLoading();
       });
