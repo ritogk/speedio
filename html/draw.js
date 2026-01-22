@@ -350,10 +350,19 @@ export const drawTargets = (value) => {
   //   });
   // });
 
-  // 上位50件の中心座標にランクを表示（1～50位まで連番）
+  // 上位N件の中心座標にランクを表示（1～N位まで連番）
+  let labelCount = 20;
+  const labelCountInput = document.getElementById("labelCount");
+  if (labelCountInput) {
+    const parsed = parseInt(labelCountInput.value, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      labelCount = parsed;
+    }
+  }
+
   const sortedTargets = targets
     .sort((a, b) => b.score_normalization - a.score_normalization)
-    .slice(0, 50);
+    .slice(0, Math.min(labelCount, targets.length));
   
   // 各区切りの色を定義
   const colorByRank = (rank) => {
@@ -364,7 +373,7 @@ export const drawTargets = (value) => {
     return "indianred";
   };
 
-  // 1～50位までのマーカーを表示
+  // 1～N位までのマーカーを表示
   sortedTargets.forEach((x, index) => {
     const rank = index + 1;
     const center = Math.ceil(x.geometry_list.length / 2);

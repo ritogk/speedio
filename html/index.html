@@ -373,6 +373,20 @@
             </button>
           </div>
         </div>
+        <!-- ランクエリア -->
+         <div id="rankArea" style="padding-bottom: 5px">
+          <div>
+            <input
+              type="number"
+              id="labelCount"
+              placeholder="labels"
+              value="20"
+              min="1"
+              style="width: 100%;"
+            />
+          </div>
+          <button id="rankButton" style="width: 335px">change rank</button>
+        </div>
         <!-- 周辺検索エリア -->
         <div id="aroundSearchArea" style="padding-bottom: 5px">
           <div>
@@ -536,6 +550,13 @@
         document
           .getElementById("weightButton")
           .addEventListener("click", () => {
+            drawTargets([]);
+          });
+        document
+          .getElementById("rankButton")
+          .addEventListener("click", () => {
+            // labelCount の値は drawTargets 内で参照されるので、
+            // ここでは再描画だけ行う
             drawTargets([]);
           });
         document
