@@ -117,7 +117,8 @@ export const generateHtml = (x, isSmartPhone) => {
           x.geometry_list
         )}', '_blank')"
         >GoogleMapで表示</button><br>
-
+        <button id="buttonCopyMarkdownHeader" class="large-button">header cp</button>
+        <button id="buttonCopyMarkdown" class="large-button">body cp</button><br>
         <button id="button3D" class="large-button">3Dで表示</button><br>
 
         <button id="button3dDriverView" class="large-button">3Dで表示(運転者目線)</button><br>
