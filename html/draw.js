@@ -4,6 +4,7 @@ import { generateHtml } from "./popup.js";
 import { draw3D } from "./3d.js";
 import { draw3D as draw3dDriverView } from "./3d_driver_view.js";
 import { drawGraph } from "./graph.js";
+import { createMarkdownHeaderFromTargets, createMarkdownTableFromTarget } from "./markdown.js";
 
 let isSmartPhone = false;
 if (navigator.userAgent.match(/iPhone|Android.+Mobile/)) {
@@ -321,6 +322,32 @@ export const drawTargets = (value) => {
                 x.terrain_elevation_file_path
               );
               toggleLoading();
+            });
+
+          document
+            .getElementById("buttonCopyMarkdown")
+            ?.addEventListener("click", async () => {
+              try {
+                const markdown = createMarkdownTableFromTarget(x, { includeHeader: false });
+                await navigator.clipboard.writeText(markdown);
+                alert("Markdownをクリップボードにコピーしました");
+              } catch (err) {
+                console.error("Markdownコピーに失敗しました", err);
+                alert("Markdownのコピーに失敗しました。ブラウザの権限設定を確認してください。");
+              }
+            });
+
+          document
+            .getElementById("buttonCopyMarkdownHeader")
+            ?.addEventListener("click", async () => {
+              try {
+                const header = createMarkdownHeaderFromTargets([x]);
+                await navigator.clipboard.writeText(header);
+                alert("Markdownヘッダーをクリップボードにコピーしました");
+              } catch (err) {
+                console.error("Markdownヘッダーコピーに失敗しました", err);
+                alert("Markdownヘッダーのコピーに失敗しました。ブラウザの権限設定を確認してください。");
+              }
             });
         })
     );
