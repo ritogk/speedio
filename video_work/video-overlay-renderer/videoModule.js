@@ -4,6 +4,8 @@
 const VIDEO_MAX_SEEK_MARGIN = 0.1; // duration から少し手前までシークするためのマージン(秒)
 const VIDEO_ERROR_MESSAGE = "時間は mm:ss または 秒数 で入力してください。";
 
+const IS_MUSTED = false;
+
 import { parseTimeToSeconds } from "./utils.js";
 
 /**
@@ -93,7 +95,7 @@ export function createVideoModule(options) {
 	async function play() {
 		if (!bgVideo) return;
 		try {
-			bgVideo.muted = true;
+			bgVideo.muted = IS_MUSTED;
 			await bgVideo.play();
 		} catch (e) {
 			console.warn("背景動画の再生に失敗しました", e);
