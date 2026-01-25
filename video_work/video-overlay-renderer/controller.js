@@ -15,6 +15,7 @@ const PLAYBACK_SPEED = 1;
  *   createElevationGraph: import("./elevationGraph.js").createElevationGraph,
  *   createVideoModule: import("./videoModule.js").createVideoModule,
  *   registerZKeyToggle: import("./keyboardShortcuts.js").registerZKeyToggle,
+ *   registerFullmapToggle: import("./keyboardShortcuts.js").registerFullmapToggle,
  *   playbackSpeed?: number,
  * }} deps 依存モジュール/設定をまとめたオブジェクト
  */
@@ -27,7 +28,8 @@ export function setupController(
 		createMapGraph,
 		createElevationGraph,
 		createVideoModule,
-		registerZKeyToggle
+		registerZKeyToggle,
+		registerFullmapToggle
 	}
 ) {
 	const n = coords.length;
@@ -44,6 +46,9 @@ export function setupController(
 	const videoStartApply = document.getElementById("video-start-apply");
 	const controls = document.querySelector(".controls");
 	const statusBar = document.querySelector(".status-bar");
+	const fullmapBtn = document.getElementById("fullmap-btn");
+	const fullmapContainer = document.getElementById("fullmap-container");
+	const mainLayout = document.querySelector(".main-layout");
 
 	const statusIndex = document.getElementById("status-index");
 	const statusElev = document.getElementById("status-elev");
@@ -69,7 +74,7 @@ export function setupController(
 			console.warn("背景動画の初期化に失敗しました", e);
 		}
 	}
-	if (playBtn) playBtn.disabled = true;
+	if (playBtn) playBtn.disabled = false; // 動画がなくても再生可能に
 	if (pauseBtn) pauseBtn.disabled = true;
 
 	slider.max = String(n - 1);
@@ -101,13 +106,16 @@ export function setupController(
 	function updatePlaybackElapsed(currentMs) {
 		const clamped = Math.max(minMillis, Math.min(maxMillis, currentMs));
 		const elapsedNow = (clamped - minMillis) / 1000;
-		playbackElapsed.textContent = `${formatMmSs(elapsedNow)} / ${formatMmSs(
-			elapsedSec
-		)}`;
+		const timeStr = `${formatMmSs(elapsedNow)} / ${formatMmSs(elapsedSec)}`;
+		playbackElapsed.textContent = timeStr;
+		if (playbackElapsedFullscreen) {
+			playbackElapsedFullscreen.textContent = timeStr;
+		}
 	}
 
 	// モジュール初期化
 	const mapSvgFull = document.getElementById("path-view-full");
+	const mapSvgFullscreen = document.getElementById("path-view-full-fullscreen");
 	const mapSvgMini = document.getElementById("path-view-mini");
 	const elevSvg = document.getElementById("elevation-chart");
 	// 全体表示マップ（ズームなし）
@@ -116,7 +124,18 @@ export function setupController(
 		cameraZoom: 1,
 		showPlayedPath: true,
 		showCurrentMarker: true,
+		basePathWeight: 10,
+		playedPathWeight: 11.5,
 	});
+	// 全画面用マップ
+	const mapGraphFullscreen = mapSvgFullscreen ? createMapGraph(coords, mapSvgFullscreen, {
+		cameraEnabled: false,
+		cameraZoom: 1,
+		showPlayedPath: true,
+		showCurrentMarker: true,
+		basePathWeight: 10,
+		playedPathWeight: 11.5,
+	}) : null;
 	// ミニマップ（現在位置を中心にズーム＆追従）
 	const mapGraphMini = createMapGraph(coords, mapSvgMini, {
 		cameraEnabled: true,
@@ -147,6 +166,25 @@ export function setupController(
 		videoStartInput,
 	});
 
+	// f キーで full-map 全画面表示を切り替える
+	registerFullmapToggle({
+		fullmapContainer,
+		mainLayout,
+	});
+
+	// 全画面ボタンクリック
+	if (fullmapBtn) {
+		fullmapBtn.addEventListener("click", () => {
+			if (fullmapContainer) {
+				const isFullmap = fullmapContainer.style.display !== "none";
+				fullmapContainer.style.display = isFullmap ? "none" : "flex";
+				if (mainLayout) {
+					mainLayout.style.display = isFullmap ? "flex" : "none";
+				}
+			}
+		});
+	}
+
 	// インデックス & 再生状態
 	let currentIndex = 0;
 	let playing = false;
@@ -159,6 +197,7 @@ export function setupController(
 		if (i >= n) i = n - 1;
 		currentIndex = i;
 		slider.value = String(i);
+		if (sliderFullscreen) sliderFullscreen.value = String(i);
 
 		const elev = elevations[i];
 		const ts = tsDates[i];
@@ -170,10 +209,19 @@ export function setupController(
 			statusLatLon.textContent = `${coord[0].toFixed(6)}, ${coord[1].toFixed(6)}`;
 		}
 		if (timeLabelAbs) timeLabelAbs.textContent = formatTimeLabel(ts);
+		if (timeLabelAbsFullscreen) timeLabelAbsFullscreen.textContent = formatTimeLabel(ts);
 		updatePlaybackElapsed(ts.getTime());
+		
+		// 全画面モードの再生時間も更新
+		if (playbackElapsedFullscreen) {
+			const clamped = Math.max(minMillis, Math.min(maxMillis, ts.getTime()));
+			const elapsedNow = (clamped - minMillis) / 1000;
+			playbackElapsedFullscreen.textContent = `${formatMmSs(elapsedNow)} / ${formatMmSs(elapsedSec)}`;
+		}
 
-		// ビジュアル更新（全体マップ + ズームマップ）
+		// ビジュアル更新（全体マップ + ズームマップ + 全画面マップ）
 		mapGraphFull.update(i);
+		if (mapGraphFullscreen) mapGraphFullscreen.update(i);
 		mapGraphMini.update(i);
 		elevationGraph.update(i);
 
@@ -226,15 +274,16 @@ export function setupController(
 
 	function handlePlay() {
 		if (playing) return;
-		if (!videoModule.isConfigured()) return;
 		// 終端にいたら先頭から
 		if (currentIndex >= n - 1) {
-			setIndex(0, { syncVideo: true });
+			setIndex(0, { syncVideo: videoModule.isConfigured() });
 		}
 		playing = true;
 		if (playBtn) playBtn.disabled = true;
 		if (pauseBtn) pauseBtn.disabled = false;
-		videoModule.play();
+		if (videoModule.isConfigured()) {
+			videoModule.play();
+		}
 		playStartRealMs = performance.now();
 		playStartDataMs = tsDates[currentIndex].getTime();
 		rafId = requestAnimationFrame(tick);
@@ -245,11 +294,42 @@ export function setupController(
 		stopAnimation();
 		if (playBtn) playBtn.disabled = false;
 		if (pauseBtn) pauseBtn.disabled = true;
+		const playBtnFullscreen = document.getElementById("play-btn-fullscreen");
+		const pauseBtnFullscreen = document.getElementById("pause-btn-fullscreen");
+		if (playBtnFullscreen) playBtnFullscreen.disabled = false;
+		if (pauseBtnFullscreen) pauseBtnFullscreen.disabled = true;
 		videoModule.pause();
 	}
 
 	if (playBtn) playBtn.addEventListener("click", handlePlay);
 	if (pauseBtn) pauseBtn.addEventListener("click", handlePause);
+
+	// 全画面モード用のボタンイベント
+	const playBtnFullscreen = document.getElementById("play-btn-fullscreen");
+	const pauseBtnFullscreen = document.getElementById("pause-btn-fullscreen");
+	const sliderFullscreen = document.getElementById("index-slider-fullscreen");
+	const playbackElapsedFullscreen = document.getElementById("playback-elapsed-fullscreen");
+	const timeLabelAbsFullscreen = document.getElementById("time-label-abs-fullscreen");
+
+	if (playBtnFullscreen) playBtnFullscreen.addEventListener("click", handlePlay);
+	if (pauseBtnFullscreen) pauseBtnFullscreen.addEventListener("click", handlePause);
+
+	if (sliderFullscreen) {
+		sliderFullscreen.addEventListener("input", () => {
+			// スライダーを動かしたら一旦停止
+			playing = false;
+			stopAnimation();
+			if (playBtn) playBtn.disabled = false;
+			if (pauseBtn) pauseBtn.disabled = true;
+			if (playBtnFullscreen) playBtnFullscreen.disabled = false;
+			if (pauseBtnFullscreen) pauseBtnFullscreen.disabled = true;
+			// 動画側も必ず一時停止して状態をそろえる
+			videoModule.pause();
+
+			const idx = Number(sliderFullscreen.value) || 0;
+			setIndex(idx, { syncVideo: true });
+		});
+	}
 
 	slider.addEventListener("input", () => {
 		// スライダーを動かしたら一旦停止
@@ -257,12 +337,39 @@ export function setupController(
 		stopAnimation();
 		if (playBtn) playBtn.disabled = false;
 		if (pauseBtn) pauseBtn.disabled = true;
+		if (playBtnFullscreen) playBtnFullscreen.disabled = false;
+		if (pauseBtnFullscreen) pauseBtnFullscreen.disabled = true;
 		// 動画側も必ず一時停止して状態をそろえる
 		videoModule.pause();
 
 		const idx = Number(slider.value) || 0;
 		setIndex(idx, { syncVideo: true });
 	});
+
+	// 再生時の表示を両モードで同期する関数
+	const updateBothModesPlayState = (isPlaying) => {
+		if (playBtn) playBtn.disabled = isPlaying;
+		if (pauseBtn) pauseBtn.disabled = !isPlaying;
+		if (playBtnFullscreen) playBtnFullscreen.disabled = isPlaying;
+		if (pauseBtnFullscreen) pauseBtnFullscreen.disabled = !isPlaying;
+	};
+
+	// handlePlayを修正して両モードのボタン状態を更新
+	const originalHandlePlay = handlePlay;
+	handlePlay = function() {
+		if (playing) return;
+		if (currentIndex >= n - 1) {
+			setIndex(0, { syncVideo: videoModule.isConfigured() });
+		}
+		playing = true;
+		updateBothModesPlayState(true);
+		if (videoModule.isConfigured()) {
+			videoModule.play();
+		}
+		playStartRealMs = performance.now();
+		playStartDataMs = tsDates[currentIndex].getTime();
+		rafId = requestAnimationFrame(tick);
+	};
 
 	// 初期表示（動画同期は不要）
 	setIndex(0);

@@ -4,7 +4,7 @@ import { setupController } from "./controller.js";
 import { createMapGraph } from "./mapGraph.js";
 import { createElevationGraph } from "./elevationGraph.js";
 import { createVideoModule } from "./videoModule.js";
-import { registerZKeyToggle } from "./keyboardShortcuts.js";
+import { registerZKeyToggle, registerFullmapToggle } from "./keyboardShortcuts.js";
 
 // ===============================
 
@@ -17,6 +17,7 @@ async function init() {
 			createElevationGraph,
 			createVideoModule,
 			registerZKeyToggle,
+			registerFullmapToggle,
 		});
 	} catch (err) {
 		console.error(err);

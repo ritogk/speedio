@@ -5,21 +5,23 @@ const MAP_SVG_WIDTH = 800;
 const MAP_SVG_HEIGHT = 600;
 const MAP_MARGIN = 30;
 const MAP_GLOW_STD_DEVIATION = 1.8;
-const MAP_BASE_GLOW_OPACITY = 0.5;
+const MAP_BASE_GLOW_OPACITY = 1.0;
 const MAP_BASE_STROKE_COLOR = "#ffffff";
-const MAP_BASE_STROKE_OPACITY = 0.8;
-const MAP_PLAYED_OPACITY = 0.95;
+const MAP_BASE_STROKE_OPACITY = 1.0;
+const MAP_PLAYED_OPACITY = 1.0;
 // 現在位置マーカーの大きさ（半径）と枠線の太さ
-const MAP_MARKER_RADIUS = 7;
+const MAP_MARKER_RADIUS = 18;
 const MAP_MARKER_STROKE_COLOR = "#111827";
-const MAP_MARKER_STROKE_WIDTH = 3;
+const MAP_MARKER_STROKE_WIDTH = 6;
 // 背景パネル（黒ぼかし）の不透明度：小さいほど透ける
-const MAP_PANEL_OPACITY = 0.2;
+const MAP_PANEL_OPACITY = 1.0;
+// 背景パネル色（クロマキー用の緑）
+const MAP_PANEL_COLOR = "#00ff00";
 // 現在位置マーカーの色
 const MAP_CURRENT_MARKER_COLOR = "#ff0000";
 // ベースライン（全区間）のスタイル
 const MAP_BASE_PATH_COLOR = "#4b5563";
-const MAP_BASE_PATH_WEIGHT = 4;
+const MAP_BASE_PATH_WEIGHT = 10;
 // 再生済みラインのスタイル
 const MAP_PLAYED_PATH_COLOR = "#f97316";
 const MAP_PLAYED_PATH_WEIGHT = 5;
@@ -120,12 +122,13 @@ function createBaseMap({ pathSvg, pathWidth, pathHeight, projectedPoints, basePa
 	pathBg.setAttribute("y", String(panelInset));
 	pathBg.setAttribute("width", String(pathWidth - panelInset * 2));
 	pathBg.setAttribute("height", String(pathHeight - panelInset * 2));
-	// 地図パネルの透明度は定数で調整
-	pathBg.setAttribute("fill", "#000000");
+	// 地図パネルはクロマキー用の緑で完全不透明にする
+	pathBg.setAttribute("fill", MAP_PANEL_COLOR);
 	pathBg.setAttribute("fill-opacity", String(MAP_PANEL_OPACITY));
 	pathBg.setAttribute("rx", "24");
 	pathBg.setAttribute("ry", "24");
-	pathBg.setAttribute("filter", "url(#panel-blur-map)");
+	// クロマキー抜きでエッジをシャープに保つためぼかしは無効化
+	// pathBg.setAttribute("filter", "url(#panel-blur-map)");
 	pathSvg.appendChild(pathBg);
 
 	// 経路やマーカーをまとめて回転させるためのグループ
@@ -135,29 +138,26 @@ function createBaseMap({ pathSvg, pathWidth, pathHeight, projectedPoints, basePa
 	);
 	pathSvg.appendChild(pathGroup);
 
-	// 全区間パス（白いグロー + 実線）
-	const baseGlowPolyline = document.createElementNS(
+	// グロー効果は無効化（クロマキー用に透明感を排除）
+	// ただし縁取り用の透明なアウトラインを描画
+	const baseOutlinePolyline = document.createElementNS(
 		"http://www.w3.org/2000/svg",
 		"polyline"
 	);
-	baseGlowPolyline.setAttribute(
+	baseOutlinePolyline.setAttribute(
 		"points",
 		projectedPoints.map((p) => `${p.x},${p.y}`).join(" ")
 	);
-	baseGlowPolyline.setAttribute("fill", "none");
-	// グローは元のライン色（グレー）
-	baseGlowPolyline.setAttribute("stroke", MAP_BASE_PATH_COLOR);
-	baseGlowPolyline.setAttribute(
+	baseOutlinePolyline.setAttribute("fill", "none");
+	baseOutlinePolyline.setAttribute("stroke", MAP_BASE_PATH_COLOR);
+	baseOutlinePolyline.setAttribute(
 		"stroke-width",
-		// 元のラインよりわずかに太い程度に抑える
-		String(basePathWeight * 1.6)
+		String(basePathWeight * 1.3)
 	);
-	baseGlowPolyline.setAttribute("stroke-linecap", "round");
-	baseGlowPolyline.setAttribute("stroke-linejoin", "round");
-	// 少しだけ強めの不透明度にして白っぽさを出す
-	baseGlowPolyline.setAttribute("opacity", String(MAP_BASE_GLOW_OPACITY));
-	baseGlowPolyline.setAttribute("filter", "url(#white-glow-map)");
-	pathGroup.appendChild(baseGlowPolyline);
+	baseOutlinePolyline.setAttribute("stroke-linecap", "round");
+	baseOutlinePolyline.setAttribute("stroke-linejoin", "round");
+	baseOutlinePolyline.setAttribute("opacity", "1.0");
+	pathGroup.appendChild(baseOutlinePolyline);
 
 	const basePolyline = document.createElementNS(
 		"http://www.w3.org/2000/svg",

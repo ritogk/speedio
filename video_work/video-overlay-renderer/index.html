@@ -4,10 +4,27 @@
 		<meta charset="UTF-8" />
 		<link rel="stylesheet" href="./main.css" />
 	</head>
-		<body>
-			<video id="bg-video" src="data/IMG_2301.MOV" playsinline preload="metadata"></video>
+		<body style="background: #00ff00;">
+			<video id="bg-video" src="data/IMG_2301a.MOV" playsinline preload="metadata"></video>
 			<div class="app-root">
 				<div id="error" class="error-banner" style="display: none"></div>
+				<!-- full-map 全画面モード用のコンテナ -->
+				<div id="fullmap-container" class="fullmap-mode" style="display: none;">
+					<div id="full-map-fullscreen">
+						<svg id="path-view-full-fullscreen" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
+					</div>
+					<div class="controls">
+						<button id="play-btn-fullscreen">▶ 再生</button>
+						<button id="pause-btn-fullscreen" class="secondary" disabled>⏸ 一時停止</button>
+						<div class="slider">
+							<input id="index-slider-fullscreen" type="range" min="0" max="0" value="0" step="1" />
+						</div>
+						<div class="time-label">
+							<div id="playback-elapsed-fullscreen">00:00 / 00:00</div>
+							<div id="time-label-abs-fullscreen">--:--:--</div>
+						</div>
+					</div>
+				</div>
 				<div class="main-layout">
 					<!-- right-panel -->
 					<div class="right-panel">
@@ -60,6 +77,7 @@
 						<div class="controls">
 						<button id="play-btn">▶ 再生</button>
 						<button id="pause-btn" class="secondary" disabled>⏸ 一時停止</button>
+						<button id="fullmap-btn" title="全画面表示（Fキー）">🖵 全画面</button>
 
 						<div class="slider">
 							<input id="index-slider" type="range" min="0" max="0" value="0" step="1" />
