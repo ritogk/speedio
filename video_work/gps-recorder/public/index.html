@@ -2,48 +2,238 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GPS Recorder</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        padding: 30px 20px;
+        max-width: 400px;
+        width: 100%;
+      }
+
+      h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 24px;
+      }
+
+      #status {
+        text-align: center;
+        padding: 15px;
+        margin-bottom: 30px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 18px;
+        background: #f0f0f0;
+      }
+
+      .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      button {
+        padding: 18px 24px;
+        font-size: 18px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-height: 56px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      #start {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      #start:active {
+        transform: scale(0.98);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      #start:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      #stop {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+      }
+
+      #stop:active {
+        transform: scale(0.98);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      #stop:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      #download {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        margin-top: 10px;
+      }
+
+      #download:active {
+        transform: scale(0.98);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      #download:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .stats {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f9f9f9;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .stat-item {
+        padding: 8px 0;
+        font-size: 14px;
+        color: #666;
+      }
+
+      .stat-value {
+        font-weight: bold;
+        font-size: 18px;
+        color: #333;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 10px;
+        }
+
+        .container {
+          padding: 20px 15px;
+        }
+
+        h1 {
+          font-size: 20px;
+        }
+
+        button {
+          padding: 16px 20px;
+          font-size: 16px;
+          min-height: 52px;
+        }
+
+        #status {
+          font-size: 16px;
+          padding: 12px;
+        }
+      }
+    </style>
   </head>
   <body>
-    <button id="start">start</button>
-    <button id="stop">stop</button>
-    <button id="download">download</button>
-    <div id="status" style="margin: 10px; font-weight: bold; color: blue">
-      状態: 未記録
+    <div class="container">
+      <h1>📍 GPS Recorder</h1>
+      <div id="status">状態: 未記録</div>
+      <div class="button-group">
+        <button id="start">▶ 記録開始</button>
+        <button id="stop" disabled>⏹ 記録停止</button>
+        <button id="download" disabled>⬇ CSVダウンロード</button>
+      </div>
+      <div class="stats">
+        <div class="stat-item">
+          記録データ数: <span class="stat-value" id="record-count">0</span>
+        </div>
+      </div>
     </div>
 
     <script>
       let watchId = null;
       const records = [];
-
       let isWatched = false;
 
+      const startBtn = document.getElementById("start");
+      const stopBtn = document.getElementById("stop");
+      const downloadBtn = document.getElementById("download");
+      const statusDiv = document.getElementById("status");
+      const recordCountDiv = document.getElementById("record-count");
+
       function updateStatus() {
-        const statusDiv = document.getElementById("status");
+        recordCountDiv.textContent = records.length;
+
         if (isWatched) {
-          statusDiv.textContent = "状態: 記録中";
+          statusDiv.textContent = "🔴 記録中...";
           statusDiv.style.color = "red";
+          statusDiv.style.background = "#ffe0e0";
+          startBtn.disabled = true;
+          stopBtn.disabled = false;
+          downloadBtn.disabled = true;
         } else if (records.length > 0) {
-          statusDiv.textContent = "状態: 記録済";
+          statusDiv.textContent = "✅ 記録完了";
           statusDiv.style.color = "green";
+          statusDiv.style.background = "#e0ffe0";
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          downloadBtn.disabled = false;
         } else {
-          statusDiv.textContent = "状態: 未記録";
+          statusDiv.textContent = "⏳ 未記録";
           statusDiv.style.color = "blue";
+          statusDiv.style.background = "#e0e8ff";
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          downloadBtn.disabled = true;
         }
       }
 
-      document.getElementById("start").onclick = () => {
+      startBtn.onclick = () => {
         isWatched = true;
         updateStatus();
         if (navigator.geolocation) {
           watchId = navigator.geolocation.watchPosition(
             (pos) => {
               const { latitude, longitude } = pos.coords;
-              const timestamp = new Date(pos.timestamp).toISOString();
+              // UTC時刻に9時間を加算してJSTにする
+              const utcDate = new Date(pos.timestamp);
+              const jstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000);
+              const timestamp = jstDate.toISOString().replace("Z", "+09:00");
               records.push({ timestamp, latitude, longitude });
+              recordCountDiv.textContent = records.length;
               console.log(`${timestamp}: ${latitude}, ${longitude}`);
             },
-            (err) => console.error(err),
+            (err) => {
+              alert("位置情報の取得に失敗しました: " + err.message);
+              console.error(err);
+            },
             { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
           );
         } else {
@@ -51,7 +241,7 @@
         }
       };
 
-      document.getElementById("stop").onclick = () => {
+      stopBtn.onclick = () => {
         isWatched = false;
         updateStatus();
         if (watchId !== null) {
@@ -60,7 +250,38 @@
         }
       };
 
-      document.getElementById("download").onclick = () => {
+      downloadBtn.onclick = () => {
+        if (records.length === 0) {
+          alert("ダウンロードするデータがありません");
+          return;
+        }
+
+        // 開始・終了地点の情報を取得
+        const startRecord = records[0];
+        const endRecord = records[records.length - 1];
+
+        // 開始・終了の日時をフォーマット（JST）
+        const startDate = new Date(startRecord.timestamp);
+        const endDate = new Date(endRecord.timestamp);
+
+        const dateStr = startDate.toLocaleDateString("ja-JP", {
+          timeZone: "Asia/Tokyo",
+        }).replaceAll("/", "");
+
+
+        const timeStr = startDate.toLocaleTimeString("ja-JP", {
+          hour12: false,
+          timeZone: "Asia/Tokyo",
+        });
+        // 緯度経度を小数第4位で丸める
+        const startLat = startRecord.latitude.toFixed(4);
+        const startLon = startRecord.longitude.toFixed(4);
+        const endLat = endRecord.latitude.toFixed(4);
+        const endLon = endRecord.longitude.toFixed(4);
+
+        // ファイル名を作成
+        const filename = `gps_${dateStr}${timeStr.replaceAll(":", "")}_${startLat}-${startLon}_${endLat}-${endLon}.csv`;
+
         const header = "timestamp,latitude,longitude\n";
         const csv =
           header +
@@ -71,7 +292,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "gps_records.csv";
+        a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
       };
