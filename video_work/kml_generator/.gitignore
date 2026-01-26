@@ -1,1 +1,2 @@
-output_route.kml
+*.kml
+!base_.kml
