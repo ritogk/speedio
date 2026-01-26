@@ -292,7 +292,10 @@ export const drawTargets = (value) => {
           maxWidth: 500,
         })
         .on("popupopen", () => {
-          console.log(x);
+          // console.log(x);
+
+          console.log(x.video_coords_segment_list)
+          console.log(x.video_elevation_segment_list)
 
           document
             .getElementById("buttonElevationGraph")
