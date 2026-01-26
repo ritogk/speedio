@@ -39,6 +39,7 @@ def main() -> None:
 	
 	scripts = [
 		base_dir / "data-generator" / "generateSegmentTimestamps.py",
+		base_dir / "coordinateRotation" / "generateRotateData.py",
 		base_dir / "kml_generator" / "generateKml.py",
 	]
 	
