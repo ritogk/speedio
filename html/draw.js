@@ -5,6 +5,7 @@ import { draw3D } from "./3d.js";
 import { draw3D as draw3dDriverView } from "./3d_driver_view.js";
 import { drawGraph } from "./graph.js";
 import { createMarkdownHeaderFromTargets, createMarkdownTableFromTarget } from "./markdown.js";
+import { downloadVideoData } from "./download.js";
 
 let isSmartPhone = false;
 if (navigator.userAgent.match(/iPhone|Android.+Mobile/)) {
@@ -301,6 +302,12 @@ export const drawTargets = (value) => {
             .getElementById("buttonElevationGraph")
             ?.addEventListener("click", () => {
               drawGraph(x.elevation_segment_list);
+            });
+
+          document
+            .getElementById("buttonDownloadVideoData")
+            ?.addEventListener("click", () => {
+              downloadVideoData(x);
             });
 
           document

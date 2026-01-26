@@ -125,6 +125,8 @@ export const generateHtml = (x, isSmartPhone) => {
 
         <button id="buttonElevationGraph" class="large-button">標高グラフを表示</button><br>
 
+        <button id="buttonDownloadVideoData" class="large-button">動画データDL</button><br>
+
         <span style="font-weight:bold;">Original</span>
         <table style="width:100%;" border="1">
           <tr>
