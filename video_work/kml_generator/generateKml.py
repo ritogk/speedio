@@ -11,15 +11,24 @@ from pathlib import Path
 # 入力となる区間ポイント群 JSON（coords_segment_list.json）
 INPUT_SEGMENT_JSON_PATH = Path("../video-overlay-renderer/data/coords_segment_list.json")
 
-# 入力となる GPS CSV ファイル
-INPUT_CSV_PATH = Path("../video-overlay-renderer/data/gps_363_2026-01-11.csv")
+# GPS CSV が置かれているディレクトリ（最初の CSV を自動で読む）
+INPUT_CSV_DIR = Path("../video-overlay-renderer/data")
 
 BASE_KML_PATH = Path("./base_.kml")
 
-# 出力KMLファイル名
-OUTPUT_KML_PATH = Path("./output_route.kml")
+# 出力KMLファイル名（実行時に CSV 名に合わせて決定）
+OUTPUT_KML_PATH = None
 
 import re
+
+
+def pick_first_csv(data_dir: Path) -> Path:
+	"""ディレクトリ内でソート順が最初の CSV ファイルを返す。"""
+
+	csv_files = sorted(data_dir.glob("*.csv"))
+	if not csv_files:
+		raise FileNotFoundError(f"CSV ファイルが見つかりませんでした: {data_dir}")
+	return csv_files[0]
 
 
 def load_coords_segment_list(json_path):
@@ -133,8 +142,16 @@ def replace_route_coordinates_in_kml(base_kml_path, output_kml_path, new_coords)
 	print(f"書き換えたKMLを出力しました: {output_kml_path}")
 
 if __name__ == "__main__":
-	coords = load_coords_segment_list(INPUT_SEGMENT_JSON_PATH)
-	st, ed = load_gps_start_end(INPUT_CSV_PATH)
+	base_dir = Path(__file__).resolve().parent
+
+	seg_path = (base_dir / INPUT_SEGMENT_JSON_PATH).resolve()
+	csv_dir = (base_dir / INPUT_CSV_DIR).resolve()
+	csv_path = pick_first_csv(csv_dir)
+	base_kml_path = (base_dir / BASE_KML_PATH).resolve()
+	output_kml_path = (base_dir / f"{csv_path.stem}.kml").resolve()
+
+	coords = load_coords_segment_list(seg_path)
+	st, ed = load_gps_start_end(csv_path)
 	coords_ordered = decide_coords_order(coords, st, ed)
 	kml_coords = coords_to_kml_coords(coords_ordered)
-	replace_route_coordinates_in_kml(BASE_KML_PATH, OUTPUT_KML_PATH, kml_coords)
+	replace_route_coordinates_in_kml(base_kml_path, output_kml_path, kml_coords)

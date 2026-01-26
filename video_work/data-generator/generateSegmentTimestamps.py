@@ -8,8 +8,8 @@ from pathlib import Path
 # 設定（必要に応じてここだけ編集）
 # ========================
 
-# 入力となる GPS CSV ファイル
-INPUT_CSV_PATH = Path("../video-overlay-renderer/data/gps_363_2026-01-11.csv")
+# GPS CSV が置かれているディレクトリ（最初の CSV を自動で読む）
+INPUT_CSV_DIR = Path("../video-overlay-renderer/data")
 
 # 入力となる区間ポイント群 JSON（coords_segment_list.json）
 INPUT_SEGMENT_JSON_PATH = Path("../video-overlay-renderer/data/coords_segment_list.json")
@@ -41,6 +41,15 @@ def haversine_distance_m(lat1: float, lon1: float, lat2: float, lon2: float) -> 
 	a = math.sin(d_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda / 2) ** 2
 	c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 	return EARTH_RADIUS_M * c
+
+
+def pick_first_csv(data_dir: Path) -> Path:
+	"""ディレクトリ内でソート順が最初の CSV ファイルを返す。"""
+
+	csv_files = sorted(data_dir.glob("*.csv"))
+	if not csv_files:
+		raise FileNotFoundError(f"CSV ファイルが見つかりませんでした: {data_dir}")
+	return csv_files[0]
 
 
 def load_gps_points(csv_path: Path) -> list[dict]:
@@ -146,7 +155,8 @@ def main() -> None:
 	# ベースディレクトリはこのスクリプトファイルと同じ場所を想定
 	base_dir = Path(__file__).resolve().parent
 
-	csv_path = (base_dir / INPUT_CSV_PATH).resolve()
+	csv_dir = (base_dir / INPUT_CSV_DIR).resolve()
+	csv_path = pick_first_csv(csv_dir)
 	seg_path = (base_dir / INPUT_SEGMENT_JSON_PATH).resolve()
 	out_path = (base_dir / OUTPUT_JSON_PATH).resolve()
 

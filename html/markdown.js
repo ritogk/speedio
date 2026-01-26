@@ -51,7 +51,7 @@ export const createMarkdownTableFromTargets = (targets, options = {}) => {
 
   const rows = targets.map((t) => {
     const values = [];
-    const name = t.name ?? "";
+    const name = t.name ?? "undefined";
     try {
       if (Array.isArray(t.geometry_list) && t.geometry_list.length > 0) {
         const url = generateGoogleMapUrl(t.geometry_list);

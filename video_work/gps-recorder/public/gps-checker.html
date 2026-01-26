@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>井戸CSVプロット – Canvas</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; }
+    header {
+      position: sticky; top: 0; z-index: 2;
+      backdrop-filter: blur(10px);
+      background: color-mix(in oklab, Canvas 80%, transparent);
+      border-bottom: 1px solid color-mix(in oklab, CanvasText 15%, transparent);
+      padding: 10px 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .btn, input[type="file"]::file-selector-button {
+      border: 1px solid color-mix(in oklab, CanvasText 20%, transparent);
+      background: color-mix(in oklab, Canvas 92%, CanvasText 8%);
+      color: CanvasText;
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+    .btn:active { transform: translateY(1px); }
+    .pill {
+      border: 1px solid color-mix(in oklab, CanvasText 15%, transparent);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      opacity: 0.9;
+      white-space: nowrap;
+    }
+    .wrap {
+      display: grid;
+      grid-template-columns: 1fr;
+      height: calc(100vh - 76px);
+    }
+    canvas { width: 100%; height: 100%; display: block; background: color-mix(in oklab, Canvas 96%, CanvasText 4%); }
+    .hint { font-size: 12px; opacity: 0.8; line-height: 1.4; }
+    .right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    label { font-size: 12px; opacity: 0.9; display: inline-flex; gap: 6px; align-items: center; }
+    input[type="range"] { width: 180px; }
+    .legend {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      font-size: 12px; opacity: 0.9;
+    }
+    .swatch {
+      width: 110px; height: 10px; border-radius: 999px;
+      background: linear-gradient(90deg, hsl(210 90% 55%), hsl(20 95% 55%));
+      border: 1px solid color-mix(in oklab, CanvasText 15%, transparent);
+    }
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid color-mix(in oklab, CanvasText 20%, transparent);
+      background: color-mix(in oklab, Canvas 86%, transparent);
+      backdrop-filter: blur(10px);
+      font-size: 12px;
+      line-height: 1.35;
+      transform: translate(12px, 12px);
+      white-space: nowrap;
+      display: none;
+      z-index: 5;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklab, CanvasText 18%, transparent);
+      margin-left: 6px;
+      opacity: 0.9;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="row">
+      <input id="file" type="file" accept=".csv,text/csv" />
+      <button id="fit" class="btn">全体にフィット</button>
+      <button id="reset" class="btn">ビューをリセット</button>
+      <div class="right">
+        <label title="点の大きさ">
+          点サイズ
+          <input id="size" type="range" min="1" max="10" value="4" />
+        </label>
+        <label title="時系列カラー（早い→遅い）">
+          時間で色付け
+          <input id="colorByTime" type="checkbox" checked />
+        </label>
+        <label title="同一座標を1点にまとめる">
+          重複を間引く
+          <input id="dedupe" type="checkbox" checked />
+        </label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="pill" id="stats">CSV未読込</div>
+      <div class="legend" id="legend" style="display:none;">
+        <span>早い</span><span class="swatch" aria-hidden="true"></span><span>遅い</span>
+      </div>
+      <div class="hint">
+        操作: ドラッグ=パン / ホイール=ズーム / Shift+ドラッグ=範囲ズーム / クリック=近傍点の情報
+        <span class="badge">CSV列: timestamp, latitude, longitude（順不同OK）</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <canvas id="c"></canvas>
+  </div>
+  <div class="tooltip" id="tip"></div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d", { alpha: false });
+
+  const fileInput = document.getElementById("file");
+  const fitBtn = document.getElementById("fit");
+  const resetBtn = document.getElementById("reset");
+  const sizeRange = document.getElementById("size");
+  const colorByTime = document.getElementById("colorByTime");
+  const dedupe = document.getElementById("dedupe");
+  const stats = document.getElementById("stats");
+  const tip = document.getElementById("tip");
+  const legend = document.getElementById("legend");
+
+  /** @type {{t:number, tn:number, ts:string, lat:number, lon:number, x:number, y:number}[]} */
+  let points = [];
+
+  // World-space bounds (lon/lat)
+  let bounds = { minLon: 0, maxLon: 1, minLat: 0, maxLat: 1 };
+
+  // View transform: screen = world * scale + offset
+  let view = { scale: 1, ox: 0, oy: 0 };
+  let defaultView = null;
+
+  // Interaction state
+  let dragging = false;
+  let dragStart = { x: 0, y: 0, ox: 0, oy: 0 };
+  let shiftDragging = false;
+  let rectZoom = null;
+
+  function resize() {
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    const r = canvas.getBoundingClientRect();
+    canvas.width = Math.floor(r.width * dpr);
+    canvas.height = Math.floor(r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+  window.addEventListener("resize", resize);
+
+  function parseCSV(text) {
+    // Minimal CSV parser (commas/newlines/quotes)
+    const rows = [];
+    let i = 0, field = "", row = [];
+    let inQuotes = false;
+
+    while (i < text.length) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+          inQuotes = false; i++; continue;
+        }
+        field += c; i++; continue;
+      } else {
+        if (c === '"') { inQuotes = true; i++; continue; }
+        if (c === ',') { row.push(field); field = ""; i++; continue; }
+        if (c === '\n') {
+          row.push(field); field = "";
+          if (row.some(v => v !== "")) rows.push(row);
+          row = []; i++; continue;
+        }
+        if (c === '\r') { i++; continue; }
+        field += c; i++; continue;
+      }
+    }
+    row.push(field);
+    if (row.some(v => v !== "")) rows.push(row);
+
+    if (rows.length === 0) return { headers: [], data: [] };
+
+    // Trim BOM
+    rows[0][0] = (rows[0][0] || "").replace(/^\uFEFF/, "");
+
+    const headers = rows[0].map(h => (h || "").trim().toLowerCase());
+    const data = rows.slice(1);
+    return { headers, data };
+  }
+
+  function toMillis(ts) {
+    const t = Date.parse(ts);
+    return Number.isFinite(t) ? t : NaN;
+  }
+
+  function buildPoints(headers, data) {
+    const idxTs = headers.indexOf("timestamp");
+    const idxLat = headers.indexOf("latitude");
+    const idxLon = headers.indexOf("longitude");
+    if (idxLat < 0 || idxLon < 0) {
+      throw new Error("CSVに latitude / longitude 列が見つかりません。");
+    }
+
+    const pts = [];
+    const seen = new Set();
+
+    for (const r of data) {
+      const lat = Number(r[idxLat]);
+      const lon = Number(r[idxLon]);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+
+      // dedupe: same lat/lon (rounded) => one point
+      if (dedupe.checked) {
+        const key = `${lat.toFixed(7)}:${lon.toFixed(7)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+      }
+
+      const ts = idxTs >= 0 ? (r[idxTs] || "") : "";
+      const t = idxTs >= 0 ? toMillis(ts) : NaN;
+      pts.push({ t, tn: 0.5, ts, lat, lon, x: lon, y: -lat });
+    }
+
+    if (pts.length === 0) throw new Error("有効な緯度経度がありません。");
+
+    const hasTime = pts.some(p => Number.isFinite(p.t));
+    if (hasTime) pts.sort((a, b) => (a.t - b.t));
+
+    if (hasTime) {
+      const tmin = pts.find(p => Number.isFinite(p.t))?.t ?? 0;
+      const tmax = [...pts].reverse().find(p => Number.isFinite(p.t))?.t ?? tmin + 1;
+      const den = Math.max(1, tmax - tmin);
+      for (const p of pts) p.tn = Number.isFinite(p.t) ? (p.t - tmin) / den : 0.5;
+      pts.tmin = tmin; pts.tmax = tmax;
+    } else {
+      for (let i = 0; i < pts.length; i++) pts[i].tn = pts.length === 1 ? 0.5 : i / (pts.length - 1);
+      pts.tmin = NaN; pts.tmax = NaN;
+    }
+
+    let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    for (const p of pts) {
+      minLon = Math.min(minLon, p.lon);
+      maxLon = Math.max(maxLon, p.lon);
+      minLat = Math.min(minLat, p.lat);
+      maxLat = Math.max(maxLat, p.lat);
+    }
+    bounds = { minLon, maxLon, minLat, maxLat };
+
+    return pts;
+  }
+
+  function fitToBounds(padPx = 24) {
+    const w = canvas.getBoundingClientRect().width;
+    const h = canvas.getBoundingClientRect().height;
+
+    const minX = bounds.minLon;
+    const maxX = bounds.maxLon;
+    const minY = -bounds.maxLat;
+    const maxY = -bounds.minLat;
+
+    const dx = Math.max(1e-9, maxX - minX);
+    const dy = Math.max(1e-9, maxY - minY);
+
+    const sx = (w - padPx * 2) / dx;
+    const sy = (h - padPx * 2) / dy;
+    const scale = Math.min(sx, sy);
+
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+
+    view.scale = scale;
+    view.ox = w / 2 - cx * scale;
+    view.oy = h / 2 - cy * scale;
+
+    draw();
+  }
+
+  function setDefaultView() {
+    fitToBounds(28);
+    defaultView = { ...view };
+  }
+
+  function resetView() {
+    if (defaultView) view = { ...defaultView };
+    draw();
+  }
+
+  function worldToScreen(wx, wy) {
+    return { x: wx * view.scale + view.ox, y: wy * view.scale + view.oy };
+  }
+
+  function screenToWorld(sx, sy) {
+    return { x: (sx - view.ox) / view.scale, y: (sy - view.oy) / view.scale };
+  }
+
+  function niceStep(v) {
+    const p = Math.pow(10, Math.floor(Math.log10(v)));
+    const m = v / p;
+    if (m < 1.5) return 1 * p;
+    if (m < 3.5) return 2 * p;
+    if (m < 7.5) return 5 * p;
+    return 10 * p;
+  }
+
+  function drawGrid() {
+    const w = canvas.getBoundingClientRect().width;
+    const h = canvas.getBoundingClientRect().height;
+
+    const targetPx = 90;
+    const stepWorld = targetPx / view.scale;
+    const step = niceStep(stepWorld);
+
+    const worldTL = screenToWorld(0, 0);
+    const worldBR = screenToWorld(w, h);
+
+    const x0 = Math.floor(worldTL.x / step) * step;
+    const x1 = Math.ceil(worldBR.x / step) * step;
+    const y0 = Math.floor(worldTL.y / step) * step;
+    const y1 = Math.ceil(worldBR.y / step) * step;
+
+    ctx.save();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(120,120,120,0.18)";
+
+    for (let x = x0; x <= x1; x += step) {
+      const sx = x * view.scale + view.ox;
+      ctx.beginPath();
+      ctx.moveTo(sx, 0);
+      ctx.lineTo(sx, h);
+      ctx.stroke();
+    }
+    for (let y = y0; y <= y1; y += step) {
+      const sy = y * view.scale + view.oy;
+      ctx.beginPath();
+      ctx.moveTo(0, sy);
+      ctx.lineTo(w, sy);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function colorFromT(tn) {
+    const h = 210 + (20 - 210) * tn;
+    return `hsl(${h} 95% 55%)`;
+  }
+
+  function draw() {
+    const w = canvas.getBoundingClientRect().width;
+    const h = canvas.getBoundingClientRect().height;
+    ctx.clearRect(0, 0, w, h);
+
+    drawGrid();
+    if (!points.length) return;
+
+    // polyline
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(120,120,120,0.25)";
+    ctx.beginPath();
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      const s = worldToScreen(p.x, p.y);
+      if (i === 0) ctx.moveTo(s.x, s.y);
+      else ctx.lineTo(s.x, s.y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    const r = Number(sizeRange.value);
+    const byTime = colorByTime.checked;
+    legend.style.display = byTime ? "" : "none";
+
+    ctx.save();
+    for (const p of points) {
+      const s = worldToScreen(p.x, p.y);
+      if (s.x < -50 || s.x > w + 50 || s.y < -50 || s.y > h + 50) continue;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = byTime ? colorFromT(p.tn) : "rgba(30,160,255,0.95)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.25)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    if (rectZoom) {
+      const { x0, y0, x1, y1 } = rectZoom;
+      const rx = Math.min(x0, x1), ry = Math.min(y0, y1);
+      const rw = Math.abs(x1 - x0), rh = Math.abs(y1 - y0);
+      ctx.save();
+      ctx.fillStyle = "rgba(180,180,180,0.12)";
+      ctx.strokeStyle = "rgba(180,180,180,0.6)";
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(rx, ry, rw, rh);
+      ctx.strokeRect(rx, ry, rw, rh);
+      ctx.restore();
+    }
+  }
+
+  function nearestPoint(sx, sy, maxPx = 18) {
+    if (!points.length) return null;
+    let best = null;
+    let bestD2 = maxPx * maxPx;
+
+    for (const p of points) {
+      const s = worldToScreen(p.x, p.y);
+      const dx = s.x - sx, dy = s.y - sy;
+      const d2 = dx*dx + dy*dy;
+      if (d2 < bestD2) { bestD2 = d2; best = { p, sx: s.x, sy: s.y, d2 }; }
+    }
+    return best;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+    })[c]);
+  }
+
+  function updateTooltip(e, force = false) {
+    const r = canvas.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+    const hit = nearestPoint(x, y, force ? 60 : 18);
+    if (!hit) { tip.style.display = "none"; return; }
+
+    const p = hit.p;
+    tip.style.display = "block";
+    tip.style.left = `${e.clientX}px`;
+    tip.style.top = `${e.clientY}px`;
+
+    const timeStr = p.ts ? p.ts : "(timestampなし)";
+    tip.innerHTML =
+      `<div><b>lat</b>: ${p.lat.toFixed(6)} / <b>lon</b>: ${p.lon.toFixed(6)}</div>` +
+      `<div><b>timestamp</b>: ${escapeHtml(timeStr)}</div>` +
+      `<div style="opacity:.8">点数: ${points.length}</div>`;
+  }
+
+  // interactions
+  canvas.addEventListener("mousedown", (e) => {
+    const r = canvas.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+    dragging = true;
+    shiftDragging = e.shiftKey;
+    dragStart = { x, y, ox: view.ox, oy: view.oy };
+    if (shiftDragging) rectZoom = { x0: x, y0: y, x1: x, y1: y };
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!points.length) return;
+    if (!dragging) { updateTooltip(e, false); return; }
+
+    const r = canvas.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+
+    if (shiftDragging) {
+      rectZoom.x1 = x; rectZoom.y1 = y;
+    } else {
+      view.ox = dragStart.ox + (x - dragStart.x);
+      view.oy = dragStart.oy + (y - dragStart.y);
+    }
+    draw();
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false;
+
+    if (shiftDragging && rectZoom) {
+      const { x0, y0, x1, y1 } = rectZoom;
+      rectZoom = null;
+
+      const rx = Math.min(x0, x1), ry = Math.min(y0, y1);
+      const rw = Math.abs(x1 - x0), rh = Math.abs(y1 - y0);
+
+      if (rw > 10 && rh > 10) {
+        const w = canvas.getBoundingClientRect().width;
+        const h = canvas.getBoundingClientRect().height;
+
+        const worldA = screenToWorld(rx, ry);
+        const worldB = screenToWorld(rx + rw, ry + rh);
+
+        const cx = (worldA.x + worldB.x) / 2;
+        const cy = (worldA.y + worldB.y) / 2;
+
+        const sx = w / rw;
+        const sy = h / rh;
+        const k = Math.min(sx, sy);
+
+        view.scale *= k;
+        view.ox = w / 2 - cx * view.scale;
+        view.oy = h / 2 - cy * view.scale;
+      }
+      draw();
+    }
+
+    shiftDragging = false;
+  });
+
+  canvas.addEventListener("wheel", (e) => {
+    if (!points.length) return;
+    e.preventDefault();
+
+    const r = canvas.getBoundingClientRect();
+    const sx = e.clientX - r.left;
+    const sy = e.clientY - r.top;
+
+    const before = screenToWorld(sx, sy);
+    const zoom = Math.exp(-e.deltaY * 0.0015);
+    const newScale = Math.max(1e-9, Math.min(1e8, view.scale * zoom));
+    view.scale = newScale;
+
+    const after = screenToWorld(sx, sy);
+    view.ox += (after.x - before.x) * view.scale;
+    view.oy += (after.y - before.y) * view.scale;
+
+    draw();
+  }, { passive: false });
+
+  canvas.addEventListener("click", (e) => updateTooltip(e, true));
+
+  // UI
+  fitBtn.addEventListener("click", () => fitToBounds(28));
+  resetBtn.addEventListener("click", () => resetView());
+  sizeRange.addEventListener("input", () => draw());
+  colorByTime.addEventListener("change", () => draw());
+  dedupe.addEventListener("change", async () => {
+    // re-parse current file for consistent behavior
+    const f = fileInput.files?.[0];
+    if (!f) { draw(); return; }
+    const text = await f.text();
+    const { headers, data } = parseCSV(text);
+    points = buildPoints(headers, data);
+    setDefaultView();
+    updateStats();
+  });
+
+  function updateStats() {
+    const latSpan = (bounds.maxLat - bounds.minLat);
+    const lonSpan = (bounds.maxLon - bounds.minLon);
+    const hasTime = points.some(p => Number.isFinite(p.t));
+    const timeInfo = hasTime
+      ? ` / 時間: ${new Date(points.tmin).toISOString()} → ${new Date(points.tmax).toISOString()}`
+      : ` / 時間: (なし)`;
+    stats.textContent = `点数: ${points.length} / 緯度幅: ${latSpan.toFixed(6)} / 経度幅: ${lonSpan.toFixed(6)}${timeInfo}`;
+  }
+
+  fileInput.addEventListener("change", async () => {
+    const f = fileInput.files?.[0];
+    if (!f) return;
+    const text = await f.text();
+    try {
+      const { headers, data } = parseCSV(text);
+      points = buildPoints(headers, data);
+      setDefaultView();
+      updateStats();
+    } catch (err) {
+      points = [];
+      stats.textContent = "読み込み失敗: " + (err?.message ?? String(err));
+      draw();
+    }
+  });
+
+  // boot
+  resize();
+  stats.textContent = "CSVを選択するとプロットします（timestamp, latitude, longitude）";
+})();
+</script>
+</body>
+</html>
