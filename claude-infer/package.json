@@ -1,0 +1,19 @@
+{
+  "name": "claude-vision-extraction",
+  "version": "1.0.0",
+  "description": "Street View画像から道幅を分析するツール",
+  "main": "src/main.ts",
+  "scripts": {
+    "start": "ts-node src/main.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "axios": "^1.13.4",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.0"
+  }
+}
