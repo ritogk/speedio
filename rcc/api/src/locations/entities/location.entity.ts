@@ -66,13 +66,67 @@ export class Location {
   has_center_line?: boolean;
 
   @Column({
+    type: 'int',
+    nullable: true,
+  })
+  @ApiProperty({
+    description: '車線数(Claudeの推定)',
+  })
+  claude_lanes?: number;
+
+  @Column({
+    type: 'float',
+    nullable: true,
+  })
+  @ApiProperty({
+    description: '車線幅(Claudeの推定)',
+  })
+  claude_lane_width?: number;
+
+  @Column({
     type: 'boolean',
     nullable: true,
   })
   @ApiProperty({
-    description: 'センターラインの有無を表すフラグ(Claudeの推定)',
+    description: 'センターラインの有無(Claudeの推定)',
   })
-  claude_has_center_line?: boolean;
+  claude_center_line?: boolean;
+
+  @Column({
+    type: 'float',
+    nullable: true,
+  })
+  @ApiProperty({
+    description: '左路肩幅(Claudeの推定)',
+  })
+  claude_shoulder_left?: number;
+
+  @Column({
+    type: 'float',
+    nullable: true,
+  })
+  @ApiProperty({
+    description: '右路肩幅(Claudeの推定)',
+  })
+  claude_shoulder_right?: number;
+
+  @Column({
+    type: 'boolean',
+    nullable: true,
+  })
+  @ApiProperty({
+    description: '左ガードレールの有無(Claudeの推定)',
+  })
+  claude_guardrail_left?: boolean;
+
+  @Column({
+    type: 'boolean',
+    nullable: true,
+  })
+  @ApiProperty({
+    description: '右ガードレールの有無(Claudeの推定)',
+  })
+  claude_guardrail_right?: boolean;
 
   @Column({
     type: 'boolean',
@@ -82,16 +136,6 @@ export class Location {
     description: 'トンネル内かどうか(Claudeの推定)',
   })
   claude_is_tunnel?: boolean;
-
-  // 減速する事なく対向車とすれ違えるかどうか
-  @Column({
-    type: 'boolean',
-    nullable: true,
-  })
-  @ApiProperty({
-    description: '減速する事なく対向車とすれ違えるかどうか',
-  })
-  can_pass_oncoming_without_slowing?: boolean;
 
   @CreateDateColumn()
   @ApiProperty({ description: '作成日時' })

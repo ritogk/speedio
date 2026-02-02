@@ -16,7 +16,6 @@ export interface RoadAnalysisResponse {
   shoulder_right: number | null;
   guardrail_left: boolean;
   guardrail_right: boolean;
-  can_pass_oncoming_without_slowing: boolean;
   is_tunnel: boolean;
 }
 

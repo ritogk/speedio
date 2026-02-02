@@ -9,8 +9,15 @@ import { getNextPointFromGeometry } from "./streetview";
 import { fetchHighResStreetViewImage } from "./panorama";
 import { analyzeRoadWidth } from "./analyzer";
 import { saveResultsToDb, closeDb } from "./db";
+import targetList, { enabled as targetListEnabled } from "./target-list";
 
 const OUTPUT_DIR = path.join(__dirname, "..", "output");
+
+// 座標が処理対象かどうかを判定
+function isTargetCoord(lat: number, lng: number): boolean {
+  if (!targetListEnabled) return true;
+  return targetList.some(([tLat, tLng]) => tLat === lat && tLng === lng);
+}
 
 // ログアイコン定義
 const LOG_ICONS = {
@@ -114,9 +121,16 @@ async function processEntry(
   const { geometry_list, geometry_check_list } = entry;
 
   // geometry_check_listを座標オブジェクトに変換（先頭と末尾を除く）
+  // TARGET_COORDSが指定されている場合はフィルタリング
   const locations = geometry_check_list
     .slice(1, geometry_check_list.length - 1)
-    .map(([lat, lng]) => ({ lat, lng }));
+    .map(([lat, lng]) => ({ lat, lng }))
+    .filter(({ lat, lng }) => isTargetCoord(lat, lng));
+
+  // フィルタリング後に処理対象がない場合はスキップ
+  if (locations.length === 0) {
+    return [];
+  }
 
   console.log(`\n${LOG_ICONS.entry} [エントリ ${entryIndex + 1}/${totalEntries}] ${locations.length} 件を処理中...`);
 
@@ -152,7 +166,8 @@ async function main() {
   const anthropic = new Anthropic();
 
   // target.jsonを読み込み
-  const entries = loadTargetEntries().slice(0, 50);
+  // const entries = loadTargetEntries().slice(0, 50);
+  const entries = loadTargetEntries();
   console.log(`${entries.length} 件のエントリを読み込みました`);
 
   // 全エントリを処理
@@ -182,8 +197,7 @@ async function main() {
     const lanes = result.analysis.lanes;
     const laneWidth = `${result.analysis.lane_width}m`;
     const centerLine = result.analysis.center_line ? "○" : "×";
-    const canPassOnComingWithoutSlowing = result.analysis.can_pass_oncoming_without_slowing ? "○" : "×";
-    console.log(`| (${result.location.lat}, ${result.location.lng}) | ${lanes} | ${laneWidth} | ${centerLine} | ${canPassOnComingWithoutSlowing} | ${result.processingTimeMs}ms |`);
+    console.log(`| (${result.location.lat}, ${result.location.lng}) | ${lanes} | ${laneWidth} | ${centerLine} | ${result.processingTimeMs}ms |`);
   }
 
   // 合計金額を表示

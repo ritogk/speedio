@@ -27,18 +27,22 @@ export async function saveResultsToDb(results: AnalysisResult[]): Promise<number
   try {
     for (const result of results) {
       const { lat, lng } = result.location;
-      const roadWidthType = result.analysis.lanes >= 2 ? RoadWidthType.TWO_LANE : RoadWidthType.ONE_LANE;
-      const hasCenterLine = result.analysis.center_line;
-      const canPassOncomingWithoutSlowing = result.analysis.can_pass_oncoming_without_slowing;
-      const isTunnel = result.analysis.is_tunnel;
+      const analysis = result.analysis;
+      const roadWidthType = analysis.lanes >= 2 ? RoadWidthType.TWO_LANE : RoadWidthType.ONE_LANE;
 
       // PostGIS形式でポイントを指定してUPDATEのみ実行
+      // claude_ プレフィックス付きで全フィールドを保存
       const query = `
         UPDATE locations SET
           claude_road_width_type = $3,
-          claude_has_center_line = $4,
-          can_pass_oncoming_without_slowing = $5,
-          claude_is_tunnel = $6,
+          claude_lanes = $4,
+          claude_lane_width = $5,
+          claude_center_line = $6,
+          claude_shoulder_left = $7,
+          claude_shoulder_right = $8,
+          claude_guardrail_left = $9,
+          claude_guardrail_right = $10,
+          claude_is_tunnel = $11,
           updated_at = NOW()
         WHERE point = ST_SetSRID(ST_MakePoint($1, $2), 4326)
       `;
@@ -47,9 +51,14 @@ export async function saveResultsToDb(results: AnalysisResult[]): Promise<number
         lng, // PostGISではlng, latの順
         lat,
         roadWidthType,
-        hasCenterLine,
-        canPassOncomingWithoutSlowing,
-        isTunnel,
+        analysis.lanes,
+        analysis.lane_width,
+        analysis.center_line,
+        analysis.shoulder_left,
+        analysis.shoulder_right,
+        analysis.guardrail_left,
+        analysis.guardrail_right,
+        analysis.is_tunnel,
       ]);
 
       insertedCount++;
