@@ -16,6 +16,7 @@ export interface RoadAnalysisResponse {
   shoulder_right: number | null;
   guardrail_left: boolean;
   guardrail_right: boolean;
+  can_pass_oncoming_without_slowing: boolean;
 }
 
 // トークン使用量と金額
@@ -40,4 +41,10 @@ export interface AnalysisOutput {
   totalLocations: number;
   totalTokenUsage: TokenUsage;
   results: AnalysisResult[];
+}
+
+// target.jsonの各エントリの型定義
+export interface TargetEntry {
+  geometry_list: [number, number][];
+  geometry_check_list: [number, number][];
 }

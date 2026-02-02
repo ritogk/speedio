@@ -46,6 +46,17 @@ export class Location {
   road_width_type: RoadWidthType;
 
   @Column({
+    type: 'enum',
+    enum: RoadWidthType,
+    default: RoadWidthType.UNCONFIRMED,
+  })
+  @ApiProperty({
+    description: '路面状況(Claudeの推定)',
+    enum: RoadWidthType,
+  })
+  claude_road_width_type: RoadWidthType;
+
+  @Column({
     type: 'boolean',
     nullable: true,
   })
@@ -53,6 +64,25 @@ export class Location {
     description: 'センターラインの有無を表すフラグ',
   })
   has_center_line?: boolean;
+
+  @Column({
+    type: 'boolean',
+    nullable: true,
+  })
+  @ApiProperty({
+    description: 'センターラインの有無を表すフラグ(Claudeの推定)',
+  })
+  claude_has_center_line?: boolean;
+
+  // 減速する事なく対向車とすれ違えるかどうか
+  @Column({
+    type: 'boolean',
+    nullable: true,
+  })
+  @ApiProperty({
+    description: '減速する事なく対向車とすれ違えるかどうか',
+  })
+  can_pass_oncoming_without_slowing?: boolean;
 
   @CreateDateColumn()
   @ApiProperty({ description: '作成日時' })

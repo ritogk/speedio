@@ -17,6 +17,7 @@ Respond in JSON format with the following fields:
 - shoulder_right: Width of right shoulder in the image (meters, null if none)
 - guardrail_left: Presence of guardrail on the left side of the image (true/false)
 - guardrail_right: Presence of guardrail on the right side of the image (true/false)
+- can_pass_oncoming_without_slowing: can pass oncoming vehicles without slowing down (true/false)
 
 Estimate scale using the following references: guardrail barrier (0.35m), single solid center line (0.2m), double solid center line (0.15m), single dashed center line (0.15m), vehicle width (1.7m), etc.
 Values to one decimal place. Per Japanese Road Traffic Law, vehicles drive on the left. Estimation only, no explanation needed.`
@@ -31,6 +32,7 @@ const promptJp = `Google Street View画像から日本の道路特徴を推定�
 - shoulder_right: 右側の路肩幅（メートル、なければnull）
 - guardrail_left: 左側のガードレール有無（true/false）
 - guardrail_right: 右側のガードレール有無（true/false）
+- can_pass_oncoming_without_slowing: 減速する事なく対向車とすれ違う事ができる（true/false）
 
 ガードレールの防護柵(0.35m)、センターライン実線1本(0.2m)、センターライン実線2本(0.15m)、センターライン破線1本(0.15m)、車両(1.7m幅)等を基準にスケールを推定。
 数値は小数1桁。推定のみ、説明不要。`;
