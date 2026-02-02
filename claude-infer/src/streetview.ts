@@ -130,6 +130,7 @@ export async function checkStreetViewAvailability(
 
 // Street View画像を取得してBase64エンコード（tmpに保存）
 // nextLat, nextLng を指定すると、その方向を向いた画像を取得する
+// ローカルに画像が存在する場合はAPIリクエストをスキップ
 export async function fetchStreetViewImage(
   index: number,
   lat: number,
@@ -138,6 +139,17 @@ export async function fetchStreetViewImage(
   nextLat?: number,
   nextLng?: number
 ): Promise<string> {
+  ensureTmpDir();
+  const fileName = generateImageFileName(index, lat, lng);
+  const filePath = path.join(TMP_DIR, fileName);
+
+  // ローカルに画像が存在する場合はそれを使用
+  if (fs.existsSync(filePath)) {
+    console.log(`  ローカル画像を使用: ${fileName}`);
+    const buffer = fs.readFileSync(filePath);
+    return buffer.toString("base64");
+  }
+
   // メタデータを確認してStreet Viewが利用可能か検証
   await checkStreetViewAvailability(lat, lng, apiKey);
 
@@ -165,9 +177,6 @@ export async function fetchStreetViewImage(
   const buffer = Buffer.from(response.data);
 
   // tmpディレクトリに保存
-  ensureTmpDir();
-  const fileName = generateImageFileName(index, lat, lng);
-  const filePath = path.join(TMP_DIR, fileName);
   fs.writeFileSync(filePath, buffer);
 
   return buffer.toString("base64");
