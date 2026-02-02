@@ -2,9 +2,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import * as fs from "fs";
 import * as path from "path";
 
-import { AnalysisResult, AnalysisOutput, TokenUsage } from "./types";
+import { AnalysisResult, AnalysisOutput, TokenUsage, TargetEntry } from "./types";
 import { loadConfig } from "./config";
-import { loadLocations } from "./loader";
+import { loadTargetEntries } from "./loader";
 import { fetchStreetViewImage, getNextPointFromGeometry } from "./streetview";
 import { analyzeRoadWidth } from "./analyzer";
 
@@ -61,6 +61,7 @@ function saveResultsToJson(results: AnalysisResult[]): string {
 async function analyzeLocation(
   index: number,
   location: { lat: number; lng: number },
+  geometryList: [number, number][],
   config: { googleMapsApiKey: string },
   anthropic: Anthropic,
   totalCount: number
@@ -68,7 +69,7 @@ async function analyzeLocation(
   console.log(`[${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) を分析開始...`);
 
   try {
-    const nextPoint = getNextPointFromGeometry(location.lat, location.lng);
+    const nextPoint = getNextPointFromGeometry(location.lat, location.lng, geometryList);
     if (!nextPoint) return null;
 
     const imageBase64 = await fetchStreetViewImage(
@@ -90,6 +91,35 @@ async function analyzeLocation(
   }
 }
 
+// 1つのエントリを処理する関数
+async function processEntry(
+  entryIndex: number,
+  entry: TargetEntry,
+  config: { googleMapsApiKey: string },
+  anthropic: Anthropic,
+  totalEntries: number
+): Promise<AnalysisResult[]> {
+  const { geometry_list, geometry_check_list } = entry;
+
+  // geometry_check_listを座標オブジェクトに変換（先頭と末尾を除く）
+  const locations = geometry_check_list
+    .slice(1, geometry_check_list.length - 1)
+    .map(([lat, lng]) => ({ lat, lng }));
+
+  console.log(`\n[エントリ ${entryIndex + 1}/${totalEntries}] ${locations.length} 件を処理中...`);
+
+  const promises = locations.map((location, i) =>
+    analyzeLocation(i, location, geometry_list, config, anthropic, locations.length)
+  );
+
+  const rawResults = await Promise.all(promises);
+
+  return rawResults
+    .filter((r): r is { index: number; result: AnalysisResult } => r !== null)
+    .sort((a, b) => a.index - b.index)
+    .map((r) => r.result);
+}
+
 // メイン処理
 async function main() {
   console.log("=== Street View 道幅分析ツール ===\n");
@@ -100,48 +130,41 @@ async function main() {
   // Anthropicクライアント初期化
   const anthropic = new Anthropic();
 
-  // 位置情報を読み込み
-  const locations = loadLocations();
-  console.log(`${locations.length} 件の位置情報を読み込みました\n`);
+  // target.jsonを読み込み
+  const entries = loadTargetEntries();
+  console.log(`${entries.length} 件のエントリを読み込みました`);
 
-  // 各位置について並列で分析
-  const targetLocations = locations.slice(1, locations.length - 1);
-  console.log(`${targetLocations.length} 件を並列処理中...\n`);
+  // 全エントリを処理
+  const allResults: AnalysisResult[] = [];
 
-  const promises = targetLocations.map((location, i) =>
-    analyzeLocation(i + 1, location, config, anthropic, locations.length)
-  );
-
-  const rawResults = await Promise.all(promises);
-
-  // nullを除外し、index順にソート
-  const results: AnalysisResult[] = rawResults
-    .filter((r): r is { index: number; result: AnalysisResult } => r !== null)
-    .sort((a, b) => a.index - b.index)
-    .map((r) => r.result)
+  for (let i = 0; i < entries.length; i++) {
+    const entryResults = await processEntry(i, entries[i], config, anthropic, entries.length);
+    allResults.push(...entryResults);
+  }
 
   // サマリーを出力
   console.log("\n\n========== 分析結果サマリー ==========\n");
-  console.log("| 座標 | 車線数 | 車幅 | センターライン | 処理時間 |");
-  console.log("|------|--------|--------|----------------|----------|");
+  console.log("| 座標 | 車線数 | 車幅 | センターライン | 対向車と減速せずすれ違える | 処理時間 |");
+  console.log("|------|--------|--------|----------------|--------------------------|----------|");
 
-  for (const result of results) {
+  for (const result of allResults) {
     const lanes = result.analysis.lanes;
     const laneWidth = `${result.analysis.lane_width}m`;
     const centerLine = result.analysis.center_line ? "○" : "×";
-    console.log(`| (${result.location.lat}, ${result.location.lng}) | ${lanes} | ${laneWidth} | ${centerLine} | ${result.processingTimeMs}ms |`);
+    const canPassOnComingWithoutSlowing = result.analysis.can_pass_oncoming_without_slowing ? "○" : "×";
+    console.log(`| (${result.location.lat}, ${result.location.lng}) | ${lanes} | ${laneWidth} | ${centerLine} | ${canPassOnComingWithoutSlowing} | ${result.processingTimeMs}ms |`);
   }
 
   // 合計金額を表示
-  if (results.length > 0) {
-    const total = calculateTotalTokenUsage(results);
+  if (allResults.length > 0) {
+    const total = calculateTotalTokenUsage(allResults);
     console.log("\n【合計トークン使用量】");
     console.log(`入力トークン: ${total.inputTokens.toLocaleString()}`);
     console.log(`出力トークン: ${total.outputTokens.toLocaleString()}`);
     console.log(`合計金額: ¥${total.costJpy.toLocaleString()} ($${total.costUsd})`);
 
     // JSONファイルに保存
-    const outputPath = saveResultsToJson(results);
+    const outputPath = saveResultsToJson(allResults);
     console.log(`\n結果をJSONファイルに保存しました: ${outputPath}`);
   }
 

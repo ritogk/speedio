@@ -509,6 +509,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "tunnel_length",
         "terrain_elevation_file_path",
         "min_elevation",
+        "geometry_check_list"
     ]
 
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../html/targets/{prefecture_code}/target.json"

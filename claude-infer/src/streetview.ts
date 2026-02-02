@@ -1,7 +1,6 @@
 import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
-import { loadGeometryList } from "./loader";
 
 const STREET_VIEW_BASE_URL = "https://maps.googleapis.com/maps/api/streetview";
 const STREET_VIEW_METADATA_URL = "https://maps.googleapis.com/maps/api/streetview/metadata";
@@ -73,10 +72,9 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 // 現在位置からgeometry_list上の最も近いインデックスを見つけ、次のポイントを返す
 export function getNextPointFromGeometry(
   currentLat: number,
-  currentLng: number
+  currentLng: number,
+  geometryList: [number, number][]
 ): { lat: number; lng: number } | null {
-  const geometryList = loadGeometryList();
-
   if (geometryList.length < 2) {
     return null;
   }
@@ -145,7 +143,7 @@ export async function fetchStreetViewImage(
 
   // 次の地点が指定されている場合、進行方向を計算
   const params: Record<string, string> = {
-    size: "640x640",
+    size: "640x480",
     location: `${lat},${lng}`,
     key: apiKey,
     fov: "90",
