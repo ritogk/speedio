@@ -81,6 +81,7 @@ async function analyzeLocation(
       nextPoint.lat,
       nextPoint.lng
     );
+    console.log(`[${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) 画像取得完了`);
 
     const result = await analyzeRoadWidth(anthropic, imageBase64, location);
     console.log(`[${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) 分析完了`);
@@ -109,13 +110,23 @@ async function processEntry(
 
   console.log(`\n[エントリ ${entryIndex + 1}/${totalEntries}] ${locations.length} 件を処理中...`);
 
-  const promises = locations.map((location, i) =>
-    analyzeLocation(i, location, geometry_list, config, anthropic, locations.length)
-  );
+  // 8件ずつ並列処理
+  const BATCH_SIZE = 8;
+  const allRawResults: ({ index: number; result: AnalysisResult } | null)[] = [];
 
-  const rawResults = await Promise.all(promises);
+  for (let batchStart = 0; batchStart < locations.length; batchStart += BATCH_SIZE) {
+    const batchEnd = Math.min(batchStart + BATCH_SIZE, locations.length);
+    const batchLocations = locations.slice(batchStart, batchEnd);
 
-  return rawResults
+    const batchPromises = batchLocations.map((location, i) =>
+      analyzeLocation(batchStart + i, location, geometry_list, config, anthropic, locations.length)
+    );
+
+    const batchResults = await Promise.all(batchPromises);
+    allRawResults.push(...batchResults);
+  }
+
+  return allRawResults
     .filter((r): r is { index: number; result: AnalysisResult } => r !== null)
     .sort((a, b) => a.index - b.index)
     .map((r) => r.result);
@@ -141,6 +152,16 @@ async function main() {
   for (let i = 0; i < entries.length; i++) {
     const entryResults = await processEntry(i, entries[i], config, anthropic, entries.length);
     allResults.push(...entryResults);
+
+    // エントリごとにDBに保存
+    if (entryResults.length > 0) {
+      try {
+        const dbCount = await saveResultsToDb(entryResults);
+        console.log(`[エントリ ${i + 1}] DBに ${dbCount} 件保存`);
+      } catch (error) {
+        console.error(`[エントリ ${i + 1}] DBへの保存に失敗:`, error);
+      }
+    }
   }
 
   // サマリーを出力
@@ -167,17 +188,10 @@ async function main() {
     // JSONファイルに保存
     const outputPath = saveResultsToJson(allResults);
     console.log(`\n結果をJSONファイルに保存しました: ${outputPath}`);
-
-    // DBに保存
-    try {
-      const dbCount = await saveResultsToDb(allResults);
-      console.log(`\nDBに ${dbCount} 件の結果を保存しました`);
-    } catch (error) {
-      console.error("DBへの保存に失敗しました:", error);
-    } finally {
-      await closeDb();
-    }
   }
+
+  // DB接続を閉じる
+  await closeDb();
 
   console.log("\n分析完了");
 }
