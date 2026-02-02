@@ -30,6 +30,8 @@ export async function saveResultsToDb(results: AnalysisResult[]): Promise<number
       const roadWidthType = result.analysis.lanes >= 2 ? RoadWidthType.TWO_LANE : RoadWidthType.ONE_LANE;
       const hasCenterLine = result.analysis.center_line;
       const canPassOncomingWithoutSlowing = result.analysis.can_pass_oncoming_without_slowing;
+      const isTunnel = result.analysis.is_tunnel;
+      const hasCatsEye = result.analysis.has_cats_eye;
 
       // PostGIS形式でポイントを指定してUPDATEのみ実行
       const query = `
@@ -37,6 +39,8 @@ export async function saveResultsToDb(results: AnalysisResult[]): Promise<number
           claude_road_width_type = $3,
           claude_has_center_line = $4,
           can_pass_oncoming_without_slowing = $5,
+          claude_is_tunnel = $6,
+          claude_has_cats_eye = $7,
           updated_at = NOW()
         WHERE point = ST_SetSRID(ST_MakePoint($1, $2), 4326)
       `;
@@ -47,6 +51,8 @@ export async function saveResultsToDb(results: AnalysisResult[]): Promise<number
         roadWidthType,
         hasCenterLine,
         canPassOncomingWithoutSlowing,
+        isTunnel,
+        hasCatsEye,
       ]);
 
       insertedCount++;
