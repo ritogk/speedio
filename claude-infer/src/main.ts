@@ -7,6 +7,7 @@ import { loadConfig } from "./config";
 import { loadTargetEntries } from "./loader";
 import { fetchStreetViewImage, getNextPointFromGeometry } from "./streetview";
 import { analyzeRoadWidth } from "./analyzer";
+import { saveResultsToDb, closeDb } from "./db";
 
 const OUTPUT_DIR = path.join(__dirname, "..", "output");
 
@@ -166,6 +167,16 @@ async function main() {
     // JSONファイルに保存
     const outputPath = saveResultsToJson(allResults);
     console.log(`\n結果をJSONファイルに保存しました: ${outputPath}`);
+
+    // DBに保存
+    try {
+      const dbCount = await saveResultsToDb(allResults);
+      console.log(`\nDBに ${dbCount} 件の結果を保存しました`);
+    } catch (error) {
+      console.error("DBへの保存に失敗しました:", error);
+    } finally {
+      await closeDb();
+    }
   }
 
   console.log("\n分析完了");

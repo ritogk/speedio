@@ -2,6 +2,10 @@ import { Location } from "./types";
 
 const DEBUG = false;
 
+// export const MODEL = "claude-sonnet-4-5-20250929";
+export const MODEL = "claude-opus-4-5-20251101";
+// export const MODEL = "claude-haiku-4-5-20251001";
+
 // 道幅分析用プロンプトを生成
 export function createRoadWidthAnalysisPrompt(location: Location): string {
   return DEBUG ? promptJp : promptEn;
@@ -10,7 +14,7 @@ export function createRoadWidthAnalysisPrompt(location: Location): string {
 const promptEn = `Estimate Japanese road features from a Google Street View image.
 
 Respond in JSON format with the following fields:
-- lanes: Number of lanes (integer)
+- lanes: integer number of lanes (if center_line is false, set to 1)
 - lane_width: Width of one lane (meters)
 - center_line: Presence of center line (true/false)
 - shoulder_left: Width of left shoulder in the direction of travel (meters, null if none)
@@ -25,7 +29,7 @@ Values to one decimal place. Per Japanese Road Traffic Law, vehicles drive on th
 const promptJp = `Google Street View画像から日本の道路特徴を推定してください。
 
 以下の項目をJSON形式で回答：
-- lanes: 車線数（整数）
+- lanes: 車線数（整数）center_lineがfalseの場合は1
 - lane_width: 1車線の幅（メートル）
 - center_line: センターライン有無（true/false）
 - shoulder_left: 左側の路肩幅（メートル、なければnull）

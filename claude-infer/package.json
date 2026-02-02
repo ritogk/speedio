@@ -9,10 +9,12 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
     "axios": "^1.13.4",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "pg": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/pg": "^8.16.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.0"
   }

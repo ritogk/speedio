@@ -1,10 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { Location, AnalysisResult, RoadAnalysisResponse, TokenUsage } from "./types";
-import { createRoadWidthAnalysisPrompt } from "./prompts";
-
-const MODEL = "claude-sonnet-4-5-20250929";
-// const MODEL = "claude-opus-4-5-20251101";
-// const MODEL = "claude-haiku-4-5-20251001";
+import { createRoadWidthAnalysisPrompt, MODEL } from "./prompts";
 
 // Claude Sonnet 4 料金 (USD per 1M tokens)
 const PRICE_INPUT_PER_1M = 3.0;
@@ -32,7 +28,6 @@ function calculateTokenUsage(inputTokens: number, outputTokens: number): TokenUs
 function parseJsonResponse(text: string): RoadAnalysisResponse {
   // コードブロック内のJSONを抽出（```json ... ``` または ``` ... ```）
   const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  console.log(text)
   const jsonText = codeBlockMatch ? codeBlockMatch[1].trim() : text.trim();
 
   try {
@@ -53,7 +48,7 @@ export async function analyzeRoadWidth(
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 1024,
-    // temperature: 0,
+    temperature: 0,
     messages: [
       {
         role: "user",
