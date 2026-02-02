@@ -11,6 +11,13 @@ import { saveResultsToDb, closeDb } from "./db";
 
 const OUTPUT_DIR = path.join(__dirname, "..", "output");
 
+// ログアイコン定義
+const LOG_ICONS = {
+  entry: "\x1b[36m📁\x1b[0m", // シアン - エントリ
+  streetView: "\x1b[33m🗺️\x1b[0m", // 黄色 - Google Street View
+  claude: "\x1b[35m🤖\x1b[0m", // マゼンタ - Claude
+} as const;
+
 // 出力ディレクトリを作成
 function ensureOutputDir(): void {
   if (!fs.existsSync(OUTPUT_DIR)) {
@@ -67,7 +74,7 @@ async function analyzeLocation(
   anthropic: Anthropic,
   totalCount: number
 ): Promise<{ index: number; result: AnalysisResult } | null> {
-  console.log(`[${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) を分析開始...`);
+  console.log(`${LOG_ICONS.entry} [${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) を分析開始...`);
 
   try {
     const nextPoint = getNextPointFromGeometry(location.lat, location.lng, geometryList);
@@ -81,10 +88,10 @@ async function analyzeLocation(
       nextPoint.lat,
       nextPoint.lng
     );
-    console.log(`[${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) 画像取得完了`);
+    console.log(`${LOG_ICONS.streetView} [${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) 画像取得完了`);
 
     const result = await analyzeRoadWidth(anthropic, imageBase64, location);
-    console.log(`[${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) 分析完了`);
+    console.log(`${LOG_ICONS.claude} [${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) 分析完了`);
     return { index, result };
   } catch (error) {
     console.error(`エラー: [${index + 1}] (${location.lat}, ${location.lng}) の分析に失敗しました`);
@@ -108,9 +115,8 @@ async function processEntry(
     .slice(1, geometry_check_list.length - 1)
     .map(([lat, lng]) => ({ lat, lng }));
 
-  console.log(`\n[エントリ ${entryIndex + 1}/${totalEntries}] ${locations.length} 件を処理中...`);
+  console.log(`\n${LOG_ICONS.entry} [エントリ ${entryIndex + 1}/${totalEntries}] ${locations.length} 件を処理中...`);
 
-  // 8件ずつ並列処理
   const BATCH_SIZE = 8;
   const allRawResults: ({ index: number; result: AnalysisResult } | null)[] = [];
 
@@ -143,7 +149,7 @@ async function main() {
   const anthropic = new Anthropic();
 
   // target.jsonを読み込み
-  const entries = loadTargetEntries();
+  const entries = loadTargetEntries().slice(0, 50);
   console.log(`${entries.length} 件のエントリを読み込みました`);
 
   // 全エントリを処理
@@ -157,7 +163,7 @@ async function main() {
     if (entryResults.length > 0) {
       try {
         const dbCount = await saveResultsToDb(entryResults);
-        console.log(`[エントリ ${i + 1}] DBに ${dbCount} 件保存`);
+        console.log(`${LOG_ICONS.entry} [エントリ ${i + 1}] DBに ${dbCount} 件保存`);
       } catch (error) {
         console.error(`[エントリ ${i + 1}] DBへの保存に失敗:`, error);
       }
