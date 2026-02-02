@@ -11,25 +11,34 @@ export function createRoadWidthAnalysisPrompt(location: Location): string {
   return DEBUG ? promptJp : promptEn;
 }
 
-const promptEn = `Estimate Japanese road features from a Google Street View image.
-Important: For center_line judgment, consider both visible markings AND road design:
-1. First estimate total paved width using reference objects (guardrail 0.35m, vehicle 1.7m, etc.)
-2. If total width is 5.0m or more, center_line is likely true even if paint is faded/invisible
-3. Check for faint traces of white/yellow paint or discoloration along the centerline
-4. Look for road symmetry - similar shoulder widths on both sides suggests 2-lane design
-5. Check for asphalt patches in center that may have covered old center lines
-6. If center_line appears designed to exist but is faded: set center_line to true
+const promptEn = `Estimate Japanese road characteristics from Google Street View images.
+IMPORTANT: When determining center_line, consider both visible markings and road design:
+
+First, estimate total pavement width using reference objects (guardrail 0.35m, vehicle 1.7m, etc.)
+If total width is 5.0m or more, center_line is likely true even if paint is faded/invisible
+Check for faint traces of white/yellow paint or discoloration near the center
+Verify road symmetry - similar shoulder widths on both sides suggest 2-lane design
+Check for asphalt repair patches in the center (may be covering old center lines)
+If center line should exist by design but is faded: set center_line to true
+
+**Tunnel Image Characteristics and Detection:**
+- Tunnel images are characterized by pinkish color tone and coarse noise
+
 Respond in JSON format with the following fields:
-- lanes: integer number of lanes (if center_line is false, set to 1)
-- lane_width: Width of one lane (meters)
-- center_line: Presence of center line (true/false)
-- shoulder_left: Width of left shoulder in the direction of travel (meters, null if none)
-- shoulder_right: Width of right shoulder in the image (meters, null if none)
-- guardrail_left: Presence of guardrail on the left side of the image (true/false)
-- guardrail_right: Presence of guardrail on the right side of the image (true/false)
-- can_pass_oncoming_without_slowing: can pass oncoming vehicles without slowing down (true/false)
-Estimate scale using the following references: guardrail barrier (0.35m), single solid center line (0.2m), double solid center line (0.15m), single dashed center line (0.15m), vehicle width (1.7m), etc.
-Values to one decimal place. Per Japanese Road Traffic Law, vehicles drive on the left. Estimation only, no explanation needed.`
+
+lanes: Number of lanes (integer) (set to 1 if center_line is false)
+lane_width: Width of one lane (meters)
+center_line: Presence of center line (true/false)
+shoulder_left: Left shoulder width in direction of travel (meters, null if none)
+shoulder_right: Right shoulder width in image (meters, null if none)
+guardrail_left: Presence of guardrail on left side of image (true/false)
+guardrail_right: Presence of guardrail on right side of image (true/false)
+can_pass_oncoming_without_slowing: Can pass oncoming traffic without slowing (true/false)
+is_tunnel: Whether inside a tunnel (true/false)
+has_cats_eye: Presence of cat's eyes/road studs on the road (true/false)
+
+Use these reference values for scale estimation: guardrail (0.35m), solid center line (0.2m), double solid center line (0.15m), dashed center line (0.15m), vehicle width (1.7m), tunnel wall margin (0.25-0.75m), etc.
+Values to one decimal place. Following Japanese traffic laws, vehicles drive on the left side. Estimation only, no explanation required.`
 
 const promptJp = `Google Street Viewの画像から日本の道路特性を推定してください。
 重要：中央線（center_line）の判定では、視認可能な標示と道路設計の両方を考慮すること：
@@ -41,6 +50,9 @@ const promptJp = `Google Street Viewの画像から日本の道路特性を推�
 中央部のアスファルト補修跡を確認（古い中央線を覆っている可能性）
 中央線が設計上存在するはずだが薄れている場合：center_lineをtrueに設定
 
+**トンネル内画像の特徴と判定方法：**
+- トンネル内の画像は、ピンク色がかった色調と粗いノイズが特徴的
+
 以下のフィールドでJSON形式で回答してください：
 
 lanes: 車線数（整数）（center_lineがfalseの場合は1に設定）
@@ -51,6 +63,8 @@ shoulder_right: 画像右側の路肩幅（メートル、なければnull）
 guardrail_left: 画像左側のガードレールの有無（true/false）
 guardrail_right: 画像右側のガードレールの有無（true/false）
 can_pass_oncoming_without_slowing: 対向車と減速せずにすれ違い可能か（true/false）
+is_tunnel: トンネル内かどうか（true/false）
+has_cats_eye: キャッツアイ（道路鋲）の有無（true/false）
 
-以下の参照値でスケールを推定：ガードレール（0.35m）、実線中央線（0.2m）、二重実線中央線（0.15m）、破線中央線（0.15m）、車両幅（1.7m）等。
+以下の参照値でスケールを推定：ガードレール（0.35m）、実線中央線（0.2m）、二重実線中央線（0.15m）、破線中央線（0.15m）、車両幅（1.7m）、トンネル壁側の余白（0.25-0.75m）等。
 値は小数点第1位まで。日本の道路交通法に従い、車両は左側通行。推定のみ、説明不要。`;
