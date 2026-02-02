@@ -5,7 +5,8 @@ import * as path from "path";
 import { AnalysisResult, AnalysisOutput, TokenUsage, TargetEntry } from "./types";
 import { loadConfig } from "./config";
 import { loadTargetEntries } from "./loader";
-import { fetchStreetViewImage, getNextPointFromGeometry } from "./streetview";
+import { getNextPointFromGeometry } from "./streetview";
+import { fetchHighResStreetViewImage } from "./panorama";
 import { analyzeRoadWidth } from "./analyzer";
 import { saveResultsToDb, closeDb } from "./db";
 
@@ -74,21 +75,23 @@ async function analyzeLocation(
   anthropic: Anthropic,
   totalCount: number
 ): Promise<{ index: number; result: AnalysisResult } | null> {
-  console.log(`${LOG_ICONS.entry} [${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) を分析開始...`);
+  console.log(`${LOG_ICONS.claude} [${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) を分析開始...`);
 
   try {
     const nextPoint = getNextPointFromGeometry(location.lat, location.lng, geometryList);
     if (!nextPoint) return null;
 
-    const imageBase64 = await fetchStreetViewImage(
-      index,
+    const imageBase64 = await fetchHighResStreetViewImage(
       location.lat,
       location.lng,
       config.googleMapsApiKey,
       nextPoint.lat,
-      nextPoint.lng
+      nextPoint.lng,
+      1280,
+      960,
+      3
     );
-    console.log(`${LOG_ICONS.streetView} [${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) 画像取得完了`);
+    console.log(`${LOG_ICONS.streetView} [${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) 高解像度画像取得完了`);
 
     const result = await analyzeRoadWidth(anthropic, imageBase64, location);
     console.log(`${LOG_ICONS.claude} [${index + 1}/${totalCount}] (${location.lat}, ${location.lng}) 分析完了`);
