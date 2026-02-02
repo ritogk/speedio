@@ -35,7 +35,6 @@ guardrail_left: Presence of guardrail on left side of image (true/false)
 guardrail_right: Presence of guardrail on right side of image (true/false)
 can_pass_oncoming_without_slowing: Can pass oncoming traffic without slowing (true/false)
 is_tunnel: Whether inside a tunnel (true/false)
-has_cats_eye: Presence of cat's eyes/road studs on the road (true/false)
 
 Use these reference values for scale estimation: guardrail (0.35m), solid center line (0.2m), double solid center line (0.15m), dashed center line (0.15m), vehicle width (1.7m), tunnel wall margin (0.25-0.75m), etc.
 Values to one decimal place. Following Japanese traffic laws, vehicles drive on the left side. Estimation only, no explanation required.`
@@ -64,7 +63,6 @@ guardrail_left: 画像左側のガードレールの有無（true/false）
 guardrail_right: 画像右側のガードレールの有無（true/false）
 can_pass_oncoming_without_slowing: 対向車と減速せずにすれ違い可能か（true/false）
 is_tunnel: トンネル内かどうか（true/false）
-has_cats_eye: キャッツアイ（道路鋲）の有無（true/false）
 
 以下の参照値でスケールを推定：ガードレール（0.35m）、実線中央線（0.2m）、二重実線中央線（0.15m）、破線中央線（0.15m）、車両幅（1.7m）、トンネル壁側の余白（0.25-0.75m）等。
 値は小数点第1位まで。日本の道路交通法に従い、車両は左側通行。推定のみ、説明不要。`;

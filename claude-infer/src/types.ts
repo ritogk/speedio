@@ -18,7 +18,6 @@ export interface RoadAnalysisResponse {
   guardrail_right: boolean;
   can_pass_oncoming_without_slowing: boolean;
   is_tunnel: boolean;
-  has_cats_eye: boolean;
 }
 
 // トークン使用量と金額

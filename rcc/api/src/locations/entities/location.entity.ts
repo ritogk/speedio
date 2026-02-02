@@ -83,16 +83,6 @@ export class Location {
   })
   claude_is_tunnel?: boolean;
 
-  // キャッツアイ（道路鋲）の有無(Claudeの推定)
-  @Column({
-    type: 'boolean',
-    nullable: true,
-  })
-  @ApiProperty({
-    description: 'キャッツアイ（道路鋲）の有無(Claudeの推定)',
-  })
-  claude_has_cats_eye?: boolean;
-
   // 減速する事なく対向車とすれ違えるかどうか
   @Column({
     type: 'boolean',
