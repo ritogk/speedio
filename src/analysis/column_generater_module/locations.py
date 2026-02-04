@@ -25,9 +25,9 @@ def generate(gdf: GeoDataFrame) -> Series:
                 max_latitude = point[1]
         srid = 4326
         locations = []
-        # SQLクエリを実行（claude_has_center_line も取得）
+        # SQLクエリを実行
         result = session.execute(text(
-            f"SELECT ST_X(point) AS longitude, ST_Y(point) AS latitude, road_width_type, has_center_line, claude_has_center_line "
+            f"SELECT ST_X(point) AS longitude, ST_Y(point) AS latitude, road_width_type, has_center_line, claude_center_line, claude_road_width_type "
             f"FROM locations "
             f"WHERE ST_Intersects(ST_MakeEnvelope({min_longitude}, {min_latitude}, {max_longitude}, {max_latitude}, {srid}), locations.point)"
         ))
