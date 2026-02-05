@@ -4,7 +4,8 @@
   "description": "Street View画像から道幅を分析するツール",
   "main": "src/main.ts",
   "scripts": {
-    "start": "ts-node src/main.ts"
+    "start": "ts-node src/main.ts",
+    "optimize": "ts-node src/optimizer/index.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
