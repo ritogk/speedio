@@ -5,3 +5,5 @@ dist/
 .history
 tmp/
 output/
+src/optimizer/output/*.json
+!src/optimizer/output/.gitkeep
