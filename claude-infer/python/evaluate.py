@@ -3,13 +3,47 @@
 import argparse
 from pathlib import Path
 
+import psycopg2
+from psycopg2.extras import execute_batch
 import torch
 from tqdm import tqdm
 
-from config import DATA_DIR, MODELS_DIR
+from config import DATA_DIR, MODELS_DIR, DB_CONFIG
 from dataset import CenterLineDataset, get_transforms
 from model import CenterLineClassifier
 from train import calculate_metrics
+
+
+def write_results_to_db(samples: list):
+    """推論結果をDBのclaude_center_lineカラムに書き込み"""
+    print("\nWriting results to database (claude_center_line)...")
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    cursor = conn.cursor()
+
+    try:
+        update_query = """
+            UPDATE locations
+            SET claude_center_line = %s
+            WHERE ST_Y(point) = %s AND ST_X(point) = %s
+        """
+
+        update_data = [
+            (s["pred"] >= 0.5, s["lat"], s["lng"])
+            for s in samples
+        ]
+
+        execute_batch(cursor, update_query, update_data, page_size=100)
+        conn.commit()
+
+        print(f"  Updated: {len(samples)} records")
+
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def evaluate_model(model_path: str = None, split: str = "test", batch_size: int = 16):
@@ -110,13 +144,17 @@ def main():
     parser.add_argument("--model", type=str, help="Path to model checkpoint")
     parser.add_argument("--split", type=str, default="test", choices=["train", "val", "test"])
     parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--write-db", action="store_true", help="Write results to claude_center_line column in DB")
     args = parser.parse_args()
 
-    evaluate_model(
+    metrics, samples = evaluate_model(
         model_path=args.model,
         split=args.split,
         batch_size=args.batch_size,
     )
+
+    if args.write_db and samples:
+        write_results_to_db(samples)
 
 
 if __name__ == "__main__":
