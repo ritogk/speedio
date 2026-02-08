@@ -199,6 +199,24 @@ async function buildPanorama(panoId: string, requestedZoom: number): Promise<Buf
   throw new Error(`パノラマタイルを取得できませんでした: ${panoId}`);
 }
 
+// パノラマキャッシュを削除（ディスク節約）
+// buildPanoramaがzoomフォールバックするため、全zoomレベルを掃除する
+function cleanupPanoramaCache(panoId: string, maxZoom: number): void {
+  if (!fs.existsSync(PANORAMA_DIR)) return;
+  for (let zoom = 1; zoom <= maxZoom; zoom++) {
+    const tilesX = Math.pow(2, zoom);
+    const tilesY = Math.pow(2, zoom - 1);
+    for (let y = 0; y < tilesY; y++) {
+      for (let x = 0; x < tilesX; x++) {
+        const tileFile = path.join(PANORAMA_DIR, `${panoId}_z${zoom}_x${x}_y${y}.jpg`);
+        if (fs.existsSync(tileFile)) fs.unlinkSync(tileFile);
+      }
+    }
+    const fullFile = path.join(PANORAMA_DIR, `${panoId}_full_z${zoom}.jpg`);
+    if (fs.existsSync(fullFile)) fs.unlinkSync(fullFile);
+  }
+}
+
 // 等距円筒図法（equirectangular）からパースペクティブ投影で画像を切り出す
 async function extractPerspective(
   panoramaBuffer: Buffer,
@@ -351,6 +369,9 @@ export async function fetchHighResStreetViewImage(
 
   // キャッシュに保存
   fs.writeFileSync(cacheFile, perspective);
+
+  // パノラマキャッシュを削除（ディスク節約）
+  cleanupPanoramaCache(panoId, zoom);
 
   return perspective.toString("base64");
 }

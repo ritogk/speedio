@@ -196,6 +196,20 @@ def extract_perspective(
     return Image.fromarray(output_array)
 
 
+def cleanup_panorama_cache(pano_id: str, zoom: int = 3) -> None:
+    """パノラマタイルとフルパノラマのキャッシュを削除"""
+    if not PANORAMA_DIR.exists():
+        return
+    tiles_x = 2 ** zoom
+    tiles_y = 2 ** (zoom - 1)
+    for y in range(tiles_y):
+        for x in range(tiles_x):
+            tile_file = PANORAMA_DIR / f"{pano_id}_z{zoom}_x{x}_y{y}.jpg"
+            tile_file.unlink(missing_ok=True)
+    full_file = PANORAMA_DIR / f"{pano_id}_full_z{zoom}.jpg"
+    full_file.unlink(missing_ok=True)
+
+
 def calculate_heading(from_lat: float, from_lng: float, to_lat: float, to_lng: float) -> float:
     """2点間の方位角を計算"""
     lat1 = math.radians(from_lat)
@@ -262,6 +276,9 @@ def fetch_street_view_image(
 
     # キャッシュに保存
     perspective.save(cache_file, "JPEG", quality=90)
+
+    # パノラマキャッシュを削除（ディスク節約）
+    cleanup_panorama_cache(pano_id, zoom)
 
     with open(cache_file, "rb") as f:
         return base64.b64encode(f.read()).decode()
