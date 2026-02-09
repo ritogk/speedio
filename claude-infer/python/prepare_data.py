@@ -202,7 +202,7 @@ def prepare_dataset(pref_codes: list = None, check_images: bool = True):
             "next_lat": next_lat,
             "next_lng": next_lng,
             "heading": heading,
-            "image_path": str(image_path),
+            "image_path": str(image_path.relative_to(TMP_DIR.parent)),
             "has_center_line": has_center_line,
         })
 

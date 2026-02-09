@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from config import MODEL_CONFIG, IMAGE_CONFIG, DATA_DIR
+from config import MODEL_CONFIG, IMAGE_CONFIG, DATA_DIR, PROJECT_ROOT
 
 
 def get_transforms(is_training: bool = True):
@@ -55,7 +55,7 @@ class CenterLineDataset(Dataset):
         # 有効なサンプルのみを保持
         valid_indices = []
         for idx in range(len(self.df)):
-            image_path = Path(self.df.iloc[idx]["image_path"])
+            image_path = PROJECT_ROOT / self.df.iloc[idx]["image_path"]
             if image_path.exists():
                 valid_indices.append(idx)
 
@@ -67,7 +67,7 @@ class CenterLineDataset(Dataset):
 
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
-        image_path = row["image_path"]
+        image_path = PROJECT_ROOT / row["image_path"]
         label = 1 if row["has_center_line"] else 0
 
         # 画像読み込み
