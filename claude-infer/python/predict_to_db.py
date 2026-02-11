@@ -88,7 +88,7 @@ def load_targets(pref_code: str):
     return geometry_map, coords
 
 
-def predict_to_db(pref_code: str, batch_size: int = 16, write_db: bool = False):
+def predict_to_db(pref_code: str, batch_size: int = 16, write_db: bool = False, model_path: str = None):
     """推論してDBに書き込み"""
     print(f"=== 都道府県コード {pref_code} の推論 ===\n")
 
@@ -134,7 +134,10 @@ def predict_to_db(pref_code: str, batch_size: int = 16, write_db: bool = False):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"  Device: {device}")
 
-    model_path = MODELS_DIR / "vit_centerline_best.pt"
+    if model_path is None:
+        model_path = MODELS_DIR / "vit_centerline_best.pt"
+    else:
+        model_path = Path(model_path)
     model = CenterLineClassifier(pretrained=False)
     model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
     model.to(device)
@@ -213,16 +216,19 @@ def predict_to_db(pref_code: str, batch_size: int = 16, write_db: bool = False):
 
 def main():
     parser = argparse.ArgumentParser(description="推論結果をDBに書き込み")
-    parser.add_argument("--pref", type=str, required=True, help="都道府県コード（例: 24）")
+    parser.add_argument("--pref", type=str, nargs="+", required=True, help="都道府県コード（例: 24、複数指定可）")
+    parser.add_argument("--model", type=str, help="モデルパス（デフォルト: vit_centerline_best.pt）")
     parser.add_argument("--batch-size", type=int, default=16, help="バッチサイズ")
     parser.add_argument("--write-db", action="store_true", help="DBに書き込む")
     args = parser.parse_args()
 
-    predict_to_db(
-        pref_code=args.pref,
-        batch_size=args.batch_size,
-        write_db=args.write_db,
-    )
+    for pref_code in args.pref:
+        predict_to_db(
+            pref_code=pref_code,
+            batch_size=args.batch_size,
+            write_db=args.write_db,
+            model_path=args.model,
+        )
 
 
 if __name__ == "__main__":
