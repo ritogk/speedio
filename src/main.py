@@ -21,6 +21,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     env = getEnv()
     consider_gsi_width = env["CONSIDER_GSI_WIDTH"]
     create_video = env["CREATE_VIDEO"]
+    create_terrain = env["CREATE_TERRAIN"]
 
     execution_timer_ins = ExecutionTimer()
     # ベースとなるグラフを取得する
@@ -420,10 +421,13 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     execution_timer_ins.stop()
 
     # 地形データを出力する
-    execution_timer_ins.start("🏔️ write terrain_elevation file")
-    gdf_edges["terrain_elevation_file_path"] = generate_file_path(gdf_edges, prefecture_code)
-    write_terrain_elevations_file(gdf_edges, tif_path, plane_epsg_code)
-    execution_timer_ins.stop()
+    if create_terrain:
+        execution_timer_ins.start("🏔️ write terrain_elevation file")
+        gdf_edges["terrain_elevation_file_path"] = generate_file_path(gdf_edges, prefecture_code)
+        write_terrain_elevations_file(gdf_edges, tif_path, plane_epsg_code)
+        execution_timer_ins.stop()
+    else:
+        gdf_edges["terrain_elevation_file_path"] = ""
 
     # csvに変換して出力する
     output_columns = [
