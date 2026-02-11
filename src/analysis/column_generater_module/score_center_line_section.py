@@ -16,7 +16,7 @@ def generate(gdf: GeoDataFrame) -> Series:
             return 0
         else:
             # 頭と末尾の座標は評価されないはずなので取り除く
-            score = center_line_count / ((row.length / 500) - 2)
+            score = (center_line_count - 2) / ((row.length / 500) - 2)
             if score > 1:
                 score = 1
             return score
