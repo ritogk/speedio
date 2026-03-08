@@ -115,6 +115,64 @@
         cursor: not-allowed;
       }
 
+      .calibration-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f9f9f9;
+        border-radius: 8px;
+      }
+
+      .calibration-section h2 {
+        font-size: 16px;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .calibration-hint {
+        font-size: 13px;
+        color: #888;
+        margin-bottom: 10px;
+        line-height: 1.5;
+      }
+
+      .calibration-step {
+        margin-bottom: 12px;
+      }
+
+      #calibrate-step1, #calibrate-step2 {
+        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+        color: white;
+        width: 100%;
+      }
+
+      #calibrate-step1:active, #calibrate-step2:active {
+        transform: scale(0.98);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      #calibrate-step1:disabled, #calibrate-step2:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      #calibrate-reset {
+        background: #999;
+        color: white;
+        width: 100%;
+        font-size: 14px;
+        padding: 10px;
+        min-height: 40px;
+      }
+
+      .step-status {
+        margin-top: 8px;
+        margin-bottom: 4px;
+        font-size: 14px;
+        text-align: center;
+        padding: 8px;
+        border-radius: 6px;
+      }
+
       .stats {
         margin-top: 20px;
         padding: 15px;
@@ -165,6 +223,24 @@
     <div class="container">
       <h1>📍 GPS Recorder</h1>
       <div id="status">状態: 未記録</div>
+      <div class="calibration-section">
+        <h2>加速度キャリブレーション</h2>
+        <div class="calibration-step" id="step1-section">
+          <div class="calibration-hint">
+            STEP 1: スマホを手に持ち、上端を進行方向に向けて水平に構えてください。
+          </div>
+          <button id="calibrate-step1">方向を計測</button>
+          <div id="step1-status" class="step-status"></div>
+        </div>
+        <div class="calibration-step" id="step2-section" style="display:none;">
+          <div class="calibration-hint">
+            STEP 2: スマホをホルダーに固定してください（向きは自由）。
+          </div>
+          <button id="calibrate-step2">固定位置を計測</button>
+          <div id="step2-status" class="step-status"></div>
+        </div>
+        <button id="calibrate-reset" style="display:none;">やり直す</button>
+      </div>
       <div class="button-group">
         <button id="start">▶ 記録開始</button>
         <button id="stop" disabled>⏹ 記録停止</button>
@@ -180,16 +256,35 @@
     <script>
       let watchId = null;
       const records = [];
+      const accelRecords = [];
       let isWatched = false;
+      let accelListener = null;
+
+      // Calibration state
+      let calibrationData = null;
+      let step1Data = null; // { gravity, forward, lateral, down }
+      let isCalibrating = false;
 
       const startBtn = document.getElementById("start");
       const stopBtn = document.getElementById("stop");
       const downloadBtn = document.getElementById("download");
+      const step1Btn = document.getElementById("calibrate-step1");
+      const step2Btn = document.getElementById("calibrate-step2");
+      const resetBtn = document.getElementById("calibrate-reset");
+      const step1Section = document.getElementById("step1-section");
+      const step2Section = document.getElementById("step2-section");
+      const step1Status = document.getElementById("step1-status");
+      const step2Status = document.getElementById("step2-status");
       const statusDiv = document.getElementById("status");
       const recordCountDiv = document.getElementById("record-count");
 
+      function toJstTimestamp(date) {
+        const jstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+        return jstDate.toISOString().replace("Z", "+09:00");
+      }
+
       function updateStatus() {
-        recordCountDiv.textContent = records.length;
+        recordCountDiv.textContent = `GPS: ${records.length} / 加速度: ${accelRecords.length}`;
 
         if (isWatched) {
           statusDiv.textContent = "🔴 記録中...";
@@ -215,19 +310,278 @@
         }
       }
 
-      startBtn.onclick = () => {
+      // --- Vector math ---
+      function vecLen(v) {
+        return Math.sqrt(v.x ** 2 + v.y ** 2 + v.z ** 2);
+      }
+      function vecNorm(v) {
+        const l = vecLen(v);
+        return { x: v.x / l, y: v.y / l, z: v.z / l };
+      }
+      function vecDot(a, b) {
+        return a.x * b.x + a.y * b.y + a.z * b.z;
+      }
+      function vecCross(a, b) {
+        return {
+          x: a.y * b.z - a.z * b.y,
+          y: a.z * b.x - a.x * b.z,
+          z: a.x * b.y - a.y * b.x,
+        };
+      }
+      function vecScale(v, s) {
+        return { x: v.x * s, y: v.y * s, z: v.z * s };
+      }
+      function vecAdd(a, b) {
+        return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
+      }
+
+      // Rodrigues' rotation: rotate vector v around axis k by angle theta
+      function rotateVec(v, k, cosT, sinT) {
+        // v*cos + (k×v)*sin + k*(k·v)*(1-cos)
+        const kxv = vecCross(k, v);
+        const kdv = vecDot(k, v);
+        return vecAdd(
+          vecAdd(vecScale(v, cosT), vecScale(kxv, sinT)),
+          vecScale(k, kdv * (1 - cosT))
+        );
+      }
+
+      // --- Calibration ---
+      function setStepStatus(el, text, type) {
+        el.textContent = text;
+        if (type === "progress") {
+          el.style.color = "#e67e22";
+          el.style.background = "#fff8e1";
+        } else if (type === "success") {
+          el.style.color = "#27ae60";
+          el.style.background = "#e8f8f0";
+        } else if (type === "error") {
+          el.style.color = "#e74c3c";
+          el.style.background = "#fdecea";
+        }
+      }
+
+      function measureGravity(statusEl, btn) {
+        return new Promise(async (resolve) => {
+          const motionAllowed = await requestMotionPermission();
+          if (!motionAllowed) { resolve(null); return; }
+
+          btn.disabled = true;
+          setStepStatus(statusEl, "計測中... (2秒間静止してください)", "progress");
+
+          const samples = [];
+          const listener = (event) => {
+            const acc = event.accelerationIncludingGravity;
+            if (acc) samples.push({ x: acc.x, y: acc.y, z: acc.z });
+          };
+          window.addEventListener("devicemotion", listener);
+
+          setTimeout(() => {
+            window.removeEventListener("devicemotion", listener);
+            btn.disabled = false;
+
+            if (samples.length < 10) {
+              setStepStatus(statusEl, "失敗: センサーデータが不足しています", "error");
+              resolve(null); return;
+            }
+
+            const sum = samples.reduce(
+              (s, v) => ({ x: s.x + v.x, y: s.y + v.y, z: s.z + v.z }),
+              { x: 0, y: 0, z: 0 }
+            );
+            const n = samples.length;
+            const gravity = { x: sum.x / n, y: sum.y / n, z: sum.z / n };
+
+            const variance = samples.reduce(
+              (s, v) => ({
+                x: s.x + (v.x - gravity.x) ** 2,
+                y: s.y + (v.y - gravity.y) ** 2,
+                z: s.z + (v.z - gravity.z) ** 2,
+              }),
+              { x: 0, y: 0, z: 0 }
+            );
+            const stddev = Math.sqrt((variance.x + variance.y + variance.z) / n);
+            if (stddev > 1.0) {
+              setStepStatus(statusEl, "失敗: 揺れが大きすぎます。静止してやり直してください", "error");
+              resolve(null); return;
+            }
+
+            resolve({ gravity, samples: n, stddev });
+          }, 2000);
+        });
+      }
+
+      step1Btn.onclick = async () => {
+        const result = await measureGravity(step1Status, step1Btn);
+        if (!result) return;
+
+        const { gravity, samples: n, stddev } = result;
+        const down = vecNorm(gravity);
+
+        // Phone Y+ = forward (user holds phone with top pointing forward, horizontally)
+        const phoneY = { x: 0, y: 1, z: 0 };
+        const dotYDown = vecDot(phoneY, down);
+        const forwardRaw = {
+          x: phoneY.x - dotYDown * down.x,
+          y: phoneY.y - dotYDown * down.y,
+          z: phoneY.z - dotYDown * down.z,
+        };
+        const fLen = vecLen(forwardRaw);
+
+        if (fLen < 0.01) {
+          setStepStatus(step1Status, "失敗: スマホが真上/真下を向いています。水平に構えてください", "error");
+          return;
+        }
+
+        const forward = vecNorm(forwardRaw);
+        const lateral = vecCross(down, forward);
+
+        step1Data = { gravity, down, forward, lateral, samples: n, stddev };
+
+        setStepStatus(step1Status, `完了 (${n}サンプル, ブレ: ${stddev.toFixed(3)})`, "success");
+        step1Btn.disabled = true;
+        step2Section.style.display = "block";
+        resetBtn.style.display = "block";
+      };
+
+      step2Btn.onclick = async () => {
+        const result = await measureGravity(step2Status, step2Btn);
+        if (!result) return;
+
+        const { gravity: gravity2, samples: n, stddev } = result;
+        const down2 = vecNorm(gravity2);
+        const down1 = step1Data.down;
+
+        // Find rotation from step1 orientation to step2 orientation
+        // using Rodrigues' formula: rotation that maps down1 → down2
+        const crossD = vecCross(down1, down2);
+        const sinT = vecLen(crossD);
+        const cosT = vecDot(down1, down2);
+
+        let forward2, lateral2;
+        if (sinT < 0.001) {
+          // Same orientation (or 180° flip)
+          if (cosT > 0) {
+            // No rotation needed
+            forward2 = step1Data.forward;
+            lateral2 = step1Data.lateral;
+          } else {
+            // 180° flip — rotate around phone X-axis
+            forward2 = vecScale(step1Data.forward, -1);
+            lateral2 = step1Data.lateral;
+          }
+        } else {
+          // Rotation axis
+          const axis = vecNorm(crossD);
+          forward2 = rotateVec(step1Data.forward, axis, cosT, sinT);
+          lateral2 = rotateVec(step1Data.lateral, axis, cosT, sinT);
+        }
+
+        calibrationData = {
+          gravity: gravity2,
+          down: down2,
+          forward: vecNorm(forward2),
+          lateral: vecNorm(lateral2),
+        };
+
+        const angleDeg = Math.round(Math.acos(Math.min(1, Math.abs(cosT))) * 180 / Math.PI);
+        setStepStatus(step2Status, `完了 (${n}サンプル, STEP1との角度差: ${angleDeg}°)`, "success");
+        step2Btn.disabled = true;
+      };
+
+      resetBtn.onclick = () => {
+        step1Data = null;
+        calibrationData = null;
+        step1Btn.disabled = false;
+        step2Section.style.display = "none";
+        resetBtn.style.display = "none";
+        step1Status.textContent = "";
+        step1Status.style.background = "none";
+        step2Status.textContent = "";
+        step2Status.style.background = "none";
+      };
+
+      function transformAccel(raw) {
+        if (!calibrationData) return null;
+        const { forward, lateral, down, gravity } = calibrationData;
+        // Remove gravity
+        const noGrav = {
+          x: raw.x - gravity.x,
+          y: raw.y - gravity.y,
+          z: raw.z - gravity.z,
+        };
+        return {
+          forward: Math.round(vecDot(noGrav, forward) * 100) / 100,
+          lateral: Math.round(vecDot(noGrav, lateral) * 100) / 100,
+          vertical: Math.round(vecDot(noGrav, down) * 100) / 100,
+        };
+      }
+
+      // --- Accelerometer recording ---
+      let lastAccelTime = 0;
+      const ACCEL_INTERVAL_MS = 1000 / 30; // 30Hz
+
+      function startAccelerometer() {
+        lastAccelTime = 0;
+        accelListener = (event) => {
+          const now = performance.now();
+          if (now - lastAccelTime < ACCEL_INTERVAL_MS) return;
+          lastAccelTime = now;
+          const acc = event.accelerationIncludingGravity;
+          if (!acc) return;
+          const record = {
+            timestamp: toJstTimestamp(new Date()),
+            x: Math.round(acc.x * 100) / 100,
+            y: Math.round(acc.y * 100) / 100,
+            z: Math.round(acc.z * 100) / 100,
+          };
+          const calibrated = transformAccel(acc);
+          if (calibrated) {
+            record.forward = calibrated.forward;
+            record.lateral = calibrated.lateral;
+            record.vertical = calibrated.vertical;
+          }
+          accelRecords.push(record);
+        };
+        window.addEventListener("devicemotion", accelListener);
+      }
+
+      function stopAccelerometer() {
+        if (accelListener) {
+          window.removeEventListener("devicemotion", accelListener);
+          accelListener = null;
+        }
+      }
+
+      async function requestMotionPermission() {
+        // iOS 13+ requires explicit permission request
+        if (typeof DeviceMotionEvent.requestPermission === "function") {
+          const perm = await DeviceMotionEvent.requestPermission();
+          if (perm !== "granted") {
+            alert("加速度センサーの権限が許可されませんでした");
+            return false;
+          }
+        }
+        return true;
+      }
+
+      startBtn.onclick = async () => {
+        const motionAllowed = await requestMotionPermission();
+        if (!motionAllowed) return;
+
         isWatched = true;
         updateStatus();
+
+        // 加速度計測開始
+        startAccelerometer();
+
         if (navigator.geolocation) {
           watchId = navigator.geolocation.watchPosition(
             (pos) => {
               const { latitude, longitude } = pos.coords;
-              // UTC時刻に9時間を加算してJSTにする
-              const utcDate = new Date(pos.timestamp);
-              const jstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000);
-              const timestamp = jstDate.toISOString().replace("Z", "+09:00");
+              const timestamp = toJstTimestamp(new Date(pos.timestamp));
               records.push({ timestamp, latitude, longitude });
-              recordCountDiv.textContent = records.length;
+              updateStatus();
               console.log(`${timestamp}: ${latitude}, ${longitude}`);
             },
             (err) => {
@@ -243,6 +597,7 @@
 
       stopBtn.onclick = () => {
         isWatched = false;
+        stopAccelerometer();
         updateStatus();
         if (watchId !== null) {
           navigator.geolocation.clearWatch(watchId);
@@ -262,12 +617,10 @@
 
         // 開始・終了の日時をフォーマット（JST）
         const startDate = new Date(startRecord.timestamp);
-        const endDate = new Date(endRecord.timestamp);
 
         const dateStr = startDate.toLocaleDateString("ja-JP", {
           timeZone: "Asia/Tokyo",
         }).replaceAll("/", "");
-
 
         const timeStr = startDate.toLocaleTimeString("ja-JP", {
           hour12: false,
@@ -279,20 +632,27 @@
         const endLat = endRecord.latitude.toFixed(4);
         const endLon = endRecord.longitude.toFixed(4);
 
-        // ファイル名を作成
-        const filename = `gps_${dateStr}${timeStr.replaceAll(":", "")}_${startLat}-${startLon}_${endLat}-${endLon}.csv`;
+        const baseName = `gps_${dateStr}${timeStr.replaceAll(":", "")}_${startLat}-${startLon}_${endLat}-${endLon}`;
 
-        const header = "timestamp,latitude,longitude\n";
-        const csv =
-          header +
-          records
-            .map((r) => `${r.timestamp},${r.latitude},${r.longitude}`)
-            .join("\n");
-        const blob = new Blob([csv], { type: "text/csv" });
+        // JSON with both GPS and accelerometer data
+        const data = {
+          gps: records,
+          accelerometer: accelRecords,
+          ...(calibrationData ? {
+            calibration: {
+              gravity: calibrationData.gravity,
+              forward: calibrationData.forward,
+              lateral: calibrationData.lateral,
+              down: calibrationData.down,
+            },
+          } : {}),
+        };
+        const json = JSON.stringify(data);
+        const blob = new Blob([json], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = filename;
+        a.download = `${baseName}.json`;
         a.click();
         URL.revokeObjectURL(url);
       };
