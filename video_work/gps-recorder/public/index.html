@@ -173,6 +173,39 @@
         border-radius: 6px;
       }
 
+      .gbowl-toggle {
+        margin-top: 12px;
+        text-align: center;
+      }
+
+      #gbowl-toggle-btn {
+        background: #555;
+        color: white;
+        font-size: 14px;
+        padding: 10px 20px;
+        min-height: 40px;
+        width: 100%;
+      }
+
+      .gbowl-container {
+        margin-top: 12px;
+        text-align: center;
+      }
+
+      #gbowl-canvas {
+        background: #1a1a2e;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 300px;
+        aspect-ratio: 1;
+      }
+
+      .gbowl-label {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #666;
+      }
+
       .stats {
         margin-top: 20px;
         padding: 15px;
@@ -245,6 +278,13 @@
         <button id="start">▶ 記録開始</button>
         <button id="stop" disabled>⏹ 記録停止</button>
         <button id="download" disabled>⬇ CSVダウンロード</button>
+      </div>
+      <div class="gbowl-toggle">
+        <button id="gbowl-toggle-btn">G-BOWL 表示</button>
+      </div>
+      <div class="gbowl-container" id="gbowl-container" style="display:none;">
+        <canvas id="gbowl-canvas" width="300" height="300"></canvas>
+        <div class="gbowl-label" id="gbowl-label">-- G</div>
       </div>
       <div class="stats">
         <div class="stat-item">
@@ -517,6 +557,142 @@
         };
       }
 
+      // --- G-Bowl ---
+      const gbowlCanvas = document.getElementById("gbowl-canvas");
+      const gbowlCtx = gbowlCanvas.getContext("2d");
+      const gbowlContainer = document.getElementById("gbowl-container");
+      const gbowlToggleBtn = document.getElementById("gbowl-toggle-btn");
+      const gbowlLabel = document.getElementById("gbowl-label");
+      let gbowlVisible = false;
+      const GBOWL_MA_SIZE = 10;
+      const gbowlBuffer = []; // ring buffer for moving average
+      let gbowlAnimId = null;
+
+      gbowlToggleBtn.onclick = () => {
+        gbowlVisible = !gbowlVisible;
+        gbowlContainer.style.display = gbowlVisible ? "block" : "none";
+        gbowlToggleBtn.textContent = gbowlVisible ? "G-BOWL 非表示" : "G-BOWL 表示";
+        if (gbowlVisible) {
+          drawGBowl(0, 0);
+          startGBowlLoop();
+        } else {
+          stopGBowlLoop();
+        }
+      };
+
+      function getGBowlMA() {
+        if (gbowlBuffer.length === 0) return { forward: 0, lateral: 0 };
+        const sum = gbowlBuffer.reduce(
+          (s, v) => ({ forward: s.forward + v.forward, lateral: s.lateral + v.lateral }),
+          { forward: 0, lateral: 0 }
+        );
+        const n = gbowlBuffer.length;
+        return { forward: sum.forward / n, lateral: sum.lateral / n };
+      }
+
+      function pushGBowlSample(calibrated) {
+        gbowlBuffer.push(calibrated);
+        if (gbowlBuffer.length > GBOWL_MA_SIZE) gbowlBuffer.shift();
+      }
+
+      function drawGBowl(latG, fwdG) {
+        const canvas = gbowlCanvas;
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        const ctx = gbowlCtx;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const cx = w / 2;
+        const cy = h / 2;
+        const maxG = 1.5;
+        const radius = Math.min(cx, cy) - 10;
+        const scale = radius / maxG;
+
+        // Background
+        ctx.fillStyle = "#1a1a2e";
+        ctx.fillRect(0, 0, w, h);
+
+        // Concentric rings
+        const rings = [0.5, 1.0, 1.5];
+        rings.forEach(g => {
+          const r = g * scale;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(255,255,255,0.15)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.fillStyle = "rgba(255,255,255,0.3)";
+          ctx.font = "11px sans-serif";
+          ctx.fillText(`${g}G`, cx + r + 3, cy - 3);
+        });
+
+        // Cross hair
+        ctx.strokeStyle = "rgba(255,255,255,0.1)";
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - radius); ctx.lineTo(cx, cy + radius);
+        ctx.moveTo(cx - radius, cy); ctx.lineTo(cx + radius, cy);
+        ctx.stroke();
+
+        // Axis labels
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.font = "12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("加速", cx, cy - radius - 2);
+        ctx.fillText("減速", cx, cy + radius + 12);
+        ctx.textAlign = "left";
+        ctx.fillText("右", cx + radius + 3, cy + 4);
+        ctx.textAlign = "right";
+        ctx.fillText("左", cx - radius - 3, cy + 4);
+        ctx.textAlign = "center";
+
+        // Dot position: lateral = right(+), forward = up(+)
+        const dotX = cx + latG * scale;
+        const dotY = cy - fwdG * scale;
+
+        // Glow
+        const glow = ctx.createRadialGradient(dotX, dotY, 0, dotX, dotY, 12);
+        glow.addColorStop(0, "rgba(0,255,128,0.5)");
+        glow.addColorStop(1, "rgba(0,255,128,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(dotX, dotY, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Dot
+        ctx.beginPath();
+        ctx.arc(dotX, dotY, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#00ff80";
+        ctx.fill();
+      }
+
+      function gbowlFrame() {
+        if (!gbowlVisible) return;
+        const ma = getGBowlMA();
+        const G = 9.81;
+        const latG = ma.lateral / G;
+        const fwdG = ma.forward / G;
+        drawGBowl(latG, fwdG);
+        const totalG = Math.sqrt(latG ** 2 + fwdG ** 2);
+        gbowlLabel.textContent = `${totalG.toFixed(2)} G (前後: ${fwdG.toFixed(2)} / 左右: ${latG.toFixed(2)})`;
+        gbowlAnimId = requestAnimationFrame(gbowlFrame);
+      }
+
+      function startGBowlLoop() {
+        stopGBowlLoop();
+        gbowlAnimId = requestAnimationFrame(gbowlFrame);
+      }
+
+      function stopGBowlLoop() {
+        if (gbowlAnimId) {
+          cancelAnimationFrame(gbowlAnimId);
+          gbowlAnimId = null;
+        }
+      }
+
       // --- Accelerometer recording ---
       let lastAccelTime = 0;
       const ACCEL_INTERVAL_MS = 1000 / 30; // 30Hz
@@ -540,6 +716,7 @@
             record.forward = calibrated.forward;
             record.lateral = calibrated.lateral;
             record.vertical = calibrated.vertical;
+            pushGBowlSample(calibrated);
           }
           accelRecords.push(record);
         };
