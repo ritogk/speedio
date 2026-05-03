@@ -187,12 +187,12 @@ def predict_to_db(pref_code: str, batch_size: int = 16, write_db: bool = False, 
         try:
             update_query = """
                 UPDATE locations
-                SET claude_center_line = %s
+                SET claude_center_line = %s, claude_center_line_score = %s
                 WHERE ST_Y(point) = %s AND ST_X(point) = %s
             """
 
             update_data = [
-                (r["has_center_line"], r["lat"], r["lng"])
+                (r["has_center_line"], r["probability"], r["lat"], r["lng"])
                 for r in results
             ]
 

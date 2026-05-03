@@ -380,6 +380,9 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
     gdf_edges["score_center_line_section"] = column_generater.score_center_line_section.generate(gdf_edges)
     gdf_edges["score_claude_center_line_section"] = column_generater.score_claude_center_line_section.generate(gdf_edges)
+    gdf_edges["score_claude_center_line_section_detail"] = gdf_edges["locations"].apply(
+        lambda locs: sum(loc.get("claude_center_line_score") or 0 for loc in locs) / len(locs) if len(locs) > 0 else 0
+    )
     # gdf_edges["score_width"] = 1
     score_corner_week, score_corner_medium, score_corner_strong, score_corner_none = column_generater.score_corner_level.generate(gdf_edges)
     gdf_edges["score_corner_week"] = score_corner_week
@@ -499,6 +502,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "score_tunnel_outside",
         "score_center_line_section",
         "score_claude_center_line_section",
+        "score_claude_center_line_section_detail",
         "google_earth_url",
         "street_view_url",
         "lanes",
