@@ -93,6 +93,15 @@ export class Location {
   claude_center_line?: boolean;
 
   @Column({
+    type: 'real',
+    nullable: true,
+  })
+  @ApiProperty({
+    description: 'センターラインの確信度(Claudeの推定、0-1)',
+  })
+  claude_center_line_score?: number;
+
+  @Column({
     type: 'float',
     nullable: true,
   })
