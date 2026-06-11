@@ -1093,7 +1093,8 @@ async function switchPref(code){
   }
   showLoading(true, `${PREFECTURES[code]}のデータを読み込み中…`);
   try{
-    const res = await fetch(`./targets/${code}/target.json?_=${Date.now()}`, {cache:"no-store"});
+    // slim版（ビュワー用に軽量化+gzip配信）。Cache-Controlに任せてブラウザ/CDNキャッシュを効かせる
+    const res = await fetch(`./targets/${code}/target.slim.json`);
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const raw = await res.json();
     currentItems = raw.map(toViewModel);
