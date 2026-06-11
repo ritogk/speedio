@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>峠サーチャー 3D｜日本全国の峠道を探す</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F3E8;
+  --paper-deep:#EFE8D6;
+  --contour:#C9B89A;
+  --ink:#2B2722;
+  --ink-soft:#6B6357;
+  --mountain:#3E6B4F;
+  --route-red:#C03A2B;
+  --corner-strong:#C03A2B;
+  --corner-medium:#D98E2B;
+  --corner-weak:#3E6B4F;
+  --straight:#9C9484;
+  --radius:10px;
+  --header-h:52px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overscroll-behavior:none;touch-action:manipulation}
+body{
+  font-family:"Zen Kaku Gothic New",sans-serif;
+  color:var(--ink);background:var(--paper);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+
+header{
+  height:var(--header-h);
+  display:flex;align-items:center;gap:10px;
+  padding:0 12px;
+  background:var(--paper);
+  border-bottom:2px solid var(--ink);
+  z-index:1300;flex-shrink:0;
+}
+.logo{
+  font-family:"Shippori Mincho B1",serif;
+  font-size:20px;line-height:1;
+  background:var(--ink);color:var(--paper);
+  padding:5px 7px;border-radius:6px;flex-shrink:0;
+}
+header h1{font-size:15px;font-weight:700;letter-spacing:.04em;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pref-select{
+  margin-left:auto;
+  font:inherit;font-size:13px;font-weight:500;
+  border:1.5px solid var(--ink);border-radius:999px;
+  background:#fff;color:var(--ink);
+  padding:5px 28px 5px 14px;cursor:pointer;
+  appearance:none;max-width:42vw;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%232B2722' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;
+}
+.locate-btn{
+  font:inherit;font-size:12px;font-weight:500;cursor:pointer;
+  border:1.5px solid var(--ink);border-radius:999px;
+  background:#fff;padding:5px 12px;white-space:nowrap;flex-shrink:0;
+}
+.locate-btn:hover{border-color:var(--route-red);color:var(--route-red)}
+
+@media (max-width:480px){
+  header{gap:7px;padding:0 10px}
+  .logo{font-size:17px;padding:4px 6px}
+  header h1{font-size:13px}
+  .pref-select{font-size:12px;padding:5px 24px 5px 10px;max-width:36vw;background-position:right 9px center}
+  .locate-btn{padding:5px 9px}
+  .locate-btn .locate-label{display:none}
+}
+
+main{flex:1;position:relative;min-height:0}
+#map{position:absolute;inset:0;background:var(--paper-deep)}
+#ghostLine{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1050}
+#ghostLine path{
+  fill:none;stroke:var(--route-red);stroke-width:3;
+  stroke-opacity:.35;stroke-dasharray:7 6;stroke-linecap:round;stroke-linejoin:round;
+}
+
+/* 地図上コントロール（左上） */
+.map-ctrl{
+  position:absolute;top:10px;left:10px;z-index:1250;
+  display:flex;gap:6px;flex-wrap:wrap;
+}
+.ctrl-btn{
+  font:inherit;font-size:12px;font-weight:500;cursor:pointer;
+  border:1.5px solid var(--ink);border-radius:999px;
+  background:var(--paper);padding:6px 13px;
+}
+.ctrl-btn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* ビュー操作（長押しで回転 / タップで北向きリセット） */
+.view-ctrl{
+  position:absolute;right:10px;bottom:calc(96px + 14px);z-index:1100;
+  display:flex;flex-direction:column;gap:8px;
+}
+.view-ctrl button{
+  width:42px;height:42px;border-radius:50%;
+  border:1.5px solid var(--ink);background:rgba(247,243,232,.95);
+  font-size:18px;color:var(--ink);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 4px rgba(0,0,0,.25);
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
+.view-ctrl button:active{background:var(--ink);color:var(--paper)}
+@media (min-width:761px){
+  .view-ctrl{display:none} /* PCはドラッグで回転できる */
+}
+
+.legend{
+  position:absolute;left:10px;bottom:calc(96px + 10px);z-index:1100;
+  font-size:10px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.85);
+  pointer-events:none;
+}
+.legend li{list-style:none;display:flex;align-items:center;gap:6px;margin-top:3px}
+.legend li:first-child{margin-top:0}
+.swatch{width:16px;height:4px;border-radius:2px;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.5)}
+
+.panel{
+  position:absolute;left:0;right:0;bottom:0;z-index:1200;
+  background:var(--paper);
+  border-top:2px solid var(--ink);
+  border-radius:16px 16px 0 0;
+  display:flex;flex-direction:column;
+  height:80dvh;
+  transform:translateY(calc(100% - 96px));
+  transition:transform .28s cubic-bezier(.3,.9,.3,1);
+  touch-action:none;
+  box-shadow:0 -4px 16px rgba(43,39,34,.18);
+}
+.panel.half{transform:translateY(45%)}
+.panel.full{transform:translateY(0)}
+.sheet-handle{flex-shrink:0;padding:8px 16px 6px;cursor:grab;user-select:none}
+.sheet-handle .grip{width:42px;height:4px;border-radius:2px;background:var(--contour);margin:0 auto 8px}
+.sheet-head{display:flex;align-items:baseline;gap:8px}
+.sheet-head h2{font-size:13px;font-weight:700;letter-spacing:.04em}
+.sheet-head .count{font-size:11px;color:var(--ink-soft)}
+.sheet-head .pref-name{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--route-red)}
+.panel-body{flex:1;overflow-y:auto;min-height:0;padding:4px 14px 24px;-webkit-overflow-scrolling:touch}
+
+.searchbox{padding:2px 0 8px}
+.searchbox input{
+  width:100%;font:inherit;font-size:13px;
+  border:1.5px solid var(--ink);border-radius:8px;
+  background:#fff;padding:7px 10px;
+}
+.searchbox input:focus{outline:2px solid var(--route-red);outline-offset:1px}
+
+.more-btn{
+  display:block;width:100%;margin:4px 0 8px;
+  font:inherit;font-size:12px;font-weight:500;cursor:pointer;
+  border:1.5px dashed var(--ink);border-radius:var(--radius);
+  background:var(--paper);padding:10px;color:var(--ink);
+}
+.more-btn:hover{border-style:solid;color:var(--route-red);border-color:var(--route-red)}
+.no-hit{font-size:12px;color:var(--ink-soft);padding:10px 0}
+
+.presets{padding:4px 0 10px;border-bottom:1px dashed var(--contour);margin-bottom:10px}
+.chip-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chip-row::-webkit-scrollbar{display:none}
+.chip{
+  font:inherit;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;
+  border:1.5px solid var(--ink);border-radius:999px;
+  background:#fff;color:var(--ink);padding:5px 12px;flex-shrink:0;
+}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.preset-hint{font-size:11px;color:var(--ink-soft);margin-top:7px;line-height:1.5}
+
+.card{
+  position:relative;background:#fff;border:1.5px solid var(--ink);
+  border-radius:var(--radius);padding:11px 12px 11px 50px;margin-bottom:10px;
+  cursor:pointer;
+  opacity:var(--fade,1);transition:opacity .15s;
+}
+.card:hover,.card:focus-visible,.card.active{opacity:1}
+.card.active{box-shadow:3px 3px 0 var(--route-red)}
+.rank-badge{
+  position:absolute;left:11px;top:11px;
+  font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:500;
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--paper-deep);border:1.5px solid var(--ink);
+}
+.card.top1 .rank-badge{background:var(--ink);color:var(--paper)}
+.card-top{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
+.route-oval{
+  font-family:"IBM Plex Mono",monospace;font-size:10px;color:#fff;
+  background:var(--route-red);border-radius:999px;padding:2px 8px;white-space:nowrap;
+}
+.card-top h3{font-size:14px;font-weight:700;word-break:break-all}
+.today-pick{
+  font-size:9px;font-weight:700;color:var(--route-red);
+  border:1px solid var(--route-red);border-radius:4px;padding:1px 5px;letter-spacing:.08em;
+}
+.meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
+.meta b{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-weight:500}
+.bars{display:grid;grid-template-columns:58px 1fr 28px;gap:3px 8px;align-items:center}
+.bars .bl{font-size:10px;color:var(--ink-soft)}
+.bars .bv{font-family:"IBM Plex Mono",monospace;font-size:10px;text-align:right}
+.track{height:6px;background:var(--paper-deep);border-radius:3px;overflow:hidden}
+.fill{height:100%;background:var(--mountain);border-radius:3px}
+.fill.c{background:var(--route-red)}
+.fill.u{background:var(--corner-medium)}
+.card-actions{display:flex;gap:6px;margin-top:9px}
+.btn{
+  font:inherit;font-size:11px;font-weight:500;cursor:pointer;
+  border:1.5px solid var(--ink);border-radius:6px;background:var(--paper);
+  padding:5px 10px;text-decoration:none;color:var(--ink);
+}
+.btn.primary{background:var(--ink);color:var(--paper)}
+
+.rank-marker{
+  background:var(--route-red);color:#fff;border:2px solid #fff;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;
+  box-shadow:0 1px 3px rgba(0,0,0,.4);
+  width:26px;height:26px;cursor:pointer;
+}
+.ring-label{
+  font-family:"IBM Plex Mono",monospace;font-size:10px;color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.85);pointer-events:none;
+}
+.maplibregl-ctrl-attrib{font-size:10px}
+
+.loading-overlay{
+  position:absolute;inset:0;z-index:1400;
+  background:rgba(43,39,34,.45);
+  display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;
+}
+.loading-overlay.show{display:flex}
+.spinner{
+  width:46px;height:46px;border-radius:50%;
+  border:4px solid var(--paper);border-top-color:var(--route-red);
+  animation:spin 1s linear infinite;
+}
+.loading-overlay p{color:var(--paper);font-size:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.toast{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1500;
+  background:var(--ink);color:var(--paper);font-size:12px;
+  border-radius:999px;padding:7px 18px;opacity:0;transition:opacity .3s;pointer-events:none;
+  max-width:90vw;text-align:center;
+}
+.toast.show{opacity:.95}
+
+@media (min-width:761px){
+  .chip-row{flex-wrap:wrap;overflow-x:visible}
+  .panel{
+    left:0;right:auto;top:0;bottom:0;height:auto;
+    width:350px;border-radius:0;border-top:0;border-right:2px solid var(--ink);
+    transform:none !important;transition:margin-left .25s;box-shadow:none;
+  }
+  .panel.hidden-side{margin-left:-352px}
+  .sheet-handle{cursor:default}
+  .sheet-handle .grip{display:none}
+  .legend{left:auto;right:10px;bottom:24px}
+  .map-ctrl{left:362px;transition:left .25s}
+  .panel.hidden-side ~ .map-ctrl, body:has(.panel.hidden-side) .map-ctrl{left:10px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">峠</div>
+  <h1>峠サーチャー <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--route-red)">3D</span></h1>
+  <select class="pref-select" id="prefSelect" aria-label="都道府県を選択"></select>
+  <button class="locate-btn" id="locateBtn">📍<span class="locate-label"> 現在地</span></button>
+</header>
+
+<main>
+  <div id="map"></div>
+  <svg id="ghostLine" aria-hidden="true"></svg>
+
+  <div class="map-ctrl">
+    <button class="ctrl-btn" id="sideToggle" style="display:none">☰ ランキング</button>
+    <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">⛰ 3D地形</button>
+  </div>
+
+  <div class="view-ctrl" id="viewCtrl">
+    <button id="rotL" aria-label="左に回転">⟲</button>
+    <button id="rotR" aria-label="右に回転">⟳</button>
+  </div>
+
+  <div class="legend">
+    <ul>
+      <li><span class="swatch" style="background:var(--corner-strong)"></span>低速コーナー</li>
+      <li><span class="swatch" style="background:var(--corner-medium)"></span>中速</li>
+      <li><span class="swatch" style="background:var(--corner-weak)"></span>高速</li>
+      <li><span class="swatch" style="background:var(--straight)"></span>ストレート</li>
+    </ul>
+  </div>
+
+  <section class="panel" id="panel">
+    <div class="sheet-handle" id="sheetHandle">
+      <div class="grip"></div>
+      <div class="sheet-head">
+        <h2>この県のおすすめ</h2>
+        <span class="count" id="resultCount"></span>
+        <span class="pref-name" id="prefName">未選択</span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="searchbox">
+        <input id="searchInput" type="search" placeholder="🔍 峠名・道路種別で検索" autocomplete="off">
+      </div>
+      <section class="presets">
+        <div class="chip-row" role="group" aria-label="評価プリセット">
+          <button class="chip" aria-pressed="true" data-preset="balance">バランス</button>
+          <button class="chip" aria-pressed="false" data-preset="corner">コーナー重視</button>
+          <button class="chip" aria-pressed="false" data-preset="updown">高低差重視</button>
+          <button class="chip" aria-pressed="false" data-preset="relax">のんびり快走</button>
+        </div>
+        <p class="preset-hint" id="presetHint">コーナー・高低差・道幅をバランスよく評価します。</p>
+      </section>
+      <div id="cards"></div>
+    </div>
+  </section>
+
+  <div class="loading-overlay" id="loading"><div class="spinner"></div><p id="loadingText">読み込み中…</p></div>
+  <div class="toast" id="toast"></div>
+</main>
+
+<script>
+function initApp(){
+"use strict";
+
+// ================= 定数 =================
+const MARKER_N = 20;
+// ランクに応じたフェード係数（1位=1.0 → 最下位=下限値）
+function fadeOf(i, len, floor){
+  if(len <= 1) return 1;
+  return Math.max(floor, 1 - (1 - floor) * (i / (len - 1)));
+}
+
+const PREFECTURES = {
+  "01":"北海道","02":"青森県","03":"岩手県","04":"宮城県","05":"秋田県","06":"山形県","07":"福島県",
+  "08":"茨城県","09":"栃木県","10":"群馬県","11":"埼玉県","12":"千葉県","13":"東京都","14":"神奈川県",
+  "15":"新潟県","16":"富山県","17":"石川県","18":"福井県","19":"山梨県","20":"長野県","21":"岐阜県",
+  "22":"静岡県","23":"愛知県","24":"三重県","25":"滋賀県","26":"京都府","27":"大阪府","28":"兵庫県",
+  "29":"奈良県","30":"和歌山県","31":"鳥取県","32":"島根県","33":"岡山県","34":"広島県","35":"山口県",
+  "36":"徳島県","37":"香川県","38":"愛媛県","39":"高知県","40":"福岡県","41":"佐賀県","42":"長崎県",
+  "43":"熊本県","44":"大分県","45":"宮崎県","46":"鹿児島県","47":"沖縄県"
+};
+const HIGHWAY_LABEL = {trunk:"国道(主要)",trunk_link:"国道(主要)",primary:"国道",primary_link:"国道",secondary:"県道",secondary_link:"県道",tertiary:"一般道"};
+
+const presetHints = {
+  balance:"コーナー・高低差・道幅をバランスよく評価します。",
+  corner:"ヘアピンや中速コーナーが連続する道を上位にします。",
+  updown:"アップダウンと標高差の大きい道を上位にします。",
+  relax:"道幅が広く、緩いカーブ主体の快走路を上位にします。"
+};
+const presetWeights = {
+  balance:{corner:1,updown:1,width:1},
+  corner:{corner:2.2,updown:0.7,width:0.8},
+  updown:{corner:0.7,updown:2.2,width:0.8},
+  relax:{corner:0.4,updown:0.6,width:2.4}
+};
+let currentPreset = "balance";
+let currentItems = [];
+const prefCache = {};
+
+// ================= ユーティリティ =================
+const $ = id => document.getElementById(id);
+function showLoading(on, text){
+  $("loading").classList.toggle("show", on);
+  if(text) $("loadingText").textContent = text;
+}
+let toastTimer = null;
+function toast(msg){
+  const el = $("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove("show"), 3500);
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function cssVar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+
+// ================= 国土地理院DEM → terrain-rgb 変換プロトコル =================
+// GSIのdem_png(標高PNG)をMapLibreが読めるMapbox terrain-rgb形式に変換する
+const FLAT_TILE = (()=>{ // 標高0mの平坦タイル（エラー時フォールバック用）
+  let cache = null;
+  return async () => {
+    if(cache) return cache;
+    const cv = document.createElement("canvas");
+    cv.width = 256; cv.height = 256;
+    const ctx = cv.getContext("2d");
+    ctx.fillStyle = "rgb(1,134,160)";
+    ctx.fillRect(0,0,256,256);
+    const blob = await new Promise(r=>cv.toBlob(r,"image/png"));
+    cache = await blob.arrayBuffer();
+    return cache;
+  };
+})();
+maplibregl.addProtocol("gsidem", async (params) => {
+  try {
+    const url = params.url.replace("gsidem://", "");
+    const res = await fetch(url);
+    if(!res.ok) return {data: await FLAT_TILE()}; // 海上など標高タイルが無い領域
+    const blob = await res.blob();
+    const bmp = await createImageBitmap(blob);
+    const cv = document.createElement("canvas");
+    cv.width = bmp.width; cv.height = bmp.height;
+    const ctx = cv.getContext("2d");
+    ctx.drawImage(bmp, 0, 0);
+    const img = ctx.getImageData(0, 0, cv.width, cv.height);
+    const d = img.data;
+    for(let i = 0; i < d.length; i += 4){
+      const x = d[i]*65536 + d[i+1]*256 + d[i+2];
+      let h = 0;
+      if(x !== 8388608){ // 無効値(2^23)以外
+        h = x < 8388608 ? x*0.01 : (x-16777216)*0.01;
+      }
+      const v = Math.round((h + 10000) * 10); // mapbox terrain-rgb encode
+      d[i]   = Math.floor(v / 65536) % 256;
+      d[i+1] = Math.floor(v / 256) % 256;
+      d[i+2] = v % 256;
+      d[i+3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    const outBlob = await new Promise(r=>cv.toBlob(r,"image/png"));
+    return {data: await outBlob.arrayBuffer()};
+  } catch(err) {
+    console.warn("[gsidem] tile convert failed:", err.message);
+    return {data: await FLAT_TILE()};
+  }
+});
+
+// ================= 地図 =================
+const GSI_ATTR = '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">国土地理院</a>';
+const map = new maplibregl.Map({
+  container: "map",
+  style: {
+    version: 8,
+    sources: {
+      photo: {
+        type:"raster",
+        tiles:["https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg"],
+        tileSize:256, maxzoom:18, attribution:GSI_ATTR
+      },
+      gsiTerrain: {
+        type:"raster-dem",
+        tiles:["gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png"],
+        tileSize:256, maxzoom:14
+      }
+    },
+    layers: [
+      {id:"photo", type:"raster", source:"photo",
+       paint:{"raster-brightness-max":.9, "raster-saturation":-.1, "raster-contrast":.03}}, // スモーク（明るさを抑えて彩度も少し落とす）
+      {id:"greenTint", type:"background",
+       paint:{"background-color":"#1E4D33", "background-opacity":.18}} // 地表に重ねる濃い緑の薄いベール
+    ],
+    terrain: {source:"gsiTerrain", exaggeration:1.2}
+  },
+  center: [137.5, 36.2],
+  zoom: 5,
+  pitch: 55,
+  bearing: -10,
+  maxPitch: 75,
+  attributionControl: {compact:true}
+});
+
+const levelColor = {
+  strong:cssVar("--corner-strong"), medium:cssVar("--corner-medium"),
+  weak:cssVar("--corner-weak"), none:cssVar("--straight"), straight:cssVar("--straight")
+};
+
+let mapReady = false;
+map.on("load", () => {
+  // 現在地からの距離サークル（20km刻み、道路レイヤーより下に描く）
+  map.addSource("rings", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
+  map.addLayer({
+    id:"rings", type:"line", source:"rings",
+    paint:{"line-color":"#ffffff","line-opacity":.55,"line-width":1.5,"line-dasharray":[3,3]}
+  });
+
+  // 道路レイヤー（選択グロー + 白縁 + コーナー色分け）
+  map.addSource("touge", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
+  map.addLayer({
+    id:"touge-selected", type:"line", source:"touge",
+    filter:["==",["get","tid"],-9999],
+    layout:{"line-cap":"round","line-join":"round"},
+    paint:{
+      "line-color":cssVar("--route-red"),
+      "line-width":["interpolate",["linear"],["zoom"],8,10,14,22],
+      "line-blur":3,
+      "line-opacity":.85
+    }
+  });
+  map.addLayer({
+    id:"touge-casing", type:"line", source:"touge",
+    layout:{"line-cap":"round","line-join":"round"},
+    paint:{"line-color":"#ffffff","line-width":["interpolate",["linear"],["zoom"],8,5,14,11],"line-opacity":["*",.9,["coalesce",["get","fade"],1]]}
+  });
+  map.addLayer({
+    id:"touge-line", type:"line", source:"touge",
+    layout:{"line-cap":"round","line-join":"round"},
+    paint:{
+      "line-color":["match",["get","level"],
+        "strong",levelColor.strong,
+        "medium",levelColor.medium,
+        "weak",levelColor.weak,
+        levelColor.straight],
+      "line-width":["interpolate",["linear"],["zoom"],8,2.5,14,6],
+      "line-opacity":["coalesce",["get","fade"],1]
+    }
+  });
+  // 道路ラインを直接クリック/タップで選択（casingの方が太いのでタップ判定に含める）
+  ["touge-line","touge-casing"].forEach(layer=>{
+    map.on("click", layer, e=>{
+      const tid = e.features?.[0]?.properties?.tid;
+      const t = lastRanked.find(x=>x.id === tid);
+      if(t) revealAndSelect(t);
+    });
+    map.on("mouseenter", layer, ()=>{ map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", layer, ()=>{ map.getCanvas().style.cursor = ""; });
+  });
+  mapReady = true;
+  if(pendingGeojson){ map.getSource("touge").setData(pendingGeojson); pendingGeojson = null; }
+});
+
+let markers = [];
+let pendingGeojson = null;
+
+function drawMap(list){
+  // GeoJSON生成: road_sectionをコーナーレベル毎のLineStringに
+  const features = [];
+  list.forEach((t,i)=>{
+    const fade = fadeOf(i, list.length, 0.25); // 下位ほど薄く（下限25%）
+    if(t.roadSection.length){
+      t.roadSection.forEach(sec=>{
+        const pts = (sec.points||[]); // [lng,lat]のままでOK(GeoJSONはlng,lat順)
+        if(pts.length < 2) return;
+        const lv = (sec.section_type === "straight") ? "straight" : (sec.corner_level || "weak");
+        features.push({type:"Feature",properties:{level:lv,fade,tid:t.id},geometry:{type:"LineString",coordinates:pts}});
+      });
+    }else if(t.poly.length){
+      features.push({type:"Feature",properties:{level:"weak",fade,tid:t.id},
+        geometry:{type:"LineString",coordinates:t.poly.map(p=>[p[1],p[0]])}});
+    }
+  });
+  const geojson = {type:"FeatureCollection", features};
+  if(mapReady) map.getSource("touge").setData(geojson);
+  else pendingGeojson = geojson;
+
+  // ランクマーカー
+  markers.forEach(m=>m.remove());
+  markers = [];
+  list.slice(0, MARKER_N).forEach((t,i)=>{
+    const el = document.createElement("div");
+    el.className = "rank-marker";
+    el.textContent = i+1;
+    el.addEventListener("click",()=>revealAndSelect(t));
+    const m = new maplibregl.Marker({element:el})
+      .setLngLat([t.center[1], t.center[0]])
+      .addTo(map);
+    markers.push(m);
+  });
+}
+
+// サイドバー/ボトムシートに隠れていない「見えている領域」の中心に合わせるためのパディング
+function viewPadding(extra){
+  const e = extra || 0;
+  if(window.innerWidth <= 760){
+    return {top:e+10, left:e+10, right:e+10, bottom:e+110}; // 下110px ≒ ボトムシートのpeek分
+  }
+  const side = document.getElementById("panel").classList.contains("hidden-side") ? 0 : 350;
+  return {top:e, left:e+side, right:e, bottom:e};
+}
+
+// 峠に「滑空」するカメラ演出
+// 飛行中にリサイズ等で中断されると中途半端な位置で止まるため、
+// ユーザー自身の操作による中断でなければ最後に着地位置を保証する
+let flightAbort = null;
+function flyToTouge(t){
+  if(!t.poly.length) return;
+  const st = t.poly[0], ed = t.poly[t.poly.length-1];
+  // 道の方向に合わせてベアリングを計算（コンパス方位: 0=北, 90=東）
+  const bearing = Math.atan2(ed[1]-st[1], ed[0]-st[0]) * 180 / Math.PI;
+  const target = {
+    center:[t.center[1], t.center[0]],
+    zoom:14,
+    pitch:70,
+    bearing,
+    padding:viewPadding(0),
+    duration:1800,
+    essential:true
+  };
+  if(flightAbort) flightAbort(); // 直前の飛行の着地保証を無効化
+  let cancelled = false;
+  const userEvents = ["dragstart","zoomstart","rotatestart","pitchstart"];
+  const onUser = e => { if(e.originalEvent) cancelled = true; };
+  userEvents.forEach(ev=>map.on(ev,onUser));
+  const cleanup = ()=>{ userEvents.forEach(ev=>map.off(ev,onUser)); flightAbort = null; };
+  flightAbort = ()=>{ cancelled = true; cleanup(); };
+  map.flyTo(target);
+  map.once("moveend", ()=>{
+    const userTookOver = cancelled;
+    cleanup();
+    if(!userTookOver) map.jumpTo(target); // 完走時は実質no-op、中断時はここで着地
+  });
+}
+
+// ================= ビューモデル =================
+function toViewModel(raw, idx){
+  const poly = raw.geometry_list || [];
+  const center = poly.length ? poly[Math.floor(poly.length/2)] : [35.0,137.0];
+  let name = raw.name;
+  if(Array.isArray(name)) name = name.filter(Boolean).join(" / ");
+  if(!name) name = "（名称未登録の道）";
+  const corner = Math.max(0, Math.min(1, 1 - (raw.score_corner_none ?? 1)));
+  const updown = Math.max(0, Math.min(1, ((raw.score_elevation ?? 0) + (raw.score_elevation_unevenness ?? 0)) / 2));
+  const width = Math.max(0, Math.min(1, raw.score_width ?? 0));
+  return {
+    id: idx, name,
+    routeLabel: HIGHWAY_LABEL[Array.isArray(raw.highway) ? raw.highway[0] : raw.highway] || "一般道",
+    lengthKm: Math.round((raw.length || 0) / 100) / 10,
+    height: Math.round(raw.elevation_height || 0),
+    corner, updown, width,
+    center, poly,
+    roadSection: raw.road_section || [],
+    googleEarthUrl: raw.google_earth_url
+  };
+}
+function googleMapUrl(poly){
+  if(!poly.length) return "#";
+  const st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
+  return `https://www.google.co.jp/maps/dir/${st[0]},${st[1]}/${ct[0]},${ct[1]}/${ed[0]},${ed[1]}`;
+}
+// ライン中央点のストリートビューを進行方向向きで開くURL（target.json内の旧形式URLは廃止されたため自前生成）
+function streetViewUrl(poly){
+  if(poly.length < 2) return null;
+  const i = Math.floor(poly.length/2);
+  const a = poly[Math.max(0, i-1)], b = poly[Math.min(poly.length-1, i+1)], c = poly[i];
+  const toRad = d => d*Math.PI/180;
+  const dLng = toRad(b[1]-a[1]);
+  const y = Math.sin(dLng)*Math.cos(toRad(b[0]));
+  const x = Math.cos(toRad(a[0]))*Math.sin(toRad(b[0])) - Math.sin(toRad(a[0]))*Math.cos(toRad(b[0]))*Math.cos(dLng);
+  const heading = Math.round((Math.atan2(y,x)*180/Math.PI + 360) % 360);
+  return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c[0]},${c[1]}&heading=${heading}&pitch=0&fov=90`;
+}
+
+// ================= ランキング =================
+function rankedList(){
+  const w = presetWeights[currentPreset];
+  const sum = w.corner + w.updown + w.width;
+  return [...currentItems]
+    .map(t=>({...t,_s:(t.corner*w.corner + t.updown*w.updown + t.width*w.width)/sum}))
+    .sort((a,b)=>b._s-a._s);
+}
+const PAGE_N = 30;
+let visibleCount = PAGE_N;
+let searchQuery = "";
+let lastRanked = [];
+
+function cardHtml(t, rank, total){
+  const sv = streetViewUrl(t.poly);
+  return `
+    <article class="card${rank===0?" top1":""}" data-id="${t.id}" tabindex="0" style="--fade:${fadeOf(rank, total, 0.45).toFixed(2)}">
+      <div class="rank-badge">${rank+1}</div>
+      <div class="card-top">
+        <span class="route-oval">${escapeHtml(t.routeLabel)}</span><h3>${escapeHtml(t.name)}</h3>
+        ${rank===0?'<span class="today-pick">本日の一本</span>':""}
+      </div>
+      <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b> ・ 総合 <b>${Math.round(t._s*100)}</b>点</p>
+      <div class="bars">
+        <span class="bl">コーナー</span><div class="track"><div class="fill c" style="width:${Math.round(t.corner*100)}%"></div></div><span class="bv">${Math.round(t.corner*100)}</span>
+        <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
+        <span class="bl">道幅</span><div class="track"><div class="fill" style="width:${Math.round(t.width*100)}%"></div></div><span class="bv">${Math.round(t.width*100)}</span>
+      </div>
+      <div class="card-actions">
+        <a class="btn primary" href="${googleMapUrl(t.poly)}" target="_blank" rel="noopener" data-act="link">🚗 ここへ行く</a>
+        ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">📷 路面</a>`:""}
+      </div>
+    </article>`;
+}
+
+function renderCards(){
+  const ranked = lastRanked;
+  const q = searchQuery.trim().toLowerCase();
+  let view = ranked.map((t,i)=>({t, rank:i}));
+  if(q) view = view.filter(({t}) =>
+    t.name.toLowerCase().includes(q) || t.routeLabel.toLowerCase().includes(q));
+  const shown = q ? view : view.slice(0, visibleCount);
+
+  $("resultCount").textContent = q
+    ? `検索ヒット ${view.length}件`
+    : `全${ranked.length}件中 ${shown.length}件表示`;
+
+  let html = shown.map(({t, rank}) => cardHtml(t, rank, ranked.length)).join("");
+  if(q && !view.length){
+    html = `<p class="no-hit">「${escapeHtml(searchQuery)}」に一致する峠はありません</p>`;
+  }
+  if(!q && visibleCount < ranked.length){
+    const rest = ranked.length - visibleCount;
+    html += `<button class="more-btn" id="moreBtn">さらに${Math.min(PAGE_N, rest)}件表示（残り${rest}件）</button>`;
+  }
+  $("cards").innerHTML = html;
+
+  document.querySelectorAll(".card").forEach(card=>{
+    card.addEventListener("click",e=>{
+      if(e.target.dataset.act === "link") return;
+      const t = ranked.find(x=>x.id === Number(card.dataset.id));
+      if(!t) return;
+      selectCard(t.id,false);
+      setSheet("peek");
+      flyToTouge(t);
+    });
+  });
+  const mb = document.getElementById("moreBtn");
+  if(mb) mb.addEventListener("click",()=>{ visibleCount += PAGE_N; renderCards(); });
+}
+
+function render(){
+  lastRanked = rankedList();
+  renderCards();
+  drawMap(lastRanked);
+}
+
+// 地図上のライン/マーカーから選んだとき、リスト側でそのカードまで開いて選択する
+function revealAndSelect(t){
+  const rank = lastRanked.findIndex(x=>x.id === t.id);
+  if(rank < 0) return;
+  if(searchQuery){ searchQuery = ""; $("searchInput").value = ""; }
+  if(rank + 1 > visibleCount) visibleCount = Math.ceil((rank + 1) / PAGE_N) * PAGE_N;
+  renderCards();
+  selectCard(t.id, true);
+  setSheet("peek");
+  flyToTouge(t);
+}
+function selectCard(id,scroll){
+  document.querySelectorAll(".card").forEach(c=>c.classList.toggle("active", Number(c.dataset.id)===id));
+  if(scroll){
+    // scrollIntoView はウィンドウごとスクロールしてヘッダーが見切れるため、パネル内部だけをスクロールする
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    const body = document.querySelector(".panel-body");
+    if(card && body){
+      const delta = card.getBoundingClientRect().top - body.getBoundingClientRect().top;
+      body.scrollTo({top: body.scrollTop + delta - 8, behavior:"smooth"});
+    }
+  }
+  highlightOnMap(id);
+}
+// 選択中の峠を地図上で強調（グロー表示 + フェード解除）
+function highlightOnMap(id){
+  if(!mapReady) return;
+  const sel = ["==",["get","tid"], id ?? -9999];
+  map.setFilter("touge-selected", sel);
+  map.setPaintProperty("touge-line", "line-opacity",
+    ["case", sel, 1, ["coalesce",["get","fade"],1]]);
+  map.setPaintProperty("touge-casing", "line-opacity",
+    ["case", sel, 1, ["*",.9,["coalesce",["get","fade"],1]]]);
+  const t = id != null ? lastRanked.find(x=>x.id === id) : null;
+  setGhost(t ? t.poly : null);
+}
+
+// ===== ゴーストライン =====
+// 地形に貼り付くラインは山の陰に隠れるため、選択中の峠だけ
+// SVGオーバーレイで全経路を破線でうっすら重ね、完全に隠れないようにする
+const ghostSvg = document.getElementById("ghostLine");
+const ghostPath = document.createElementNS("http://www.w3.org/2000/svg","path");
+ghostSvg.appendChild(ghostPath);
+let ghostPoly = null;
+function setGhost(poly){
+  if(poly && poly.length > 1){
+    // 点数を間引いて毎フレームの投影コストを抑える
+    const MAX = 240;
+    if(poly.length <= MAX){ ghostPoly = poly; }
+    else{
+      const step = (poly.length-1)/(MAX-1);
+      ghostPoly = Array.from({length:MAX}, (_,i)=>poly[Math.round(i*step)]);
+    }
+  }else{
+    ghostPoly = null;
+  }
+  drawGhost();
+}
+function drawGhost(){
+  if(!ghostPoly){ ghostPath.setAttribute("d",""); return; }
+  let d = "";
+  for(let i = 0; i < ghostPoly.length; i++){
+    const p = map.project([ghostPoly[i][1], ghostPoly[i][0]]);
+    d += (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1);
+  }
+  ghostPath.setAttribute("d", d);
+}
+map.on("render", drawGhost); // カメラ移動・地形読み込みに毎フレーム追従させる
+
+// ================= 県の読み込み =================
+async function switchPref(code){
+  if(!code) return;
+  try{ localStorage.setItem("touge.pref", code); }catch(e){}
+  $("prefName").textContent = `${PREFECTURES[code]} / ${code}`;
+  visibleCount = PAGE_N;
+  searchQuery = "";
+  $("searchInput").value = "";
+  highlightOnMap(null);
+  if(prefCache[code]){
+    currentItems = prefCache[code];
+    afterLoad();
+    return;
+  }
+  showLoading(true, `${PREFECTURES[code]}のデータを読み込み中…`);
+  try{
+    const res = await fetch(`./targets/${code}/target.json?_=${Date.now()}`, {cache:"no-store"});
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const raw = await res.json();
+    currentItems = raw.map(toViewModel);
+    prefCache[code] = currentItems;
+    afterLoad();
+  }catch(err){
+    console.error(err);
+    toast(`${PREFECTURES[code]}のデータを読み込めませんでした（targets/${code}/target.json）`);
+    currentItems = [];
+    render();
+  }finally{
+    showLoading(false);
+  }
+}
+function afterLoad(){
+  render();
+  const list = rankedList();
+  if(list.length){
+    const b = new maplibregl.LngLatBounds();
+    list.forEach(t=>b.extend([t.center[1], t.center[0]]));
+    map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
+  }
+  if(window.innerWidth<=760) setSheet("half");
+}
+
+// ================= UIイベント =================
+const sel = $("prefSelect");
+sel.innerHTML = '<option value="">都道府県を選ぶ</option>' +
+  Object.entries(PREFECTURES).map(([c,n])=>`<option value="${c}">${n}</option>`).join("");
+sel.addEventListener("change",e=>switchPref(e.target.value));
+
+document.querySelectorAll(".chip").forEach(chip=>{
+  chip.addEventListener("click",()=>{
+    document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed","false"));
+    chip.setAttribute("aria-pressed","true");
+    currentPreset = chip.dataset.preset;
+    try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
+    $("presetHint").textContent = presetHints[currentPreset];
+    visibleCount = PAGE_N; // 並びが変わるので表示件数をリセット
+    render();
+  });
+});
+
+// ===== 前回の状態を復元（県・プリセット） =====
+try{
+  const savedPreset = localStorage.getItem("touge.preset");
+  if(savedPreset && presetWeights[savedPreset]){
+    currentPreset = savedPreset;
+    document.querySelectorAll(".chip").forEach(c=>
+      c.setAttribute("aria-pressed", c.dataset.preset === savedPreset));
+    $("presetHint").textContent = presetHints[savedPreset];
+  }
+  const savedPref = localStorage.getItem("touge.pref");
+  if(savedPref && PREFECTURES[savedPref]){
+    sel.value = savedPref;
+    switchPref(savedPref);
+  }
+}catch(e){}
+
+$("searchInput").addEventListener("input",e=>{
+  searchQuery = e.target.value;
+  renderCards();
+});
+
+// 現在地から10km刻み・100kmまでの距離サークルを描く
+let ringLabelMarkers = [];
+function drawRangeRings(lat, lng){
+  if(!mapReady){ map.once("load", ()=>drawRangeRings(lat, lng)); return; }
+  const features = [];
+  const labels = [];
+  const latRad = lat*Math.PI/180;
+  for(let r = 10; r <= 100; r += 10){
+    const ring = [];
+    for(let i = 0; i <= 128; i++){
+      const th = i/128 * 2*Math.PI;
+      ring.push([
+        lng + (r*1000/(111320*Math.cos(latRad)))*Math.sin(th),
+        lat + (r*1000/111320)*Math.cos(th)
+      ]);
+    }
+    features.push({type:"Feature",properties:{},geometry:{type:"LineString",coordinates:ring}});
+    labels.push({r, pos:[lng, lat + r*1000/111320]}); // 各円の北端にラベル
+  }
+  map.getSource("rings").setData({type:"FeatureCollection",features});
+  ringLabelMarkers.forEach(m=>m.remove());
+  ringLabelMarkers = labels.map(l=>{
+    const el = document.createElement("div");
+    el.className = "ring-label";
+    el.textContent = `${l.r}km`;
+    return new maplibregl.Marker({element:el}).setLngLat(l.pos).addTo(map);
+  });
+}
+
+$("locateBtn").addEventListener("click",()=>{
+  if(!navigator.geolocation){ toast("このブラウザは位置情報に対応していません"); return; }
+  showLoading(true, "現在地を取得中…");
+  navigator.geolocation.getCurrentPosition(
+    async pos=>{
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      new maplibregl.Marker({color:cssVar("--route-red")}).setLngLat([lng, lat]).addTo(map);
+      drawRangeRings(lat, lng);
+      // 国土地理院の逆ジオコーダで市区町村コードを取得（先頭2桁が県コード）
+      let code = null;
+      try{
+        const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`);
+        if(res.ok){
+          const data = await res.json();
+          const muni = data?.results?.muniCd;
+          if(muni) code = String(muni).padStart(5,"0").slice(0,2);
+        }
+      }catch(err){
+        console.warn("[峠サーチャー] reverse geocode failed:", err);
+      }
+      showLoading(false);
+      if(code && PREFECTURES[code]){
+        $("prefSelect").value = code;
+        toast(`現在地は${PREFECTURES[code]}。おすすめの峠を表示します`);
+        switchPref(code);
+      }else{
+        map.flyTo({center:[lng, lat], zoom:11, duration:1000});
+        toast("現在地の都道府県を判定できませんでした。県を選ぶと峠を表示します");
+      }
+    },
+    ()=>{
+      showLoading(false);
+      toast("位置情報を取得できませんでした");
+    }
+  );
+});
+
+// ===== スマホ用ビュー操作 =====
+// 長押し: なめらかに回転し続ける / 短いタップ: 45°だけ回転（+初回はヒント表示）
+let holdHintShown = false;
+function holdRotate(btn, dir){
+  let raf = null, t0 = 0;
+  const step = ()=>{ map.setBearing(map.getBearing() + dir*1.6); raf = requestAnimationFrame(step); };
+  btn.addEventListener("pointerdown", e=>{
+    e.preventDefault();
+    t0 = performance.now();
+    cancelAnimationFrame(raf);
+    step();
+  });
+  const end = ()=>{
+    if(!t0) return;
+    cancelAnimationFrame(raf);
+    if(performance.now() - t0 < 250){ // タップ扱い
+      map.easeTo({bearing: map.getBearing() + dir*45, duration:400});
+      if(!holdHintShown){ holdHintShown = true; toast("回転ボタンは長押しでまわり続けます"); }
+    }
+    t0 = 0;
+  };
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev, end));
+}
+holdRotate($("rotL"), 1);   // 地図が左回りに見える方向
+holdRotate($("rotR"), -1);
+// 3D地形 ON/OFF
+$("terrainToggle").addEventListener("click",e=>{
+  const btn = e.currentTarget;
+  const on = btn.getAttribute("aria-pressed") !== "true";
+  btn.setAttribute("aria-pressed", on);
+  map.setTerrain(on ? {source:"gsiTerrain", exaggeration:1.2} : null);
+  map.easeTo(on ? {pitch:55, duration:600} : {pitch:0, duration:600});
+});
+
+// ボトムシート
+const panel = $("panel");
+const handle = $("sheetHandle");
+const isMobile = ()=>window.innerWidth <= 760;
+let sheetState = "peek";
+function setSheet(state){
+  if(!isMobile()) return;
+  sheetState = state;
+  panel.classList.toggle("half",state==="half");
+  panel.classList.toggle("full",state==="full");
+}
+handle.addEventListener("click",()=>{
+  if(!isMobile()) return;
+  setSheet(sheetState==="peek"?"half":sheetState==="half"?"full":"peek");
+});
+let dragStartY=null, dragStartState=null;
+handle.addEventListener("touchstart",e=>{dragStartY=e.touches[0].clientY;dragStartState=sheetState},{passive:true});
+handle.addEventListener("touchend",e=>{
+  if(dragStartY===null) return;
+  const dy = e.changedTouches[0].clientY - dragStartY;
+  if(Math.abs(dy)>40){
+    const order=["peek","half","full"];
+    let idx = order.indexOf(dragStartState) + (dy<0?1:-1);
+    setSheet(order[Math.max(0,Math.min(2,idx))]);
+  }
+  dragStartY=null;
+});
+
+// PCサイドバー開閉
+const sideToggle = $("sideToggle");
+if(window.innerWidth > 760) sideToggle.style.display = "block";
+sideToggle.addEventListener("click",()=>{
+  panel.classList.toggle("hidden-side");
+  setTimeout(()=>map.resize(),280);
+});
+window.addEventListener("resize",()=>{
+  sideToggle.style.display = window.innerWidth > 760 ? "block" : "none";
+  map.resize();
+});
+
+// 固定レイアウトなのでページ自体は絶対にスクロールさせない
+// （キーボード表示やscrollIntoView等でずれてヘッダーが見切れるのを防ぐ保険）
+window.addEventListener("scroll",()=>{
+  if(window.scrollX || window.scrollY) window.scrollTo(0,0);
+});
+}
+
+// ===== MapLibreローダー（CDNフォールバック付き） =====
+(function loadMapLibre(){
+  const urls = [
+    "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js",
+    "https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.min.js",
+    "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"
+  ];
+  let i = 0;
+  function fail(msg){
+    document.getElementById("map").innerHTML =
+      `<div style="padding:20px;font-size:13px;line-height:1.7"><b>エラー:</b> ${msg}</div>`;
+  }
+  function next(){
+    if (typeof maplibregl !== "undefined") {
+      // WebGL対応チェック（非対応だとMapLibre内部で例外になる）
+      const testCv = document.createElement("canvas");
+      const gl = testCv.getContext("webgl2") || testCv.getContext("webgl");
+      if(!gl){
+        fail("このブラウザ/環境はWebGLが無効のため3D地図を表示できません。ブラウザのハードウェアアクセラレーション設定を確認してください。");
+        return;
+      }
+      try {
+        initApp();
+      } catch(err) {
+        console.error(err);
+        fail(`初期化に失敗しました: ${err.message}`);
+      }
+      return;
+    }
+    if (i >= urls.length) {
+      fail("地図ライブラリを読み込めませんでした。ネットワーク接続を確認して再読み込みしてください。");
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = urls[i++];
+    s.crossOrigin = "anonymous"; // エラー詳細をconsoleに出すために必要
+    s.onload = next;
+    s.onerror = next;
+    document.head.appendChild(s);
+  }
+  next();
+})();
+
+// iOS Safariはviewportのuser-scalable=noを無視するため、ページ全体のピンチ拡大をJSで抑止する
+// （地図内のピンチズームはMapLibreがcanvas上で独自処理するため影響しない）
+document.addEventListener("gesturestart", e => e.preventDefault());
+document.addEventListener("dblclick", e => {
+  if(!e.target.closest("#map")) e.preventDefault();
+});
+
+// 隠れたエラーも表示する
+window.addEventListener("error", e => {
+  if(e.message && e.message !== "Script error.") {
+    console.warn("[峠サーチャー] uncaught:", e.message, e.filename, e.lineno);
+  }
+});
+window.addEventListener("unhandledrejection", e => {
+  console.warn("[峠サーチャー] unhandled promise:", e.reason);
+});
+</script>
+</body>
+</html>
