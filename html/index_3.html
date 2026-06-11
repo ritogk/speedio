@@ -119,6 +119,14 @@ main{flex:1;position:relative;min-height:0}
 @media (min-width:761px){
   .view-ctrl{display:none} /* PCはドラッグで回転できる */
 }
+/* ボトムシートの開き具合に追従して回転ボタン・凡例を持ち上げる */
+@media (max-width:760px){
+  .view-ctrl,.legend{transition:bottom .28s cubic-bezier(.3,.9,.3,1),opacity .2s}
+  body:has(.panel.half) .view-ctrl{bottom:calc(44dvh + 14px)}
+  body:has(.panel.half) .legend{bottom:calc(44dvh + 10px)}
+  body:has(.panel.full) .view-ctrl,
+  body:has(.panel.full) .legend{opacity:0;pointer-events:none}
+}
 
 .legend{
   position:absolute;left:10px;bottom:calc(96px + 10px);z-index:1100;
@@ -184,9 +192,9 @@ main{flex:1;position:relative;min-height:0}
   position:relative;background:var(--card);border:1px solid var(--line);
   border-radius:var(--radius);padding:11px 12px 11px 50px;margin-bottom:10px;
   cursor:pointer;
-  opacity:var(--fade,1);transition:opacity .15s,border-color .15s;
+  transition:border-color .15s;
 }
-.card:hover,.card:focus-visible,.card.active{opacity:1}
+.card:hover{border-color:var(--contour)}
 #cards.thumbs .card{padding-right:104px}
 .thumb{
   position:absolute;right:10px;top:10px;bottom:10px;width:84px;
@@ -199,7 +207,11 @@ main{flex:1;position:relative;min-height:0}
   position:absolute;right:3px;bottom:2px;
   font-size:7px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.9);
 }
-.card:hover{border-color:var(--contour)}
+.thumb-spin{
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid var(--line);border-top-color:var(--accent);
+  animation:spin 1s linear infinite;
+}
 .card.active{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
 .rank-badge{
   position:absolute;left:11px;top:11px;
@@ -477,8 +489,23 @@ const map = new maplibregl.Map({
       {id:"photo", type:"raster", source:"photo",
        paint:{"raster-brightness-max":.9, "raster-saturation":-.1, "raster-contrast":.03}}, // スモーク（明るさを抑えて彩度も少し落とす）
       {id:"greenTint", type:"background",
-       paint:{"background-color":"#1E4D33", "background-opacity":.18}} // 地表に重ねる濃い緑の薄いベール
+       paint:{"background-color":"#1E4D33", "background-opacity":.18}}, // 地表に重ねる濃い緑の薄いベール
+      {id:"hillshade", type:"hillshade", source:"gsiTerrain", // DEMから陰影を生成して尾根・谷を彫り込む
+       paint:{
+         "hillshade-exaggeration":.25,
+         "hillshade-shadow-color":"#101510",
+         "hillshade-highlight-color":"#FFFFFF",
+         "hillshade-accent-color":"#101510"
+       }}
     ],
+    sky: {
+      "sky-color":"#86A8CF",        // 上空
+      "horizon-color":"#E9EDF1",    // 地平線の霞
+      "fog-color":"#DCE3E9",        // 遠景のフォグ
+      "sky-horizon-blend":.6,
+      "horizon-fog-blend":.6,
+      "fog-ground-blend":.55
+    },
     terrain: {source:"gsiTerrain", exaggeration:1.2}
   },
   center: [137.5, 36.2],
@@ -493,6 +520,12 @@ const levelColor = {
   strong:cssVar("--corner-strong"), medium:cssVar("--corner-medium"),
   weak:cssVar("--corner-weak"), none:cssVar("--straight"), straight:cssVar("--straight")
 };
+
+// ユーザーが地図に触れた・動かしたらオービット演出を即座に止める
+["pointerdown","wheel","touchstart"].forEach(ev=>
+  map.getCanvas().addEventListener(ev, ()=>cancelOrbit(), {passive:true}));
+["dragstart","zoomstart","rotatestart","pitchstart"].forEach(ev=>
+  map.on(ev, e=>{ if(e.originalEvent) cancelOrbit(); }));
 
 let mapReady = false;
 map.on("load", () => {
@@ -519,7 +552,7 @@ map.on("load", () => {
   map.addLayer({
     id:"touge-casing", type:"line", source:"touge",
     layout:{"line-cap":"round","line-join":"round"},
-    paint:{"line-color":"#ffffff","line-width":["interpolate",["linear"],["zoom"],8,5,14,11],"line-opacity":["*",.9,["coalesce",["get","fade"],1]]}
+    paint:{"line-color":"#ffffff","line-width":["interpolate",["linear"],["zoom"],8,4,14,8.5],"line-opacity":["*",.9,["coalesce",["get","fade"],1]]}
   });
   map.addLayer({
     id:"touge-line", type:"line", source:"touge",
@@ -530,7 +563,7 @@ map.on("load", () => {
         "medium",levelColor.medium,
         "weak",levelColor.weak,
         levelColor.straight],
-      "line-width":["interpolate",["linear"],["zoom"],8,2.5,14,6],
+      "line-width":["interpolate",["linear"],["zoom"],8,2,14,4.5],
       "line-opacity":["coalesce",["get","fade"],1]
     }
   });
@@ -591,10 +624,32 @@ function drawMap(list){
 function viewPadding(extra){
   const e = extra || 0;
   if(window.innerWidth <= 760){
-    return {top:e+10, left:e+10, right:e+10, bottom:e+110}; // 下110px ≒ ボトムシートのpeek分
+    // シートの開き具合に応じて隠れる高さが変わる（half=画面下約44%、peek=96px）
+    const sheet = document.getElementById("panel").classList.contains("half")
+      ? Math.round(window.innerHeight * .44) : 96;
+    return {top:e+10, left:e+10, right:e+10, bottom:e+sheet+14};
   }
   const side = document.getElementById("panel").classList.contains("hidden-side") ? 0 : 350;
   return {top:e, left:e+side, right:e, bottom:e};
+}
+
+// 着地後に峠の周りを一周するオービット演出（等速）
+const ORBIT_DEG_PER_SEC = 20; // 回転速度（360°÷20 = 一周18秒）
+let orbitRaf = null;
+function cancelOrbit(){
+  if(orbitRaf){ cancelAnimationFrame(orbitRaf); orbitRaf = null; }
+}
+function orbitAround(center){
+  cancelOrbit();
+  const startBearing = map.getBearing();
+  let t0 = null;
+  const step = ts => {
+    if(t0 === null) t0 = ts;
+    const deg = (ts - t0)/1000 * ORBIT_DEG_PER_SEC;
+    map.jumpTo({center, bearing: startBearing + deg});
+    orbitRaf = deg < 360 ? requestAnimationFrame(step) : null;
+  };
+  orbitRaf = requestAnimationFrame(step);
 }
 
 // 峠に「滑空」するカメラ演出
@@ -616,6 +671,7 @@ function flyToTouge(t){
     duration:1800,
     essential:true
   };
+  cancelOrbit();
   if(flightAbort) flightAbort(); // 直前の飛行の着地保証を無効化
   let cancelled = false;
   const userEvents = ["dragstart","zoomstart","rotatestart","pitchstart"];
@@ -627,7 +683,10 @@ function flyToTouge(t){
   map.once("moveend", ()=>{
     const userTookOver = cancelled;
     cleanup();
-    if(!userTookOver) map.jumpTo(target); // 完走時は実質no-op、中断時はここで着地
+    if(!userTookOver){
+      map.jumpTo(target); // 完走時は実質no-op、中断時はここで着地
+      orbitAround(target.center); // 着地後にゆっくり回り込む
+    }
   });
 }
 
@@ -686,7 +745,7 @@ let lastRanked = [];
 function cardHtml(t, rank, total){
   const sv = streetViewUrl(t.poly);
   return `
-    <article class="card${rank===0?" top1":""}" data-id="${t.id}" tabindex="0" style="--fade:${fadeOf(rank, total, 0.45).toFixed(2)}">
+    <article class="card${rank===0?" top1":""}" data-id="${t.id}" tabindex="0">
       <div class="rank-badge">${rank+1}</div>
       <div class="card-top">
         <span class="route-oval">${escapeHtml(t.routeLabel)}</span><h3>${escapeHtml(t.name)}</h3>
@@ -702,7 +761,7 @@ function cardHtml(t, rank, total){
         <a class="btn primary" href="${googleMapUrl(t.poly)}" target="_blank" rel="noopener" data-act="link">🚗 ここへ行く</a>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">📷 路面</a>`:""}
       </div>
-      <div class="thumb" data-tid="${t.id}"></div>
+      <div class="thumb" data-tid="${t.id}"><span class="thumb-spin"></span></div>
     </article>`;
 }
 
@@ -939,6 +998,7 @@ async function fillThumb(el){
   const live = document.querySelector(`#cards .thumb[data-tid="${tid}"]`);
   if(!live) return;
   if(url) live.innerHTML = `<img src="${url}" alt="コース形状">`;
+  else live.textContent = "—"; // 生成失敗時はスピナーを止めてダッシュ表示
 }
 
 function render(){
@@ -955,8 +1015,8 @@ function revealAndSelect(t){
   if(rank + 1 > visibleCount) visibleCount = Math.ceil((rank + 1) / PAGE_N) * PAGE_N;
   renderCards();
   selectCard(t.id, true);
-  setSheet("peek");
-  flyToTouge(t);
+  setSheet("half"); // 地図から選んだときは選択カードが見えるよう半開きにする
+  flyToTouge(t);    // viewPaddingがhalf分の高さを考慮してフォーカスする
 }
 function selectCard(id,scroll){
   document.querySelectorAll(".card").forEach(c=>c.classList.toggle("active", Number(c.dataset.id)===id));
@@ -1019,6 +1079,7 @@ map.on("render", drawGhost); // カメラ移動・地形読み込みに毎フレ
 // ================= 県の読み込み =================
 async function switchPref(code){
   if(!code) return;
+  cancelOrbit();
   try{ localStorage.setItem("touge.pref", code); }catch(e){}
   $("prefName").textContent = `${PREFECTURES[code]} / ${code}`;
   visibleCount = PAGE_N;
