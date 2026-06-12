@@ -1,0 +1,21 @@
+:root {
+  /* 一般的なライトUI + シグナルレッド（accentはロゴ/primary CTA/選択状態のみ） */
+  --bg: #f2f3f5;
+  --paper: #ffffff; /* パネル面 */
+  --paper-deep: #edeef1; /* 沈み込み面 */
+  --card: #ffffff;
+  --line: #dfe1e6; /* ヘアライン */
+  --contour: #c3c7ce;
+  --ink: #1a1c1f; /* 主文字 */
+  --ink-soft: #6b7077;
+  --accent: #e10600; /* シグナルレッド */
+  --gauge: #a8adb5; /* バー類は無彩色 */
+  --mountain: #a8adb5;
+  --route-red: #e10600;
+  --corner-strong: #ff453a; /* 地図データ色（暗い航空写真上なので明るめを維持） */
+  --corner-medium: #ff9f0a;
+  --corner-weak: #30d158;
+  --straight: #98989d;
+  --radius: 8px;
+  --header-h: 52px;
+}

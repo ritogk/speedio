@@ -1,7 +1,11 @@
 @import "tailwindcss";
 
-@layer base {
-  @theme {
-    --font-sans: InterVariable, sans-serif;
-  }
+@theme {
+  --font-sans: "Noto Sans JP", sans-serif;
+  /* アプリ(product/app)のデザイントークンと同じ色を使う */
+  --color-accent: #e10600;
+  --color-ink: #1a1c1f;
+  --color-ink-soft: #6b7077;
+  --color-paper: #f2f3f5;
+  --color-hairline: #dfe1e6;
 }

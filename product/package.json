@@ -1,26 +1,23 @@
 {
-  "name": "my-turborepo",
+  "name": "speedio-product",
   "private": true,
   "scripts": {
-    "build": "turbo build",
     "dev": "turbo dev",
+    "build": "turbo build",
     "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "test": "turbo test",
+    "type-check": "turbo type-check",
+    "format": "prettier --write \"app/src/**/*.{ts,vue,css}\" \"lp/{pages,assets,server}/**/*.{ts,vue,css}\""
   },
   "devDependencies": {
-    "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
-    "@vue-leaflet/vue-leaflet": "^0.10.1",
-    "leaflet": "^1.9.4",
-    "prettier": "^3.2.5",
-    "turbo": "latest"
+    "prettier": "^3.8.4",
+    "turbo": "^2.9.18"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
-  "packageManager": "npm@10.5.0",
-  "workspaces": [
-    "api",
-    "web"
-  ]
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["@parcel/watcher", "esbuild"]
+  }
 }

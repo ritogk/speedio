@@ -1,17 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "pipeline": {
-    "api#openapi:generate": {
-      "outputs": ["public/openapi.yml"]
-    },
-    "web#openapi-d:generate": {
-      "dependsOn": ["api#openapi:generate"],
-      "outputs": ["src/types/openapi.d.ts"]
+  "tasks": {
+    "build": {
+      "outputs": ["dist/**", ".output/**"]
     },
     "dev": {
-      "dependsOn": ["web#openapi-d:generate"],
       "cache": false,
       "persistent": true
-    }
+    },
+    "lint": {},
+    "test": {},
+    "type-check": {}
   }
 }
