@@ -8,9 +8,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
-    "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
-    "@vue-leaflet/vue-leaflet": "^0.10.1",
+"@vue-leaflet/vue-leaflet": "^0.10.1",
     "leaflet": "^1.9.4",
     "prettier": "^3.2.5",
     "turbo": "latest"
@@ -18,9 +16,5 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "npm@10.5.0",
-  "workspaces": [
-    "api",
-    "web"
-  ]
+  "packageManager": "pnpm@10.33.0"
 }

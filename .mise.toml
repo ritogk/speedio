@@ -14,7 +14,7 @@ set -e
 cd pipeline/centerline/python && uv sync
 cd ../../../pipeline/analyzer && uv sync
 cd ../../product && pnpm install
-cd ../infra && npm install
+cd ../infra && pnpm install
 """
 
 [tasks."pipeline:analyze"]
@@ -76,4 +76,4 @@ run = "pnpm dev"
 [tasks.deploy]
 description = "CDK deploy"
 dir = "infra"
-run = "npx cdk deploy"
+run = "pnpm cdk deploy"
