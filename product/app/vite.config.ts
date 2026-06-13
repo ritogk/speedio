@@ -13,7 +13,7 @@ export default defineConfig({
     },
   },
   server: {
-    // 峠データ(slim版)は本番S3/CloudFrontにのみ存在するため、開発時はプロキシで取得する
+    host: true,
     proxy: {
       "/targets": {
         target: "https://speedio.homisoftware.net",
