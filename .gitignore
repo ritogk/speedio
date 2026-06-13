@@ -6,6 +6,8 @@
 key_store
 /html/target.json
 /html/target.csv
+/html/targets/
+/product/node_modules.old-npm/
 eye_meadured_width.csv
 
 *.tif

@@ -92,6 +92,29 @@ describe("toViewModel", () => {
     expect(t.width).toBe(1);
   });
 
+  it("起伏・建物項目は存在すれば丸めて変換、無ければnull", () => {
+    const t = tougeViewModel.fromRaw(
+      raw({
+        elevation_up: 124.8,
+        elevation_down: 124.7,
+        elevation_unevenness_count: 9,
+        building_nearby_cnt: 10,
+      }),
+      0,
+    );
+    expect(t.upM).toBe(125);
+    expect(t.downM).toBe(125);
+    expect(t.unevennessCount).toBe(9);
+    expect(t.buildingCnt).toBe(10);
+
+    // 再生成前の県のslimにはフィールド自体が無い
+    const old = tougeViewModel.fromRaw(raw({}), 0);
+    expect(old.upM).toBeNull();
+    expect(old.downM).toBeNull();
+    expect(old.unevennessCount).toBeNull();
+    expect(old.buildingCnt).toBeNull();
+  });
+
   it("geometry_list欠落時もフォールバック中心を持つ", () => {
     const t = tougeViewModel.fromRaw(raw({ geometry_list: null }), 0);
     expect(t.poly).toEqual([]);

@@ -24,7 +24,8 @@ def get_panorama_id(lat: float, lng: float, api_key: str) -> str:
             "location": f"{lat},{lng}",
             "key": api_key,
             "source": "outdoor",
-        }
+        },
+        timeout=(10, 30),
     )
     data = response.json()
 
@@ -45,7 +46,7 @@ def get_panorama_heading_offset(pano_id: str) -> float:
 
         response = requests.get(url, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        })
+        }, timeout=(10, 30))
 
         text = response.text
         json_str = text.replace(")]}'\\n", "").replace(")]}\\'\\n", "")
@@ -78,7 +79,7 @@ def fetch_panorama_tile(pano_id: str, zoom: int, x: int, y: int) -> bytes:
 
     response = requests.get(url, headers={
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    })
+    }, timeout=(10, 30))
 
     if response.status_code != 200:
         raise Exception(f"Tile not available: {response.status_code}")

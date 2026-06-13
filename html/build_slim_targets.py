@@ -24,7 +24,28 @@ def r5(v):
     return round(v, 5)
 
 
+def elevation_fluctuation(elevations):
+    """src/analysis/column_generater_module/elevation_fluctuation.py と同一ロジック。
+    target.json に elevation_fluctuation が無い既存データ向けに elevation_smooth から再計算する。"""
+    up = down = 0.0
+    prev = None
+    for e in elevations or []:
+        if prev is not None:
+            diff = e - prev
+            # 標高の変化量が40m以上の場合はtif範囲外を見ている可能性があるため、無視する
+            if abs(diff) < 40:
+                if diff > 0:
+                    up += diff
+                else:
+                    down += abs(diff)
+        prev = e
+    return round(up, 1), round(down, 1)
+
+
 def slim_touge(t):
+    fluct = t.get("elevation_fluctuation")
+    if fluct is None:
+        fluct = elevation_fluctuation(t.get("elevation_smooth"))
     return {
         "length": t.get("length"),
         "highway": t.get("highway"),
@@ -34,6 +55,14 @@ def slim_touge(t):
         "score_elevation_unevenness": t.get("score_elevation_unevenness"),
         "score_width": t.get("score_width"),
         "score_corner_none": t.get("score_corner_none"),
+        "elevation_up": fluct[0],
+        "elevation_down": fluct[1],
+        "elevation_unevenness_count": t.get("elevation_unevenness_count"),
+        "elevation_unevenness": [
+            {"point": [r5(u["point"][0]), r5(u["point"][1])], "prominence": round(u["prominence"], 1)}
+            for u in t.get("elevation_unevenness") or []
+        ],
+        "building_nearby_cnt": t.get("building_nearby_cnt"),
         "geometry_list": [[r5(p[0]), r5(p[1])] for p in t.get("geometry_list") or []],
         "road_section": [
             {

@@ -483,6 +483,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "elevation_segment_list",
         "elevation_unevenness",
         "elevation_unevenness_count",
+        "elevation_fluctuation",
         "video_coords_segment_list",
         "video_elevation_segment_list",
         "angle_deltas",

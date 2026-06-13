@@ -36,6 +36,10 @@ export const tougeViewModel: TougeViewModel = {
       center,
       poly,
       roadSection: raw.road_section ?? [],
+      upM: raw.elevation_up != null ? Math.round(raw.elevation_up) : null,
+      downM: raw.elevation_down != null ? Math.round(raw.elevation_down) : null,
+      unevennessCount: raw.elevation_unevenness_count ?? null,
+      buildingCnt: raw.building_nearby_cnt ?? null,
     };
   },
 };

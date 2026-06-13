@@ -16,6 +16,10 @@ const vm = (partial: Partial<TougeVM>): TougeVM => {
     center: [35, 137],
     poly: [],
     roadSection: [],
+    upM: null,
+    downM: null,
+    unevennessCount: null,
+    buildingCnt: null,
     ...partial,
   };
 };

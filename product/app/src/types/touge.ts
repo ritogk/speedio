@@ -14,6 +14,13 @@ export interface RoadSection {
   points: LngLat[];
 }
 
+/** 上がり下がりの転換ポイント（凸=ピーク/凹=谷、始点・終点も含む） */
+export interface UnevennessPoint {
+  point: LatLng;
+  /** 最低標高からの高さ(m) */
+  prominence: number;
+}
+
 export interface RawTouge {
   length: number | null;
   highway: string | string[] | null;
@@ -25,6 +32,16 @@ export interface RawTouge {
   score_corner_none: number | null;
   geometry_list: LatLng[] | null;
   road_section: RoadSection[] | null;
+  // 以下は2026-06-13追加。再生成前の県のslimには存在しない
+  /** 累積上り標高(m) */
+  elevation_up?: number | null;
+  /** 累積下り標高(m) */
+  elevation_down?: number | null;
+  /** 上がり下がりポイント数（凸+凹） */
+  elevation_unevenness_count?: number | null;
+  elevation_unevenness?: UnevennessPoint[] | null;
+  /** 道路近傍の建物数 */
+  building_nearby_cnt?: number | null;
 }
 
 export interface TougeVM {
@@ -40,6 +57,14 @@ export interface TougeVM {
   center: LatLng;
   poly: LatLng[];
   roadSection: RoadSection[];
+  /** 累積上り標高(m)。データ未対応の県では null */
+  upM: number | null;
+  /** 累積下り標高(m)。データ未対応の県では null */
+  downM: number | null;
+  /** 上がり下がりポイント数。データ未対応の県では null */
+  unevennessCount: number | null;
+  /** 道路近傍の建物数。データ未対応の県では null */
+  buildingCnt: number | null;
 }
 
 export interface RankedTouge extends TougeVM {

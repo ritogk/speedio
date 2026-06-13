@@ -3,7 +3,9 @@
 import argparse
 import json
 import math
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from queue import Queue
 
 import psycopg2
 from psycopg2.extras import execute_batch
@@ -88,7 +90,7 @@ def load_targets(pref_code: str):
     return geometry_map, coords
 
 
-def predict_to_db(pref_code: str, batch_size: int = 16, write_db: bool = False, model_path: str = None):
+def predict_to_db(pref_code: str, batch_size: int = 128, write_db: bool = False, model_path: str = None):
     """推論してDBに書き込み"""
     print(f"=== 都道府県コード {pref_code} の推論 ===\n")
 
@@ -144,81 +146,103 @@ def predict_to_db(pref_code: str, batch_size: int = 16, write_db: bool = False, 
     model.eval()
     print(f"  Model: {model_path}")
 
-    # 4. 推論
-    print(f"\nRunning inference...")
+    # 4. 推論 + DB書き込み（プリフェッチ + バッチごと）
+    print(f"\nRunning inference (batch={batch_size}, prefetch=2)...")
     transform = get_transforms(is_training=False)
-    results = []
+    true_count = 0
+    false_count = 0
+    total_updated = 0
 
-    with torch.no_grad():
-        for i in tqdm(range(0, len(items), batch_size), desc="Predicting"):
-            batch_items = items[i:i + batch_size]
-
-            images = []
-            for item in batch_items:
-                img = Image.open(item["image_path"]).convert("RGB")
-                img = transform(img)
-                images.append(img)
-
-            images = torch.stack(images).to(device)
-            logits = model(images)
-            probs = torch.sigmoid(logits).cpu().tolist()
-
-            for item, prob in zip(batch_items, probs):
-                results.append({
-                    "lat": item["lat"],
-                    "lng": item["lng"],
-                    "probability": prob,
-                    "has_center_line": prob >= 0.5,
-                })
-
-    # 5. 統計
-    true_count = sum(1 for r in results if r["has_center_line"])
-    false_count = len(results) - true_count
-    print(f"\n推論結果:")
-    print(f"  中央線あり: {true_count}")
-    print(f"  中央線なし: {false_count}")
-
-    # 6. DB書き込み
+    conn = None
+    cursor = None
     if write_db:
-        print("\nWriting to database (claude_center_line)...")
         conn = psycopg2.connect(**DB_CONFIG)
         cursor = conn.cursor()
 
-        try:
-            update_query = """
-                UPDATE locations
-                SET claude_center_line = %s, claude_center_line_score = %s
-                WHERE ST_Y(point) = %s AND ST_X(point) = %s
-            """
+    update_query = """
+        UPDATE locations
+        SET claude_center_line = %s, claude_center_line_score = %s
+        WHERE ST_Y(point) = %s AND ST_X(point) = %s
+    """
 
-            update_data = [
-                (r["has_center_line"], r["probability"], r["lat"], r["lng"])
-                for r in results
-            ]
+    NUM_LOAD_WORKERS = 4
 
-            execute_batch(cursor, update_query, update_data, page_size=100)
-            conn.commit()
+    def load_single(item):
+        img = Image.open(item["image_path"]).convert("RGB")
+        return transform(img)
 
-            print(f"  Updated: {len(results)} records")
+    def load_batch_parallel(batch_items):
+        with ThreadPoolExecutor(max_workers=NUM_LOAD_WORKERS) as pool:
+            tensors = list(pool.map(load_single, batch_items))
+        return torch.stack(tensors)
 
-        except Exception as e:
+    prefetch_queue = Queue(maxsize=2)
+
+    def prefetch_worker():
+        for i in range(0, len(items), batch_size):
+            batch_items = items[i:i + batch_size]
+            tensor = load_batch_parallel(batch_items)
+            prefetch_queue.put((batch_items, tensor))
+        prefetch_queue.put(None)
+
+    try:
+        executor = ThreadPoolExecutor(max_workers=1)
+        executor.submit(prefetch_worker)
+
+        n_batches = (len(items) + batch_size - 1) // batch_size
+        with torch.no_grad():
+            for _ in tqdm(range(n_batches), desc="Predicting"):
+                entry = prefetch_queue.get()
+                if entry is None:
+                    break
+                batch_items, images = entry
+
+                images = images.to(device)
+                logits = model(images)
+                probs = torch.sigmoid(logits).cpu().tolist()
+
+                batch_data = []
+                for item, prob in zip(batch_items, probs):
+                    has_cl = prob >= 0.5
+                    if has_cl:
+                        true_count += 1
+                    else:
+                        false_count += 1
+                    batch_data.append((has_cl, prob, item["lat"], item["lng"]))
+
+                if write_db:
+                    execute_batch(cursor, update_query, batch_data, page_size=100)
+                    conn.commit()
+                    total_updated += len(batch_data)
+
+        executor.shutdown(wait=True)
+
+        print(f"\n推論結果:")
+        print(f"  中央線あり: {true_count}")
+        print(f"  中央線なし: {false_count}")
+        if write_db:
+            print(f"  Updated: {total_updated} records")
+        else:
+            print("\n[DRY RUN] --write-db を指定するとDBに書き込みます")
+
+    except Exception as e:
+        if conn:
             conn.rollback()
-            raise e
-        finally:
+        raise e
+    finally:
+        if cursor:
             cursor.close()
+        if conn:
             conn.close()
-    else:
-        print("\n[DRY RUN] --write-db を指定するとDBに書き込みます")
 
     print("\n=== 完了 ===")
-    return results
 
 
 def main():
     parser = argparse.ArgumentParser(description="推論結果をDBに書き込み")
     parser.add_argument("--pref", type=str, nargs="+", required=True, help="都道府県コード（例: 24、複数指定可）")
     parser.add_argument("--model", type=str, help="モデルパス（デフォルト: vit_centerline_best.pt）")
-    parser.add_argument("--batch-size", type=int, default=16, help="バッチサイズ")
+    parser.add_argument("--batch-size", type=int, default=128, help="バッチサイズ")
     parser.add_argument("--write-db", action="store_true", help="DBに書き込む")
     args = parser.parse_args()
 
