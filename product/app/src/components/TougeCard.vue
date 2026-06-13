@@ -67,7 +67,7 @@ const onSelect = () => {
         rel="noopener"
         @click.stop
       >
-        🚗 ここへ行く
+        🚗 行く
       </a>
       <a
         v-if="svUrl"
