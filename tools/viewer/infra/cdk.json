@@ -1,0 +1,11 @@
+{
+  "app": "pnpm exec ts-node --prefer-ts-exts bin/app.ts",
+  "context": {
+    "domain": "homisoftware.net",
+    "subdomain": "old.speedio.homisoftware.net",
+    "hostedZoneId": "Z06664902F5DKUOR9P3DP",
+    "certificateArn": "arn:aws:acm:us-east-1:788594208758:certificate/f61ec128-5623-4384-a9b6-e11b15742b64",
+    "bucketName": "speedio-old-viewer",
+    "accountId": "788594208758"
+  }
+}

@@ -73,7 +73,37 @@ description = "product/app dev server"
 dir = "product"
 run = "pnpm dev"
 
-[tasks.deploy]
-description = "CDK deploy"
+[tasks."deploy:prod"]
+description = "CDK deploy 本番環境"
 dir = "infra"
-run = "pnpm cdk deploy"
+run = "pnpm cdk deploy --all -c env=prod"
+
+[tasks."deploy:dev"]
+description = "CDK deploy 動作確認環境"
+dir = "infra"
+run = "pnpm cdk deploy --all -c env=dev"
+
+[tasks."deploy:old"]
+description = "CDK deploy 旧ビューワー環境"
+dir = "tools/viewer/infra"
+run = "pnpm cdk deploy --require-approval never"
+
+[tasks."deploy:data"]
+description = "峠データを S3 にアップロード (引数: <prod|dev> [pref_code])"
+dir = "pipeline/postprocess"
+run = """
+ENV="${1:?Usage: mise run deploy:data -- <prod|dev> [pref_code]}"
+CDK_JSON="../../infra/cdk.json"
+BASE=$(python3 -c "import json; c=json.load(open('$CDK_JSON'))['context']; print(f\"{c['bucketName']}-${ENV}-{c['accountId']}\")")
+bash upload_s3.sh "$BASE" "${2:-}"
+"""
+
+[tasks."deploy:data:gzip"]
+description = "峠データを gzip 圧縮して S3 にアップロード (引数: <prod|dev>)"
+dir = "pipeline/postprocess"
+run = """
+ENV="${1:?Usage: mise run deploy:data:gzip -- <prod|dev>}"
+CDK_JSON="../../infra/cdk.json"
+BASE=$(python3 -c "import json; c=json.load(open('$CDK_JSON'))['context']; print(f\"{c['bucketName']}-${ENV}-{c['accountId']}\")")
+bash gzip_upload_s3.sh "$BASE"
+"""

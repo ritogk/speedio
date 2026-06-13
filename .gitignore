@@ -1,3 +1,7 @@
+node_modules
+cdk.out
+.cdk.staging
+
 # 生成データ・巨大データ置き場(json_bk/dummyのみ追跡)
 /data/
 

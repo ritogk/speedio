@@ -4,31 +4,30 @@ import {
   aws_certificatemanager as acm,
 } from "aws-cdk-lib";
 
+interface AcmStackProps extends cdk.StackProps {
+  domain: string;
+  hostedZoneId: string;
+  subjectAlternativeNames: string[];
+}
+
 export class AcmStack extends cdk.Stack {
   public readonly certificate: acm.Certificate;
-  constructor(
-    scope: cdk.App,
-    id: string,
-    domain: string,
-    subDomain: string,
-    hostZoneId: string,
-    props?: cdk.StackProps
-  ) {
+
+  constructor(scope: cdk.App, id: string, props: AcmStackProps) {
     super(scope, id, props);
 
-    // Route 53 DNS Zone
     const hostedZone = route53.HostedZone.fromHostedZoneAttributes(
       this,
-      "GetHostedZone",
+      "HostedZone",
       {
-        hostedZoneId: hostZoneId,
-        zoneName: domain,
+        hostedZoneId: props.hostedZoneId,
+        zoneName: props.domain,
       }
     );
 
-    // Create an SSL certificate in ACM
-    this.certificate = new acm.Certificate(this, "CreateCertificate", {
-      domainName: subDomain,
+    this.certificate = new acm.Certificate(this, "WildcardCertificate", {
+      domainName: props.subjectAlternativeNames[0],
+      subjectAlternativeNames: props.subjectAlternativeNames.slice(1),
       validation: acm.CertificateValidation.fromDns(hostedZone),
     });
   }

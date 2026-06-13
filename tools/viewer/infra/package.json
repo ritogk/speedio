@@ -1,0 +1,17 @@
+{
+  "name": "viewer-infra",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.167.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.0"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.167.1",
+    "constructs": "^10.0.0"
+  }
+}
