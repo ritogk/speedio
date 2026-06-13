@@ -1,21 +1,16 @@
-/env
-/cache
-/.ipynb_checkpoints
-/__pycache__
+# 生成データ・巨大データ置き場(json_bk/dummyのみ追跡)
+/data/
+
 .env
+.ipynb_checkpoints
 key_store
-/html/target.json
-/html/target.csv
-/html/targets/
-/product/node_modules.old-npm/
+key_store.bak
+key_store.dat
+key_store.dir
 eye_meadured_width.csv
 
 *.tif
 *.geojson
-
-key_store.bak
-key_store.dat
-key_store.dir
 
 __pycache__/
 *.pyc
@@ -24,4 +19,4 @@ __pycache__/
 
 .history
 
-src/shape
+pipeline/analyzer/shape

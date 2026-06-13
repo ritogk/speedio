@@ -1,4 +1,4 @@
-// 峠データの型定義。スキーマの正は html/build_slim_targets.py の slim_touge()。
+// 峠データの型定義。スキーマの正は pipeline/postprocess/build_slim_targets.py の slim_touge()。
 
 /** [緯度, 経度] — geometry_list の座標順 */
 export type LatLng = [number, number];

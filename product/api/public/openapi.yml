@@ -1,0 +1,167 @@
+openapi: 3.0.0
+paths:
+  /items:
+    get:
+      operationId: ItemsController_findAll
+      summary: 位置情報の取得
+      description: バウンディングボックスを指定している場合はその範囲内の位置情報を取得。
+      parameters:
+        - name: minLatitude
+          required: false
+          in: query
+          description: Minimum latitude of the bounding box
+          schema:
+            type: number
+        - name: minLongitude
+          required: false
+          in: query
+          description: Minimum longitude of the bounding box
+          schema:
+            type: number
+        - name: maxLatitude
+          required: false
+          in: query
+          description: Maximum latitude of the bounding box
+          schema:
+            type: number
+        - name: maxLongitude
+          required: false
+          in: query
+          description: Maximum longitude of the bounding box
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+      tags:
+        - items
+    post:
+      operationId: ItemsController_create
+      parameters: []
+      requestBody:
+        required: true
+        description: itemの登録
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemDto'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+      tags:
+        - items
+  /items/{id}:
+    get:
+      operationId: ItemsController_findOne
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+      tags:
+        - items
+    patch:
+      operationId: ItemsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: itemの更新
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItemDto'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+      tags:
+        - items
+    delete:
+      operationId: ItemsController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      tags:
+        - items
+info:
+  title: ''
+  description: The cats API description
+  version: '1.0'
+  contact: {}
+tags: []
+servers: []
+components:
+  schemas:
+    Item:
+      type: object
+      properties:
+        id:
+          type: number
+          description: id
+        text:
+          type: string
+          description: テキスト
+        created_at:
+          format: date-time
+          type: string
+          description: 作成日時
+        updated_at:
+          format: date-time
+          type: string
+          description: 更新日時
+        deletedAt:
+          format: date-time
+          type: string
+          description: 削除日時
+      required:
+        - id
+        - text
+        - created_at
+        - updated_at
+        - deletedAt
+    CreateItemDto:
+      type: object
+      properties:
+        text:
+          type: string
+          description: テキスト
+      required:
+        - text
+    UpdateItemDto:
+      type: object
+      properties:
+        text:
+          type: string
+          description: テキスト

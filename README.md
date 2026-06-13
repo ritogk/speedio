@@ -8,9 +8,20 @@
 ![image](https://github.com/user-attachments/assets/3ba63bd5-7745-4d5a-a40f-edf74b11e8a8)
 
 
+## directory
+
+```
+pipeline/   # 峠抽出パイプライン (run.py, analyzer, centerline, postprocess)
+product/    # Webアプリ (app, lp)
+infra/      # CDK (S3 + CloudFront)
+data/       # 生成データ置き場 (gitignore)
+tools/      # viewer(開発用ビュワー), rcc(道幅目視チェック), video_work
+```
+
 ## app setup
 
 ```
+cd pipeline
 cp .base.env .env
 conda env create -f environment.yml
 ```
@@ -45,11 +56,12 @@ python3 convert_tif_epsg_4326.py
 python3 merge_tif.py
 
 ```
-# 6. elevation.tifにリネームしてプロジェクトのルートにおく
+# 6. elevation.tifにリネームして data/ におく
 ```
 
 ## run
 ```
+cd pipeline
 python3 run.py
 ```
 
