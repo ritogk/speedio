@@ -20,7 +20,10 @@ cd ../infra && pnpm install
 [tasks."pipeline:analyze"]
 description = "峠分析パイプライン"
 dir = "pipeline"
-run = "uv run --project analyzer python run.py"
+run = """
+trap 'rm -f ~/.cache/uv/.lock' EXIT
+uv run --project analyzer python run.py
+"""
 
 [tasks."pipeline:download"]
 description = "画像ダウンロード (--only 24, --force, --dry-run 等)"
