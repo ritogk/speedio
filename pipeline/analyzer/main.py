@@ -282,6 +282,13 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     gdf_edges["elevation_unevenness_count"] = elevation_unevenness_count
     execution_timer_ins.stop()
 
+    # 上り区間・下り区間のリストを生成する
+    execution_timer_ins.start("🏔️ calc elevation_unevenness_sections")
+    gdf_edges["elevation_unevenness_sections"] = column_generater.elevation_unevenness_sections.generate(
+        gdf_edges
+    )
+    execution_timer_ins.stop()
+
     execution_timer_ins.start("🛣️ calc width")
     if consider_gsi_width:
         # gsiの道幅を取得する
@@ -490,6 +497,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "elevation_segment_list",
         "elevation_unevenness",
         "elevation_unevenness_count",
+        "elevation_unevenness_sections",
         "elevation_fluctuation",
         "video_coords_segment_list",
         "video_elevation_segment_list",
