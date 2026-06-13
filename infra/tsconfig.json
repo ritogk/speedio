@@ -4,7 +4,8 @@
     "module": "commonjs",
     "lib": [
       "es2020",
-      "dom"
+      "dom",
+      "esnext.disposable"
     ],
     "declaration": true,
     "strict": true,
