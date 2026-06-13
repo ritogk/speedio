@@ -63,6 +63,10 @@ def slim_touge(t):
             for u in t.get("elevation_unevenness") or []
         ],
         "building_nearby_cnt": t.get("building_nearby_cnt"),
+        "undulation_cnt": max(
+            len((t.get("elevation_unevenness_sections") or {}).get("uphill") or []),
+            len((t.get("elevation_unevenness_sections") or {}).get("downhill") or []),
+        ) if t.get("elevation_unevenness_sections") else None,
         "geometry_list": [[r5(p[0]), r5(p[1])] for p in t.get("geometry_list") or []],
         "road_section": [
             {

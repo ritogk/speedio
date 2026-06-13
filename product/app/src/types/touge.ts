@@ -42,6 +42,8 @@ export interface RawTouge {
   elevation_unevenness?: UnevennessPoint[] | null;
   /** 道路近傍の建物数 */
   building_nearby_cnt?: number | null;
+  /** 起伏（アップダウン）回数 */
+  undulation_cnt?: number | null;
 }
 
 export interface TougeVM {
@@ -65,6 +67,8 @@ export interface TougeVM {
   unevennessCount: number | null;
   /** 道路近傍の建物数。データ未対応の県では null */
   buildingCnt: number | null;
+  /** 起伏（アップダウン）回数。データ未対応の県では null */
+  undulationCnt: number | null;
 }
 
 export interface RankedTouge extends TougeVM {

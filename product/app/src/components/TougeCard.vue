@@ -38,8 +38,11 @@ const onSelect = () => {
       <span v-if="rank === 0" class="today-pick">本日の一本</span>
     </div>
     <p class="meta">
-      全長 <b>{{ touge.lengthKm }}km</b> ・ 標高差 <b>{{ touge.height }}m</b> ・
-      総合 <b>{{ pct(touge.score) }}</b
+      全長 <b>{{ touge.lengthKm }}km</b> ・ 標高差 <b>{{ touge.height }}m</b>
+      <template v-if="touge.undulationCnt != null">
+        ・ 起伏 <b>{{ touge.undulationCnt }}</b>
+      </template>
+      ・ 総合 <b>{{ pct(touge.score) }}</b
       >点
     </p>
     <div class="bars">

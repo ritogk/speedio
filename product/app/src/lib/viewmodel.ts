@@ -40,6 +40,7 @@ export const tougeViewModel: TougeViewModel = {
       downM: raw.elevation_down != null ? Math.round(raw.elevation_down) : null,
       unevennessCount: raw.elevation_unevenness_count ?? null,
       buildingCnt: raw.building_nearby_cnt ?? null,
+      undulationCnt: raw.undulation_cnt ?? null,
     };
   },
 };
