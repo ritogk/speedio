@@ -13,18 +13,19 @@ def generate(gdf: GeoDataFrame, graph: nx.Graph) -> Series:
     all_nodes = ox.graph_to_gdfs(graph, nodes=True, edges=False)
     sindex_nodes = all_nodes.sindex
 
+    # numpy配列で直接参照（元のiloc+DataFrame生成のオーバーヘッドを回避）
+    all_geoms = all_nodes.geometry.values
+    all_street_counts = all_nodes["street_count"].values
+
     def func(row):
-        # ジオメトリーの境界ボックス内のノードのインデックスを取得
-        sindex_matche_indexs = list(sindex_nodes.intersection(row.geometry.bounds))
-        # インデックスをNodeに変換
-        sindex_matche_nodes = all_nodes.iloc[sindex_matche_indexs]
-
-        # 境界ボックス内のノードの中で実際に交差するノードを取得。boudary内のノードから絞り込むのでめっちゃはやい。
-        matche_nodes = sindex_matche_nodes[sindex_matche_nodes.intersects(row.geometry)]
-
-        # 進行方向と逆方向のノードを除外して分岐数を計算
-        result = matche_nodes["street_count"].sum() - (len(matche_nodes) * 2)
-        return result
+        idxs = list(sindex_nodes.intersection(row.geometry.bounds))
+        count = 0
+        n_matches = 0
+        for idx in idxs:
+            if all_geoms[idx].intersects(row.geometry):
+                count += all_street_counts[idx]
+                n_matches += 1
+        return count - (n_matches * 2)
 
     tqdm.pandas()
     series = gdf.progress_apply(func, axis=1)

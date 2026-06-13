@@ -41,6 +41,26 @@ class ElevationService:
         band = self.dataset.read(1, window=rasterio.windows.Window(col, row, 1, 1))
         return band[0, 0]
 
+    def get_elevations_batch(self, lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
+        """複数座標の標高を一括取得（1点ずつのread()を廃止しwindow一括読みに）"""
+        if self.dataset is None or self.dataset.closed:
+            return np.zeros(lats.shape)
+        lats = np.asarray(lats)
+        lons = np.asarray(lons)
+        t = self.dataset.transform
+        # アフィン逆変換でピクセル座標を算出（dataset.index()と同等）
+        cols = np.floor((lons - t.c) / t.a).astype(int)
+        rows = np.floor((lats - t.f) / t.e).astype(int)
+        row_min = max(0, int(rows.min()))
+        row_max = min(self.dataset.height - 1, int(rows.max()))
+        col_min = max(0, int(cols.min()))
+        col_max = min(self.dataset.width - 1, int(cols.max()))
+        window = rasterio.windows.Window(col_min, row_min, col_max - col_min + 1, row_max - row_min + 1)
+        data = self.dataset.read(1, window=window)
+        local_rows = np.clip(rows - row_min, 0, data.shape[0] - 1).astype(int)
+        local_cols = np.clip(cols - col_min, 0, data.shape[1] - 1).astype(int)
+        return data[local_rows, local_cols]
+
     def __del__(self):
         if self.dataset and not self.dataset.closed:
             self.dataset.close()

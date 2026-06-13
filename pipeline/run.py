@@ -31,7 +31,9 @@ def run():
         # 対象範囲のポリゴンを取得する
         execution_timer_ins.start("📍 get plane epsg code", ExecutionType.PROC)
         if use_custom_area:
-            area_prefecture_name = get_nearest_prefecture(custom_area_point_st[0], custom_area_point_st[1])
+            # AREA_PREFECTURE_NAMEが設定済みならNominatim逆ジオコーディングをスキップ
+            if not area_prefecture_name:
+                area_prefecture_name = get_nearest_prefecture(custom_area_point_st[0], custom_area_point_st[1])
             plane_epsg_code = generate_epsg_code(area_prefecture_name)
         else:
             plane_epsg_code = generate_epsg_code(area_prefecture_name)

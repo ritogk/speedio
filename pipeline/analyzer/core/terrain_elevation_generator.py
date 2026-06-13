@@ -47,24 +47,15 @@ def generate_terrain_elevation(plane_epsg_code, tif_path, lat_min, lon_min, lat_
 
     # Elevation Serviceのインスタンスを作成
     elevation_service_ins = elevation_service.ElevationService(tif_path)
-    
+
     # 1次元配列にするためのリスト
     lat_lon_elev_grid = np.zeros((lat_grid.shape[0], lat_grid.shape[1], 3))
-    
-    for i in range(len(lat_lon_grid)):
-        for j in range(len(lat_lon_grid[i])):
-            lat = lat_lon_grid[i][j][1]
-            lon = lat_lon_grid[i][j][0]
 
-            # 緯度経度をそのまま使用して標高を取得
-            elevation = int(elevation_service_ins.get_elevation(lat, lon))
-            
-            if elevation is None:
-                print(f"Elevation is None for lat: {lat}, lon: {lon}")
-            else:
-                # # 平面直角座標に再変換してリストに追加
-                # terrain_elevations.append([lat, lon, elevation])
-                lat_lon_elev_grid[i, j] = [lat, lon, int(elevation)]
+    # グリッド全体の標高をwindow一括読みで取得（元の二重ループ+1px読みを廃止）
+    elevations = elevation_service_ins.get_elevations_batch(lat_lon_grid[:,:,1], lat_lon_grid[:,:,0])
+    lat_lon_elev_grid[:,:,0] = lat_lon_grid[:,:,1]
+    lat_lon_elev_grid[:,:,1] = lat_lon_grid[:,:,0]
+    lat_lon_elev_grid[:,:,2] = elevations.astype(int)
     
     # terrain_elevationsをNumPy配列に変換
     # terrain_elevations = np.array(terrain_elevations)

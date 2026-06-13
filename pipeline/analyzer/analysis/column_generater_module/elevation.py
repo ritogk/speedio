@@ -1,5 +1,6 @@
 from geopandas import GeoDataFrame
 from pandas import Series
+import numpy as np
 from .core import elevation_service
 
 # 標高の変化量を取得する
@@ -7,25 +8,13 @@ def generate(gdf: GeoDataFrame, tif_path: str) -> Series:
     elevation_service_ins = elevation_service.ElevationService(tif_path)
 
     def func(row) -> list:
-        locations = list(row.geometry.coords)
-        elevations = []
-
-        # ジオメトリーの座標から標高を取得し、標高の変化量も計算する
-        for location in locations:
-            elevation = elevation_service_ins.get_elevation(location[1], location[0])
-            if elevation is None:
-                print("elevation is None")
-                # ★ここのデータは表示させないようにさせるべきか・・・？
-                # なんかtifの境界値は0.01みたいな極小の値が帰ってきたような。
-                continue
-            # elevations.append({"elevation": elevation, "location": location})
-            elevations.append(elevation)
-        return elevations
+        coords = np.array(list(row.geometry.coords))
+        # coords[:,1]=lat, coords[:,0]=lon でバッチ取得（1点ずつのget_elevation()を廃止）
+        elevations = elevation_service_ins.get_elevations_batch(coords[:, 1], coords[:, 0])
+        return elevations.tolist()
 
     results = gdf.apply(func, axis=1)
 
-    # 本来ならガーベジコレクションで未到達なコード類は開放されるはずだが
-    # なぜか処理が終わってもメモリが開放されないのでインスタンスを開放してみる
     del elevation_service_ins
-    
+
     return results
