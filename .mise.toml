@@ -1,0 +1,79 @@
+[tools]
+node = "24"
+python = ["3.12", "3.11"]
+uv = "latest"
+"npm:pnpm" = "10"
+
+[env]
+_.path = ["./node_modules/.bin"]
+
+[tasks.install]
+description = "全環境セットアップ"
+run = """
+set -e
+cd pipeline/centerline/python && uv sync
+cd ../../../pipeline/analyzer && uv sync
+cd ../../product && pnpm install
+cd ../infra && npm install
+"""
+
+[tasks."pipeline:analyze"]
+description = "峠分析パイプライン"
+dir = "pipeline"
+run = "uv run --project analyzer python run.py"
+
+[tasks."pipeline:download"]
+description = "画像ダウンロード (--only 24, --force, --dry-run 等)"
+dir = "pipeline/centerline/python"
+run = "uv run python download_all_prefs.py"
+
+[tasks."pipeline:predict"]
+description = "中央線判別 → DB (--pref 24, --write-db, --batch-size 等)"
+dir = "pipeline/centerline/python"
+run = "uv run python predict_to_db.py"
+
+[tasks."pipeline:train"]
+description = "モデル学習 (--epochs, --batch-size, --lr 等)"
+dir = "pipeline/centerline/python"
+run = "uv run python train.py"
+
+[tasks."pipeline:evaluate"]
+description = "モデル評価 (--model, --split, --write-db 等)"
+dir = "pipeline/centerline/python"
+run = "uv run python evaluate.py"
+
+[tasks."pipeline:prepare"]
+description = "学習データ準備 (--pref 09 07 15 等)"
+dir = "pipeline/centerline/python"
+run = "uv run python prepare_data.py"
+
+[tasks."pipeline:server"]
+description = "推論サーバー起動 (--port, --reload 等)"
+dir = "pipeline/centerline/python"
+run = "uv run python server.py"
+
+[tasks."pipeline:viewer"]
+description = "結果確認 viewer (静的HTML, port 7001)"
+dir = "tools/viewer"
+run = """
+explorer.exe 'http://localhost:7001' &
+python3 -m http.server 7001
+"""
+
+[tasks."pipeline:viewer:setup"]
+description = "viewer のシンボリックリンクを作成"
+dir = "tools/viewer"
+run = """
+ln -sfn ../../data/targets targets
+ln -sfn ../../data/terrain_elevations terrain_elevations
+"""
+
+[tasks.dev]
+description = "product/app dev server"
+dir = "product"
+run = "pnpm dev"
+
+[tasks.deploy]
+description = "CDK deploy"
+dir = "infra"
+run = "npx cdk deploy"
