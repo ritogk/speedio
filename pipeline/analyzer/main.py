@@ -12,7 +12,6 @@ from .core.env import getEnv
 from datetime import datetime
 from shapely.geometry import Polygon, MultiPolygon
 from .analysis.turn_edge_spliter import split
-from concurrent.futures import ThreadPoolExecutor
 
 
 from .core.terrain_elevation_generator import write_terrain_elevations_file, generate_file_path
@@ -29,12 +28,6 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     execution_timer_ins.start("🗾 load openstreetmap data", ExecutionType.FETCH)
     graph = graph_feather.fetch_graph(search_area_polygon)
     execution_timer_ins.stop()
-
-    # all/tunnel/bridgeのOSM取得を並列でバックグラウンド開始（元は直列で計500秒超）
-    _executor = ThreadPoolExecutor(max_workers=3)
-    _future_all = _executor.submit(graph_all_feather.fetch_graph, search_area_polygon)
-    _future_tunnel = _executor.submit(graph_tunnel_feather.fetch_graph, search_area_polygon)
-    _future_bridge = _executor.submit(graph_bridge_feather.fetch_graph, search_area_polygon)
 
     # グラフをGeoDataFrameに変換する
     execution_timer_ins.start("💱 convert graph to GeoDataFrame")
@@ -87,9 +80,9 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     gdf_edges["end_point"] = column_generater.end_point.generate(gdf_edges)
     execution_timer_ins.stop()
 
-    # 全graphを取得する（バックグラウンドで取得済み）
+    # 全graphを取得する
     execution_timer_ins.start("🗾 load openstreetmap all data", ExecutionType.FETCH)
-    g_all = _future_all.result()
+    g_all = graph_all_feather.fetch_graph(search_area_polygon)
     execution_timer_ins.stop()
 
     # エッジ内のnodeから分岐数を取得する
@@ -156,9 +149,9 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     gdf_edges["min_elevation"] = column_generater.min_elevation.generate_min_elevation(gdf_edges)
     execution_timer_ins.stop()
 
-    # トンネルのデータを取得する（バックグラウンドで取得済み）
+    # トンネルのデータを取得する
     execution_timer_ins.start("🗾 load osm tunnel data", ExecutionType.FETCH)
-    graph_tunnel = _future_tunnel.result()
+    graph_tunnel = graph_tunnel_feather.fetch_graph(search_area_polygon)
     in_tunnel = graph_tunnel is not None and len(graph_tunnel.edges) >= 1
     if in_tunnel:
         gdf_tunnel_edges = ox.graph_to_gdfs(graph_tunnel, nodes=False, edges=True)
@@ -185,10 +178,9 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         )
         execution_timer_ins.stop()
     
-    # 橋のデータを取得する（バックグラウンドで取得済み）
+    # 橋のデータを取得する
     execution_timer_ins.start("🌉 load osm bridge data", ExecutionType.FETCH)
-    graph_bridge = _future_bridge.result()
-    _executor.shutdown(wait=False)
+    graph_bridge = graph_bridge_feather.fetch_graph(search_area_polygon)
     in_bridge = graph_bridge is not None and len(graph_bridge.edges) >= 1
     if in_bridge:
         gdf_bridge_edges = ox.graph_to_gdfs(graph_bridge, nodes=False, edges=True)
