@@ -16,6 +16,14 @@ import sys
 import tempfile
 from pathlib import Path
 
+import psycopg2
+from shapely import wkt
+from shapely.geometry import LineString
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from analyzer.analysis.column_generater_module.core.linstring_to_polygon import create_vertical_polygon
+
+
 BUCKET = "speediomainstack-createbucketefe7ef15-bdy9vvhyqygf"
 PREFS = [f"{i:02d}" for i in range(1, 48)]
 
@@ -42,10 +50,38 @@ def elevation_fluctuation(elevations):
     return round(up, 1), round(down, 1)
 
 
-def slim_touge(t):
+def fetch_buildings_nearby(cur, geometry_list, buffer_m=15):
+    if not geometry_list or len(geometry_list) < 2:
+        return []
+    lats = [p[0] for p in geometry_list]
+    lngs = [p[1] for p in geometry_list]
+    line_coords = [(p[1], p[0]) for p in geometry_list]  # (lng, lat) for shapely
+    polygon = create_vertical_polygon(line_coords, buffer_m)
+
+    cur.execute("""
+        SELECT ST_AsText(geometry)
+        FROM buildings
+        WHERE ST_Intersects(geometry, ST_MakeEnvelope(%s, %s, %s, %s, 4326))
+    """, (min(lngs), min(lats), max(lngs), max(lats)))
+
+    result = []
+    for (wkt_str,) in cur:
+        geom = wkt.loads(wkt_str)
+        if not geom.intersects(polygon):
+            continue
+        if geom.geom_type == "Polygon":
+            result.append([[r5(c[1]), r5(c[0])] for c in geom.exterior.coords])
+        elif geom.geom_type == "MultiPolygon":
+            for poly in geom.geoms:
+                result.append([[r5(c[1]), r5(c[0])] for c in poly.exterior.coords])
+    return result
+
+
+def slim_touge(t, cur=None):
     fluct = t.get("elevation_fluctuation")
     if fluct is None:
         fluct = elevation_fluctuation(t.get("elevation_smooth"))
+    buildings = fetch_buildings_nearby(cur, t.get("geometry_list")) if cur else []
     return {
         "length": t.get("length"),
         "highway": t.get("highway"),
@@ -63,7 +99,7 @@ def slim_touge(t):
             {"point": [r5(u["point"][0]), r5(u["point"][1])], "prominence": round(u["prominence"], 1)}
             for u in t.get("elevation_unevenness") or []
         ],
-        "building_nearby_cnt": t.get("building_nearby_cnt"),
+        "building_nearby_cnt": len(buildings),
         "uphill_cnt": len((t.get("elevation_unevenness_sections") or {}).get("uphill") or []) if t.get("elevation_unevenness_sections") else None,
         "downhill_cnt": len((t.get("elevation_unevenness_sections") or {}).get("downhill") or []) if t.get("elevation_unevenness_sections") else None,
         "geometry_list": [[r5(p[0]), r5(p[1])] for p in t.get("geometry_list") or []],
@@ -75,33 +111,45 @@ def slim_touge(t):
             }
             for s in t.get("road_section") or []
         ],
+        "elevation_smooth": [round(e, 1) for e in t.get("elevation_smooth") or []],
+        "elevation_unevenness_sections": {
+            k: [{"start": [r5(s["start"][0]), r5(s["start"][1])], "end": [r5(s["end"][0]), r5(s["end"][1])]} for s in v]
+            for k, v in (t.get("elevation_unevenness_sections") or {}).items()
+        } if t.get("elevation_unevenness_sections") else None,
+        "buildings": buildings,
     }
 
 
 def main():
     prefs = sys.argv[1:] or PREFS
-    for code in prefs:
-        src = f"s3://{BUCKET}/targets/{code}/target.json"
-        dst = f"s3://{BUCKET}/targets/{code}/target.slim.json"
-        with tempfile.TemporaryDirectory() as tmp:
-            raw_path = Path(tmp) / "target.json"
-            gz_path = Path(tmp) / "target.slim.json"
-            r = subprocess.run(["aws", "s3", "cp", src, str(raw_path), "--only-show-errors"])
-            if r.returncode != 0:
-                print(f"[{code}] SKIP (download failed)")
-                continue
-            data = json.loads(raw_path.read_text())
-            slim = [slim_touge(t) for t in data]
-            body = json.dumps(slim, ensure_ascii=False, separators=(",", ":")).encode()
-            gz_path.write_bytes(gzip.compress(body, 9))
-            subprocess.run([
-                "aws", "s3", "cp", str(gz_path), dst,
-                "--content-type", "application/json",
-                "--content-encoding", "gzip",
-                "--cache-control", "public, max-age=86400",
-                "--only-show-errors",
-            ], check=True)
-            print(f"[{code}] {raw_path.stat().st_size/1e6:6.1f}MB -> slim {len(body)/1e6:5.2f}MB -> gzip {gz_path.stat().st_size/1e6:5.2f}MB ({len(slim)}件)")
+    conn = psycopg2.connect(host="localhost", dbname="speedia", user="postgres", password="postgres")
+    cur = conn.cursor()
+    try:
+        for code in prefs:
+            src = f"s3://{BUCKET}/targets/{code}/target.json"
+            dst = f"s3://{BUCKET}/targets/{code}/target.slim.json"
+            with tempfile.TemporaryDirectory() as tmp:
+                raw_path = Path(tmp) / "target.json"
+                gz_path = Path(tmp) / "target.slim.json"
+                r = subprocess.run(["aws", "s3", "cp", src, str(raw_path), "--only-show-errors"])
+                if r.returncode != 0:
+                    print(f"[{code}] SKIP (download failed)")
+                    continue
+                data = json.loads(raw_path.read_text())
+                slim = [slim_touge(t, cur) for t in data]
+                body = json.dumps(slim, ensure_ascii=False, separators=(",", ":")).encode()
+                gz_path.write_bytes(gzip.compress(body, 9))
+                subprocess.run([
+                    "aws", "s3", "cp", str(gz_path), dst,
+                    "--content-type", "application/json",
+                    "--content-encoding", "gzip",
+                    "--cache-control", "public, max-age=86400",
+                    "--only-show-errors",
+                ], check=True)
+                print(f"[{code}] {raw_path.stat().st_size/1e6:6.1f}MB -> slim {len(body)/1e6:5.2f}MB -> gzip {gz_path.stat().st_size/1e6:5.2f}MB ({len(slim)}件)")
+    finally:
+        cur.close()
+        conn.close()
 
 
 if __name__ == "__main__":

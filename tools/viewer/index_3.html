@@ -333,11 +333,16 @@ main{flex:1;position:relative;min-height:0}
   display:flex;align-items:center;justify-content:center;
 }
 .overlay-3d-close:hover{background:rgba(255,255,255,.15)}
+.overlay-3d-tools{
+  position:absolute;top:14px;right:14px;z-index:10;
+  display:flex;flex-direction:column;gap:8px;
+}
 .overlay-3d-toggle{
-  margin-left:auto;flex-shrink:0;
+  flex-shrink:0;
   font:inherit;font-size:11px;font-weight:500;cursor:pointer;
   border:1px solid rgba(255,255,255,.25);border-radius:999px;
   background:rgba(0,0,0,.45);color:#fff;padding:6px 14px;
+  white-space:nowrap;
 }
 .overlay-3d-toggle:hover{background:rgba(255,255,255,.15)}
 .overlay-3d-info{color:#fff;font-size:13px;line-height:1.6}
@@ -454,7 +459,10 @@ main{flex:1;position:relative;min-height:0}
     <div class="overlay-3d-hud">
       <button class="overlay-3d-close" id="close3d">✕</button>
       <div class="overlay-3d-info" id="info3d"></div>
+    </div>
+    <div class="overlay-3d-tools" id="tools3d">
       <button class="overlay-3d-toggle" id="toggle3dColor" style="display:none">登り/下り</button>
+      <button class="overlay-3d-toggle" id="toggle3dBuildings" style="display:none">🏠 建物</button>
     </div>
     <div class="overlay-3d-legend" id="legend3d"></div>
     <div class="overlay-3d-hint">1本指で回転 ・ 2本指で移動/ズーム</div>
@@ -945,6 +953,7 @@ function toViewModel(raw, idx){
     roadSection: secs,
     elevationSmooth: raw.elevation_smooth || [],
     elevSections: raw.elevation_unevenness_sections || null,
+    buildings: raw.buildings || [],
     googleEarthUrl: raw.google_earth_url
   };
 }
@@ -1737,29 +1746,6 @@ async function loadThreeJS(){
 
 
 
-async function fetchBuildings(south, west, north, east){
-  const query = `[out:json][timeout:10];way["building"](${south},${west},${north},${east});(._;>;);out body;`;
-  try{
-    const resp = await fetch('https://overpass-api.de/api/interpreter',{
-      method:'POST', body:'data='+encodeURIComponent(query)
-    });
-    if(!resp.ok) return [];
-    const data = await resp.json();
-    const nodes = {}, ways = [];
-    data.elements.forEach(el=>{
-      if(el.type==='node') nodes[el.id]=el;
-      else if(el.type==='way' && el.tags?.building) ways.push(el);
-    });
-    return ways.map(w=>{
-      let c = w.nodes.map(nid=>nodes[nid]).filter(Boolean);
-      if(c.length>1 && c[0].id===c[c.length-1].id) c=c.slice(0,-1);
-      if(c.length<3) return null;
-      const h = parseFloat(w.tags?.height)||(parseInt(w.tags?.['building:levels'])||2)*3;
-      return {coords:c.map(n=>[n.lat,n.lon]), height:h};
-    }).filter(Boolean);
-  }catch(e){ console.warn('[3D] building fetch failed:',e); return []; }
-}
-
 async function open3DView(t){
   if(active3D) close3DView();
   showLoading(true, "3Dデータを準備中…");
@@ -1833,7 +1819,6 @@ async function open3DView(t){
     const gMaxLat = maxLat + (maxLat - minLat) * PAD_RATIO;
     const gMinLng = minLng - (maxLng - minLng) * PAD_RATIO;
     const gMaxLng = maxLng + (maxLng - minLng) * PAD_RATIO;
-    const buildingsP = fetchBuildings(minLat, minLng, maxLat, maxLng);
     const GRID = 35;
     const gridPts = [];
     for(let j = 0; j < GRID; j++)
@@ -1888,9 +1873,14 @@ async function open3DView(t){
       new THREE.LineBasicMaterial({color: 0x3a7a4d, transparent: true, opacity: .08})
     ));
 
-    // 建物ポリゴン（Overpass API → 押し出しメッシュ）
-    const buildings = await buildingsP;
-    if(buildings.length){
+    // 道路中心線のXY座標（建物オフセット計算用）
+    const roadXY = geomList.map(p => toXYZ(p[0], p[1], 0));
+    const MIN_OFFSET = 5;
+
+    // 建物マーカー（slim.jsonの事前データ → 道路脇のボックス、初期非表示）
+    const bldgPolys = t.buildings || [];
+    const bldgObjs = [];
+    if(bldgPolys.length){
       const interpElev = (lat,lng)=>{
         const fx = (lng-gMinLng)/(gMaxLng-gMinLng)*(GRID-1);
         const fy = (lat-gMinLat)/(gMaxLat-gMinLat)*(GRID-1);
@@ -1901,30 +1891,44 @@ async function open3DView(t){
         const e01=gridElevs[(iy+1)*GRID+ix], e11=gridElevs[(iy+1)*GRID+ix+1];
         return e00*(1-tx)*(1-ty)+e10*tx*(1-ty)+e01*(1-tx)*ty+e11*tx*ty;
       };
+      const boxSize = 2.5;
+      const boxGeo = new THREE.BoxGeometry(boxSize, boxSize, boxSize * 2.5);
       const bldgMat = new THREE.MeshStandardMaterial({
-        color:0xd4c8a8, roughness:.85, metalness:.05,
-        transparent:true, opacity:.75, side:THREE.DoubleSide
+        color:0xE8E8E8, roughness:.5, metalness:.15,
+        emissive:0xCCDDEE, emissiveIntensity:.25
       });
-      const bEdgeMat = new THREE.LineBasicMaterial({color:0x8a7e68, transparent:true, opacity:.4});
-      buildings.forEach(b=>{
+      const bEdgeMat = new THREE.LineBasicMaterial({color:0x88AACC});
+      bldgPolys.forEach(coords=>{
+        let ring = coords;
+        if(ring.length>1 && ring[0][0]===ring[ring.length-1][0] && ring[0][1]===ring[ring.length-1][1]) ring=ring.slice(0,-1);
+        if(ring.length<3) return;
         let cLat=0, cLng=0;
-        b.coords.forEach(c=>{ cLat+=c[0]; cLng+=c[1]; });
-        cLat/=b.coords.length; cLng/=b.coords.length;
+        ring.forEach(c=>{ cLat+=c[0]; cLng+=c[1]; });
+        cLat/=ring.length; cLng/=ring.length;
         const bElev = interpElev(cLat, cLng);
-        const shape = new THREE.Shape();
-        const fp = b.coords.map(c=>toXYZ(c[0],c[1],0));
-        shape.moveTo(fp[0][0], fp[0][1]);
-        for(let i=1;i<fp.length;i++) shape.lineTo(fp[i][0], fp[i][1]);
-        try{
-          const geo = new THREE.ExtrudeGeometry(shape,{depth:b.height*Z_SCALE, bevelEnabled:false});
-          const mesh = new THREE.Mesh(geo, bldgMat);
-          mesh.position.z = (bElev-baseElev)*Z_SCALE+0.15;
-          group.add(mesh);
-          const edges = new THREE.EdgesGeometry(geo);
-          const eLine = new THREE.LineSegments(edges, bEdgeMat);
-          eLine.position.z = mesh.position.z;
-          group.add(eLine);
-        }catch(e){}
+        const [bx, by] = toXYZ(cLat, cLng, 0);
+        // 最寄りの道路点を探してオフセット
+        let nearI=0, nearD=Infinity;
+        for(let i=0;i<roadXY.length;i++){
+          const d=(roadXY[i][0]-bx)**2+(roadXY[i][1]-by)**2;
+          if(d<nearD){nearD=d;nearI=i;}
+        }
+        let ox=bx-roadXY[nearI][0], oy=by-roadXY[nearI][1];
+        const dist=Math.sqrt(ox*ox+oy*oy)||1;
+        if(dist<MIN_OFFSET){ ox=ox/dist*MIN_OFFSET; oy=oy/dist*MIN_OFFSET; }
+        const fx=roadXY[nearI][0]+ox, fy=roadXY[nearI][1]+oy;
+        const bz=(bElev-baseElev)*Z_SCALE;
+        const mesh = new THREE.Mesh(boxGeo, bldgMat);
+        mesh.position.set(fx, fy, bz + boxSize);
+        mesh.visible = false;
+        group.add(mesh);
+        bldgObjs.push(mesh);
+        const edges = new THREE.EdgesGeometry(boxGeo);
+        const eLine = new THREE.LineSegments(edges, bEdgeMat);
+        eLine.position.copy(mesh.position);
+        eLine.visible = false;
+        group.add(eLine);
+        bldgObjs.push(eLine);
       });
     }
 
@@ -2217,6 +2221,19 @@ async function open3DView(t){
       };
     }else{
       toggleBtn.style.display = "none";
+    }
+
+    const bldgBtn = $("toggle3dBuildings");
+    if(bldgObjs.length){
+      bldgBtn.style.display = "";
+      let bldgVisible = false;
+      bldgBtn.onclick = ()=>{
+        bldgVisible = !bldgVisible;
+        bldgObjs.forEach(o => o.visible = bldgVisible);
+        bldgBtn.style.opacity = bldgVisible ? "1" : "";
+      };
+    }else{
+      bldgBtn.style.display = "none";
     }
 
     active3D = {renderer, scene, animId, onResize};
