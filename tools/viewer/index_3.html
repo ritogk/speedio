@@ -678,7 +678,7 @@ map.on("load", () => {
       "line-color":cssVar("--route-red"),
       "line-width":["interpolate",["linear"],["zoom"],8,10,14,22],
       "line-blur":3,
-      "line-opacity":.85
+      "line-opacity":.75
     }
   });
   map.addLayer({
@@ -1222,17 +1222,16 @@ function selectCard(id,scroll){
   }
   highlightOnMap(id);
 }
-// 選択中の峠を地図上で強調（グロー表示 + フェード解除）
+// 選択中の峠を地図上で強調（白グロー + 非選択を強フェード）
 function highlightOnMap(id){
   if(!mapReady) return;
+  const hasSelection = id != null;
   const sel = ["==",["get","tid"], id ?? -9999];
   map.setFilter("touge-selected", sel);
   map.setPaintProperty("touge-line", "line-opacity",
-    ["case", sel, 1, ["coalesce",["get","fade"],1]]);
+    ["coalesce",["get","fade"],1]);
   map.setPaintProperty("touge-casing", "line-opacity",
-    ["case", sel, 1, ["*",.9,["coalesce",["get","fade"],1]]]);
-  const t = id != null ? lastRanked.find(x=>x.id === id) : null;
-  setGhost(t ? t.poly : null);
+    ["*",.9,["coalesce",["get","fade"],1]]);
 }
 
 // ===== ゴーストライン =====
