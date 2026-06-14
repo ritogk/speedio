@@ -300,6 +300,33 @@ main{flex:1;position:relative;min-height:0}
 }
 .toast.show{opacity:.95}
 
+.overlay-3d{
+  position:fixed;inset:0;z-index:2000;
+  background:#101410;display:none;flex-direction:column;
+}
+.overlay-3d.show{display:flex}
+.overlay-3d canvas{display:block}
+.overlay-3d-hud{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  padding:14px 16px;display:flex;align-items:center;gap:12px;
+  background:linear-gradient(rgba(0,0,0,.65),transparent);
+  pointer-events:none;
+}
+.overlay-3d-hud>*{pointer-events:auto}
+.overlay-3d-close{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.45);
+  color:#fff;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.overlay-3d-close:hover{background:rgba(255,255,255,.15)}
+.overlay-3d-info{color:#fff;font-size:13px;line-height:1.6}
+.overlay-3d-info b{font-weight:700}
+.overlay-3d-hint{
+  position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:10;
+  color:rgba(255,255,255,.45);font-size:11px;pointer-events:none;white-space:nowrap;
+}
+
 @media (min-width:761px){
   .chip-row{flex-wrap:wrap;overflow-x:visible}
   .panel{
@@ -384,8 +411,8 @@ main{flex:1;position:relative;min-height:0}
           <button class="chip" aria-pressed="false" data-preset="corner">コーナー重視</button>
           <button class="chip" aria-pressed="false" data-preset="updown">高低差重視</button>
           <button class="chip" aria-pressed="false" data-preset="nearby">📍 近くの峠</button>
-          <button class="chip" aria-pressed="false" id="seclusionToggle" data-filter="seclusion">秘境</button>
-          <button class="chip" aria-pressed="false" id="uphillToggle" data-filter="uphill">峠越え</button>
+          <button class="chip" aria-pressed="false" id="seclusionToggle" data-filter="seclusion">🏔 秘境</button>
+          <button class="chip" aria-pressed="false" id="uphillToggle" data-filter="uphill">〰 起伏</button>
         </div>
         <p class="preset-hint" id="presetHint">コーナー・高低差・道幅をバランスよく評価します。</p>
       </section>
@@ -395,6 +422,13 @@ main{flex:1;position:relative;min-height:0}
 
   <div class="loading-overlay" id="loading"><div class="spinner"></div><p id="loadingText">読み込み中…</p></div>
   <div class="toast" id="toast"></div>
+  <div class="overlay-3d" id="overlay3d">
+    <div class="overlay-3d-hud">
+      <button class="overlay-3d-close" id="close3d">✕</button>
+      <div class="overlay-3d-info" id="info3d"></div>
+    </div>
+    <div class="overlay-3d-hint">ドラッグで回転 ・ ホイールでズーム</div>
+  </div>
 </main>
 
 <script>
@@ -848,6 +882,7 @@ function cardHtml(t, rank, total){
       <div class="card-actions">
         <a class="btn primary" href="${googleMapUrl(t.poly)}" target="_blank" rel="noopener" data-act="link">🚗 行く</a>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">📷 路面</a>`:""}
+        <button class="btn" data-act="3d">🏔 3D</button>
       </div>
       <div class="thumb" data-tid="${t.id}"><span class="thumb-spin"></span></div>
     </article>`;
@@ -878,6 +913,11 @@ function renderCards(){
   document.querySelectorAll(".card").forEach(card=>{
     card.addEventListener("click",e=>{
       if(e.target.dataset.act === "link") return;
+      if(e.target.closest('[data-act="3d"]')){
+        const t = ranked.find(x=>x.id === Number(card.dataset.id));
+        if(t) open3DView(t);
+        return;
+      }
       const t = ranked.find(x=>x.id === Number(card.dataset.id));
       if(!t) return;
       selectCard(t.id,true);
