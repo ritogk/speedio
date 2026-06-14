@@ -240,7 +240,16 @@ main{flex:1;position:relative;min-height:0}
   font-size:10px;font-weight:500;color:var(--ink-soft);
   border:1px solid var(--contour);border-radius:999px;padding:1px 8px;white-space:nowrap;
 }
-.card-top h3{font-size:14px;font-weight:700;word-break:break-all;flex-basis:100%}
+.card-top h3{font-size:14px;font-weight:700;flex-basis:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative}
+.card-top h3::after{
+  content:attr(data-full);display:none;
+  position:absolute;left:0;top:calc(100% + 4px);z-index:10;
+  background:var(--ink);color:#fff;font-size:12px;font-weight:500;
+  padding:6px 10px;border-radius:6px;white-space:normal;
+  max-width:280px;width:max-content;line-height:1.5;
+  box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none;
+}
+.card-top h3:hover::after{display:block}
 .dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap}
 .meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
 .meta b{color:var(--ink);font-weight:500}
@@ -872,7 +881,7 @@ function cardHtml(t, rank, total){
   return `
     <article class="card" data-id="${t.id}" tabindex="0">
       <div class="card-top">
-        <span class="rank-num">${rank+1}.</span><span class="route-oval">${escapeHtml(t.routeLabel)}</span>${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}<h3>${escapeHtml(t.name)}</h3>
+        <span class="rank-num">${rank+1}.</span><span class="route-oval">${escapeHtml(t.routeLabel)}</span>${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}<h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
       </div>
       <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b></p>
       <div class="bars">
