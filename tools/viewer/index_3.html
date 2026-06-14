@@ -845,10 +845,10 @@ function toViewModel(raw, idx){
     googleEarthUrl: raw.google_earth_url
   };
 }
-function googleMapUrl(poly){
+function googleMapUrl(poly, lat, lng){
   if(!poly.length) return "#";
   const st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
-  const origin = userLatLng ? `${userLatLng[0]},${userLatLng[1]}` : "current+location";
+  const origin = lat!=null ? `${lat},${lng}` : "current+location";
   return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${ed[0]},${ed[1]}&waypoints=${st[0]},${st[1]}|${ct[0]},${ct[1]}`;
 }
 // ライン中央点のストリートビューを進行方向向きで開くURL（target.json内の旧形式URLは廃止されたため自前生成）
@@ -891,7 +891,7 @@ function cardHtml(t, rank, total){
       </div>
       <div class="card-tags">${t.unevennessCount!=null&&t.unevennessCount>0?`<span class="card-tag">${bumpIcons(t.unevennessCount)}</span>`:""}${t.buildingCnt!=null&&t.buildingCnt>0?`<span class="card-tag">🏠 ×${t.buildingCnt}</span>`:""}</div>
       <div class="card-actions">
-        <a class="btn primary" href="${googleMapUrl(t.poly)}" target="_blank" rel="noopener" data-act="link">🚗 行く</a>
+        <button class="btn primary" data-act="nav" data-poly='${JSON.stringify(t.poly)}'>🚗 行く</button>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">📷 路面</a>`:""}
         <button class="btn" data-act="3d"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 9l10 6 10-6-10-6z"/><path d="M2 15l10 6 10-6"/><path d="M2 9v6"/><path d="M22 9v6"/></svg> 3D</button>
       </div>
@@ -924,6 +924,25 @@ function renderCards(){
   document.querySelectorAll(".card").forEach(card=>{
     card.addEventListener("click",e=>{
       if(e.target.dataset.act === "link") return;
+      const navBtn = e.target.closest('[data-act="nav"]');
+      if(navBtn){
+        e.stopPropagation();
+        const poly = JSON.parse(navBtn.dataset.poly);
+        const openNav = (lat,lng)=>window.open(googleMapUrl(poly,lat,lng),"_blank");
+        if(navigator.geolocation){
+          const orig = navBtn.textContent;
+          navBtn.innerHTML = '🚗 <span style="display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;vertical-align:-1px"></span>';
+          navBtn.disabled = true;
+          navigator.geolocation.getCurrentPosition(
+            pos=>{ navBtn.textContent=orig; navBtn.disabled=false; openNav(pos.coords.latitude,pos.coords.longitude); },
+            ()=>{ navBtn.textContent=orig; navBtn.disabled=false; openNav(); },
+            {timeout:3000}
+          );
+        }else{
+          openNav();
+        }
+        return;
+      }
       if(e.target.closest('[data-act="3d"]')){
         const t = ranked.find(x=>x.id === Number(card.dataset.id));
         if(t) open3DView(t);
