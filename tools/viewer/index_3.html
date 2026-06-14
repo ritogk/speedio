@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <meta name="theme-color" content="#FFFFFF">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}
+</script>
 <style>
 :root{
   /* 一般的なライトUI + シグナルレッド（accentはロゴ/primary CTA/選択状態のみ） */
@@ -257,7 +260,7 @@ main{flex:1;position:relative;min-height:0}
 .card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .card-tag{font-size:10px;color:var(--ink-soft);background:var(--paper-deep);border-radius:4px;padding:2px 7px}
 .card-tag b{color:var(--ink);font-weight:500}
-.card-actions{display:flex;gap:6px;margin-top:9px}
+.card-actions{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}
 .btn{
   font:inherit;font-size:11px;font-weight:500;cursor:pointer;
   border:1px solid var(--line);border-radius:6px;background:var(--paper-deep);
@@ -1569,6 +1572,385 @@ window.addEventListener("resize",()=>{
 window.addEventListener("scroll",()=>{
   if(window.scrollX || window.scrollY) window.scrollTo(0,0);
 });
+
+// ================= 3Dオーバーレイ =================
+let active3D = null;
+let threeLib = null;
+const fullJsonCache = {};
+
+async function loadThreeJS(){
+  if(threeLib) return threeLib;
+  const [THREE, orbitMod, l2Mod, lmMod, lgMod] = await Promise.all([
+    import('three'),
+    import('three/addons/controls/OrbitControls.js'),
+    import('three/addons/lines/Line2.js'),
+    import('three/addons/lines/LineMaterial.js'),
+    import('three/addons/lines/LineGeometry.js')
+  ]);
+  threeLib = {THREE, OrbitControls: orbitMod.OrbitControls,
+    Line2: l2Mod.Line2, LineMaterial: lmMod.LineMaterial, LineGeometry: lgMod.LineGeometry};
+  return threeLib;
+}
+
+async function fetchFullJson(){
+  const code = $("prefSelect").value;
+  if(!code) return null;
+  if(fullJsonCache[code]) return fullJsonCache[code];
+  const res = await fetch(`./targets/${code}/target.json`);
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  fullJsonCache[code] = data;
+  return data;
+}
+
+async function open3DView(t){
+  if(active3D) close3DView();
+  showLoading(true, "3Dデータを準備中…");
+  try{
+    const [threeResult, fullJson] = await Promise.all([loadThreeJS(), fetchFullJson()]);
+    const {THREE, OrbitControls, Line2, LineMaterial, LineGeometry} = threeResult;
+    if(!fullJson || !fullJson[t.id]){ toast("3Dデータが見つかりません"); return; }
+
+    const full = fullJson[t.id];
+    const geomList = full.geometry_list || [];
+    const elevSmooth = full.elevation_smooth || [];
+    if(geomList.length < 2 || elevSmooth.length < 2){ toast("3Dデータが不十分です"); return; }
+
+    const LEVEL_HEX = {
+      strong:0xFF453A, medium:0xFF9F0A, weak:0x30D158,
+      straight:0x98989D, none:0x98989D
+    };
+
+    // geometry_list + elevation_smoothを直接使用（1:1インデックス対応）
+    // road_sectionのコーナーレベルを順方向マッチングで割り当て
+    const ptLevels = new Array(geomList.length).fill("straight");
+    let cursor = 0;
+    const roadSecs = full.road_section || [];
+    roadSecs.forEach(sec => {
+      const pts = sec.points || [];
+      if(pts.length < 2) return;
+      const level = sec.section_type === "straight" ? "straight" : (sec.corner_level || "weak");
+      const fLat = pts[0][1], fLng = pts[0][0];
+      let si = cursor, bestD = Infinity;
+      for(let i = cursor; i < Math.min(cursor + 150, geomList.length); i++){
+        const d = (geomList[i][0]-fLat)**2 + (geomList[i][1]-fLng)**2;
+        if(d < bestD){ bestD = d; si = i; }
+      }
+      const lLat = pts[pts.length-1][1], lLng = pts[pts.length-1][0];
+      let ei = si; bestD = Infinity;
+      for(let i = si; i < Math.min(si + 300, geomList.length); i++){
+        const d = (geomList[i][0]-lLat)**2 + (geomList[i][1]-lLng)**2;
+        if(d < bestD){ bestD = d; ei = i; }
+      }
+      for(let i = si; i <= ei; i++) ptLevels[i] = level;
+      cursor = ei;
+    });
+
+    const midI = Math.floor(geomList.length / 2);
+    const baseLat = geomList[midI][0], baseLng = geomList[midI][1];
+    const cosLat = Math.cos(baseLat * Math.PI / 180);
+    const DEG2M = 111320;
+    const validElevs = elevSmooth.filter(e => e !== 0);
+    const baseElev = validElevs.length ? Math.min(...validElevs) : 0;
+
+    let minLat=90, maxLat=-90, minLng=180, maxLng=-180;
+    geomList.forEach(p => {
+      minLat = Math.min(minLat, p[0]); maxLat = Math.max(maxLat, p[0]);
+      minLng = Math.min(minLng, p[1]); maxLng = Math.max(maxLng, p[1]);
+    });
+
+    const spanX = (maxLng - minLng) * DEG2M * cosLat;
+    const spanY = (maxLat - minLat) * DEG2M;
+    const span = Math.max(spanX, spanY, 100);
+    const SCALE = 300 / span;
+    const elevSpan = validElevs.length ? Math.max(...validElevs) - Math.min(...validElevs) : 100;
+    const Z_EXG = Math.max(1.5, Math.min(5, span * 0.35 / Math.max(elevSpan, 1)));
+    const Z_SCALE = SCALE * Z_EXG;
+
+    const toXYZ = (lat, lng, elev) => [
+      (lng - baseLng) * DEG2M * cosLat * SCALE,
+      (lat - baseLat) * DEG2M * SCALE,
+      (elev - baseElev) * Z_SCALE
+    ];
+
+    const PAD_RATIO = 0.2;
+    const gMinLat = minLat - (maxLat - minLat) * PAD_RATIO;
+    const gMaxLat = maxLat + (maxLat - minLat) * PAD_RATIO;
+    const gMinLng = minLng - (maxLng - minLng) * PAD_RATIO;
+    const gMaxLng = maxLng + (maxLng - minLng) * PAD_RATIO;
+    const GRID = 35;
+    const gridPts = [];
+    for(let j = 0; j < GRID; j++)
+      for(let i = 0; i < GRID; i++)
+        gridPts.push([
+          gMinLat + (gMaxLat - gMinLat) * j / (GRID - 1),
+          gMinLng + (gMaxLng - gMinLng) * i / (GRID - 1)
+        ]);
+    const gridElevs = await sampleElevations(gridPts, gridPts.length);
+
+    const overlay = $("overlay3d");
+    const W = window.innerWidth, H = window.innerHeight;
+
+    const renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x101410);
+    overlay.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, W / H, 0.5, 5000);
+    camera.up.set(0, 0, 1);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.maxPolarAngle = Math.PI / 2.05;
+
+    const group = new THREE.Group();
+
+    const terrVerts = new Float32Array(GRID * GRID * 3);
+    for(let i = 0; i < gridPts.length; i++){
+      const [x, y, z] = toXYZ(gridPts[i][0], gridPts[i][1], gridElevs[i]);
+      terrVerts[i*3] = x; terrVerts[i*3+1] = y; terrVerts[i*3+2] = z;
+    }
+    const terrIdx = [];
+    for(let j = 0; j < GRID - 1; j++)
+      for(let i = 0; i < GRID - 1; i++){
+        const a = j * GRID + i;
+        terrIdx.push(a, a+GRID, a+1, a+1, a+GRID, a+GRID+1);
+      }
+    const terrGeo = new THREE.BufferGeometry();
+    terrGeo.setAttribute('position', new THREE.BufferAttribute(terrVerts, 3));
+    terrGeo.setIndex(terrIdx);
+    terrGeo.computeVertexNormals();
+    group.add(new THREE.Mesh(terrGeo, new THREE.MeshStandardMaterial({
+      color: 0x2d6b3a, roughness: .9, metalness: 0,
+      transparent: true, opacity: .55, side: THREE.DoubleSide
+    })));
+    group.add(new THREE.LineSegments(
+      new THREE.WireframeGeometry(terrGeo),
+      new THREE.LineBasicMaterial({color: 0x3a7a4d, transparent: true, opacity: .12})
+    ));
+
+    // 道路メッシュ（geometry_list + elevation_smooth直結、3d.jsと同じリボン方式）
+    const ROAD_W = 1.5;
+    const pts3 = geomList.map((p, i) => {
+      const [x, y, z] = toXYZ(p[0], p[1], elevSmooth[i] ?? 0);
+      return new THREE.Vector3(x, y, z + 0.3);
+    });
+
+    // 法線ベクトル（XY平面の垂線、道路を平坦に保つ）
+    const normals = [];
+    for(let i = 0; i < pts3.length - 1; i++){
+      const dx = pts3[i+1].x - pts3[i].x, dy = pts3[i+1].y - pts3[i].y;
+      const len = Math.sqrt(dx*dx + dy*dy) || 1;
+      normals.push(new THREE.Vector3(-dy/len, dx/len, 0));
+    }
+    normals.push(normals[normals.length - 1].clone());
+    // 隣接法線の平均で角のギザつきを軽減
+    const smoothNormals = normals.map((n, i) => {
+      if(i === 0 || i === normals.length - 1) return n;
+      return new THREE.Vector3().addVectors(normals[i-1], normals[i]).normalize();
+    });
+
+    // 左端・右端・中央のポイント列
+    const leftPts = pts3.map((p, i) => p.clone().addScaledVector(smoothNormals[i], -ROAD_W));
+    const rightPts = pts3.map((p, i) => p.clone().addScaledVector(smoothNormals[i], ROAD_W));
+    const centerPts = pts3.map((p, i) => p.clone().addScaledVector(smoothNormals[i], ROAD_W * 0.5));
+
+    // コーナーレベル毎にリボンメッシュを生成
+    let runStart = 0;
+    for(let i = 0; i <= pts3.length; i++){
+      if(i < pts3.length && ptLevels[i] === ptLevels[runStart]) continue;
+      const end = Math.min(i, pts3.length - 1);
+      const n = end - runStart + 1;
+      if(n >= 2){
+        const verts = new Float32Array(n * 2 * 3);
+        for(let j = 0; j < n; j++){
+          const li = leftPts[runStart + j], ri = rightPts[runStart + j];
+          verts[j*6]   = li.x; verts[j*6+1] = li.y; verts[j*6+2] = li.z;
+          verts[j*6+3] = ri.x; verts[j*6+4] = ri.y; verts[j*6+5] = ri.z;
+        }
+        const idx = [];
+        for(let j = 0; j < n - 1; j++){
+          const a=j*2, b=j*2+1, c=(j+1)*2, d=(j+1)*2+1;
+          idx.push(a, c, b, b, c, d);
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+        geo.setIndex(idx);
+        geo.computeVertexNormals();
+        group.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+          color: LEVEL_HEX[ptLevels[runStart]] || 0x98989D,
+          side: THREE.DoubleSide
+        })));
+      }
+      runStart = i;
+    }
+
+    // 縁線（白）
+    const edgeMat = new THREE.LineBasicMaterial({color: 0x595959});
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftPts), edgeMat));
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightPts), edgeMat.clone()));
+    // 中央線（破線）
+    const centerMat = new THREE.LineDashedMaterial({color: 0x595959, dashSize: 2, gapSize: 1.5});
+    const centerLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(centerPts), centerMat);
+    centerLine.computeLineDistances();
+    group.add(centerLine);
+
+    // 補助線（bboxフレーム + 道路から上方向への垂直線）
+    {
+      let rMinX=Infinity,rMaxX=-Infinity,rMinY=Infinity,rMaxY=-Infinity,rMinZ=Infinity,rMaxZ=-Infinity;
+      pts3.forEach(p=>{
+        rMinX=Math.min(rMinX,p.x);rMaxX=Math.max(rMaxX,p.x);
+        rMinY=Math.min(rMinY,p.y);rMaxY=Math.max(rMaxY,p.y);
+        rMinZ=Math.min(rMinZ,p.z);rMaxZ=Math.max(rMaxZ,p.z);
+      });
+      const pad = 8;
+      rMinX-=pad;rMaxX+=pad;rMinY-=pad;rMaxY+=pad;
+
+      const dashMat = new THREE.LineDashedMaterial({
+        color:0x888888, dashSize:3, gapSize:2, transparent:true, opacity:.25
+      });
+      const addDash = (points) => {
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), dashMat.clone());
+        line.computeLineDistances();
+        group.add(line);
+      };
+
+      // bbox底面
+      addDash([
+        new THREE.Vector3(rMinX,rMinY,rMinZ), new THREE.Vector3(rMaxX,rMinY,rMinZ),
+        new THREE.Vector3(rMaxX,rMaxY,rMinZ), new THREE.Vector3(rMinX,rMaxY,rMinZ),
+        new THREE.Vector3(rMinX,rMinY,rMinZ)
+      ]);
+      // bbox上面
+      addDash([
+        new THREE.Vector3(rMinX,rMinY,rMaxZ), new THREE.Vector3(rMaxX,rMinY,rMaxZ),
+        new THREE.Vector3(rMaxX,rMaxY,rMaxZ), new THREE.Vector3(rMinX,rMaxY,rMaxZ),
+        new THREE.Vector3(rMinX,rMinY,rMaxZ)
+      ]);
+      // bbox4隅の垂直線
+      [[rMinX,rMinY],[rMaxX,rMinY],[rMaxX,rMaxY],[rMinX,rMaxY]].forEach(([x,y])=>{
+        addDash([new THREE.Vector3(x,y,rMinZ), new THREE.Vector3(x,y,rMaxZ)]);
+      });
+
+      // 道路ポイントから上方向への垂直線（実距離kmベースの間隔）
+      const intervalKm = t.lengthKm < 3 ? 0.5 : t.lengthKm < 10 ? 1 : 2;
+      const intervalM = intervalKm * 1000;
+      let accumM = 0;
+      let lastVertM = -intervalM;
+      for(let i = 0; i < geomList.length; i++){
+        if(i > 0){
+          const dy = (geomList[i][0] - geomList[i-1][0]) * DEG2M;
+          const dx = (geomList[i][1] - geomList[i-1][1]) * DEG2M * cosLat;
+          accumM += Math.sqrt(dx*dx + dy*dy);
+        }
+        if(accumM - lastVertM >= intervalM){
+          const p = pts3[i];
+          addDash([new THREE.Vector3(p.x, p.y, p.z), new THREE.Vector3(p.x, p.y, rMaxZ)]);
+          lastVertM = accumM;
+        }
+      }
+      const last = pts3[pts3.length - 1];
+      addDash([new THREE.Vector3(last.x, last.y, last.z), new THREE.Vector3(last.x, last.y, rMaxZ)]);
+
+      // 底面に道路の影（投影線）
+      const floorPts = pts3.map(p => new THREE.Vector3(p.x, p.y, rMinZ));
+      const floorLine = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(floorPts),
+        new THREE.LineDashedMaterial({color:0x666666, dashSize:2, gapSize:1.5, transparent:true, opacity:.15})
+      );
+      floorLine.computeLineDistances();
+      group.add(floorLine);
+    }
+
+    // 赤丸（道路上を走るオブジェクト）
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(2, 16, 16),
+      new THREE.MeshBasicMaterial({color: 0xff0000})
+    );
+    group.add(sphere);
+
+    const bbox = new THREE.Box3().setFromObject(group);
+    const center = bbox.getCenter(new THREE.Vector3());
+    group.position.sub(center);
+    scene.add(group);
+
+    controls.target.set(0, 0, 0);
+    const size = bbox.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    camera.position.set(maxDim * 0.6, maxDim * 0.8, maxDim * 0.6);
+    controls.update();
+
+    scene.add(new THREE.HemisphereLight(0xc8d8e8, 0x1a2a1a, 0.6));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(maxDim * 0.5, maxDim * 0.5, maxDim * 1.2);
+    scene.add(dirLight);
+
+    // 赤丸アニメーション
+    let progress = 0;
+    const totalPts = centerPts.length;
+
+    let animId;
+    const animate = () => {
+      animId = requestAnimationFrame(animate);
+      controls.update();
+      group.rotation.z += 0.0008;
+
+      // 赤丸を中央線上で走らせる
+      progress += 0.0009;
+      if(progress > 1) progress = 0;
+      const idx = Math.floor(progress * (totalPts - 1));
+      const next = Math.min(idx + 1, totalPts - 1);
+      const frac = (progress * (totalPts - 1)) % 1;
+      sphere.position.lerpVectors(centerPts[idx], centerPts[next], frac);
+
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    const onResize = () => {
+      const w = window.innerWidth, h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    };
+    window.addEventListener('resize', onResize);
+
+    active3D = {renderer, scene, animId, onResize};
+
+    const maxE = validElevs.length ? Math.round(Math.max(...validElevs)) : 0;
+    const minE = validElevs.length ? Math.round(Math.min(...validElevs)) : 0;
+    $("info3d").innerHTML = `<b>${escapeHtml(t.name)}</b><br>全長 ${t.lengthKm}km ・ 標高 ${minE}〜${maxE}m（差 ${maxE - minE}m）`;
+    overlay.classList.add("show");
+  }catch(err){
+    console.error("[3D]", err);
+    toast("3D表示に失敗しました");
+  }finally{
+    showLoading(false);
+  }
+}
+
+function close3DView(){
+  if(!active3D) return;
+  cancelAnimationFrame(active3D.animId);
+  window.removeEventListener('resize', active3D.onResize);
+  active3D.scene.traverse(obj => {
+    obj.geometry?.dispose();
+    if(obj.material){
+      if(Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+      else obj.material.dispose();
+    }
+  });
+  active3D.renderer.dispose();
+  active3D.renderer.domElement.remove();
+  $("overlay3d").classList.remove("show");
+  active3D = null;
+}
+
+$("close3d").addEventListener("click", close3DView);
+document.addEventListener("keydown", e => { if(e.key === "Escape" && active3D) close3DView(); });
 }
 
 // ===== MapLibreローダー（CDNフォールバック付き） =====
