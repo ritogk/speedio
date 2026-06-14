@@ -385,6 +385,7 @@ main{flex:1;position:relative;min-height:0}
           <button class="chip" aria-pressed="false" data-preset="updown">高低差重視</button>
           <button class="chip" aria-pressed="false" data-preset="nearby">📍 近くの峠</button>
           <button class="chip" aria-pressed="false" id="seclusionToggle" data-filter="seclusion">秘境</button>
+          <button class="chip" aria-pressed="false" id="uphillToggle" data-filter="uphill">峠越え</button>
         </div>
         <p class="preset-hint" id="presetHint">コーナー・高低差・道幅をバランスよく評価します。</p>
       </section>
@@ -437,6 +438,8 @@ let distanceFilter = null;
 let widthFilter = 0.85;
 let seclusionFilter = false;
 const SECLUSION_DENSITY_MAX = 2.0;
+let uphillFilter = false;
+const UPHILL_MIN = 2;
 let currentItems = [];
 const prefCache = {};
 
@@ -789,6 +792,7 @@ function toViewModel(raw, idx){
     pctWeak: Math.round(segWeak/segTotal*100),
     pctStraight: Math.round(segStraight/segTotal*100),
     corner, updown, width,
+    unevennessCount: raw.elevation_unevenness_count ?? null,
     uphillCnt: raw.uphill_cnt ?? null,
     downhillCnt: raw.downhill_cnt ?? null,
     center, poly,
@@ -840,7 +844,7 @@ function cardHtml(t, rank, total){
         <span class="bl">コーナー</span><div class="stacked"><span style="width:${t.pctStrong}%;background:var(--corner-strong)"></span><span style="width:${t.pctMedium}%;background:var(--corner-medium)"></span><span style="width:${t.pctWeak}%;background:var(--corner-weak)"></span><span style="width:${t.pctStraight}%;background:var(--straight)"></span></div><span class="bv">${t.pctStrong+t.pctMedium+t.pctWeak}%</span>
         <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
       </div>
-      <div class="card-tags">${t.uphillCnt!=null?`<span class="card-tag">上下り <b>${Math.max(t.uphillCnt,t.downhillCnt)}</b></span>`:""}<span class="card-tag">建物 <b>${t.buildingCnt??"-"}</b></span></div>
+      <div class="card-tags">${t.unevennessCount!=null?`<span class="card-tag">上下り <b>${t.unevennessCount}</b></span>`:""}<span class="card-tag">建物 <b>${t.buildingCnt??"-"}</b></span></div>
       <div class="card-actions">
         <a class="btn primary" href="${googleMapUrl(t.poly)}" target="_blank" rel="noopener" data-act="link">🚗 行く</a>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">📷 路面</a>`:""}
@@ -1100,6 +1104,9 @@ function render(){
   }
   if(seclusionFilter){
     lastRanked = lastRanked.filter(t=>t.buildingDensity!=null && t.buildingDensity<=SECLUSION_DENSITY_MAX);
+  }
+  if(uphillFilter){
+    lastRanked = lastRanked.filter(t=>t.unevennessCount!=null && t.unevennessCount>=UPHILL_MIN);
   }
   renderCards();
   drawMap(lastRanked);
@@ -1426,6 +1433,15 @@ $("seclusionToggle").addEventListener("click",e=>{
   const on = btn.getAttribute("aria-pressed") !== "true";
   btn.setAttribute("aria-pressed", String(on));
   seclusionFilter = on;
+  visibleCount = PAGE_N;
+  render();
+});
+// 峠越えフィルター ON/OFF
+$("uphillToggle").addEventListener("click",e=>{
+  const btn = e.currentTarget;
+  const on = btn.getAttribute("aria-pressed") !== "true";
+  btn.setAttribute("aria-pressed", String(on));
+  uphillFilter = on;
   visibleCount = PAGE_N;
   render();
 });
