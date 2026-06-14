@@ -1826,7 +1826,8 @@ async function open3DView(t){
       rMinX-=pad;rMaxX+=pad;rMinY-=pad;rMaxY+=pad;
 
       const dashMat = new THREE.LineDashedMaterial({
-        color:0xaaaaaa, dashSize:3, gapSize:2, transparent:true, opacity:.45
+        color:0xaaaaaa, dashSize:3, gapSize:2, transparent:true, opacity:.45,
+        depthTest:false
       });
       const addDash = (points) => {
         const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), dashMat.clone());
@@ -1908,7 +1909,7 @@ async function open3DView(t){
       const floorPts = pts3.map(p => new THREE.Vector3(p.x, p.y, rMinZ));
       const floorLine = new THREE.Line(
         new THREE.BufferGeometry().setFromPoints(floorPts),
-        new THREE.LineDashedMaterial({color:0x666666, dashSize:2, gapSize:1.5, transparent:true, opacity:.15})
+        new THREE.LineDashedMaterial({color:0x666666, dashSize:2, gapSize:1.5, transparent:true, opacity:.15, depthTest:false})
       );
       floorLine.computeLineDistances();
       group.add(floorLine);
