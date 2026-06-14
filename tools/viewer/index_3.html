@@ -127,6 +127,8 @@ main{flex:1;position:relative;min-height:0}
   .view-ctrl,.legend{transition:bottom .28s cubic-bezier(.3,.9,.3,1),opacity .2s}
   body:has(.panel.half) .view-ctrl{bottom:calc(44dvh + 14px)}
   body:has(.panel.half) .legend{bottom:calc(44dvh + 10px)}
+  body:has(.panel.card-peek) .view-ctrl{bottom:calc(var(--card-peek-h,96)*1px + 14px)}
+  body:has(.panel.card-peek) .legend{bottom:calc(var(--card-peek-h,96)*1px + 10px)}
   body:has(.panel.full) .view-ctrl,
   body:has(.panel.full) .legend{opacity:0;pointer-events:none}
 }
@@ -153,6 +155,7 @@ main{flex:1;position:relative;min-height:0}
   box-shadow:0 -4px 16px rgba(0,0,0,.15);
 }
 .panel.half{transform:translateY(45%)}
+.panel.card-peek{}
 .panel.full{transform:translateY(0)}
 .sheet-handle{flex-shrink:0;padding:8px 16px 6px;cursor:grab;user-select:none}
 .sheet-handle .grip{width:42px;height:4px;border-radius:2px;background:var(--contour);margin:0 auto 8px}
@@ -674,8 +677,9 @@ function viewPadding(extra){
   const e = extra || 0;
   if(window.innerWidth <= 760){
     // シートの開き具合に応じて隠れる高さが変わる（half=画面下約44%、peek=96px）
-    const sheet = document.getElementById("panel").classList.contains("half")
-      ? Math.round(window.innerHeight * .44) : 96;
+    const p = document.getElementById("panel");
+    const sheet = p.classList.contains("half") ? Math.round(window.innerHeight * .44)
+      : p.classList.contains("card-peek") ? parseInt(getComputedStyle(document.documentElement).getPropertyValue("--card-peek-h"))||96 : 96;
     return {top:e+10, left:e+10, right:e+10, bottom:e+sheet+14};
   }
   const side = document.getElementById("panel").classList.contains("hidden-side") ? 0 : 350;
@@ -842,7 +846,7 @@ function renderCards(){
       const t = ranked.find(x=>x.id === Number(card.dataset.id));
       if(!t) return;
       selectCard(t.id,true);
-      setSheet("peek");
+      setSheet("card-peek");
       flyToTouge(t);
     });
   });
@@ -1072,7 +1076,7 @@ function revealAndSelect(t){
   if(rank + 1 > visibleCount) visibleCount = Math.ceil((rank + 1) / PAGE_N) * PAGE_N;
   renderCards();
   selectCard(t.id, true);
-  setSheet("half"); // 地図から選んだときは選択カードが見えるよう半開きにする
+  setSheet("card-peek");
   flyToTouge(t);    // viewPaddingがhalf分の高さを考慮してフォーカスする
 }
 function selectCard(id,scroll){
@@ -1085,6 +1089,11 @@ function selectCard(id,scroll){
         const bodyRect = body.getBoundingClientRect();
         const cardRect = card.getBoundingClientRect();
         body.scrollTo({top: body.scrollTop + cardRect.top - bodyRect.top, behavior:"smooth"});
+      }
+      if(card && isMobile()){
+        const h = $("sheetHandle").offsetHeight + card.offsetHeight + 14;
+        panel.style.transform = "translateY(calc(100% - "+h+"px))";
+        document.documentElement.style.setProperty("--card-peek-h", h);
       }
     });
   }
@@ -1384,11 +1393,14 @@ function setSheet(state){
   if(!isMobile()) return;
   sheetState = state;
   panel.classList.toggle("half",state==="half");
+  panel.classList.toggle("card-peek",state==="card-peek");
   panel.classList.toggle("full",state==="full");
+  if(state !== "card-peek") panel.style.transform = "";
 }
 handle.addEventListener("click",()=>{
   if(!isMobile()) return;
-  setSheet(sheetState==="peek"?"half":sheetState==="half"?"full":"peek");
+  const next = sheetState==="peek"||sheetState==="card-peek" ? "half" : sheetState==="half" ? "full" : "peek";
+  setSheet(next);
 });
 let dragStartY=null, dragStartState=null;
 handle.addEventListener("touchstart",e=>{dragStartY=e.touches[0].clientY;dragStartState=sheetState},{passive:true});
