@@ -252,6 +252,8 @@ main{flex:1;position:relative;min-height:0}
 .bars .bv{font-size:10px;text-align:right}
 .track{height:6px;background:var(--paper-deep);border-radius:3px;overflow:hidden}
 .fill{height:100%;background:var(--gauge);border-radius:3px}
+.stacked{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--paper-deep)}
+.stacked span{height:100%}
 .card-actions{display:flex;gap:6px;margin-top:9px}
 .btn{
   font:inherit;font-size:11px;font-weight:500;cursor:pointer;
@@ -379,6 +381,7 @@ main{flex:1;position:relative;min-height:0}
           <button class="chip" aria-pressed="false" data-preset="corner">コーナー重視</button>
           <button class="chip" aria-pressed="false" data-preset="updown">高低差重視</button>
           <button class="chip" aria-pressed="false" data-preset="nearby">📍 近くの峠</button>
+          <button class="chip" aria-pressed="false" id="seclusionToggle" data-filter="seclusion">秘境</button>
         </div>
         <p class="preset-hint" id="presetHint">コーナー・高低差・道幅をバランスよく評価します。</p>
       </section>
@@ -429,6 +432,8 @@ let currentPreset = "balance";
 let userLatLng = null;
 let distanceFilter = null;
 let widthFilter = 0.85;
+let seclusionFilter = false;
+const SECLUSION_DENSITY_MAX = 2.0;
 let currentItems = [];
 const prefCache = {};
 
@@ -758,14 +763,33 @@ function toViewModel(raw, idx){
   const corner = Math.max(0, Math.min(1, 1 - (raw.score_corner_none ?? 1)));
   const updown = Math.max(0, Math.min(1, ((raw.score_elevation ?? 0) + (raw.score_elevation_unevenness ?? 0)) / 2));
   const width = Math.max(0, Math.min(1, raw.score_claude_center_line_section ?? raw.score_width ?? 0));
+  const secs = raw.road_section || [];
+  let segStrong=0, segMedium=0, segWeak=0, segStraight=0;
+  secs.forEach(s=>{
+    const n = Math.max(0, (s.points||[]).length - 1);
+    const lv = s.section_type==="straight" ? "none" : (s.corner_level||"none");
+    if(lv==="strong") segStrong+=n;
+    else if(lv==="medium") segMedium+=n;
+    else if(lv==="weak") segWeak+=n;
+    else segStraight+=n;
+  });
+  const segTotal = segStrong+segMedium+segWeak+segStraight || 1;
   return {
     id: idx, name,
     routeLabel: HIGHWAY_LABEL[Array.isArray(raw.highway) ? raw.highway[0] : raw.highway] || "一般道",
     lengthKm: Math.round((raw.length || 0) / 100) / 10,
     height: Math.round(raw.elevation_height || 0),
+    buildingCnt: raw.building_nearby_cnt ?? null,
+    buildingDensity: (raw.building_nearby_cnt != null && raw.length > 0) ? Math.round(raw.building_nearby_cnt / (raw.length / 1000) * 10) / 10 : null,
+    pctStrong: Math.round(segStrong/segTotal*100),
+    pctMedium: Math.round(segMedium/segTotal*100),
+    pctWeak: Math.round(segWeak/segTotal*100),
+    pctStraight: Math.round(segStraight/segTotal*100),
     corner, updown, width,
+    uphillCnt: raw.uphill_cnt ?? null,
+    downhillCnt: raw.downhill_cnt ?? null,
     center, poly,
-    roadSection: raw.road_section || [],
+    roadSection: secs,
     googleEarthUrl: raw.google_earth_url
   };
 }
@@ -808,9 +832,9 @@ function cardHtml(t, rank, total){
       <div class="card-top">
         <span class="route-oval">${escapeHtml(t.routeLabel)}</span><h3>${escapeHtml(t.name)}</h3>
       </div>
-      <p class="meta">${t.distanceKm!=null?`📍 <b>${Math.round(t.distanceKm)}km</b> ・ `:""}全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b> ・ 総合 <b>${Math.round(t._s*100)}</b>点</p>
+      <p class="meta">${t.distanceKm!=null?`📍 <b>${Math.round(t.distanceKm)}km</b> ・ `:""}全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b>${t.uphillCnt!=null?` ・ 上り <b>${t.uphillCnt}</b> 下り <b>${t.downhillCnt}</b>`:""}${t.buildingCnt!=null?` ・ 建物 <b>${t.buildingCnt}</b>`:""} ・ 総合 <b>${Math.round(t._s*100)}</b>点</p>
       <div class="bars">
-        <span class="bl">コーナー</span><div class="track"><div class="fill c" style="width:${Math.round(t.corner*100)}%"></div></div><span class="bv">${Math.round(t.corner*100)}</span>
+        <span class="bl">コーナー</span><div class="stacked"><span style="width:${t.pctStrong}%;background:var(--corner-strong)"></span><span style="width:${t.pctMedium}%;background:var(--corner-medium)"></span><span style="width:${t.pctWeak}%;background:var(--corner-weak)"></span><span style="width:${t.pctStraight}%;background:var(--straight)"></span></div><span class="bv">${t.pctStrong+t.pctMedium+t.pctWeak}%</span>
         <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
       </div>
       <div class="card-actions">
@@ -1070,6 +1094,9 @@ function render(){
   if(widthFilter!=null){
     lastRanked = lastRanked.filter(t=>t.width>=widthFilter);
   }
+  if(seclusionFilter){
+    lastRanked = lastRanked.filter(t=>t.buildingDensity!=null && t.buildingDensity<=SECLUSION_DENSITY_MAX);
+  }
   renderCards();
   drawMap(lastRanked);
 }
@@ -1208,7 +1235,7 @@ sel.innerHTML = '<option value="">都道府県を選ぶ</option>' +
     .map(([c,n])=>`<option value="${c}">${n}</option>`).join("");
 sel.addEventListener("change",e=>switchPref(e.target.value));
 
-document.querySelectorAll(".presets .chip").forEach(chip=>{
+document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
   chip.addEventListener("click",()=>{
     const preset = chip.dataset.preset;
     if(preset === "nearby" && !userLatLng){
@@ -1219,7 +1246,7 @@ document.querySelectorAll(".presets .chip").forEach(chip=>{
         userLatLng = [lat, lng];
         new maplibregl.Marker({color:cssVar("--route-red"), occludedOpacity:1}).setLngLat([lng, lat]).addTo(map);
         drawRangeRings(lat, lng);
-        document.querySelectorAll(".presets .chip").forEach(c=>c.setAttribute("aria-pressed","false"));
+        document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
         chip.setAttribute("aria-pressed","true");
         currentPreset = "nearby";
         distanceFilter = 20;
@@ -1249,7 +1276,7 @@ document.querySelectorAll(".presets .chip").forEach(chip=>{
       });
       return;
     }
-    document.querySelectorAll(".presets .chip").forEach(c=>c.setAttribute("aria-pressed","false"));
+    document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
     chip.setAttribute("aria-pressed","true");
     currentPreset = preset;
     distanceFilter = preset === "nearby" ? 20 : null;
@@ -1388,6 +1415,15 @@ $("terrainToggle").addEventListener("click",e=>{
   btn.setAttribute("aria-pressed", on);
   map.setTerrain(on ? {source:"gsiTerrain", exaggeration:1.2} : null);
   map.easeTo(on ? {pitch:55, duration:600} : {pitch:0, duration:600});
+});
+// 秘境フィルター ON/OFF
+$("seclusionToggle").addEventListener("click",e=>{
+  const btn = e.currentTarget;
+  const on = btn.getAttribute("aria-pressed") !== "true";
+  btn.setAttribute("aria-pressed", String(on));
+  seclusionFilter = on;
+  visibleCount = PAGE_N;
+  render();
 });
 
 // ボトムシート
