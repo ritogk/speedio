@@ -348,6 +348,7 @@ main{flex:1;position:relative;min-height:0}
           <button class="chip" aria-pressed="false" data-preset="corner">コーナー重視</button>
           <button class="chip" aria-pressed="false" data-preset="updown">高低差重視</button>
           <button class="chip" aria-pressed="false" data-preset="relax">のんびり快走</button>
+          <button class="chip" aria-pressed="false" data-preset="nearby">📍 近くの峠</button>
         </div>
         <p class="preset-hint" id="presetHint">コーナー・高低差・道幅をバランスよく評価します。</p>
       </section>
@@ -386,15 +387,19 @@ const presetHints = {
   balance:"コーナー・高低差・道幅をバランスよく評価します。",
   corner:"ヘアピンや中速コーナーが連続する道を上位にします。",
   updown:"アップダウンと標高差の大きい道を上位にします。",
-  relax:"道幅が広く、緩いカーブ主体の快走路を上位にします。"
+  relax:"道幅が広く、緩いカーブ主体の快走路を上位にします。",
+  nearby:"現在地から20km以内の峠を表示します。"
 };
 const presetWeights = {
   balance:{corner:1,updown:1,width:1},
   corner:{corner:2.2,updown:0.7,width:0.8},
   updown:{corner:0.7,updown:2.2,width:0.8},
-  relax:{corner:0.4,updown:0.6,width:2.4}
+  relax:{corner:0.4,updown:0.6,width:2.4},
+  nearby:{corner:1,updown:1,width:1}
 };
 let currentPreset = "balance";
+let userLatLng = null;
+let distanceFilter = null;
 let currentItems = [];
 const prefCache = {};
 
@@ -416,6 +421,12 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 function cssVar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function haversineKm(lat1,lng1,lat2,lng2){
+  const R=6371,toR=d=>d*Math.PI/180;
+  const dLat=toR(lat2-lat1),dLng=toR(lng2-lng1);
+  const a=Math.sin(dLat/2)**2+Math.cos(toR(lat1))*Math.cos(toR(lat2))*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
 
 // ================= 国土地理院DEM → terrain-rgb 変換プロトコル =================
 // GSIのdem_png(標高PNG)をMapLibreが読めるMapbox terrain-rgb形式に変換する
@@ -770,7 +781,7 @@ function cardHtml(t, rank, total){
         <span class="route-oval">${escapeHtml(t.routeLabel)}</span><h3>${escapeHtml(t.name)}</h3>
         ${rank===0?'<span class="today-pick">本日の一本</span>':""}
       </div>
-      <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b> ・ 総合 <b>${Math.round(t._s*100)}</b>点</p>
+      <p class="meta">${t.distanceKm!=null?`📍 <b>${Math.round(t.distanceKm)}km</b> ・ `:""}全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b> ・ 総合 <b>${Math.round(t._s*100)}</b>点</p>
       <div class="bars">
         <span class="bl">コーナー</span><div class="track"><div class="fill c" style="width:${Math.round(t.corner*100)}%"></div></div><span class="bv">${Math.round(t.corner*100)}</span>
         <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
@@ -1022,6 +1033,14 @@ async function fillThumb(el){
 
 function render(){
   lastRanked = rankedList();
+  if(userLatLng){
+    lastRanked.forEach(t=>{
+      t.distanceKm = haversineKm(userLatLng[0],userLatLng[1],t.center[0],t.center[1]);
+    });
+  }
+  if(distanceFilter!=null && userLatLng){
+    lastRanked = lastRanked.filter(t=>t.distanceKm<=distanceFilter);
+  }
   renderCards();
   drawMap(lastRanked);
 }
@@ -1147,14 +1166,54 @@ sel.innerHTML = '<option value="">都道府県を選ぶ</option>' +
     .map(([c,n])=>`<option value="${c}">${n}</option>`).join("");
 sel.addEventListener("change",e=>switchPref(e.target.value));
 
-document.querySelectorAll(".chip").forEach(chip=>{
+document.querySelectorAll(".presets .chip").forEach(chip=>{
   chip.addEventListener("click",()=>{
-    document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed","false"));
+    const preset = chip.dataset.preset;
+    if(preset === "nearby" && !userLatLng){
+      if(!navigator.geolocation){ toast("このブラウザは位置情報に対応していません"); return; }
+      showLoading(true, "現在地を取得中…");
+      navigator.geolocation.getCurrentPosition(async pos=>{
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+        userLatLng = [lat, lng];
+        new maplibregl.Marker({color:cssVar("--route-red")}).setLngLat([lng, lat]).addTo(map);
+        drawRangeRings(lat, lng);
+        document.querySelectorAll(".presets .chip").forEach(c=>c.setAttribute("aria-pressed","false"));
+        chip.setAttribute("aria-pressed","true");
+        currentPreset = "nearby";
+        distanceFilter = 20;
+        $("presetHint").textContent = presetHints.nearby;
+        visibleCount = PAGE_N;
+        let code = null;
+        try{
+          const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`);
+          if(res.ok){
+            const data = await res.json();
+            const muni = data?.results?.muniCd;
+            if(muni) code = String(muni).padStart(5,"0").slice(0,2);
+          }
+        }catch(err){}
+        showLoading(false);
+        if(code && PREFECTURES[code]){
+          $("prefSelect").value = code;
+          toast(`現在地は${PREFECTURES[code]}。20km以内の峠を表示します`);
+          switchPref(code);
+        }else{
+          toast("現在地の都道府県を判定できませんでした");
+          if(currentItems.length) render();
+        }
+      }, ()=>{
+        showLoading(false);
+        toast("位置情報を取得できませんでした");
+      });
+      return;
+    }
+    document.querySelectorAll(".presets .chip").forEach(c=>c.setAttribute("aria-pressed","false"));
     chip.setAttribute("aria-pressed","true");
-    currentPreset = chip.dataset.preset;
-    try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
+    currentPreset = preset;
+    distanceFilter = preset === "nearby" ? 20 : null;
+    if(preset !== "nearby") try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
     $("presetHint").textContent = presetHints[currentPreset];
-    visibleCount = PAGE_N; // 並びが変わるので表示件数をリセット
+    visibleCount = PAGE_N;
     render();
   });
 });
@@ -1162,9 +1221,9 @@ document.querySelectorAll(".chip").forEach(chip=>{
 // ===== 前回の状態を復元（県・プリセット） =====
 try{
   const savedPreset = localStorage.getItem("touge.preset");
-  if(savedPreset && presetWeights[savedPreset]){
+  if(savedPreset && presetWeights[savedPreset] && savedPreset !== "nearby"){
     currentPreset = savedPreset;
-    document.querySelectorAll(".chip").forEach(c=>
+    document.querySelectorAll(".presets .chip").forEach(c=>
       c.setAttribute("aria-pressed", c.dataset.preset === savedPreset));
     $("presetHint").textContent = presetHints[savedPreset];
   }
@@ -1222,6 +1281,7 @@ $("locateBtn").addEventListener("click",()=>{
   navigator.geolocation.getCurrentPosition(
     async pos=>{
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      userLatLng = [lat, lng];
       new maplibregl.Marker({color:cssVar("--route-red")}).setLngLat([lng, lat]).addTo(map);
       drawRangeRings(lat, lng);
       // 国土地理院の逆ジオコーダで市区町村コードを取得（先頭2桁が県コード）
@@ -1244,6 +1304,7 @@ $("locateBtn").addEventListener("click",()=>{
       }else{
         map.flyTo({center:[lng, lat], zoom:11, duration:1000});
         toast("現在地の都道府県を判定できませんでした。県を選ぶと峠を表示します");
+        if(currentItems.length) render();
       }
     },
     ()=>{
