@@ -250,8 +250,9 @@ main{flex:1;position:relative;min-height:0}
 .fill{height:100%;background:var(--gauge);border-radius:3px}
 .stacked{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--paper-deep)}
 .stacked span{height:100%}
-.card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
 .card-tag{font-size:10px;color:var(--ink-soft);background:var(--paper-deep);border-radius:4px;padding:2px 7px}
+.bump-ico{width:14px;height:10px;vertical-align:-1px}
 .card-tag b{color:var(--ink);font-weight:500}
 .card-actions{display:flex;gap:5px;margin-top:9px}
 .btn{
@@ -491,6 +492,10 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 function cssVar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+const BUMP_SVG = '<svg class="bump-ico" viewBox="0 0 20 12"><path d="M0 9Q5 1 10 9Q15 17 20 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+function bumpIcons(n){
+  return BUMP_SVG+' ×'+n;
+}
 function haversineKm(lat1,lng1,lat2,lng2){
   const R=6371,toR=d=>d*Math.PI/180;
   const dLat=toR(lat2-lat1),dLng=toR(lng2-lng1);
@@ -873,7 +878,7 @@ function cardHtml(t, rank, total){
         <span class="bl">コーナー</span><div class="stacked"><span style="width:${t.pctStrong}%;background:var(--corner-strong)"></span><span style="width:${t.pctMedium}%;background:var(--corner-medium)"></span><span style="width:${t.pctWeak}%;background:var(--corner-weak)"></span><span style="width:${t.pctStraight}%;background:var(--straight)"></span></div><span class="bv">${t.pctStrong+t.pctMedium+t.pctWeak}%</span>
         <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
       </div>
-      <div class="card-tags">${t.unevennessCount!=null?`<span class="card-tag">上下り <b>${t.unevennessCount}</b></span>`:""}<span class="card-tag">建物 <b>${t.buildingCnt??"-"}</b></span></div>
+      <div class="card-tags">${t.unevennessCount!=null&&t.unevennessCount>0?`<span class="card-tag">${bumpIcons(t.unevennessCount)}</span>`:""}<span class="card-tag">建物 <b>${t.buildingCnt??"-"}</b></span></div>
       <div class="card-actions">
         <a class="btn primary" href="${googleMapUrl(t.poly)}" target="_blank" rel="noopener" data-act="link">🚗 行く</a>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">📷 路面</a>`:""}
