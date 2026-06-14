@@ -1725,11 +1725,11 @@ async function open3DView(t){
     terrGeo.computeVertexNormals();
     group.add(new THREE.Mesh(terrGeo, new THREE.MeshStandardMaterial({
       color: 0x2d6b3a, roughness: .9, metalness: 0,
-      transparent: true, opacity: .55, side: THREE.DoubleSide
+      transparent: true, opacity: .2, side: THREE.DoubleSide
     })));
     group.add(new THREE.LineSegments(
       new THREE.WireframeGeometry(terrGeo),
-      new THREE.LineBasicMaterial({color: 0x3a7a4d, transparent: true, opacity: .12})
+      new THREE.LineBasicMaterial({color: 0x3a7a4d, transparent: true, opacity: .08})
     ));
 
     // 道路メッシュ（geometry_list + elevation_smooth直結、3d.jsと同じリボン方式）
@@ -1810,7 +1810,7 @@ async function open3DView(t){
       rMinX-=pad;rMaxX+=pad;rMinY-=pad;rMaxY+=pad;
 
       const dashMat = new THREE.LineDashedMaterial({
-        color:0x888888, dashSize:3, gapSize:2, transparent:true, opacity:.25
+        color:0xaaaaaa, dashSize:3, gapSize:2, transparent:true, opacity:.45
       });
       const addDash = (points) => {
         const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), dashMat.clone());
@@ -1888,9 +1888,13 @@ async function open3DView(t){
     dirLight.position.set(maxDim * 0.5, maxDim * 0.5, maxDim * 1.2);
     scene.add(dirLight);
 
-    // 赤丸アニメーション
+    // 赤丸アニメーション（実距離ベースの一定速度）
     let progress = 0;
     const totalPts = centerPts.length;
+    let pathLen = 0;
+    for(let i = 1; i < totalPts; i++) pathLen += centerPts[i].distanceTo(centerPts[i-1]);
+    const SPEED = 3.0;
+    const progressPerFrame = pathLen > 0 ? SPEED / pathLen : 0.005;
 
     let animId;
     const animate = () => {
@@ -1898,8 +1902,7 @@ async function open3DView(t){
       controls.update();
       group.rotation.z += 0.0008;
 
-      // 赤丸を中央線上で走らせる
-      progress += 0.0009;
+      progress += progressPerFrame;
       if(progress > 1) progress = 0;
       const idx = Math.floor(progress * (totalPts - 1));
       const next = Math.min(idx + 1, totalPts - 1);
