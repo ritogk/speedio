@@ -842,6 +842,7 @@ function toViewModel(raw, idx){
     downhillCnt: raw.downhill_cnt ?? null,
     center, poly,
     roadSection: secs,
+    elevationSmooth: raw.elevation_smooth || [],
     googleEarthUrl: raw.google_earth_url
   };
 }
@@ -1611,7 +1612,7 @@ window.addEventListener("scroll",()=>{
 // ================= 3Dオーバーレイ =================
 let active3D = null;
 let threeLib = null;
-const fullJsonCache = {};
+requestIdleCallback(()=>loadThreeJS(), {timeout:5000});
 
 async function loadThreeJS(){
   if(threeLib) return threeLib;
@@ -1627,28 +1628,17 @@ async function loadThreeJS(){
   return threeLib;
 }
 
-async function fetchFullJson(){
-  const code = $("prefSelect").value;
-  if(!code) return null;
-  if(fullJsonCache[code]) return fullJsonCache[code];
-  const res = await fetch(`./targets/${code}/target.json`);
-  if(!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  fullJsonCache[code] = data;
-  return data;
-}
+
 
 async function open3DView(t){
   if(active3D) close3DView();
   showLoading(true, "3Dデータを準備中…");
   try{
-    const [threeResult, fullJson] = await Promise.all([loadThreeJS(), fetchFullJson()]);
+    const threeResult = await loadThreeJS();
     const {THREE, OrbitControls, Line2, LineMaterial, LineGeometry} = threeResult;
-    if(!fullJson || !fullJson[t.id]){ toast("3Dデータが見つかりません"); return; }
 
-    const full = fullJson[t.id];
-    const geomList = full.geometry_list || [];
-    const elevSmooth = full.elevation_smooth || [];
+    const geomList = t.poly;
+    const elevSmooth = t.elevationSmooth || [];
     if(geomList.length < 2 || elevSmooth.length < 2){ toast("3Dデータが不十分です"); return; }
 
     const LEVEL_HEX = {
@@ -1660,7 +1650,7 @@ async function open3DView(t){
     // road_sectionのコーナーレベルを順方向マッチングで割り当て
     const ptLevels = new Array(geomList.length).fill("straight");
     let cursor = 0;
-    const roadSecs = full.road_section || [];
+    const roadSecs = t.roadSection || [];
     roadSecs.forEach(sec => {
       const pts = sec.points || [];
       if(pts.length < 2) return;
