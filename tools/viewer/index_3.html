@@ -848,7 +848,8 @@ function toViewModel(raw, idx){
 function googleMapUrl(poly){
   if(!poly.length) return "#";
   const st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
-  return `https://www.google.co.jp/maps/dir/${st[0]},${st[1]}/${ct[0]},${ct[1]}/${ed[0]},${ed[1]}`;
+  const origin = userLatLng ? `${userLatLng[0]},${userLatLng[1]}` : "current+location";
+  return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${ed[0]},${ed[1]}&waypoints=${st[0]},${st[1]}|${ct[0]},${ct[1]}`;
 }
 // ライン中央点のストリートビューを進行方向向きで開くURL（target.json内の旧形式URLは廃止されたため自前生成）
 function streetViewUrl(poly){
