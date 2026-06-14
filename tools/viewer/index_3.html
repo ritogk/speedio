@@ -327,6 +327,13 @@ main{flex:1;position:relative;min-height:0}
   display:flex;align-items:center;justify-content:center;
 }
 .overlay-3d-close:hover{background:rgba(255,255,255,.15)}
+.overlay-3d-toggle{
+  margin-left:auto;flex-shrink:0;
+  font:inherit;font-size:11px;font-weight:500;cursor:pointer;
+  border:1px solid rgba(255,255,255,.25);border-radius:999px;
+  background:rgba(0,0,0,.45);color:#fff;padding:6px 14px;
+}
+.overlay-3d-toggle:hover{background:rgba(255,255,255,.15)}
 .overlay-3d-info{color:#fff;font-size:13px;line-height:1.6}
 .overlay-3d-info b{font-weight:700}
 .overlay-3d-hint{
@@ -433,6 +440,7 @@ main{flex:1;position:relative;min-height:0}
     <div class="overlay-3d-hud">
       <button class="overlay-3d-close" id="close3d">✕</button>
       <div class="overlay-3d-info" id="info3d"></div>
+      <button class="overlay-3d-toggle" id="toggle3dColor" style="display:none">登り/下り</button>
     </div>
     <div class="overlay-3d-hint">1本指で回転 ・ 2本指で移動/ズーム</div>
   </div>
@@ -843,6 +851,7 @@ function toViewModel(raw, idx){
     center, poly,
     roadSection: secs,
     elevationSmooth: raw.elevation_smooth || [],
+    elevSections: raw.elevation_unevenness_sections || null,
     googleEarthUrl: raw.google_earth_url
   };
 }
@@ -1774,35 +1783,66 @@ async function open3DView(t){
     const rightPts = pts3.map((p, i) => p.clone().addScaledVector(smoothNormals[i], ROAD_W));
     const centerPts = pts3.map(p => p.clone());
 
-    // コーナーレベル毎にリボンメッシュを生成
-    let runStart = 0;
-    for(let i = 0; i <= pts3.length; i++){
-      if(i < pts3.length && ptLevels[i] === ptLevels[runStart]) continue;
-      const end = Math.min(i, pts3.length - 1);
-      const n = end - runStart + 1;
-      if(n >= 2){
-        const verts = new Float32Array(n * 2 * 3);
-        for(let j = 0; j < n; j++){
-          const li = leftPts[runStart + j], ri = rightPts[runStart + j];
-          verts[j*6]   = li.x; verts[j*6+1] = li.y; verts[j*6+2] = li.z;
-          verts[j*6+3] = ri.x; verts[j*6+4] = ri.y; verts[j*6+5] = ri.z;
-        }
-        const idx = [];
-        for(let j = 0; j < n - 1; j++){
-          const a=j*2, b=j*2+1, c=(j+1)*2, d=(j+1)*2+1;
-          idx.push(a, c, b, b, c, d);
-        }
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-        geo.setIndex(idx);
-        geo.computeVertexNormals();
-        group.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-          color: LEVEL_HEX[ptLevels[runStart]] || 0x98989D,
-          side: THREE.DoubleSide
-        })));
-      }
-      runStart = i;
+    // 登り/下り判定（elevation_unevenness_sectionsから各ポイントに割り当て）
+    const ELEV_HEX = { up:0xE8553D, down:0x4A90D9, flat:0x98989D };
+    const ptElevDir = new Array(geomList.length).fill("flat");
+    const eSecs = t.elevSections;
+    if(eSecs){
+      const assignDir = (sections, dir) => {
+        sections.forEach(sec => {
+          let si = 0, ei = geomList.length - 1, bestDs = Infinity, bestDe = Infinity;
+          for(let i = 0; i < geomList.length; i++){
+            const ds = (geomList[i][0]-sec.start[0])**2 + (geomList[i][1]-sec.start[1])**2;
+            const de = (geomList[i][0]-sec.end[0])**2 + (geomList[i][1]-sec.end[1])**2;
+            if(ds < bestDs){ bestDs = ds; si = i; }
+            if(de < bestDe){ bestDe = de; ei = i; }
+          }
+          if(si > ei) [si, ei] = [ei, si];
+          for(let i = si; i <= ei; i++) ptElevDir[i] = dir;
+        });
+      };
+      assignDir(eSecs.uphill || [], "up");
+      assignDir(eSecs.downhill || [], "down");
     }
+
+    // リボンメッシュ生成ヘルパー
+    function buildRoadMeshes(levels, colorMap){
+      const meshes = [];
+      let rs = 0;
+      for(let i = 0; i <= pts3.length; i++){
+        if(i < pts3.length && levels[i] === levels[rs]) continue;
+        const end = Math.min(i, pts3.length - 1);
+        const n = end - rs + 1;
+        if(n >= 2){
+          const verts = new Float32Array(n * 2 * 3);
+          for(let j = 0; j < n; j++){
+            const li = leftPts[rs + j], ri = rightPts[rs + j];
+            verts[j*6]   = li.x; verts[j*6+1] = li.y; verts[j*6+2] = li.z;
+            verts[j*6+3] = ri.x; verts[j*6+4] = ri.y; verts[j*6+5] = ri.z;
+          }
+          const idx = [];
+          for(let j = 0; j < n - 1; j++){
+            const a=j*2, b=j*2+1, c=(j+1)*2, d=(j+1)*2+1;
+            idx.push(a, c, b, b, c, d);
+          }
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+          geo.setIndex(idx);
+          geo.computeVertexNormals();
+          meshes.push(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+            color: colorMap[levels[rs]] || 0x98989D,
+            side: THREE.DoubleSide
+          })));
+        }
+        rs = i;
+      }
+      return meshes;
+    }
+
+    const cornerMeshes = buildRoadMeshes(ptLevels, LEVEL_HEX);
+    const elevMeshes = buildRoadMeshes(ptElevDir, ELEV_HEX);
+    cornerMeshes.forEach(m => group.add(m));
+    elevMeshes.forEach(m => { m.visible = false; group.add(m); });
 
     // 縁線（白）
     const edgeMat = new THREE.LineBasicMaterial({color: 0x595959});
@@ -1987,6 +2027,21 @@ async function open3DView(t){
       renderer.setSize(w, h);
     };
     window.addEventListener('resize', onResize);
+
+    const toggleBtn = $("toggle3dColor");
+    if(eSecs){
+      let elevMode = false;
+      toggleBtn.style.display = "";
+      toggleBtn.textContent = "登り/下り";
+      toggleBtn.onclick = ()=>{
+        elevMode = !elevMode;
+        cornerMeshes.forEach(m => m.visible = !elevMode);
+        elevMeshes.forEach(m => m.visible = elevMode);
+        toggleBtn.textContent = elevMode ? "コーナー" : "登り/下り";
+      };
+    }else{
+      toggleBtn.style.display = "none";
+    }
 
     active3D = {renderer, scene, animId, onResize};
 
