@@ -75,7 +75,7 @@ export const tougeSource: TougeSource = {
         "line-color": COLORS.routeRed,
         "line-width": ["interpolate", ["linear"], ["zoom"], 8, 10, 14, 22],
         "line-blur": 3,
-        "line-opacity": 0.85,
+        "line-opacity": 0.75,
       },
     });
     map.addLayer({
@@ -136,16 +136,14 @@ export const tougeSource: TougeSource = {
       sel as Parameters<MaplibreMap["setFilter"]>[1],
     );
     map.setPaintProperty("touge-line", "line-opacity", [
-      "case",
-      sel,
+      "coalesce",
+      ["get", "fade"],
       1,
-      ["coalesce", ["get", "fade"], 1],
     ]);
     map.setPaintProperty("touge-casing", "line-opacity", [
-      "case",
-      sel,
-      1,
-      ["*", 0.9, ["coalesce", ["get", "fade"], 1]],
+      "*",
+      0.9,
+      ["coalesce", ["get", "fade"], 1],
     ]);
   },
 };

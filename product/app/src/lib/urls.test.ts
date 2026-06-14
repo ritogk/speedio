@@ -11,7 +11,7 @@ describe("googleMapUrl", () => {
       [35.2, 137.2],
     ];
     expect(urls.googleMap(poly)).toBe(
-      "https://www.google.co.jp/maps/dir/35,137/35.1,137.1/35.2,137.2",
+      "https://www.google.com/maps/dir/?api=1&origin=current+location&destination=35.2,137.2&waypoints=35,137|35.1,137.1",
     );
   });
 

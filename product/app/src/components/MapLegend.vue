@@ -1,8 +1,16 @@
 <script setup lang="ts">
 // コーナーレベルの色凡例。
+import { computed } from "vue";
+
 import { useTougeStore } from "@/stores/tougeStore";
 
 const store = useTougeStore();
+
+/** card-peek 時は CSS 変数 --card-peek-h に連動して bottom を動かす */
+const cardPeekStyle = computed(() => {
+  if (store.sheetState !== "card-peek") return {};
+  return { bottom: "calc(var(--card-peek-h, 96) * 1px + 10px)" };
+});
 
 const ITEMS = [
   { varName: "--corner-strong", label: "低速コーナー" },
@@ -19,6 +27,7 @@ const ITEMS = [
       lifted: store.sheetState === 'half',
       hidden: store.sheetState === 'full',
     }"
+    :style="cardPeekStyle"
   >
     <ul>
       <li v-for="item in ITEMS" :key="item.varName">
@@ -83,8 +92,7 @@ const ITEMS = [
 
 @media (min-width: 761px) {
   .legend {
-    left: auto;
-    right: 10px;
+    left: 10px;
     bottom: 24px;
   }
 }

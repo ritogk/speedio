@@ -1,13 +1,16 @@
 <script setup lang="ts">
-// 地図左上のコントロール（サイドバー開閉・3D地形トグル）。
-import { ref } from "vue";
+// 地図左上のコントロール（サイドバー開閉・3D地形トグル・交番レイヤートグル）。
+import { ref, watch } from "vue";
 
 import { useMapInstance } from "@/composables/useMapInstance";
+import { useToast } from "@/composables/useToast";
+import { kobanLayer } from "@/map/kobanLayer";
 import { mapStyle } from "@/map/mapStyle";
 import { useTougeStore } from "@/stores/tougeStore";
 
 const store = useTougeStore();
 const { map } = useMapInstance();
+const { show: toast } = useToast();
 
 const terrainOn = ref(true);
 const toggleTerrain = () => {
@@ -21,15 +24,56 @@ const toggleTerrain = () => {
       : { pitch: 0, duration: 600 },
   );
 };
+
+const kobanVisible = ref(false);
+const kobanLoading = ref(false);
+
+const fetchKoban = async () => {
+  const m = map.value;
+  const code = store.prefCode;
+  if (!m || !code) return;
+  kobanLoading.value = true;
+  try {
+    await kobanLayer.fetchAndShow(m, code);
+  } catch {
+    toast("交番データの取得に失敗しました");
+  } finally {
+    kobanLoading.value = false;
+  }
+};
+
+const toggleKoban = () => {
+  const m = map.value;
+  if (!m) return;
+  kobanVisible.value = !kobanVisible.value;
+  kobanLayer.toggle(m, kobanVisible.value);
+  if (kobanVisible.value && store.prefCode) {
+    void fetchKoban();
+  }
+};
+
+// 県が切り替わったとき、交番レイヤーが表示中なら再取得
+watch(
+  () => store.loadSeq,
+  () => {
+    if (kobanVisible.value && store.prefCode) {
+      void fetchKoban();
+    }
+  },
+);
 </script>
 
 <template>
-  <div class="map-ctrl" :class="{ 'sidebar-hidden': store.sidebarHidden }">
-    <button class="ctrl-btn side-btn" @click="store.toggleSidebar()">
-      ☰ ランキング
-    </button>
+  <div class="map-ctrl">
     <button class="ctrl-btn" :aria-pressed="terrainOn" @click="toggleTerrain">
       ⛰ 3D地形
+    </button>
+    <button
+      class="ctrl-btn"
+      :aria-pressed="String(kobanVisible)"
+      @click="toggleKoban"
+    >
+      👮<span v-if="kobanLoading" class="ctrl-spin" />
     </button>
   </div>
 </template>
@@ -63,21 +107,26 @@ const toggleTerrain = () => {
   color: #fff;
 }
 
-.side-btn {
-  display: none;
+.ctrl-spin {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+  margin-left: 4px;
+  vertical-align: -1px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (min-width: 761px) {
-  .side-btn {
-    display: block;
-  }
-
   .map-ctrl {
-    left: 362px;
-    transition: left 0.25s;
-  }
-
-  .map-ctrl.sidebar-hidden {
     left: 10px;
   }
 }

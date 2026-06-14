@@ -99,21 +99,12 @@ export const routeThumb: RouteThumb = {
     const gtx = ground.getContext("2d")!;
     gtx.fillStyle = "#171a17";
     gtx.fillRect(0, 0, W, Hw);
-    const { zt, ts, tiles } = tileMath.enumerateTiles(z, px0, py0, W, Hw);
-    const [photos, shades, elevs] = await Promise.all([
+    const { zt, ts, tiles } = tileMath.enumerateTiles(z, px0, py0, W, Hw, 8, 13);
+    const [photos, elevs] = await Promise.all([
       Promise.all(
         tiles.map(({ tx, ty }) =>
           loadTile(
             `https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/${zt}/${tx}/${ty}.jpg`,
-          )
-            .then((img) => ({ img, tx, ty }))
-            .catch(() => null),
-        ),
-      ),
-      Promise.all(
-        tiles.map(({ tx, ty }) =>
-          loadTile(
-            `https://cyberjapandata.gsi.go.jp/xyz/hillshademap/${zt}/${tx}/${ty}.png`,
           )
             .then((img) => ({ img, tx, ty }))
             .catch(() => null),
@@ -124,13 +115,6 @@ export const routeThumb: RouteThumb = {
     for (const p of photos) {
       if (p) gtx.drawImage(p.img, p.tx * ts - px0, p.ty * ts - py0, ts, ts);
     }
-    gtx.globalCompositeOperation = "multiply";
-    gtx.globalAlpha = 0.55;
-    for (const s of shades) {
-      if (s) gtx.drawImage(s.img, s.tx * ts - px0, s.ty * ts - py0, ts, ts);
-    }
-    gtx.globalCompositeOperation = "source-over";
-    gtx.globalAlpha = 1;
     gtx.fillStyle = "rgba(8,10,8,.25)";
     gtx.fillRect(0, 0, W, Hw);
     ctx.drawImage(ground, 0, 0, W, Hw, 0, 0, W, H);

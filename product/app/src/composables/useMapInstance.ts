@@ -26,6 +26,7 @@ export const useMapInstance = (): MapInstance => ({
       style: mapStyle.build(),
       ...mapStyle.initialView,
       attributionControl: { compact: true },
+      renderWorldCopies: false,
     });
     map.value = m;
     m.on("load", () => {

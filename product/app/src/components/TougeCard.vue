@@ -17,50 +17,64 @@ const store = useTougeStore();
 const svUrl = computed(() => urls.streetView(props.touge.poly));
 const pct = (v: number) => Math.round(v * 100);
 
+const cornerPct = computed(
+  () => props.touge.pctStrong + props.touge.pctMedium + props.touge.pctWeak,
+);
+
 const onSelect = () => {
   store.select(props.touge.id, "card");
+};
+
+const has3DData =
+  props.touge.poly.length >= 2 &&
+  props.touge.elevationSmooth.length >= 2;
+
+const open3D = () => {
+  store.open3D(props.touge);
 };
 </script>
 
 <template>
   <article
     class="card"
-    :class="{ top1: rank === 0, active: store.selectedId === touge.id }"
+    :class="{ active: store.selectedId === touge.id }"
     :data-id="touge.id"
     tabindex="0"
     @click="onSelect"
     @keydown.enter="onSelect"
   >
-    <div class="rank-badge">{{ rank + 1 }}</div>
     <div class="card-top">
+      <span class="rank-num">{{ rank + 1 }}</span>
       <span class="route-oval">{{ touge.routeLabel }}</span>
-      <h3>{{ touge.name }}</h3>
-      <span v-if="rank === 0" class="today-pick">本日の一本</span>
+      <span v-if="touge.distanceKm != null" class="dist-tag">
+        📍{{ touge.distanceKm < 10 ? touge.distanceKm.toFixed(1) : Math.round(touge.distanceKm) }}km
+      </span>
+      <h3 :data-full="touge.name">{{ touge.name }}</h3>
     </div>
     <p class="meta">
       全長 <b>{{ touge.lengthKm }}km</b> ・ 標高差 <b>{{ touge.height }}m</b>
-      <template v-if="touge.undulationCnt != null">
-        ・ 起伏 <b>{{ touge.undulationCnt }}</b>
-      </template>
-      ・ 総合 <b>{{ pct(touge.score) }}</b
-      >点
     </p>
     <div class="bars">
       <span class="bl">コーナー</span>
-      <div class="track">
-        <div class="fill" :style="{ width: `${pct(touge.corner)}%` }"></div>
+      <div class="stacked">
+        <span :style="{ width: `${touge.pctStrong}%`, background: 'var(--corner-strong)' }"></span>
+        <span :style="{ width: `${touge.pctMedium}%`, background: 'var(--corner-medium)' }"></span>
+        <span :style="{ width: `${touge.pctWeak}%`, background: 'var(--corner-weak)' }"></span>
+        <span :style="{ width: `${touge.pctStraight}%`, background: 'var(--straight)' }"></span>
       </div>
-      <span class="bv">{{ pct(touge.corner) }}</span>
+      <span class="bv">{{ cornerPct }}%</span>
       <span class="bl">高低差</span>
       <div class="track">
         <div class="fill" :style="{ width: `${pct(touge.updown)}%` }"></div>
       </div>
       <span class="bv">{{ pct(touge.updown) }}</span>
-      <span class="bl">道幅</span>
-      <div class="track">
-        <div class="fill" :style="{ width: `${pct(touge.width)}%` }"></div>
-      </div>
-      <span class="bv">{{ pct(touge.width) }}</span>
+    </div>
+    <div class="card-tags">
+      <span v-if="touge.unevennessCount != null && touge.unevennessCount > 0" class="card-tag">
+        <svg class="bump-ico" viewBox="0 0 20 12"><path d="M0 9Q5 1 10 9Q15 17 20 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        ×{{ touge.unevennessCount }}
+      </span>
+      <span v-if="touge.buildingCnt != null && touge.buildingCnt > 0" class="card-tag">🏠 ×{{ touge.buildingCnt }}</span>
     </div>
     <div class="card-actions">
       <a
@@ -80,8 +94,15 @@ const onSelect = () => {
         rel="noopener"
         @click.stop
       >
-        📷 路面
+        👁 路面
       </a>
+      <button
+        v-if="has3DData"
+        class="btn"
+        @click.stop="open3D"
+      >
+        <svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 9l10 6 10-6-10-6z"/><path d="M2 15l10 6 10-6"/><path d="M2 9v6"/><path d="M22 9v6"/></svg> 3D
+      </button>
     </div>
     <RouteThumb :touge="touge" />
   </article>
@@ -93,7 +114,7 @@ const onSelect = () => {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 11px 104px 11px 50px;
+  padding: 11px 104px 11px 12px;
   margin-bottom: 10px;
   cursor: pointer;
   transition: border-color 0.15s;
@@ -106,29 +127,22 @@ const onSelect = () => {
 .card.active {
   border-color: var(--accent);
   box-shadow: inset 3px 0 0 var(--accent);
+  background: #FEF2F2;
 }
 
-.rank-badge {
-  position: absolute;
-  left: 11px;
-  top: 11px;
-  font-size: 14px;
+.rank-num {
+  font-size: 11px;
   font-weight: 600;
-  width: 28px;
-  height: 28px;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
+  background: var(--paper-deep);
+  border: 1.5px solid var(--contour);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--paper-deep);
-  border: 1px solid var(--contour);
-  color: var(--ink);
-}
-
-.card.top1 .rank-badge {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #fff;
 }
 
 .card-top {
@@ -152,17 +166,44 @@ const onSelect = () => {
 .card-top h3 {
   font-size: 14px;
   font-weight: 700;
-  word-break: break-all;
+  flex-basis: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  position: relative;
 }
 
-.today-pick {
-  font-size: 9px;
+.card-top h3::after {
+  content: attr(data-full);
+  display: none;
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 10;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: normal;
+  max-width: 280px;
+  width: max-content;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.card-top h3:hover::after {
+  display: block;
+}
+
+.dist-tag {
+  font-size: 11px;
   font-weight: 700;
   color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  padding: 1px 5px;
-  letter-spacing: 0.08em;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .meta {
@@ -206,9 +247,48 @@ const onSelect = () => {
   border-radius: 3px;
 }
 
-.card-actions {
+.stacked {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+
+.stacked span {
+  height: 100%;
+}
+
+.card-tags {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.card-tag {
+  font-size: 10px;
+  color: var(--ink-soft);
+  background: var(--paper-deep);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+
+.bump-ico {
+  width: 14px;
+  height: 10px;
+  vertical-align: -1px;
+}
+
+.card-tag b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.card-actions {
+  display: flex;
+  gap: 5px;
   margin-top: 9px;
 }
 

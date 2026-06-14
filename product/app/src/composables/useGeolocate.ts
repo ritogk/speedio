@@ -9,7 +9,7 @@ import { rangeRings } from "@/map/rangeRings";
 import { useTougeStore } from "@/stores/tougeStore";
 
 interface Geolocate {
-  locate(): void;
+  locate(onSuccess?: () => void): void;
 }
 
 let positionMarker: maplibregl.Marker | null = null;
@@ -20,7 +20,7 @@ export const useGeolocate = (): Geolocate => {
   const store = useTougeStore();
 
   return {
-    locate: () => {
+    locate: (onSuccess?: () => void) => {
       if (!navigator.geolocation) {
         toast("このブラウザは位置情報に対応していません");
         return;
@@ -31,10 +31,11 @@ export const useGeolocate = (): Geolocate => {
         async (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
+          store.userLatLng = [lat, lng];
           const m = map.value;
           if (m) {
             positionMarker?.remove();
-            positionMarker = new maplibregl.Marker({ color: COLORS.routeRed })
+            positionMarker = new maplibregl.Marker({ color: COLORS.routeRed, occludedOpacity: 1 })
               .setLngLat([lng, lat])
               .addTo(m);
             if (mapReady.value) rangeRings.draw(m, lat, lng);
@@ -55,6 +56,7 @@ export const useGeolocate = (): Geolocate => {
             console.warn("[峠サーチャー] reverse geocode failed:", err);
           }
           store.loading = false;
+          onSuccess?.();
           if (code && PREFECTURES[code]) {
             toast(`現在地は${PREFECTURES[code]}。おすすめの峠を表示します`);
             void store.switchPref(code);

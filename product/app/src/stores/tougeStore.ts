@@ -14,7 +14,7 @@ import { dataLoader } from "@/lib/dataLoader";
 import { ranking } from "@/lib/ranking";
 import type { PresetKey, RankedTouge, TougeVM } from "@/types/touge";
 
-export type SheetState = "peek" | "half" | "full";
+export type SheetState = "peek" | "half" | "full" | "card-peek";
 
 export type SelectSource = "card" | "map" | "none";
 
@@ -35,6 +35,22 @@ const persist = (key: string, value: string) => {
   }
 };
 
+/** 2点間のハーバーサイン距離 (km) */
+const haversineKm = (
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number => {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
 export const useTougeStore = defineStore("touge", () => {
   const { show: toast } = useToast();
 
@@ -50,11 +66,54 @@ export const useTougeStore = defineStore("touge", () => {
   const loadSeq = ref(0);
   const sheetState = ref<SheetState>("peek");
   const sidebarHidden = ref(false);
+  /** 3Dオーバーレイで表示中の峠。null なら非表示 */
+  const overlay3dTarget = ref<TougeVM | null>(null);
+  /** 道幅スコアの下限フィルタ (0-1) */
+  const widthFilter = ref<number>(0.85);
+  /** 人里離れた道フィルタ (建物密度 <= 2.0棟/km) */
+  const seclusionFilter = ref(false);
+  /** 登りフィルタ (unevennessCount >= 2) */
+  const uphillFilter = ref(false);
+  /** 距離フィルタ (km)。null=無制限 */
+  const distanceFilter = ref<number | null>(null);
+  /** ユーザーの現在位置。null=未取得 */
+  const userLatLng = ref<[number, number] | null>(null);
 
   // getters
-  const ranked = computed<RankedTouge[]>(() =>
-    ranking.rank(items.value, preset.value),
-  );
+  const ranked = computed<RankedTouge[]>(() => {
+    let list = ranking.rank(items.value, preset.value);
+
+    // 距離の付与
+    if (userLatLng.value) {
+      const [uLat, uLng] = userLatLng.value;
+      list = list.map((t) => ({
+        ...t,
+        distanceKm: haversineKm(uLat, uLng, t.center[0], t.center[1]),
+      }));
+    }
+
+    // フィルタ適用
+    if (widthFilter.value != null) {
+      list = list.filter((t) => t.width >= widthFilter.value);
+    }
+    if (seclusionFilter.value) {
+      list = list.filter(
+        (t) => t.buildingDensity != null && t.buildingDensity <= 2.0,
+      );
+    }
+    if (uphillFilter.value) {
+      list = list.filter(
+        (t) => t.unevennessCount != null && t.unevennessCount >= 2,
+      );
+    }
+    if (distanceFilter.value != null && userLatLng.value) {
+      list = list.filter(
+        (t) => (t.distanceKm ?? Infinity) <= distanceFilter.value!,
+      );
+    }
+
+    return list;
+  });
 
   const hasQuery = computed(() => searchQuery.value.trim().length > 0);
 
@@ -98,7 +157,7 @@ export const useTougeStore = defineStore("touge", () => {
   const select = (id: number | null, source: SelectSource = "none") => {
     selection.value = { id, source, seq: selection.value.seq + 1 };
     if (id != null && isMobile()) {
-      sheetState.value = source === "card" ? "peek" : "half";
+      sheetState.value = source === "card" ? "card-peek" : "half";
     }
   };
 
@@ -130,6 +189,22 @@ export const useTougeStore = defineStore("touge", () => {
 
   const toggleSidebar = () => {
     sidebarHidden.value = !sidebarHidden.value;
+  };
+
+  const open3D = (touge: TougeVM) => {
+    overlay3dTarget.value = touge;
+  };
+
+  const close3D = () => {
+    overlay3dTarget.value = null;
+  };
+
+  const toggleSeclusion = () => {
+    seclusionFilter.value = !seclusionFilter.value;
+  };
+
+  const toggleUphill = () => {
+    uphillFilter.value = !uphillFilter.value;
   };
 
   const switchPref = async (code: string) => {
@@ -170,6 +245,12 @@ export const useTougeStore = defineStore("touge", () => {
     loadSeq,
     sheetState,
     sidebarHidden,
+    overlay3dTarget,
+    widthFilter,
+    seclusionFilter,
+    uphillFilter,
+    distanceFilter,
+    userLatLng,
     ranked,
     hasQuery,
     visibleCards,
@@ -184,6 +265,10 @@ export const useTougeStore = defineStore("touge", () => {
     showMore,
     setSheet,
     toggleSidebar,
+    open3D,
+    close3D,
+    toggleSeclusion,
+    toggleUphill,
     switchPref,
   };
 });

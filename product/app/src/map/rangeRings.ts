@@ -6,6 +6,7 @@ import maplibregl, {
 } from "maplibre-gl";
 
 import { geo } from "@/lib/geo";
+import type { LngLat } from "@/types/touge";
 
 interface RangeRingsLayer {
   addLayer(map: MaplibreMap): void;
@@ -24,6 +25,35 @@ const createRangeRings = (): RangeRingsLayer => {
         data: { type: "FeatureCollection", features: [] },
       });
       map.addLayer({
+        id: "rings-fill",
+        type: "fill",
+        source: SOURCE,
+        paint: {
+          "fill-color": [
+            "interpolate",
+            ["linear"],
+            ["get", "r"],
+            10,
+            "#4A9E60",
+            40,
+            "#B89E40",
+            70,
+            "#B07040",
+            100,
+            "#9E4A4A",
+          ],
+          "fill-opacity": [
+            "interpolate",
+            ["linear"],
+            ["get", "r"],
+            10,
+            0.15,
+            100,
+            0.06,
+          ],
+        },
+      });
+      map.addLayer({
         id: SOURCE,
         type: "line",
         source: SOURCE,
@@ -38,20 +68,30 @@ const createRangeRings = (): RangeRingsLayer => {
 
     draw: (map, lat, lng) => {
       const rings = geo.buildRangeRings(lat, lng);
+      // Polygon features with donut holes for fill layer (largest first)
+      const features = [...rings].reverse().map((r, i, arr) => {
+        const coords: LngLat[][] = [r.ring];
+        // Add inner ring (hole) from the next smaller radius
+        if (i < arr.length - 1) coords.push([...arr[i + 1].ring].reverse());
+        return {
+          type: "Feature" as const,
+          properties: { r: r.r },
+          geometry: {
+            type: "Polygon" as const,
+            coordinates: coords,
+          },
+        };
+      });
       (map.getSource(SOURCE) as GeoJSONSource | undefined)?.setData({
         type: "FeatureCollection",
-        features: rings.map((r) => ({
-          type: "Feature",
-          properties: {},
-          geometry: { type: "LineString", coordinates: r.ring },
-        })),
+        features,
       });
       labelMarkers.forEach((m) => m.remove());
       labelMarkers = rings.map((r) => {
         const el = document.createElement("div");
         el.className = "ring-label";
         el.textContent = `${r.r}km`;
-        return new maplibregl.Marker({ element: el })
+        return new maplibregl.Marker({ element: el, occludedOpacity: 1 })
           .setLngLat(r.labelPos)
           .addTo(map);
       });

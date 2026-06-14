@@ -13,7 +13,7 @@ export const urls: Urls = {
     const st = poly[0];
     const ct = poly[Math.floor(poly.length / 2)];
     const ed = poly[poly.length - 1];
-    return `https://www.google.co.jp/maps/dir/${st[0]},${st[1]}/${ct[0]},${ct[1]}/${ed[0]},${ed[1]}`;
+    return `https://www.google.com/maps/dir/?api=1&origin=current+location&destination=${ed[0]},${ed[1]}&waypoints=${st[0]},${st[1]}|${ct[0]},${ct[1]}`;
   },
 
   streetView: (poly) => {

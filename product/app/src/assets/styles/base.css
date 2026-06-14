@@ -34,9 +34,9 @@ body {
 
 /* MapLibre Marker として命令的に生成するDOM要素（Vueスコープ外のためグローバル定義） */
 .rank-marker {
-  background: var(--route-red);
+  background: rgba(0, 0, 0, 0.65);
   color: #fff;
-  border: 2px solid #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
   border-radius: 50%;
   display: flex;
   align-items: center;

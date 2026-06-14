@@ -46,7 +46,7 @@ export const mapStyle: MapStyle = {
           "gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png",
         ],
         tileSize: 256,
-        maxzoom: 14,
+        maxzoom: 12,
       },
     },
     layers: [

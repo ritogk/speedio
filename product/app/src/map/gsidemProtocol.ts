@@ -13,40 +13,53 @@ const createGsiDemProtocol = (): GsiDemProtocol => {
   let flatTileCache: ArrayBuffer | null = null;
   const flatTile = async (): Promise<ArrayBuffer> => {
     if (flatTileCache) return flatTileCache;
-    const cv = document.createElement("canvas");
-    cv.width = 256;
-    cv.height = 256;
+    const cv = new OffscreenCanvas(256, 256);
     const ctx = cv.getContext("2d")!;
     ctx.fillStyle = "rgb(1,134,160)";
     ctx.fillRect(0, 0, 256, 256);
-    const blob = await new Promise<Blob | null>((r) =>
-      cv.toBlob(r, "image/png"),
-    );
-    flatTileCache = await blob!.arrayBuffer();
+    const blob = await cv.convertToBlob({ type: "image/png" });
+    flatTileCache = await blob.arrayBuffer();
     return flatTileCache;
   };
+
+  const demCache = new Map<string, ArrayBuffer>();
+  const DEM_CACHE_MAX = 4096;
+  const demCanvas = new OffscreenCanvas(256, 256);
+  const demCtx = demCanvas.getContext("2d", {
+    willReadFrequently: true,
+  })!;
 
   return {
     register: () => {
       maplibregl.addProtocol("gsidem", async (params, abortController) => {
         try {
           const url = params.url.replace("gsidem://", "");
+          const cached = demCache.get(url);
+          if (cached) return { data: cached };
           const res = await fetch(url, { signal: abortController.signal });
           if (!res.ok) return { data: await flatTile() };
           const blob = await res.blob();
           const bmp = await createImageBitmap(blob);
-          const cv = document.createElement("canvas");
-          cv.width = bmp.width;
-          cv.height = bmp.height;
-          const ctx = cv.getContext("2d")!;
-          ctx.drawImage(bmp, 0, 0);
-          const img = ctx.getImageData(0, 0, cv.width, cv.height);
-          dem.convertGsiDemToTerrainRgb(img.data);
-          ctx.putImageData(img, 0, 0);
-          const outBlob = await new Promise<Blob | null>((r) =>
-            cv.toBlob(r, "image/png"),
+          demCanvas.width = bmp.width;
+          demCanvas.height = bmp.height;
+          demCtx.drawImage(bmp, 0, 0);
+          bmp.close();
+          const img = demCtx.getImageData(
+            0,
+            0,
+            demCanvas.width,
+            demCanvas.height,
           );
-          return { data: await outBlob!.arrayBuffer() };
+          dem.convertGsiDemToTerrainRgb(img.data);
+          demCtx.putImageData(img, 0, 0);
+          const outBlob = await demCanvas.convertToBlob({
+            type: "image/png",
+          });
+          const buf = await outBlob.arrayBuffer();
+          if (demCache.size >= DEM_CACHE_MAX)
+            demCache.delete(demCache.keys().next().value!);
+          demCache.set(url, buf);
+          return { data: buf };
         } catch (err) {
           if ((err as Error).name === "AbortError") throw err;
           console.warn("[gsidem] tile convert failed:", (err as Error).message);

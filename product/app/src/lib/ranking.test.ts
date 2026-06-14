@@ -20,6 +20,17 @@ const vm = (partial: Partial<TougeVM>): TougeVM => {
     downM: null,
     unevennessCount: null,
     buildingCnt: null,
+    buildingDensity: null,
+    undulationCnt: null,
+    uphillCnt: null,
+    downhillCnt: null,
+    pctStrong: 0,
+    pctMedium: 0,
+    pctWeak: 0,
+    pctStraight: 100,
+    elevationSmooth: [],
+    buildings: [],
+    elevSections: null,
     ...partial,
   };
 };
@@ -44,8 +55,9 @@ describe("rankedList", () => {
     expect(ranked[0].score).toBeCloseTo(2.2 / 3.7);
   });
 
-  it("relaxプリセットでは道幅の広い道が1位になる", () => {
-    expect(ranking.rank(items, "relax")[0].id).toBe(2);
+  it("nearbyプリセットはbalanceと同じ重みで全軸等価", () => {
+    const ranked = ranking.rank(items, "nearby");
+    for (const t of ranked) expect(t.score).toBeCloseTo(1 / 3);
   });
 
   it("入力配列を破壊しない", () => {

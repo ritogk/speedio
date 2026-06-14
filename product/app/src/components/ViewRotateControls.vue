@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // モバイル用の地図回転ボタン。
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 import { useHoldRotate } from "@/composables/useHoldRotate";
 import { useTougeStore } from "@/stores/tougeStore";
@@ -10,6 +10,13 @@ const rotL = ref<HTMLElement | null>(null);
 const rotR = ref<HTMLElement | null>(null);
 useHoldRotate(rotL, 1); // 地図が左回りに見える方向
 useHoldRotate(rotR, -1);
+
+/** card-peek 時は CSS 変数 --card-peek-h に連動して bottom を動かす */
+const cardPeekStyle = computed(() => {
+  if (store.sheetState !== "card-peek") return {};
+  // CSS変数をcalcで参照する
+  return { bottom: "calc(var(--card-peek-h, 96) * 1px + 14px)" };
+});
 </script>
 
 <template>
@@ -19,6 +26,7 @@ useHoldRotate(rotR, -1);
       lifted: store.sheetState === 'half',
       hidden: store.sheetState === 'full',
     }"
+    :style="cardPeekStyle"
   >
     <button ref="rotL" aria-label="左に回転">⟲</button>
     <button ref="rotR" aria-label="右に回転">⟳</button>
@@ -60,10 +68,9 @@ useHoldRotate(rotR, -1);
   color: #fff;
 }
 
-/* PCはドラッグで回転できる */
 @media (min-width: 761px) {
   .view-ctrl {
-    display: none;
+    bottom: 24px;
   }
 }
 

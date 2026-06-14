@@ -30,6 +30,8 @@ export interface RawTouge {
   score_elevation_unevenness: number | null;
   score_width: number | null;
   score_corner_none: number | null;
+  /** 区間ごと中央線スコア（score_width の上位互換） */
+  score_claude_center_line_section?: number | null;
   geometry_list: LatLng[] | null;
   road_section: RoadSection[] | null;
   // 以下は2026-06-13追加。再生成前の県のslimには存在しない
@@ -44,6 +46,27 @@ export interface RawTouge {
   building_nearby_cnt?: number | null;
   /** 起伏（アップダウン）回数 */
   undulation_cnt?: number | null;
+  /** 登り回数 */
+  uphill_cnt?: number | null;
+  /** 下り回数 */
+  downhill_cnt?: number | null;
+  /** 平滑化済み標高(m) — geometry_list と 1:1 対応 */
+  elevation_smooth?: number[] | null;
+  /** 建物ポリゴン座標 [[lat,lng],...] の配列 */
+  buildings?: LatLng[][] | null;
+  /** 登り/下り区間 */
+  elevation_unevenness_sections?: ElevSections | null;
+}
+
+/** 登り/下り区間の start/end 座標 */
+export interface ElevSectionRange {
+  start: LatLng;
+  end: LatLng;
+}
+
+export interface ElevSections {
+  uphill?: ElevSectionRange[];
+  downhill?: ElevSectionRange[];
 }
 
 export interface TougeVM {
@@ -67,15 +90,37 @@ export interface TougeVM {
   unevennessCount: number | null;
   /** 道路近傍の建物数。データ未対応の県では null */
   buildingCnt: number | null;
+  /** 建物密度 (棟/km)。データ未対応の県では null */
+  buildingDensity: number | null;
   /** 起伏（アップダウン）回数。データ未対応の県では null */
   undulationCnt: number | null;
+  /** 登り回数。データ未対応の県では null */
+  uphillCnt: number | null;
+  /** 下り回数。データ未対応の県では null */
+  downhillCnt: number | null;
+  /** コーナー構成割合(%) — strong */
+  pctStrong: number;
+  /** コーナー構成割合(%) — medium */
+  pctMedium: number;
+  /** コーナー構成割合(%) — weak */
+  pctWeak: number;
+  /** コーナー構成割合(%) — straight */
+  pctStraight: number;
+  /** 平滑化済み標高(m) — poly と 1:1 対応 */
+  elevationSmooth: number[];
+  /** 建物ポリゴン座標 [[lat,lng],...] の配列 */
+  buildings: LatLng[][];
+  /** 登り/下り区間 */
+  elevSections: ElevSections | null;
+  /** 現在地からの直線距離(km)。位置情報未取得時は undefined */
+  distanceKm?: number;
 }
 
 export interface RankedTouge extends TougeVM {
   score: number;
 }
 
-export type PresetKey = "balance" | "corner" | "updown" | "relax";
+export type PresetKey = "balance" | "corner" | "updown" | "nearby";
 
 export interface PresetWeight {
   corner: number;

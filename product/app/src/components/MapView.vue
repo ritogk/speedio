@@ -3,19 +3,25 @@
 import maplibregl from "maplibre-gl";
 import { onMounted, onUnmounted, ref, watch } from "vue";
 
-import GhostLineOverlay from "@/components/GhostLineOverlay.vue";
 import MapControls from "@/components/MapControls.vue";
 import MapLegend from "@/components/MapLegend.vue";
 import ViewRotateControls from "@/components/ViewRotateControls.vue";
+import { useGeolocate } from "@/composables/useGeolocate";
 import { useMapInstance } from "@/composables/useMapInstance";
-import { MARKER_N } from "@/lib/constants";
+import { MARKER_N, PREFECTURE_ENTRIES } from "@/lib/constants";
 import { camera, type CameraDirector } from "@/map/camera";
+import { kobanLayer } from "@/map/kobanLayer";
 import { rangeRings } from "@/map/rangeRings";
 import { tougeSource } from "@/map/tougeSource";
 import { useTougeStore } from "@/stores/tougeStore";
 
 const store = useTougeStore();
+const { locate } = useGeolocate();
 const { map, mapReady, init, dispose } = useMapInstance();
+
+const onPrefChange = (e: Event) => {
+  void store.switchPref((e.target as HTMLSelectElement).value);
+};
 
 const container = ref<HTMLElement | null>(null);
 let director: CameraDirector | null = null;
@@ -37,7 +43,7 @@ const drawRankMarkers = () => {
     el.className = "rank-marker";
     el.textContent = String(i + 1);
     el.addEventListener("click", () => store.revealAndSelect(t.id));
-    return new maplibregl.Marker({ element: el })
+    return new maplibregl.Marker({ element: el, occludedOpacity: 1 })
       .setLngLat([t.center[1], t.center[0]])
       .addTo(m);
   });
@@ -50,17 +56,22 @@ const drawTouges = () => {
   drawRankMarkers();
 };
 
+const resizeHandler = () => map.value?.resize();
+
 onMounted(() => {
   const m = init(container.value!);
   director = camera.createDirector(m);
   m.on("load", () => {
     rangeRings.addLayer(m); // 道路レイヤーより下に描くため先に
+    kobanLayer.addLayer(m); // 交番レイヤー（道路より下に配置）
     tougeSource.addLayers(m, (tid) => store.revealAndSelect(tid));
     drawTouges();
   });
+  window.addEventListener("resize", resizeHandler);
 });
 
 onUnmounted(() => {
+  window.removeEventListener("resize", resizeHandler);
   director?.dispose();
   director = null;
   rankMarkers.forEach((mk) => mk.remove());
@@ -98,11 +109,39 @@ watch(
     if (t && sel.id != null) director?.flyToTouge(t, currentPadding(0));
   },
 );
+
+watch(
+  () => store.sidebarHidden,
+  () => {
+    setTimeout(() => map.value?.resize(), 280);
+  },
+);
 </script>
 
 <template>
   <div ref="container" class="map-container"></div>
-  <GhostLineOverlay />
+
+  <div class="map-float">
+    <select
+      class="pref-select"
+      :value="store.prefCode ?? ''"
+      aria-label="都道府県を選択"
+      @change="onPrefChange"
+    >
+      <option value="">都道府県を選ぶ</option>
+      <option
+        v-for="[code, name] in PREFECTURE_ENTRIES"
+        :key="code"
+        :value="code"
+      >
+        {{ name }}
+      </option>
+    </select>
+    <button class="locate-btn" @click="locate">
+      📍<span class="locate-label"> 現在地</span>
+    </button>
+  </div>
+
   <MapControls />
   <ViewRotateControls />
   <MapLegend />
@@ -113,5 +152,86 @@ watch(
   position: absolute;
   inset: 0;
   background: var(--paper-deep);
+}
+
+.map-float {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1250;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.map-float .pref-select {
+  margin-left: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  padding: 5px 28px 5px 14px;
+  cursor: pointer;
+  appearance: none;
+  max-width: 42vw;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%231A1C1F' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+}
+
+.map-float .locate-btn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  padding: 5px 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+.map-float .locate-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (max-width: 760px) {
+  .map-float {
+    pointer-events: none;
+  }
+
+  .map-float > * {
+    pointer-events: auto;
+  }
+
+  .map-float .pref-select {
+    font-size: 12px;
+    padding: 7px 26px 7px 12px;
+    background-position: right 9px center;
+    max-width: 55vw;
+  }
+
+  .map-float .locate-btn {
+    padding: 7px 10px;
+    margin-left: auto;
+  }
+
+  .map-float .locate-label {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .locate-btn .locate-label {
+    display: none;
+  }
 }
 </style>

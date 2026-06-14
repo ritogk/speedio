@@ -1,21 +1,34 @@
 <script setup lang="ts">
 // ランキングパネル（PC: サイドバー / モバイル: 3段階ボトムシート）。検索・プリセット・カード一覧を持つ。
-import { nextTick, provide, ref, watch } from "vue";
+import { nextTick, onMounted, onUnmounted, provide, ref, watch } from "vue";
 
 import PresetChips from "@/components/PresetChips.vue";
 import TougeCardList from "@/components/TougeCardList.vue";
+import { MOBILE_MAX_WIDTH } from "@/lib/constants";
 import { panelBodyKey } from "@/lib/injectionKeys";
 import { useTougeStore, type SheetState } from "@/stores/tougeStore";
 
 const store = useTougeStore();
 
+const panelEl = ref<HTMLElement | null>(null);
+const sheetHandleEl = ref<HTMLElement | null>(null);
+const cardPeekTransform = ref<string | undefined>(undefined);
+
 const panelBody = ref<HTMLElement | null>(null);
 provide(panelBodyKey, panelBody);
 
-const ORDER: SheetState[] = ["peek", "half", "full"];
+const isMobile = () => window.innerWidth <= MOBILE_MAX_WIDTH;
+
 const cycleSheet = () => {
-  const idx = (ORDER.indexOf(store.sheetState) + 1) % ORDER.length;
-  store.setSheet(ORDER[idx]);
+  if (!isMobile()) return;
+  const s = store.sheetState;
+  const next =
+    s === "peek" || s === "card-peek"
+      ? "half"
+      : s === "half"
+        ? "full"
+        : "peek";
+  store.setSheet(next);
 };
 
 let dragStartY: number | null = null;
@@ -28,6 +41,7 @@ const onTouchEnd = (e: TouchEvent) => {
   if (dragStartY === null) return;
   const dy = e.changedTouches[0].clientY - dragStartY;
   if (Math.abs(dy) > 40) {
+    const ORDER: SheetState[] = ["peek", "half", "full"];
     const idx = ORDER.indexOf(dragStartState) + (dy < 0 ? 1 : -1);
     store.setSheet(ORDER[Math.max(0, Math.min(2, idx))]);
   }
@@ -48,15 +62,98 @@ watch(
     body.scrollTo({ top: body.scrollTop + delta - 8, behavior: "smooth" });
   },
 );
+
+// card-peek 状態: ハンドル＋選択カードの高さを測ってパネルを持ち上げる
+watch(
+  () => store.selection,
+  async (sel) => {
+    if (sel.source !== "card" || sel.id == null) return;
+    await nextTick();
+    const body = panelBody.value;
+    const card = body?.querySelector<HTMLElement>(`.card[data-id="${sel.id}"]`);
+    const handle = sheetHandleEl.value;
+    if (!card || !handle || !isMobile()) return;
+    const h = handle.offsetHeight + card.offsetHeight + 14;
+    cardPeekTransform.value = `translateY(calc(100% - ${h}px))`;
+    document.documentElement.style.setProperty("--card-peek-h", String(h));
+  },
+);
+
+// card-peek 以外の状態ではインラインtransformをクリアする
+watch(
+  () => store.sheetState,
+  (state) => {
+    if (state !== "card-peek") {
+      cardPeekTransform.value = undefined;
+    }
+  },
+);
+
+// PC パネルのマウスドラッグスクロール
+let dragging = false;
+let startY = 0;
+let startScroll = 0;
+let moved = false;
+
+const onMouseDown = (e: MouseEvent) => {
+  if (!isMobile() && e.button === 0) {
+    dragging = true;
+    moved = false;
+    startY = e.clientY;
+    startScroll = panelBody.value?.scrollTop ?? 0;
+    if (panelBody.value) panelBody.value.style.cursor = "grab";
+  }
+};
+
+const onMouseMove = (e: MouseEvent) => {
+  if (!dragging) return;
+  const dy = e.clientY - startY;
+  if (Math.abs(dy) > 4) moved = true;
+  if (moved && panelBody.value) {
+    panelBody.value.scrollTop = startScroll - dy;
+    panelBody.value.style.cursor = "grabbing";
+  }
+};
+
+const onMouseUp = () => {
+  if (!dragging) return;
+  dragging = false;
+  if (panelBody.value) panelBody.value.style.cursor = "";
+};
+
+const onBodyClick = (e: MouseEvent) => {
+  if (moved) e.stopPropagation();
+  moved = false;
+};
+
+onMounted(() => {
+  window.addEventListener("mousemove", onMouseMove);
+  window.addEventListener("mouseup", onMouseUp);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("mousemove", onMouseMove);
+  window.removeEventListener("mouseup", onMouseUp);
+});
 </script>
 
 <template>
   <section
+    ref="panelEl"
     class="panel"
     :class="[store.sheetState, { 'hidden-side': store.sidebarHidden }]"
+    :style="cardPeekTransform ? { transform: cardPeekTransform } : {}"
     aria-label="峠ランキング"
   >
+    <div class="side-handle" @click="store.toggleSidebar()">
+      <span
+        class="chevron"
+        :style="store.sidebarHidden ? 'transform:scaleX(-1)' : ''"
+        >&#9666;</span
+      >
+    </div>
     <div
+      ref="sheetHandleEl"
       class="sheet-handle"
       @click="cycleSheet"
       @touchstart.passive="onTouchStart"
@@ -64,12 +161,17 @@ watch(
     >
       <div class="grip"></div>
       <div class="sheet-head">
-        <h2>この県のおすすめ</h2>
+        <div class="panel-logo">峠</div>
         <span class="count">{{ store.resultCountLabel }}</span>
         <span class="pref-name">{{ store.prefLabel }}</span>
       </div>
     </div>
-    <div ref="panelBody" class="panel-body">
+    <div
+      ref="panelBody"
+      class="panel-body"
+      @mousedown="onMouseDown"
+      @click.capture="onBodyClick"
+    >
       <div class="searchbox">
         <input
           v-model="store.searchQuery"
@@ -107,8 +209,16 @@ watch(
   transform: translateY(45%);
 }
 
+.panel.card-peek {
+  /* transform set via inline style from store */
+}
+
 .panel.full {
   transform: translateY(0);
+}
+
+.side-handle {
+  display: none;
 }
 
 .sheet-handle {
@@ -132,10 +242,16 @@ watch(
   gap: 8px;
 }
 
-.sheet-head h2 {
-  font-size: 13px;
+.panel-logo {
+  display: none;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  line-height: 1;
+  color: #fff;
+  background: var(--accent);
+  padding: 6px 7px;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
 .sheet-head .count {
@@ -202,12 +318,42 @@ watch(
     margin-left: -352px;
   }
 
+  .panel-logo {
+    display: inline-block;
+  }
+
   .sheet-handle {
     cursor: default;
   }
 
   .sheet-handle .grip {
     display: none;
+  }
+
+  .side-handle {
+    display: flex;
+    position: absolute;
+    right: -22px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-left: none;
+    border-radius: 0 6px 6px 0;
+    cursor: pointer;
+    color: var(--ink-soft);
+    font-size: 13px;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+    z-index: 1;
+  }
+
+  .side-handle:hover {
+    color: var(--ink);
+    background: var(--paper-deep);
   }
 }
 </style>

@@ -69,23 +69,23 @@ export const HIGHWAY_LABEL: Record<string, string> = {
 
 export const PRESET_LABELS: Record<PresetKey, string> = {
   balance: "バランス",
-  corner: "コーナー重視",
-  updown: "高低差重視",
-  relax: "のんびり快走",
+  corner: "コーナー",
+  updown: "高低差",
+  nearby: "📍 近く",
 };
 
 export const PRESET_HINTS: Record<PresetKey, string> = {
   balance: "コーナー・高低差・道幅をバランスよく評価します。",
   corner: "ヘアピンや中速コーナーが連続する道を上位にします。",
   updown: "アップダウンと標高差の大きい道を上位にします。",
-  relax: "道幅が広く、緩いカーブ主体の快走路を上位にします。",
+  nearby: "現在地から20km以内の峠を表示します。",
 };
 
 export const PRESET_WEIGHTS: Record<PresetKey, PresetWeight> = {
   balance: { corner: 1, updown: 1, width: 1 },
   corner: { corner: 2.2, updown: 0.7, width: 0.8 },
   updown: { corner: 0.7, updown: 2.2, width: 0.8 },
-  relax: { corner: 0.4, updown: 0.6, width: 2.4 },
+  nearby: { corner: 1, updown: 1, width: 1 },
 };
 
 export const isPresetKey = (v: unknown): v is PresetKey =>
