@@ -673,7 +673,7 @@ function drawMap(list){
     el.className = "rank-marker";
     el.textContent = i+1;
     el.addEventListener("click",()=>revealAndSelect(t));
-    const m = new maplibregl.Marker({element:el})
+    const m = new maplibregl.Marker({element:el, occludedOpacity:1})
       .setLngLat([t.center[1], t.center[0]])
       .addTo(map);
     markers.push(m);
@@ -1217,7 +1217,7 @@ document.querySelectorAll(".presets .chip").forEach(chip=>{
       navigator.geolocation.getCurrentPosition(async pos=>{
         const lat = pos.coords.latitude, lng = pos.coords.longitude;
         userLatLng = [lat, lng];
-        new maplibregl.Marker({color:cssVar("--route-red")}).setLngLat([lng, lat]).addTo(map);
+        new maplibregl.Marker({color:cssVar("--route-red"), occludedOpacity:1}).setLngLat([lng, lat]).addTo(map);
         drawRangeRings(lat, lng);
         document.querySelectorAll(".presets .chip").forEach(c=>c.setAttribute("aria-pressed","false"));
         chip.setAttribute("aria-pressed","true");
@@ -1313,7 +1313,7 @@ function drawRangeRings(lat, lng){
     el.className = "ring-label";
     el.textContent = `${l.r}km`;
     el.style.color = "#fff";
-    return new maplibregl.Marker({element:el}).setLngLat(l.pos).addTo(map);
+    return new maplibregl.Marker({element:el, occludedOpacity:1}).setLngLat(l.pos).addTo(map);
   });
 }
 
@@ -1324,7 +1324,7 @@ $("locateBtn").addEventListener("click",()=>{
     async pos=>{
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
       userLatLng = [lat, lng];
-      new maplibregl.Marker({color:cssVar("--route-red")}).setLngLat([lng, lat]).addTo(map);
+      new maplibregl.Marker({color:cssVar("--route-red"), occludedOpacity:1}).setLngLat([lng, lat]).addTo(map);
       drawRangeRings(lat, lng);
       // 国土地理院の逆ジオコーダで市区町村コードを取得（先頭2桁が県コード）
       let code = null;
