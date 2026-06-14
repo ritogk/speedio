@@ -345,6 +345,7 @@ main{flex:1;position:relative;min-height:0}
   white-space:nowrap;
 }
 .overlay-3d-toggle:hover{background:rgba(255,255,255,.15)}
+.overlay-3d-toggle.active{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.6)}
 .overlay-3d-info{color:#fff;font-size:13px;line-height:1.6}
 .overlay-3d-info b{font-weight:700}
 .overlay-3d-hint{
@@ -461,6 +462,7 @@ main{flex:1;position:relative;min-height:0}
       <div class="overlay-3d-info" id="info3d"></div>
     </div>
     <div class="overlay-3d-tools" id="tools3d">
+      <button class="overlay-3d-toggle active" id="toggle3dSection">セクション</button>
       <button class="overlay-3d-toggle" id="toggle3dColor" style="display:none">登り/下り</button>
       <button class="overlay-3d-toggle" id="toggle3dBuildings" style="display:none">🏠 建物</button>
     </div>
@@ -769,9 +771,10 @@ map.on("load", () => {
     layout:{"line-cap":"round","line-join":"round"},
     paint:{
       "line-color":cssVar("--route-red"),
-      "line-width":["interpolate",["linear"],["zoom"],8,10,14,22],
+      "line-gap-width":["interpolate",["linear"],["zoom"],8,2,14,4.5],
+      "line-width":["interpolate",["linear"],["zoom"],8,3,14,6],
       "line-blur":3,
-      "line-opacity":.75
+      "line-opacity":.55
     }
   });
   map.addLayer({
@@ -2014,17 +2017,28 @@ async function open3DView(t){
       return meshes;
     }
 
+    // 白ベース道路（セクション色OFF時に表示）
+    const whiteLevels = new Array(geomList.length).fill("white");
+    const whiteMeshes = buildRoadMeshes(whiteLevels, {white:0xB0B8C0});
+    whiteMeshes.forEach(m => {
+      m.visible = false;
+      m.material.polygonOffset = true;
+      m.material.polygonOffsetFactor = 1;
+      m.material.polygonOffsetUnits = 1;
+      group.add(m);
+    });
+
     const cornerMeshes = buildRoadMeshes(ptLevels, LEVEL_HEX);
     const elevMeshes = buildRoadMeshes(ptElevDir, ELEV_HEX);
     cornerMeshes.forEach(m => group.add(m));
     elevMeshes.forEach(m => { m.visible = false; group.add(m); });
 
-    // 縁線（白）
-    const edgeMat = new THREE.LineBasicMaterial({color: 0x595959});
+    // 縁線
+    const edgeMat = new THREE.LineBasicMaterial({color: 0x333333});
     group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftPts), edgeMat));
     group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightPts), edgeMat.clone()));
     // 中央線（破線）
-    const centerMat = new THREE.LineDashedMaterial({color: 0x595959, dashSize: 2, gapSize: 1.5});
+    const centerMat = new THREE.LineDashedMaterial({color: 0x666666, dashSize: 2, gapSize: 1.5});
     const centerLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(centerPts), centerMat);
     centerLine.computeLineDistances();
     group.add(centerLine);
@@ -2203,26 +2217,46 @@ async function open3DView(t){
     };
     window.addEventListener('resize', onResize);
 
-    const toggleBtn = $("toggle3dColor");
     const legend3d = $("legend3d");
     const cornerLegend = '<span><i style="background:#FF453A"></i>低速コーナー</span><span><i style="background:#FF9F0A"></i>中速</span><span><i style="background:#30D158"></i>高速</span><span><i style="background:#98989D"></i>ストレート</span>';
     const elevLegend = '<span><i style="background:#E8553D"></i>登り</span><span><i style="background:#4A90D9"></i>下り</span><span><i style="background:#98989D"></i>平坦</span>';
+
+    // 道路表示の状態管理
+    let sectionVisible = true;
+    let elevMode = false;
     legend3d.innerHTML = cornerLegend;
+
+    function updateRoadVisibility(){
+      cornerMeshes.forEach(m => m.visible = sectionVisible && !elevMode);
+      elevMeshes.forEach(m => m.visible = sectionVisible && elevMode);
+      whiteMeshes.forEach(m => m.visible = !sectionVisible);
+      legend3d.innerHTML = sectionVisible ? (elevMode ? elevLegend : cornerLegend) : "";
+    }
+
+    // セクション色トグル
+    const secBtn = $("toggle3dSection");
+    secBtn.onclick = ()=>{
+      sectionVisible = !sectionVisible;
+      secBtn.classList.toggle("active", sectionVisible);
+      updateRoadVisibility();
+    };
+
+    // 登り/下りトグル
+    const toggleBtn = $("toggle3dColor");
     if(eSecs){
-      let elevMode = false;
       toggleBtn.style.display = "";
-      toggleBtn.textContent = "登り/下り";
       toggleBtn.onclick = ()=>{
         elevMode = !elevMode;
-        cornerMeshes.forEach(m => m.visible = !elevMode);
-        elevMeshes.forEach(m => m.visible = elevMode);
+        if(!sectionVisible){ sectionVisible = true; secBtn.classList.add("active"); }
+        toggleBtn.classList.toggle("active", elevMode);
         toggleBtn.textContent = elevMode ? "コーナー" : "登り/下り";
-        legend3d.innerHTML = elevMode ? elevLegend : cornerLegend;
+        updateRoadVisibility();
       };
     }else{
       toggleBtn.style.display = "none";
     }
 
+    // 建物トグル
     const bldgBtn = $("toggle3dBuildings");
     if(bldgObjs.length){
       bldgBtn.style.display = "";
@@ -2230,7 +2264,7 @@ async function open3DView(t){
       bldgBtn.onclick = ()=>{
         bldgVisible = !bldgVisible;
         bldgObjs.forEach(o => o.visible = bldgVisible);
-        bldgBtn.style.opacity = bldgVisible ? "1" : "";
+        bldgBtn.classList.toggle("active", bldgVisible);
       };
     }else{
       bldgBtn.style.display = "none";
