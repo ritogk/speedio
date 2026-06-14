@@ -211,7 +211,7 @@ main{flex:1;position:relative;min-height:0}
 
 .card{
   position:relative;background:var(--card);border:1px solid var(--line);
-  border-radius:var(--radius);padding:11px 12px 11px 38px;margin-bottom:10px;
+  border-radius:var(--radius);padding:11px 12px;margin-bottom:10px;
   cursor:pointer;
   transition:border-color .15s;
 }
@@ -234,20 +234,13 @@ main{flex:1;position:relative;min-height:0}
   animation:spin 1s linear infinite;
 }
 .card.active{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent);background:#FEF2F2}
-.rank-badge{
-  position:absolute;left:8px;top:11px;
-  font-size:11px;font-weight:600;
-  width:22px;height:22px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  background:var(--paper-deep);border:1px solid var(--contour);color:var(--ink);
-}
-.card.top1 .rank-badge{background:var(--ink);border-color:var(--ink);color:#fff}
+.rank-num{font-size:13px;font-weight:700;color:var(--ink-soft);flex-shrink:0}
 .card-top{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
 .route-oval{
   font-size:10px;font-weight:500;color:var(--ink-soft);
   border:1px solid var(--contour);border-radius:999px;padding:1px 8px;white-space:nowrap;
 }
-.card-top h3{font-size:14px;font-weight:700;word-break:break-all}
+.card-top h3{font-size:14px;font-weight:700;word-break:break-all;flex-basis:100%}
 .meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
 .meta b{color:var(--ink);font-weight:500}
 .bars{display:grid;grid-template-columns:58px 1fr 28px;gap:3px 8px;align-items:center}
@@ -430,7 +423,7 @@ main{flex:1;position:relative;min-height:0}
       <button class="overlay-3d-close" id="close3d">✕</button>
       <div class="overlay-3d-info" id="info3d"></div>
     </div>
-    <div class="overlay-3d-hint">ドラッグで回転 ・ ホイールでズーム</div>
+    <div class="overlay-3d-hint">1本指で回転 ・ 2本指で移動/ズーム</div>
   </div>
 </main>
 
@@ -871,10 +864,9 @@ let lastRanked = [];
 function cardHtml(t, rank, total){
   const sv = streetViewUrl(t.poly);
   return `
-    <article class="card${rank===0?" top1":""}" data-id="${t.id}" tabindex="0">
-      <div class="rank-badge">${rank+1}</div>
+    <article class="card" data-id="${t.id}" tabindex="0">
       <div class="card-top">
-        <span class="route-oval">${escapeHtml(t.routeLabel)}</span><h3>${escapeHtml(t.name)}</h3>
+        <span class="rank-num">${rank+1}.</span><span class="route-oval">${escapeHtml(t.routeLabel)}</span><h3>${escapeHtml(t.name)}</h3>
       </div>
       <p class="meta">${t.distanceKm!=null?`📍 <b>${Math.round(t.distanceKm)}km</b> ・ `:""}全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b></p>
       <div class="bars">
