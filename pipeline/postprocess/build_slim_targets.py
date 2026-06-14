@@ -54,6 +54,7 @@ def slim_touge(t):
         "score_elevation": t.get("score_elevation"),
         "score_elevation_unevenness": t.get("score_elevation_unevenness"),
         "score_width": t.get("score_width"),
+        "score_claude_center_line_section": t.get("score_claude_center_line_section"),
         "score_corner_none": t.get("score_corner_none"),
         "elevation_up": fluct[0],
         "elevation_down": fluct[1],

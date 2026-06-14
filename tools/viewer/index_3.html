@@ -417,6 +417,7 @@ const presetWeights = {
 let currentPreset = "balance";
 let userLatLng = null;
 let distanceFilter = null;
+let widthFilter = 0.85;
 let currentItems = [];
 const prefCache = {};
 
@@ -748,7 +749,7 @@ function toViewModel(raw, idx){
   if(!name) name = "（名称未登録の道）";
   const corner = Math.max(0, Math.min(1, 1 - (raw.score_corner_none ?? 1)));
   const updown = Math.max(0, Math.min(1, ((raw.score_elevation ?? 0) + (raw.score_elevation_unevenness ?? 0)) / 2));
-  const width = Math.max(0, Math.min(1, raw.score_width ?? 0));
+  const width = Math.max(0, Math.min(1, raw.score_claude_center_line_section ?? raw.score_width ?? 0));
   return {
     id: idx, name,
     routeLabel: HIGHWAY_LABEL[Array.isArray(raw.highway) ? raw.highway[0] : raw.highway] || "一般道",
@@ -803,7 +804,6 @@ function cardHtml(t, rank, total){
       <div class="bars">
         <span class="bl">コーナー</span><div class="track"><div class="fill c" style="width:${Math.round(t.corner*100)}%"></div></div><span class="bv">${Math.round(t.corner*100)}</span>
         <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
-        <span class="bl">道幅</span><div class="track"><div class="fill" style="width:${Math.round(t.width*100)}%"></div></div><span class="bv">${Math.round(t.width*100)}</span>
       </div>
       <div class="card-actions">
         <a class="btn primary" href="${googleMapUrl(t.poly)}" target="_blank" rel="noopener" data-act="link">🚗 行く</a>
@@ -1058,6 +1058,9 @@ function render(){
   }
   if(distanceFilter!=null && userLatLng){
     lastRanked = lastRanked.filter(t=>t.distanceKm<=distanceFilter);
+  }
+  if(widthFilter!=null){
+    lastRanked = lastRanked.filter(t=>t.width>=widthFilter);
   }
   renderCards();
   drawMap(lastRanked);
