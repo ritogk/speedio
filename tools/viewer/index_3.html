@@ -1491,6 +1491,7 @@ $("searchInput").addEventListener("input",e=>{
   renderCards();
 });
 
+
 // 現在地から10km刻み・100kmまでの距離サークルを描く
 let ringLabelMarkers = [];
 function drawRangeRings(lat, lng){
@@ -1736,6 +1737,29 @@ async function loadThreeJS(){
 
 
 
+async function fetchBuildings(south, west, north, east){
+  const query = `[out:json][timeout:10];way["building"](${south},${west},${north},${east});(._;>;);out body;`;
+  try{
+    const resp = await fetch('https://overpass-api.de/api/interpreter',{
+      method:'POST', body:'data='+encodeURIComponent(query)
+    });
+    if(!resp.ok) return [];
+    const data = await resp.json();
+    const nodes = {}, ways = [];
+    data.elements.forEach(el=>{
+      if(el.type==='node') nodes[el.id]=el;
+      else if(el.type==='way' && el.tags?.building) ways.push(el);
+    });
+    return ways.map(w=>{
+      let c = w.nodes.map(nid=>nodes[nid]).filter(Boolean);
+      if(c.length>1 && c[0].id===c[c.length-1].id) c=c.slice(0,-1);
+      if(c.length<3) return null;
+      const h = parseFloat(w.tags?.height)||(parseInt(w.tags?.['building:levels'])||2)*3;
+      return {coords:c.map(n=>[n.lat,n.lon]), height:h};
+    }).filter(Boolean);
+  }catch(e){ console.warn('[3D] building fetch failed:',e); return []; }
+}
+
 async function open3DView(t){
   if(active3D) close3DView();
   showLoading(true, "3Dデータを準備中…");
@@ -1809,6 +1833,7 @@ async function open3DView(t){
     const gMaxLat = maxLat + (maxLat - minLat) * PAD_RATIO;
     const gMinLng = minLng - (maxLng - minLng) * PAD_RATIO;
     const gMaxLng = maxLng + (maxLng - minLng) * PAD_RATIO;
+    const buildingsP = fetchBuildings(minLat, minLng, maxLat, maxLng);
     const GRID = 35;
     const gridPts = [];
     for(let j = 0; j < GRID; j++)
@@ -1862,6 +1887,46 @@ async function open3DView(t){
       new THREE.WireframeGeometry(terrGeo),
       new THREE.LineBasicMaterial({color: 0x3a7a4d, transparent: true, opacity: .08})
     ));
+
+    // 建物ポリゴン（Overpass API → 押し出しメッシュ）
+    const buildings = await buildingsP;
+    if(buildings.length){
+      const interpElev = (lat,lng)=>{
+        const fx = (lng-gMinLng)/(gMaxLng-gMinLng)*(GRID-1);
+        const fy = (lat-gMinLat)/(gMaxLat-gMinLat)*(GRID-1);
+        const ix = Math.max(0,Math.min(GRID-2,Math.floor(fx)));
+        const iy = Math.max(0,Math.min(GRID-2,Math.floor(fy)));
+        const tx = fx-ix, ty = fy-iy;
+        const e00=gridElevs[iy*GRID+ix], e10=gridElevs[iy*GRID+ix+1];
+        const e01=gridElevs[(iy+1)*GRID+ix], e11=gridElevs[(iy+1)*GRID+ix+1];
+        return e00*(1-tx)*(1-ty)+e10*tx*(1-ty)+e01*(1-tx)*ty+e11*tx*ty;
+      };
+      const bldgMat = new THREE.MeshStandardMaterial({
+        color:0xd4c8a8, roughness:.85, metalness:.05,
+        transparent:true, opacity:.75, side:THREE.DoubleSide
+      });
+      const bEdgeMat = new THREE.LineBasicMaterial({color:0x8a7e68, transparent:true, opacity:.4});
+      buildings.forEach(b=>{
+        let cLat=0, cLng=0;
+        b.coords.forEach(c=>{ cLat+=c[0]; cLng+=c[1]; });
+        cLat/=b.coords.length; cLng/=b.coords.length;
+        const bElev = interpElev(cLat, cLng);
+        const shape = new THREE.Shape();
+        const fp = b.coords.map(c=>toXYZ(c[0],c[1],0));
+        shape.moveTo(fp[0][0], fp[0][1]);
+        for(let i=1;i<fp.length;i++) shape.lineTo(fp[i][0], fp[i][1]);
+        try{
+          const geo = new THREE.ExtrudeGeometry(shape,{depth:b.height*Z_SCALE, bevelEnabled:false});
+          const mesh = new THREE.Mesh(geo, bldgMat);
+          mesh.position.z = (bElev-baseElev)*Z_SCALE+0.15;
+          group.add(mesh);
+          const edges = new THREE.EdgesGeometry(geo);
+          const eLine = new THREE.LineSegments(edges, bEdgeMat);
+          eLine.position.z = mesh.position.z;
+          group.add(eLine);
+        }catch(e){}
+      });
+    }
 
     // 道路メッシュ（geometry_list + elevation_smooth直結、3d.jsと同じリボン方式）
     const ROAD_W = 1.5;
