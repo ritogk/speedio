@@ -1105,10 +1105,16 @@ function setGhost(poly){
 }
 function drawGhost(){
   if(!ghostPoly){ ghostPath.setAttribute("d",""); return; }
+  const W = map.getCanvas().width, H = map.getCanvas().height;
+  const margin = Math.max(W, H) * 2;
   let d = "";
+  let penDown = false;
   for(let i = 0; i < ghostPoly.length; i++){
     const p = map.project([ghostPoly[i][1], ghostPoly[i][0]]);
-    d += (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1);
+    const ok = p.x > -margin && p.x < W+margin && p.y > -margin && p.y < H+margin;
+    if(!ok){ penDown = false; continue; }
+    d += (penDown ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1);
+    penDown = true;
   }
   ghostPath.setAttribute("d", d);
 }
