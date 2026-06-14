@@ -1026,18 +1026,18 @@ function renderCards(){
       if(navBtn){
         e.stopPropagation();
         const poly = JSON.parse(navBtn.dataset.poly);
-        const openNav = (lat,lng)=>window.open(googleMapUrl(poly,lat,lng),"_blank");
+        const w = window.open("about:blank","_blank");
         if(navigator.geolocation){
           const orig = navBtn.textContent;
           navBtn.innerHTML = '🚗 <span style="display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;vertical-align:-1px"></span>';
           navBtn.disabled = true;
           navigator.geolocation.getCurrentPosition(
-            pos=>{ navBtn.textContent=orig; navBtn.disabled=false; openNav(pos.coords.latitude,pos.coords.longitude); },
-            ()=>{ navBtn.textContent=orig; navBtn.disabled=false; openNav(); },
+            pos=>{ navBtn.textContent=orig; navBtn.disabled=false; if(w) w.location.href=googleMapUrl(poly,pos.coords.latitude,pos.coords.longitude); else location.href=googleMapUrl(poly,pos.coords.latitude,pos.coords.longitude); },
+            ()=>{ navBtn.textContent=orig; navBtn.disabled=false; if(w) w.location.href=googleMapUrl(poly); else location.href=googleMapUrl(poly); },
             {timeout:3000}
           );
         }else{
-          openNav();
+          if(w) w.location.href=googleMapUrl(poly); else location.href=googleMapUrl(poly);
         }
         return;
       }
