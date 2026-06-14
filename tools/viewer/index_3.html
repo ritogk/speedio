@@ -1884,7 +1884,7 @@ async function open3DView(t){
       lblD.position.set(rMaxX + 3, (rMinY+rMaxY)/2, rMinZ);
       group.add(lblD);
       // 高さ（垂直辺の中央）
-      const lblH = makeLabelSprite(`↕${realH}m`);
+      const lblH = makeLabelSprite(`${realH}m`);
       lblH.position.set(rMinX - 3, rMinY, (rMinZ+rMaxZ)/2);
       group.add(lblH);
 
