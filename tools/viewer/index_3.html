@@ -1322,11 +1322,19 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
       });
       return;
     }
+    const isActive = chip.getAttribute("aria-pressed") === "true";
     document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
-    chip.setAttribute("aria-pressed","true");
-    currentPreset = preset;
-    distanceFilter = preset === "nearby" ? 20 : null;
-    if(preset !== "nearby") try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
+    if(isActive){
+      // 再押下でバランスに戻す
+      document.querySelector('.chip[data-preset="balance"]').setAttribute("aria-pressed","true");
+      currentPreset = "balance";
+      distanceFilter = null;
+    }else{
+      chip.setAttribute("aria-pressed","true");
+      currentPreset = preset;
+      distanceFilter = preset === "nearby" ? 20 : null;
+    }
+    if(currentPreset !== "nearby") try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
     $("presetHint").textContent = presetHints[currentPreset];
     visibleCount = PAGE_N;
     render();
