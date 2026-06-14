@@ -878,7 +878,7 @@ function cardHtml(t, rank, total){
         <span class="bl">コーナー</span><div class="stacked"><span style="width:${t.pctStrong}%;background:var(--corner-strong)"></span><span style="width:${t.pctMedium}%;background:var(--corner-medium)"></span><span style="width:${t.pctWeak}%;background:var(--corner-weak)"></span><span style="width:${t.pctStraight}%;background:var(--straight)"></span></div><span class="bv">${t.pctStrong+t.pctMedium+t.pctWeak}%</span>
         <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
       </div>
-      <div class="card-tags">${t.unevennessCount!=null&&t.unevennessCount>0?`<span class="card-tag">${bumpIcons(t.unevennessCount)}</span>`:""}<span class="card-tag">建物 <b>${t.buildingCnt??"-"}</b></span></div>
+      <div class="card-tags">${t.unevennessCount!=null&&t.unevennessCount>0?`<span class="card-tag">${bumpIcons(t.unevennessCount)}</span>`:""}${t.buildingCnt!=null&&t.buildingCnt>0?`<span class="card-tag">🏠 ×${t.buildingCnt}</span>`:""}</div>
       <div class="card-actions">
         <a class="btn primary" href="${googleMapUrl(t.poly)}" target="_blank" rel="noopener" data-act="link">🚗 行く</a>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">📷 路面</a>`:""}
