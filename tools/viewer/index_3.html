@@ -673,14 +673,12 @@ function drawMap(list){
 function viewPadding(extra){
   const e = extra || 0;
   if(window.innerWidth <= 760){
-    // シートの開き具合に応じて隠れる高さが変わる（half=画面下約44%、peek=96px）
     const p = document.getElementById("panel");
-    const sheet = p.classList.contains("half") ? Math.round(window.innerHeight * .44)
-      : p.classList.contains("card-peek") ? parseInt(getComputedStyle(document.documentElement).getPropertyValue("--card-peek-h"))||96 : 96;
+    const rect = p.getBoundingClientRect();
+    const sheet = Math.max(0, window.innerHeight - rect.top);
     return {top:e+10, left:e+10, right:e+10, bottom:e+sheet+14};
   }
-  const side = document.getElementById("panel").classList.contains("hidden-side") ? 0 : 350;
-  return {top:e, left:e+side, right:e, bottom:e};
+  return {top:e, left:e, right:e, bottom:e};
 }
 
 // 着地後に峠の周りを一周するオービット演出（等速）
@@ -709,12 +707,11 @@ let flightAbort = null;
 function flyToTouge(t){
   if(!t.poly.length) return;
   const st = t.poly[0], ed = t.poly[t.poly.length-1];
-  // 道の方向に合わせてベアリングを計算（コンパス方位: 0=北, 90=東）
   const bearing = Math.atan2(ed[1]-st[1], ed[0]-st[0]) * 180 / Math.PI;
   const mobile = window.innerWidth <= 760;
   const target = {
     center:[t.center[1], t.center[0]],
-    zoom: mobile ? 12.8 : 13.5, // 少し遠目から眺めて道全体が収まるように
+    zoom: mobile ? 12.8 : 13.5,
     pitch: mobile ? 64 : 70,
     bearing,
     padding:viewPadding(0),
@@ -722,7 +719,7 @@ function flyToTouge(t){
     essential:true
   };
   cancelOrbit();
-  if(flightAbort) flightAbort(); // 直前の飛行の着地保証を無効化
+  if(flightAbort) flightAbort();
   let cancelled = false;
   const userEvents = ["dragstart","zoomstart","rotatestart","pitchstart"];
   const onUser = e => { if(e.originalEvent) cancelled = true; };
@@ -734,8 +731,8 @@ function flyToTouge(t){
     const userTookOver = cancelled;
     cleanup();
     if(!userTookOver){
-      map.jumpTo(target); // 完走時は実質no-op、中断時はここで着地
-      orbitAround(target.center); // 着地後にゆっくり回り込む
+      map.jumpTo(target);
+      orbitAround(target.center);
     }
   });
 }
