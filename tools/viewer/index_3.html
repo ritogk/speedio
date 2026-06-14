@@ -1410,6 +1410,37 @@ handle.addEventListener("touchend",e=>{
   dragStartY=null;
 });
 
+// PCパネルのマウスドラッグスクロール
+{
+  const body = document.querySelector(".panel-body");
+  let dragging = false, startY = 0, startScroll = 0, moved = false;
+  body.addEventListener("mousedown",e=>{
+    if(!isMobile() && e.button===0){
+      dragging = true; moved = false;
+      startY = e.clientY; startScroll = body.scrollTop;
+      body.style.cursor = "grab";
+    }
+  });
+  window.addEventListener("mousemove",e=>{
+    if(!dragging) return;
+    const dy = e.clientY - startY;
+    if(Math.abs(dy) > 4) moved = true;
+    if(moved){
+      body.scrollTop = startScroll - dy;
+      body.style.cursor = "grabbing";
+    }
+  });
+  window.addEventListener("mouseup",()=>{
+    if(!dragging) return;
+    dragging = false;
+    body.style.cursor = "";
+  });
+  body.addEventListener("click",e=>{
+    if(moved) e.stopPropagation();
+    moved = false;
+  }, true);
+}
+
 // PCサイドバー開閉
 $("sideHandle").addEventListener("click",()=>{
   panel.classList.toggle("hidden-side");
