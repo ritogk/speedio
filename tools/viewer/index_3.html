@@ -1872,20 +1872,26 @@ async function open3DView(t){
       const last = pts3[pts3.length - 1];
       addDash([new THREE.Vector3(last.x, last.y, last.z), new THREE.Vector3(last.x, last.y, rMaxZ)]);
 
-      // 寸法ラベル（実距離m表示）
-      const realW = Math.round((maxLng - minLng) * DEG2M * cosLat);
-      const realD = Math.round((maxLat - minLat) * DEG2M);
-      const realH = Math.round(validElevs.length ? Math.max(...validElevs) - Math.min(...validElevs) : 0);
-      function makeLabelSprite(text){
+      // 寸法ラベル（10m単位に丸め）
+      const round10 = v => Math.round(v / 10) * 10;
+      const realW = round10((maxLng - minLng) * DEG2M * cosLat);
+      const realD = round10((maxLat - minLat) * DEG2M);
+      const realH = round10(validElevs.length ? Math.max(...validElevs) - Math.min(...validElevs) : 0);
+      function makeLabelSprite(num){
         const cv = document.createElement('canvas');
         const cx = cv.getContext('2d');
+        const numStr = num.toLocaleString();
         cx.font = '40px sans-serif';
-        const tw = cx.measureText(text).width;
-        cv.width = tw + 16; cv.height = 52;
-        cx.font = '40px sans-serif';
-        cx.fillStyle = 'rgba(255,255,255,.25)';
+        const nw = cx.measureText(numStr).width;
+        cx.font = '26px sans-serif';
+        const uw = cx.measureText('m').width;
+        cv.width = nw + uw + 16; cv.height = 52;
         cx.textBaseline = 'middle';
-        cx.fillText(text, 8, cv.height / 2);
+        cx.fillStyle = 'rgba(255,255,255,.25)';
+        cx.font = '40px sans-serif';
+        cx.fillText(numStr, 8, cv.height / 2);
+        cx.font = '26px sans-serif';
+        cx.fillText('m', 8 + nw + 1, cv.height / 2);
         const tex = new THREE.CanvasTexture(cv);
         const mat = new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false});
         const sp = new THREE.Sprite(mat);
@@ -1893,15 +1899,15 @@ async function open3DView(t){
         return sp;
       }
       // 横幅（底面X辺の中央）
-      const lblW = makeLabelSprite(`${realW}m`);
+      const lblW = makeLabelSprite(realW);
       lblW.position.set((rMinX+rMaxX)/2, rMinY - 3, rMinZ);
       group.add(lblW);
       // 奥行き（底面Y辺の中央）
-      const lblD = makeLabelSprite(`${realD}m`);
+      const lblD = makeLabelSprite(realD);
       lblD.position.set(rMaxX + 3, (rMinY+rMaxY)/2, rMinZ);
       group.add(lblD);
       // 高さ（垂直辺の中央）
-      const lblH = makeLabelSprite(`${realH}m`);
+      const lblH = makeLabelSprite(realH);
       lblH.position.set(rMinX - 3, rMinY, (rMinZ+rMaxZ)/2);
       group.add(lblH);
 
