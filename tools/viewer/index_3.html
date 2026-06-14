@@ -235,7 +235,12 @@ main{flex:1;position:relative;min-height:0}
   animation:spin 1s linear infinite;
 }
 .card.active{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent);background:#FEF2F2}
-.rank-num{font-size:13px;font-weight:700;color:var(--ink-soft);flex-shrink:0}
+.rank-num{
+  font-size:11px;font-weight:600;color:var(--ink-soft);flex-shrink:0;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--paper-deep);border:1.5px solid var(--contour);
+  display:flex;align-items:center;justify-content:center;
+}
 .card-top{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
 .route-oval{
   font-size:10px;font-weight:500;color:var(--ink-soft);
@@ -274,7 +279,7 @@ main{flex:1;position:relative;min-height:0}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 
 .rank-marker{
-  background:var(--route-red);color:#fff;border:2px solid #fff;
+  background:rgba(0,0,0,.65);color:#fff;border:1.5px solid rgba(255,255,255,.45);
   border-radius:50%;display:flex;align-items:center;justify-content:center;
   font-size:12px;font-weight:500;
   box-shadow:0 1px 3px rgba(0,0,0,.4);
@@ -396,7 +401,7 @@ main{flex:1;position:relative;min-height:0}
     <div class="map-float" id="mapFloat"></div>
     <div class="map-ctrl">
       <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">⛰ 3D地形</button>
-      <button class="ctrl-btn" id="kobanToggle" aria-pressed="false">👮 交番</button>
+      <button class="ctrl-btn" id="kobanToggle" aria-pressed="false">👮</button>
     </div>
 
     <div class="view-ctrl" id="viewCtrl">
@@ -980,7 +985,7 @@ function cardHtml(t, rank, total){
   return `
     <article class="card" data-id="${t.id}" tabindex="0">
       <div class="card-top">
-        <span class="rank-num">${rank+1}.</span><span class="route-oval">${escapeHtml(t.routeLabel)}</span>${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}<h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
+        <span class="rank-num">${rank+1}</span><span class="route-oval">${escapeHtml(t.routeLabel)}</span>${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}<h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
       </div>
       <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b></p>
       <div class="bars">
@@ -1026,19 +1031,7 @@ function renderCards(){
       if(navBtn){
         e.stopPropagation();
         const poly = JSON.parse(navBtn.dataset.poly);
-        const w = window.open("about:blank","_blank");
-        if(navigator.geolocation){
-          const orig = navBtn.textContent;
-          navBtn.innerHTML = '🚗 <span style="display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;vertical-align:-1px"></span>';
-          navBtn.disabled = true;
-          navigator.geolocation.getCurrentPosition(
-            pos=>{ navBtn.textContent=orig; navBtn.disabled=false; if(w) w.location.href=googleMapUrl(poly,pos.coords.latitude,pos.coords.longitude); else location.href=googleMapUrl(poly,pos.coords.latitude,pos.coords.longitude); },
-            ()=>{ navBtn.textContent=orig; navBtn.disabled=false; if(w) w.location.href=googleMapUrl(poly); else location.href=googleMapUrl(poly); },
-            {timeout:3000}
-          );
-        }else{
-          if(w) w.location.href=googleMapUrl(poly); else location.href=googleMapUrl(poly);
-        }
+        location.href = googleMapUrl(poly);
         return;
       }
       if(e.target.closest('[data-act="3d"]')){
@@ -1407,6 +1400,15 @@ sel.innerHTML = '<option value="">都道府県を選ぶ</option>' +
   Object.entries(PREFECTURES).sort((a,b)=>a[0].localeCompare(b[0]))
     .map(([c,n])=>`<option value="${c}">${n}</option>`).join("");
 sel.addEventListener("change",e=>switchPref(e.target.value));
+{
+  const longest = Object.values(PREFECTURES).reduce((a,b)=>a.length>=b.length?a:b);
+  const m = document.createElement("span");
+  m.style.cssText = "position:absolute;visibility:hidden;font:inherit;font-size:13px;font-weight:500;white-space:nowrap";
+  m.textContent = longest;
+  document.body.appendChild(m);
+  sel.style.width = (m.offsetWidth + 48) + "px";
+  m.remove();
+}
 
 document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
   chip.addEventListener("click",()=>{
