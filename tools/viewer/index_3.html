@@ -872,7 +872,7 @@ function cardHtml(t, rank, total){
   return `
     <article class="card" data-id="${t.id}" tabindex="0">
       <div class="card-top">
-        <span class="rank-num">${rank+1}.</span><span class="route-oval">${escapeHtml(t.routeLabel)}</span>${t.distanceKm!=null?`<span class="dist-tag">${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}<h3>${escapeHtml(t.name)}</h3>
+        <span class="rank-num">${rank+1}.</span><span class="route-oval">${escapeHtml(t.routeLabel)}</span>${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}<h3>${escapeHtml(t.name)}</h3>
       </div>
       <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b></p>
       <div class="bars">
