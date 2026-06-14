@@ -892,7 +892,7 @@ function cardHtml(t, rank, total){
       <div class="card-tags">${t.unevennessCount!=null&&t.unevennessCount>0?`<span class="card-tag">${bumpIcons(t.unevennessCount)}</span>`:""}${t.buildingCnt!=null&&t.buildingCnt>0?`<span class="card-tag">🏠 ×${t.buildingCnt}</span>`:""}</div>
       <div class="card-actions">
         <button class="btn primary" data-act="nav" data-poly='${JSON.stringify(t.poly)}'>🚗 行く</button>
-        ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">📷 路面</a>`:""}
+        ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">👁 路面</a>`:""}
         <button class="btn" data-act="3d"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 9l10 6 10-6-10-6z"/><path d="M2 15l10 6 10-6"/><path d="M2 9v6"/><path d="M22 9v6"/></svg> 3D</button>
       </div>
       <div class="thumb" data-tid="${t.id}"><span class="thumb-spin"></span></div>
