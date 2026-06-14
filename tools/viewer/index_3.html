@@ -1772,7 +1772,7 @@ async function open3DView(t){
     // 左端・右端・中央のポイント列
     const leftPts = pts3.map((p, i) => p.clone().addScaledVector(smoothNormals[i], -ROAD_W));
     const rightPts = pts3.map((p, i) => p.clone().addScaledVector(smoothNormals[i], ROAD_W));
-    const centerPts = pts3.map((p, i) => p.clone().addScaledVector(smoothNormals[i], ROAD_W * 0.5));
+    const centerPts = pts3.map(p => p.clone());
 
     // コーナーレベル毎にリボンメッシュを生成
     let runStart = 0;
