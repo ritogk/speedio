@@ -215,7 +215,7 @@ main{flex:1;position:relative;min-height:0}
   border:2px solid var(--line);border-top-color:var(--accent);
   animation:spin 1s linear infinite;
 }
-.card.active{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.card.active{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent);background:#FEF2F2}
 .rank-badge{
   position:absolute;left:11px;top:11px;
   font-size:14px;font-weight:600;
@@ -841,7 +841,7 @@ function renderCards(){
       if(e.target.dataset.act === "link") return;
       const t = ranked.find(x=>x.id === Number(card.dataset.id));
       if(!t) return;
-      selectCard(t.id,false);
+      selectCard(t.id,true);
       setSheet("peek");
       flyToTouge(t);
     });
@@ -1078,13 +1078,15 @@ function revealAndSelect(t){
 function selectCard(id,scroll){
   document.querySelectorAll(".card").forEach(c=>c.classList.toggle("active", Number(c.dataset.id)===id));
   if(scroll){
-    // scrollIntoView はウィンドウごとスクロールしてヘッダーが見切れるため、パネル内部だけをスクロールする
-    const card = document.querySelector(`.card[data-id="${id}"]`);
-    const body = document.querySelector(".panel-body");
-    if(card && body){
-      const delta = card.getBoundingClientRect().top - body.getBoundingClientRect().top;
-      body.scrollTo({top: body.scrollTop + delta - 8, behavior:"smooth"});
-    }
+    requestAnimationFrame(()=>{
+      const card = document.querySelector(`.card[data-id="${id}"]`);
+      const body = document.querySelector(".panel-body");
+      if(card && body){
+        const bodyRect = body.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
+        body.scrollTo({top: body.scrollTop + cardRect.top - bodyRect.top, behavior:"smooth"});
+      }
+    });
   }
   highlightOnMap(id);
 }
