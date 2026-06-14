@@ -119,6 +119,7 @@ main{flex:1;position:relative;min-height:0}
   background:rgba(255,255,255,.92);color:var(--ink);padding:6px 13px;
 }
 .ctrl-btn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.ctrl-spin{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:spin .8s linear infinite;margin-left:4px;vertical-align:-1px}
 
 /* ビュー操作（長押しで回転 / タップで北向きリセット） */
 .view-ctrl{
@@ -395,6 +396,7 @@ main{flex:1;position:relative;min-height:0}
     <div class="map-float" id="mapFloat"></div>
     <div class="map-ctrl">
       <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">⛰ 3D地形</button>
+      <button class="ctrl-btn" id="kobanToggle" aria-pressed="false">👮 交番</button>
     </div>
 
     <div class="view-ctrl" id="viewCtrl">
@@ -499,6 +501,52 @@ let uphillFilter = false;
 const UPHILL_MIN = 2;
 let currentItems = [];
 const prefCache = {};
+const kobanCache = {};
+let kobanVisible = false;
+
+function kobanSpin(on){
+  const btn = document.getElementById("kobanToggle");
+  if(!btn) return;
+  const old = btn.querySelector(".ctrl-spin");
+  if(old) old.remove();
+  if(on) btn.insertAdjacentHTML("beforeend",' <span class="ctrl-spin"></span>');
+}
+
+async function fetchKoban(code){
+  if(!mapReady) await new Promise(r=>map.once("load",r));
+  const name = PREFECTURES[code];
+  if(!name) return;
+  if(kobanCache[code]){
+    map.getSource("koban").setData(kobanCache[code]);
+    return;
+  }
+  kobanSpin(true);
+  const query = `[out:json][timeout:30];area["name"="${name}"]["admin_level"="4"]->.pref;(node["amenity"="police"](area.pref);way["amenity"="police"](area.pref););out center;`;
+  try{
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method:"POST", body:"data="+encodeURIComponent(query),
+      headers:{"Content-Type":"application/x-www-form-urlencoded"}
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const features = data.elements
+      .map(el=>{
+        const lat = el.lat ?? el.center?.lat;
+        const lon = el.lon ?? el.center?.lon;
+        if(lat==null || lon==null) return null;
+        return {type:"Feature",properties:{name:el.tags?.name||""},geometry:{type:"Point",coordinates:[lon,lat]}};
+      })
+      .filter(Boolean);
+    const geojson = {type:"FeatureCollection", features};
+    kobanCache[code] = geojson;
+    if(kobanVisible) map.getSource("koban").setData(geojson);
+  }catch(err){
+    console.warn("[交番]", err.message);
+    toast("交番データの取得に失敗しました");
+  }finally{
+    kobanSpin(false);
+  }
+}
 
 // ================= ユーティリティ =================
 const $ = id => document.getElementById(id);
@@ -667,6 +715,38 @@ map.on("load", () => {
       "line-dasharray":[3,3]
     }
   });
+
+  // 交番レイヤー（絵文字アイコン、道路ラインより下に配置）
+  {
+    const sz = 32, cv = document.createElement("canvas");
+    cv.width = cv.height = sz;
+    const cx = cv.getContext("2d");
+    cx.font = `${sz - 4}px serif`;
+    cx.textAlign = "center"; cx.textBaseline = "middle";
+    cx.fillText("👮", sz/2, sz/2 + 1);
+    map.addImage("koban-ico", {width:sz, height:sz, data:new Uint8Array(cx.getImageData(0,0,sz,sz).data)});
+  }
+  map.addSource("koban", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
+  map.addLayer({
+    id:"koban-sym", type:"symbol", source:"koban",
+    layout:{
+      "icon-image":"koban-ico",
+      "icon-size":["interpolate",["linear"],["zoom"],8,.4,14,.7],
+      "icon-allow-overlap":false,
+      "icon-optional":true,
+      "visibility":"none"
+    }
+  });
+  map.on("click","koban-sym",e=>{
+    const f = e.features?.[0];
+    if(!f) return;
+    new maplibregl.Popup({offset:8,closeButton:false,maxWidth:"200px"})
+      .setLngLat(e.lngLat)
+      .setHTML(`<div style="font-size:12px;font-weight:500">${escapeHtml(f.properties.name||"交番")}</div>`)
+      .addTo(map);
+  });
+  map.on("mouseenter","koban-sym",()=>{ map.getCanvas().style.cursor="pointer"; });
+  map.on("mouseleave","koban-sym",()=>{ map.getCanvas().style.cursor=""; });
 
   // 道路レイヤー（選択グロー + 白縁 + コーナー色分け）
   map.addSource("touge", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
@@ -1314,6 +1394,10 @@ function afterLoad(){
     map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
   }
   if(window.innerWidth<=760) setSheet("half");
+  if(kobanVisible){
+    const code = $("prefSelect").value;
+    if(code) fetchKoban(code);
+  }
 }
 
 // ================= UIイベント =================
@@ -1512,6 +1596,19 @@ $("terrainToggle").addEventListener("click",e=>{
   btn.setAttribute("aria-pressed", on);
   map.setTerrain(on ? {source:"gsiTerrain", exaggeration:1.2} : null);
   map.easeTo(on ? {pitch:55, duration:600} : {pitch:0, duration:600});
+});
+// 交番レイヤー ON/OFF
+$("kobanToggle").addEventListener("click",e=>{
+  const btn = e.currentTarget;
+  const on = btn.getAttribute("aria-pressed") !== "true";
+  btn.setAttribute("aria-pressed", String(on));
+  kobanVisible = on;
+  const vis = on ? "visible" : "none";
+  map.setLayoutProperty("koban-sym","visibility",vis);
+  if(on){
+    const code = $("prefSelect").value;
+    if(code) fetchKoban(code);
+  }
 });
 // 秘境フィルター ON/OFF
 $("seclusionToggle").addEventListener("click",e=>{
