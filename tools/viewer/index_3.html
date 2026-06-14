@@ -83,12 +83,15 @@ header h1{
 }
 
 main{flex:1;position:relative;min-height:0}
+.map-area{position:absolute;inset:0;overflow:hidden}
 #map{position:absolute;inset:0;background:var(--paper-deep)}
 #ghostLine{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1050}
 #ghostLine path{
   fill:none;stroke:var(--route-red);stroke-width:3;
   stroke-opacity:.35;stroke-dasharray:7 6;stroke-linecap:round;stroke-linejoin:round;
 }
+
+.side-handle{display:none}
 
 /* 地図上コントロール（左上） */
 .map-ctrl{
@@ -117,7 +120,7 @@ main{flex:1;position:relative;min-height:0}
 }
 .view-ctrl button:active{background:var(--ink);border-color:var(--ink);color:#fff}
 @media (min-width:761px){
-  .view-ctrl{display:none} /* PCはドラッグで回転できる */
+  .view-ctrl{bottom:24px}
 }
 /* ボトムシートの開き具合に追従して回転ボタン・凡例を持ち上げる */
 @media (max-width:760px){
@@ -291,9 +294,22 @@ main{flex:1;position:relative;min-height:0}
   .panel.hidden-side{margin-left:-352px}
   .sheet-handle{cursor:default}
   .sheet-handle .grip{display:none}
-  .legend{left:auto;right:10px;bottom:24px}
-  .map-ctrl{left:362px;transition:left .25s}
-  .panel.hidden-side ~ .map-ctrl, body:has(.panel.hidden-side) .map-ctrl{left:10px}
+  .map-area{left:351px;transition:left .25s}
+  body:has(.panel.hidden-side) .map-area{left:0}
+  .legend{bottom:24px}
+  .side-handle{
+    display:flex;
+    position:absolute;right:-22px;top:50%;transform:translateY(-50%);
+    width:22px;height:56px;
+    align-items:center;justify-content:center;
+    background:var(--paper);border:1px solid var(--line);border-left:none;
+    border-radius:0 6px 6px 0;
+    cursor:pointer;color:var(--ink-soft);font-size:13px;
+    box-shadow:2px 0 4px rgba(0,0,0,.08);
+    z-index:1;
+  }
+  .side-handle:hover{color:var(--ink);background:var(--paper-deep)}
+  .panel.hidden-side .side-handle .chevron{transform:scaleX(-1)}
 }
 </style>
 </head>
@@ -307,29 +323,31 @@ main{flex:1;position:relative;min-height:0}
 </header>
 
 <main>
-  <div id="map"></div>
-  <svg id="ghostLine" aria-hidden="true"></svg>
+  <div class="map-area" id="mapArea">
+    <div id="map"></div>
+    <svg id="ghostLine" aria-hidden="true"></svg>
 
-  <div class="map-ctrl">
-    <button class="ctrl-btn" id="sideToggle" style="display:none">☰ ランキング</button>
-    <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">⛰ 3D地形</button>
-  </div>
+    <div class="map-ctrl">
+      <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">⛰ 3D地形</button>
+    </div>
 
-  <div class="view-ctrl" id="viewCtrl">
-    <button id="rotL" aria-label="左に回転">⟲</button>
-    <button id="rotR" aria-label="右に回転">⟳</button>
-  </div>
+    <div class="view-ctrl" id="viewCtrl">
+      <button id="rotL" aria-label="左に回転">⟲</button>
+      <button id="rotR" aria-label="右に回転">⟳</button>
+    </div>
 
-  <div class="legend">
-    <ul>
-      <li><span class="swatch" style="background:var(--corner-strong)"></span>低速コーナー</li>
-      <li><span class="swatch" style="background:var(--corner-medium)"></span>中速</li>
-      <li><span class="swatch" style="background:var(--corner-weak)"></span>高速</li>
-      <li><span class="swatch" style="background:var(--straight)"></span>ストレート</li>
-    </ul>
+    <div class="legend">
+      <ul>
+        <li><span class="swatch" style="background:var(--corner-strong)"></span>低速コーナー</li>
+        <li><span class="swatch" style="background:var(--corner-medium)"></span>中速</li>
+        <li><span class="swatch" style="background:var(--corner-weak)"></span>高速</li>
+        <li><span class="swatch" style="background:var(--straight)"></span>ストレート</li>
+      </ul>
+    </div>
   </div>
 
   <section class="panel" id="panel">
+    <div class="side-handle" id="sideHandle"><span class="chevron">◂</span></div>
     <div class="sheet-handle" id="sheetHandle">
       <div class="grip"></div>
       <div class="sheet-head">
@@ -430,22 +448,23 @@ function haversineKm(lat1,lng1,lat2,lng2){
 
 // ================= 国土地理院DEM → terrain-rgb 変換プロトコル =================
 // GSIのdem_png(標高PNG)をMapLibreが読めるMapbox terrain-rgb形式に変換する
-const FLAT_TILE = (()=>{ // 標高0mの平坦タイル（エラー時フォールバック用）
+const FLAT_TILE = (()=>{
   let cache = null;
   return async () => {
     if(cache) return cache;
-    const cv = document.createElement("canvas");
-    cv.width = 256; cv.height = 256;
+    const cv = new OffscreenCanvas(256, 256);
     const ctx = cv.getContext("2d");
     ctx.fillStyle = "rgb(1,134,160)";
     ctx.fillRect(0,0,256,256);
-    const blob = await new Promise(r=>cv.toBlob(r,"image/png"));
+    const blob = await cv.convertToBlob({type:"image/png"});
     cache = await blob.arrayBuffer();
     return cache;
   };
 })();
 const demCache = new Map();
-const DEM_CACHE_MAX = 2048;
+const DEM_CACHE_MAX = 4096;
+const demCanvas = new OffscreenCanvas(256, 256);
+const demCtx = demCanvas.getContext("2d", {willReadFrequently:true});
 maplibregl.addProtocol("gsidem", async (params) => {
   try {
     const url = params.url.replace("gsidem://", "");
@@ -455,11 +474,10 @@ maplibregl.addProtocol("gsidem", async (params) => {
     if(!res.ok) return {data: await FLAT_TILE()};
     const blob = await res.blob();
     const bmp = await createImageBitmap(blob);
-    const cv = document.createElement("canvas");
-    cv.width = bmp.width; cv.height = bmp.height;
-    const ctx = cv.getContext("2d");
-    ctx.drawImage(bmp, 0, 0);
-    const img = ctx.getImageData(0, 0, cv.width, cv.height);
+    demCanvas.width = bmp.width; demCanvas.height = bmp.height;
+    demCtx.drawImage(bmp, 0, 0);
+    bmp.close();
+    const img = demCtx.getImageData(0, 0, demCanvas.width, demCanvas.height);
     const d = img.data;
     for(let i = 0; i < d.length; i += 4){
       const x = d[i]*65536 + d[i+1]*256 + d[i+2];
@@ -473,8 +491,8 @@ maplibregl.addProtocol("gsidem", async (params) => {
       d[i+2] = v % 256;
       d[i+3] = 255;
     }
-    ctx.putImageData(img, 0, 0);
-    const outBlob = await new Promise(r=>cv.toBlob(r,"image/png"));
+    demCtx.putImageData(img, 0, 0);
+    const outBlob = await demCanvas.convertToBlob({type:"image/png"});
     const buf = await outBlob.arrayBuffer();
     if(demCache.size >= DEM_CACHE_MAX) demCache.delete(demCache.keys().next().value);
     demCache.set(url, buf);
@@ -500,7 +518,7 @@ const map = new maplibregl.Map({
       gsiTerrain: {
         type:"raster-dem",
         tiles:["gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png"],
-        tileSize:256, maxzoom:14
+        tileSize:256, maxzoom:12
       }
     },
     layers: [
@@ -531,6 +549,7 @@ const map = new maplibregl.Map({
   pitch: 55,
   bearing: -10,
   maxPitch: 75,
+  renderWorldCopies: false,
   attributionControl: {compact:true}
 });
 
@@ -1383,14 +1402,11 @@ handle.addEventListener("touchend",e=>{
 });
 
 // PCサイドバー開閉
-const sideToggle = $("sideToggle");
-if(window.innerWidth > 760) sideToggle.style.display = "block";
-sideToggle.addEventListener("click",()=>{
+$("sideHandle").addEventListener("click",()=>{
   panel.classList.toggle("hidden-side");
   setTimeout(()=>map.resize(),280);
 });
 window.addEventListener("resize",()=>{
-  sideToggle.style.display = window.innerWidth > 760 ? "block" : "none";
   map.resize();
 });
 
