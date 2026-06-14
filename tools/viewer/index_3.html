@@ -1893,7 +1893,7 @@ async function open3DView(t){
     const totalPts = centerPts.length;
     let pathLen = 0;
     for(let i = 1; i < totalPts; i++) pathLen += centerPts[i].distanceTo(centerPts[i-1]);
-    const SPEED = 3.0;
+    const SPEED = 2.2;
     const progressPerFrame = pathLen > 0 ? SPEED / pathLen : 0.005;
 
     let animId;
