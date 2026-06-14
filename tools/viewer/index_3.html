@@ -1852,11 +1852,12 @@ async function open3DView(t){
         addDash([new THREE.Vector3(x,y,rMinZ), new THREE.Vector3(x,y,rMaxZ)]);
       });
 
-      // 道路ポイントから上方向への垂直線（実距離kmベースの間隔）
+      // 道路ポイントから交互に上・下方向への垂直線（実距離kmベースの間隔）
       const intervalKm = t.lengthKm < 3 ? 0.5 : t.lengthKm < 10 ? 1 : 2;
       const intervalM = intervalKm * 1000;
       let accumM = 0;
       let lastVertM = -intervalM;
+      let vertUp = true;
       for(let i = 0; i < geomList.length; i++){
         if(i > 0){
           const dy = (geomList[i][0] - geomList[i-1][0]) * DEG2M;
@@ -1865,12 +1866,22 @@ async function open3DView(t){
         }
         if(accumM - lastVertM >= intervalM){
           const p = pts3[i];
-          addDash([new THREE.Vector3(p.x, p.y, p.z), new THREE.Vector3(p.x, p.y, rMaxZ)]);
+          if(vertUp) addDash([new THREE.Vector3(p.x, p.y, p.z), new THREE.Vector3(p.x, p.y, rMaxZ)]);
+          else addDash([new THREE.Vector3(p.x, p.y, p.z), new THREE.Vector3(p.x, p.y, rMinZ)]);
+          vertUp = !vertUp;
           lastVertM = accumM;
         }
       }
       const last = pts3[pts3.length - 1];
-      addDash([new THREE.Vector3(last.x, last.y, last.z), new THREE.Vector3(last.x, last.y, rMaxZ)]);
+      if(vertUp) addDash([new THREE.Vector3(last.x, last.y, last.z), new THREE.Vector3(last.x, last.y, rMaxZ)]);
+      else addDash([new THREE.Vector3(last.x, last.y, last.z), new THREE.Vector3(last.x, last.y, rMinZ)]);
+
+      // 最低点→上、最高点→下
+      let minZi = 0, maxZi = 0;
+      pts3.forEach((p,i)=>{ if(p.z < pts3[minZi].z) minZi = i; if(p.z > pts3[maxZi].z) maxZi = i; });
+      const pLow = pts3[minZi], pHigh = pts3[maxZi];
+      addDash([new THREE.Vector3(pLow.x, pLow.y, pLow.z), new THREE.Vector3(pLow.x, pLow.y, rMaxZ)]);
+      addDash([new THREE.Vector3(pHigh.x, pHigh.y, pHigh.z), new THREE.Vector3(pHigh.x, pHigh.y, rMinZ)]);
 
       // 寸法ラベル（10m単位に丸め）
       const round10 = v => Math.round(v / 10) * 10;
