@@ -254,6 +254,9 @@ main{flex:1;position:relative;min-height:0}
 .fill{height:100%;background:var(--gauge);border-radius:3px}
 .stacked{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--paper-deep)}
 .stacked span{height:100%}
+.card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.card-tag{font-size:10px;color:var(--ink-soft);background:var(--paper-deep);border-radius:4px;padding:2px 7px}
+.card-tag b{color:var(--ink);font-weight:500}
 .card-actions{display:flex;gap:6px;margin-top:9px}
 .btn{
   font:inherit;font-size:11px;font-weight:500;cursor:pointer;
@@ -761,7 +764,7 @@ function toViewModel(raw, idx){
   if(Array.isArray(name)) name = name.filter(Boolean).join(" / ");
   if(!name) name = "（名称未登録の道）";
   const corner = Math.max(0, Math.min(1, 1 - (raw.score_corner_none ?? 1)));
-  const updown = Math.max(0, Math.min(1, ((raw.score_elevation ?? 0) + (raw.score_elevation_unevenness ?? 0)) / 2));
+  const updown = Math.max(0, Math.min(1, raw.score_elevation_unevenness ?? 0));
   const width = Math.max(0, Math.min(1, raw.score_claude_center_line_section ?? raw.score_width ?? 0));
   const secs = raw.road_section || [];
   let segStrong=0, segMedium=0, segWeak=0, segStraight=0;
@@ -832,11 +835,12 @@ function cardHtml(t, rank, total){
       <div class="card-top">
         <span class="route-oval">${escapeHtml(t.routeLabel)}</span><h3>${escapeHtml(t.name)}</h3>
       </div>
-      <p class="meta">${t.distanceKm!=null?`📍 <b>${Math.round(t.distanceKm)}km</b> ・ `:""}全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b>${t.uphillCnt!=null?` ・ 上り <b>${t.uphillCnt}</b> 下り <b>${t.downhillCnt}</b>`:""}${t.buildingCnt!=null?` ・ 建物 <b>${t.buildingCnt}</b>`:""} ・ 総合 <b>${Math.round(t._s*100)}</b>点</p>
+      <p class="meta">${t.distanceKm!=null?`📍 <b>${Math.round(t.distanceKm)}km</b> ・ `:""}全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b> ・ 総合 <b>${Math.round(t._s*100)}</b>点</p>
       <div class="bars">
         <span class="bl">コーナー</span><div class="stacked"><span style="width:${t.pctStrong}%;background:var(--corner-strong)"></span><span style="width:${t.pctMedium}%;background:var(--corner-medium)"></span><span style="width:${t.pctWeak}%;background:var(--corner-weak)"></span><span style="width:${t.pctStraight}%;background:var(--straight)"></span></div><span class="bv">${t.pctStrong+t.pctMedium+t.pctWeak}%</span>
         <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
       </div>
+      <div class="card-tags">${t.uphillCnt!=null?`<span class="card-tag">上下り <b>${Math.max(t.uphillCnt,t.downhillCnt)}</b></span>`:""}<span class="card-tag">建物 <b>${t.buildingCnt??"-"}</b></span></div>
       <div class="card-actions">
         <a class="btn primary" href="${googleMapUrl(t.poly)}" target="_blank" rel="noopener" data-act="link">🚗 行く</a>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">📷 路面</a>`:""}
