@@ -1028,7 +1028,7 @@ async function renderRouteThumb(t, W, H){
   gtx.fillStyle = "#171a17";
   gtx.fillRect(0, 0, W, Hw);
   // タイルは整数ズームで取得し、連続ズームへ縮小描画する
-  const zt = Math.max(8, Math.min(16, Math.ceil(z)));
+  const zt = Math.max(8, Math.min(13, Math.ceil(z)));
   const ts = 256 * Math.pow(2, z - zt); // 連続ズーム座標系でのタイル1枚のサイズ
   const tileList = [];
   for(let tx = Math.floor(px0/ts); tx <= Math.floor((px0+W)/ts); tx++){
@@ -1036,23 +1036,14 @@ async function renderRouteThumb(t, W, H){
       tileList.push({tx, ty});
     }
   }
-  // 航空写真 + 陰影起伏(立体感) + 標高サンプリングを並行で取得
-  const [photos, shades, elevs] = await Promise.all([
+  // 航空写真 + 標高サンプリングを並行で取得
+  const [photos, elevs] = await Promise.all([
     Promise.all(tileList.map(({tx,ty})=>
       loadTile(`https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/${zt}/${tx}/${ty}.jpg`)
-        .then(img=>({img,tx,ty})).catch(()=>null))),
-    Promise.all(tileList.map(({tx,ty})=>
-      loadTile(`https://cyberjapandata.gsi.go.jp/xyz/hillshademap/${zt}/${tx}/${ty}.png`)
         .then(img=>({img,tx,ty})).catch(()=>null))),
     sampleElevations(pts, 48).catch(()=>null)
   ]);
   photos.filter(Boolean).forEach(({img,tx,ty})=>gtx.drawImage(img, tx*ts-px0, ty*ts-py0, ts, ts));
-  // 陰影起伏を乗算合成して尾根・谷を強調
-  gtx.globalCompositeOperation = "multiply";
-  gtx.globalAlpha = .55;
-  shades.filter(Boolean).forEach(({img,tx,ty})=>gtx.drawImage(img, tx*ts-px0, ty*ts-py0, ts, ts));
-  gtx.globalCompositeOperation = "source-over";
-  gtx.globalAlpha = 1;
   gtx.fillStyle = "rgba(8,10,8,.25)"; // 地図本体と同じくスモーク
   gtx.fillRect(0, 0, W, Hw);
   // 地面を前傾させて本体キャンバスへ
