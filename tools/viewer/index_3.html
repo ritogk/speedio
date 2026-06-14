@@ -1716,7 +1716,7 @@ window.addEventListener("scroll",()=>{
 // ================= 3Dオーバーレイ =================
 let active3D = null;
 let threeLib = null;
-requestIdleCallback(()=>loadThreeJS(), {timeout:5000});
+(window.requestIdleCallback||((cb)=>setTimeout(cb,200)))(()=>loadThreeJS(), {timeout:5000});
 
 async function loadThreeJS(){
   if(threeLib) return threeLib;
