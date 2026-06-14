@@ -340,6 +340,13 @@ main{flex:1;position:relative;min-height:0}
   position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:10;
   color:rgba(255,255,255,.45);font-size:11px;pointer-events:none;white-space:nowrap;
 }
+.overlay-3d-legend{
+  position:absolute;bottom:50px;left:14px;z-index:10;
+  font-size:11px;color:#fff;pointer-events:none;
+  display:flex;flex-direction:column;gap:4px;
+}
+.overlay-3d-legend span{display:flex;align-items:center;gap:6px}
+.overlay-3d-legend i{width:14px;height:4px;border-radius:2px;display:inline-block;flex-shrink:0}
 
 @media (min-width:761px){
   .chip-row{flex-wrap:wrap;overflow-x:visible}
@@ -442,6 +449,7 @@ main{flex:1;position:relative;min-height:0}
       <div class="overlay-3d-info" id="info3d"></div>
       <button class="overlay-3d-toggle" id="toggle3dColor" style="display:none">登り/下り</button>
     </div>
+    <div class="overlay-3d-legend" id="legend3d"></div>
     <div class="overlay-3d-hint">1本指で回転 ・ 2本指で移動/ズーム</div>
   </div>
 </main>
@@ -2029,6 +2037,10 @@ async function open3DView(t){
     window.addEventListener('resize', onResize);
 
     const toggleBtn = $("toggle3dColor");
+    const legend3d = $("legend3d");
+    const cornerLegend = '<span><i style="background:#FF453A"></i>低速コーナー</span><span><i style="background:#FF9F0A"></i>中速</span><span><i style="background:#30D158"></i>高速</span><span><i style="background:#98989D"></i>ストレート</span>';
+    const elevLegend = '<span><i style="background:#E8553D"></i>登り</span><span><i style="background:#4A90D9"></i>下り</span><span><i style="background:#98989D"></i>平坦</span>';
+    legend3d.innerHTML = cornerLegend;
     if(eSecs){
       let elevMode = false;
       toggleBtn.style.display = "";
@@ -2038,6 +2050,7 @@ async function open3DView(t){
         cornerMeshes.forEach(m => m.visible = !elevMode);
         elevMeshes.forEach(m => m.visible = elevMode);
         toggleBtn.textContent = elevMode ? "コーナー" : "登り/下り";
+        legend3d.innerHTML = elevMode ? elevLegend : cornerLegend;
       };
     }else{
       toggleBtn.style.display = "none";
