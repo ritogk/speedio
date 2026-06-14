@@ -241,6 +241,7 @@ main{flex:1;position:relative;min-height:0}
   border:1px solid var(--contour);border-radius:999px;padding:1px 8px;white-space:nowrap;
 }
 .card-top h3{font-size:14px;font-weight:700;word-break:break-all;flex-basis:100%}
+.dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap}
 .meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
 .meta b{color:var(--ink);font-weight:500}
 .bars{display:grid;grid-template-columns:58px 1fr 28px;gap:3px 8px;align-items:center}
@@ -871,9 +872,9 @@ function cardHtml(t, rank, total){
   return `
     <article class="card" data-id="${t.id}" tabindex="0">
       <div class="card-top">
-        <span class="rank-num">${rank+1}.</span><span class="route-oval">${escapeHtml(t.routeLabel)}</span><h3>${escapeHtml(t.name)}</h3>
+        <span class="rank-num">${rank+1}.</span><span class="route-oval">${escapeHtml(t.routeLabel)}</span>${t.distanceKm!=null?`<span class="dist-tag">${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}<h3>${escapeHtml(t.name)}</h3>
       </div>
-      <p class="meta">${t.distanceKm!=null?`📍 <b>${Math.round(t.distanceKm)}km</b> ・ `:""}全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b></p>
+      <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b></p>
       <div class="bars">
         <span class="bl">コーナー</span><div class="stacked"><span style="width:${t.pctStrong}%;background:var(--corner-strong)"></span><span style="width:${t.pctMedium}%;background:var(--corner-medium)"></span><span style="width:${t.pctWeak}%;background:var(--corner-weak)"></span><span style="width:${t.pctStraight}%;background:var(--straight)"></span></div><span class="bv">${t.pctStrong+t.pctMedium+t.pctWeak}%</span>
         <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
@@ -882,7 +883,7 @@ function cardHtml(t, rank, total){
       <div class="card-actions">
         <a class="btn primary" href="${googleMapUrl(t.poly)}" target="_blank" rel="noopener" data-act="link">🚗 行く</a>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">📷 路面</a>`:""}
-        <button class="btn" data-act="3d">🏔 3D</button>
+        <button class="btn" data-act="3d"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 9l10 6 10-6-10-6z"/><path d="M2 15l10 6 10-6"/><path d="M2 9v6"/><path d="M22 9v6"/></svg> 3D</button>
       </div>
       <div class="thumb" data-tid="${t.id}"><span class="thumb-spin"></span></div>
     </article>`;
