@@ -532,8 +532,20 @@ map.on("load", () => {
   // 現在地からの距離サークル（20km刻み、道路レイヤーより下に描く）
   map.addSource("rings", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
   map.addLayer({
+    id:"rings-fill", type:"fill", source:"rings",
+    paint:{
+      "fill-color":["interpolate",["linear"],["get","r"],10,"#4A9E60",40,"#B89E40",70,"#B07040",100,"#9E4A4A"],
+      "fill-opacity":["interpolate",["linear"],["get","r"],10,.15,100,.06]
+    }
+  });
+  map.addLayer({
     id:"rings", type:"line", source:"rings",
-    paint:{"line-color":"#ffffff","line-opacity":.55,"line-width":1.5,"line-dasharray":[3,3]}
+    paint:{
+      "line-color":"#ffffff",
+      "line-opacity":.55,
+      "line-width":1.5,
+      "line-dasharray":[3,3]
+    }
   });
 
   // 道路レイヤー（選択グロー + 白縁 + コーナー色分け）
@@ -1168,17 +1180,23 @@ function drawRangeRings(lat, lng){
   const features = [];
   const labels = [];
   const latRad = lat*Math.PI/180;
-  for(let r = 10; r <= 100; r += 10){
-    const ring = [];
+  function circleCoords(radius, cw){
+    const pts = [];
     for(let i = 0; i <= 128; i++){
-      const th = i/128 * 2*Math.PI;
-      ring.push([
-        lng + (r*1000/(111320*Math.cos(latRad)))*Math.sin(th),
-        lat + (r*1000/111320)*Math.cos(th)
+      const j = cw ? i : (128 - i);
+      const th = j/128 * 2*Math.PI;
+      pts.push([
+        lng + (radius*1000/(111320*Math.cos(latRad)))*Math.sin(th),
+        lat + (radius*1000/111320)*Math.cos(th)
       ]);
     }
-    features.push({type:"Feature",properties:{},geometry:{type:"LineString",coordinates:ring}});
-    labels.push({r, pos:[lng, lat + r*1000/111320]}); // 各円の北端にラベル
+    return pts;
+  }
+  for(let r = 100; r >= 10; r -= 10){
+    const coords = [circleCoords(r, false)];
+    if(r > 10) coords.push(circleCoords(r - 10, true));
+    features.push({type:"Feature",properties:{r},geometry:{type:"Polygon",coordinates:coords}});
+    labels.push({r, pos:[lng, lat + r*1000/111320]});
   }
   map.getSource("rings").setData({type:"FeatureCollection",features});
   ringLabelMarkers.forEach(m=>m.remove());
@@ -1186,6 +1204,7 @@ function drawRangeRings(lat, lng){
     const el = document.createElement("div");
     el.className = "ring-label";
     el.textContent = `${l.r}km`;
+    el.style.color = "#fff";
     return new maplibregl.Marker({element:el}).setLngLat(l.pos).addTo(map);
   });
 }
