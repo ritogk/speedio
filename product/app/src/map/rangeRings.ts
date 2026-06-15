@@ -47,9 +47,9 @@ const createRangeRings = (): RangeRingsLayer => {
             ["linear"],
             ["get", "r"],
             10,
-            0.15,
+            0.22,
             100,
-            0.06,
+            0.10,
           ],
         },
       });

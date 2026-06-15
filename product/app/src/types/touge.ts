@@ -120,7 +120,7 @@ export interface RankedTouge extends TougeVM {
   score: number;
 }
 
-export type PresetKey = "balance" | "corner" | "updown" | "nearby";
+export type PresetKey = "balance" | "corner" | "updown" | "nearby" | "seclusion" | "uphill";
 
 export interface PresetWeight {
   corner: number;

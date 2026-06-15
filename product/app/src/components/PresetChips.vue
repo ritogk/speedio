@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 評価プリセットの切り替えチップ + フィルタトグル。
+// 並び替えプリセットの切り替えチップ。
 import { useGeolocate } from "@/composables/useGeolocate";
 import { PRESET_HINTS, PRESET_LABELS } from "@/lib/constants";
 import { useTougeStore } from "@/stores/tougeStore";
@@ -10,28 +10,29 @@ const presets = Object.keys(PRESET_LABELS) as PresetKey[];
 const { locate } = useGeolocate();
 
 const onPresetClick = (p: PresetKey) => {
-  // nearby が未取得なら位置情報を取得してからセット
   if (p === "nearby" && !store.userLatLng) {
     locate(() => {
       store.setPreset("nearby");
-      store.distanceFilter = 20;
+      store.distanceFilter = 50;
     });
     return;
   }
-  // 既にアクティブなプリセットを再度押したらバランスに戻す
   if (store.preset === p) {
     store.setPreset("balance");
     store.distanceFilter = null;
   } else {
     store.setPreset(p);
-    store.distanceFilter = p === "nearby" ? 20 : null;
+    store.distanceFilter = p === "nearby" ? 50 : null;
+    if (p === "nearby" && store.userLatLng && store.prefCode) {
+      void store.loadAdjacentForNearby(store.prefCode);
+    }
   }
 };
 </script>
 
 <template>
   <section class="presets">
-    <div class="chip-row" role="group" aria-label="評価プリセット">
+    <div class="chip-row" role="group" aria-label="並び替え">
       <button
         v-for="p in presets"
         :key="p"
@@ -40,20 +41,6 @@ const onPresetClick = (p: PresetKey) => {
         @click="onPresetClick(p)"
       >
         {{ PRESET_LABELS[p] }}
-      </button>
-      <button
-        class="chip"
-        :aria-pressed="String(store.seclusionFilter)"
-        @click="store.toggleSeclusion()"
-      >
-        秘境
-      </button>
-      <button
-        class="chip"
-        :aria-pressed="String(store.uphillFilter)"
-        @click="store.toggleUphill()"
-      >
-        起伏
       </button>
     </div>
     <p class="preset-hint">{{ PRESET_HINTS[store.preset] }}</p>

@@ -73,9 +73,10 @@ export const tougeSource: TougeSource = {
       layout: { "line-cap": "round", "line-join": "round" },
       paint: {
         "line-color": COLORS.routeRed,
-        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 10, 14, 22],
-        "line-blur": 3,
-        "line-opacity": 0.75,
+        "line-gap-width": ["interpolate", ["linear"], ["zoom"], 8, 3, 14, 6],
+        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 5, 14, 9],
+        "line-blur": 4,
+        "line-opacity": 0.55,
       },
     });
     map.addLayer({

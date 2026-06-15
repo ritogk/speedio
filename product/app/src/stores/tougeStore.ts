@@ -5,6 +5,7 @@ import { computed, ref } from "vue";
 
 import { useToast } from "@/composables/useToast";
 import {
+  ADJACENT,
   MOBILE_MAX_WIDTH,
   PAGE_N,
   PREFECTURES,
@@ -70,14 +71,12 @@ export const useTougeStore = defineStore("touge", () => {
   const overlay3dTarget = ref<TougeVM | null>(null);
   /** 道幅スコアの下限フィルタ (0-1) */
   const widthFilter = ref<number>(0.85);
-  /** 人里離れた道フィルタ (建物密度 <= 2.0棟/km) */
-  const seclusionFilter = ref(false);
-  /** 登りフィルタ (unevennessCount >= 2) */
-  const uphillFilter = ref(false);
   /** 距離フィルタ (km)。null=無制限 */
   const distanceFilter = ref<number | null>(null);
   /** ユーザーの現在位置。null=未取得 */
   const userLatLng = ref<[number, number] | null>(null);
+  /** 読み込み済み県コードの集合 */
+  const loadedPrefs = ref<Set<string>>(new Set());
 
   // getters
   const ranked = computed<RankedTouge[]>(() => {
@@ -90,21 +89,14 @@ export const useTougeStore = defineStore("touge", () => {
         ...t,
         distanceKm: haversineKm(uLat, uLng, t.center[0], t.center[1]),
       }));
+      if (preset.value === "nearby") {
+        list.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
+      }
     }
 
     // フィルタ適用
     if (widthFilter.value != null) {
       list = list.filter((t) => t.width >= widthFilter.value);
-    }
-    if (seclusionFilter.value) {
-      list = list.filter(
-        (t) => t.buildingDensity != null && t.buildingDensity <= 2.0,
-      );
-    }
-    if (uphillFilter.value) {
-      list = list.filter(
-        (t) => t.unevennessCount != null && t.unevennessCount >= 2,
-      );
     }
     if (distanceFilter.value != null && userLatLng.value) {
       list = list.filter(
@@ -139,11 +131,10 @@ export const useTougeStore = defineStore("touge", () => {
       : `全${ranked.value.length}件中 ${visibleCards.value.length}件表示`;
   });
 
-  const prefLabel = computed(() =>
-    prefCode.value
-      ? `${PREFECTURES[prefCode.value]} / ${prefCode.value}`
-      : "未選択",
-  );
+  const prefLabel = computed(() => {
+    const names = [...loadedPrefs.value].sort().map((c) => PREFECTURES[c]).filter(Boolean);
+    return names.length ? names.join("・") : "未選択";
+  });
 
   const selectedId = computed(() => selection.value.id);
 
@@ -174,7 +165,7 @@ export const useTougeStore = defineStore("touge", () => {
   const setPreset = (p: PresetKey) => {
     if (!(p in PRESET_WEIGHTS)) return;
     preset.value = p;
-    persist("touge.preset", p);
+    if (p !== "nearby") persist("touge.preset", p);
     visibleCount.value = PAGE_N;
   };
 
@@ -199,35 +190,53 @@ export const useTougeStore = defineStore("touge", () => {
     overlay3dTarget.value = null;
   };
 
-  const toggleSeclusion = () => {
-    seclusionFilter.value = !seclusionFilter.value;
+  const loadAdjacentForNearby = async (code: string) => {
+    const codes = [code, ...(ADJACENT[code] || [])];
+    loadedPrefs.value = new Set(codes);
+    loading.value = true;
+    loadingText.value = `周辺${codes.length}県のデータを読み込み中…`;
+    try {
+      const results = await Promise.all(codes.map((c) => dataLoader.loadPref(c)));
+      const seen = new Set<number>();
+      items.value = results.flat().filter((t) => (seen.has(t.id) ? false : (seen.add(t.id), true)));
+      loadSeq.value++;
+    } catch (err) {
+      console.error(err);
+      toast("周辺県のデータ読み込みに失敗しました");
+    } finally {
+      loading.value = false;
+    }
   };
 
-  const toggleUphill = () => {
-    uphillFilter.value = !uphillFilter.value;
-  };
-
-  const switchPref = async (code: string) => {
+  const switchPref = async (code: string, replace = true) => {
     if (!code || !PREFECTURES[code]) return;
     prefCode.value = code;
     persist("touge.pref", code);
     visibleCount.value = PAGE_N;
     searchQuery.value = "";
     select(null);
+    if (replace) {
+      loadedPrefs.value = new Set([code]);
+    } else {
+      loadedPrefs.value = new Set([...loadedPrefs.value, code]);
+    }
     loading.value = true;
     loadingText.value = `${PREFECTURES[code]}のデータを読み込み中…`;
     try {
-      const data = await dataLoader.loadPref(code);
-      if (prefCode.value !== code) return; // 連打時は最後に選んだ県を優先
-      items.value = data;
+      const newItems = await dataLoader.loadPref(code);
+      if (prefCode.value !== code) return;
+      if (replace) {
+        items.value = newItems;
+      } else {
+        const seen = new Set(items.value.map((t) => t.id));
+        items.value = [...items.value, ...newItems.filter((t) => !seen.has(t.id))];
+      }
       loadSeq.value++;
       if (isMobile()) sheetState.value = "half";
     } catch (err) {
       console.error(err);
-      toast(
-        `${PREFECTURES[code]}のデータを読み込めませんでした（targets/${code}/target.slim.json）`,
-      );
-      items.value = [];
+      toast(`${PREFECTURES[code]}のデータを読み込めませんでした`);
+      if (replace) items.value = [];
     } finally {
       if (prefCode.value === code) loading.value = false;
     }
@@ -247,10 +256,9 @@ export const useTougeStore = defineStore("touge", () => {
     sidebarHidden,
     overlay3dTarget,
     widthFilter,
-    seclusionFilter,
-    uphillFilter,
     distanceFilter,
     userLatLng,
+    loadedPrefs,
     ranked,
     hasQuery,
     visibleCards,
@@ -267,8 +275,7 @@ export const useTougeStore = defineStore("touge", () => {
     toggleSidebar,
     open3D,
     close3D,
-    toggleSeclusion,
-    toggleUphill,
+    loadAdjacentForNearby,
     switchPref,
   };
 });

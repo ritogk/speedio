@@ -55,12 +55,17 @@ export const useGeolocate = (): Geolocate => {
           } catch (err) {
             console.warn("[峠サーチャー] reverse geocode failed:", err);
           }
-          store.loading = false;
-          onSuccess?.();
           if (code && PREFECTURES[code]) {
-            toast(`現在地は${PREFECTURES[code]}。おすすめの峠を表示します`);
-            void store.switchPref(code);
+            store.setPreset("nearby");
+            store.distanceFilter = 50;
+            await store.loadAdjacentForNearby(code);
+            store.loading = false;
+            onSuccess?.();
+            const adj = store.loadedPrefs.size - 1;
+            toast(`${PREFECTURES[code]}＋周辺${adj}県から50km以内の峠を表示`);
           } else {
+            store.loading = false;
+            onSuccess?.();
             map.value?.flyTo({ center: [lng, lat], zoom: 11, duration: 1000 });
             toast(
               "現在地の都道府県を判定できませんでした。県を選ぶと峠を表示します",

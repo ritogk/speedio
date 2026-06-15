@@ -86,27 +86,18 @@ export const camera: Camera = {
       };
       cancelOrbit();
       flightAbort?.();
-      let cancelled = false;
-      const onUser = (e: { originalEvent?: unknown }) => {
-        if (e.originalEvent) cancelled = true;
-      };
+      const onUser = () => {};
       for (const ev of USER_EVENTS) map.on(ev, onUser);
       const cleanup = () => {
         for (const ev of USER_EVENTS) map.off(ev, onUser);
         flightAbort = null;
       };
       flightAbort = () => {
-        cancelled = true;
         cleanup();
       };
       map.flyTo(target);
       map.once("moveend", () => {
-        const userTookOver = cancelled;
         cleanup();
-        if (!userTookOver) {
-          map.jumpTo(target);
-          orbitAround(target.center);
-        }
       });
     };
 

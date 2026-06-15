@@ -10,6 +10,26 @@ interface Ranking {
 
 export const ranking: Ranking = {
   rank: (items, preset) => {
+    if (preset === "corner") {
+      return items
+        .map((t) => ({ ...t, score: t.corner ?? 0 }))
+        .sort((a, b) => b.score - a.score);
+    }
+    if (preset === "updown") {
+      return items
+        .map((t) => ({ ...t, score: t.updown ?? 0 }))
+        .sort((a, b) => b.score - a.score);
+    }
+    if (preset === "seclusion") {
+      return items
+        .map((t) => ({ ...t, score: t.buildingDensity != null ? -t.buildingDensity : 1 }))
+        .sort((a, b) => b.score - a.score);
+    }
+    if (preset === "uphill") {
+      return items
+        .map((t) => ({ ...t, score: t.unevennessCount ?? 0 }))
+        .sort((a, b) => b.score - a.score);
+    }
     const w = PRESET_WEIGHTS[preset];
     const sum = w.corner + w.updown + w.width;
     return items

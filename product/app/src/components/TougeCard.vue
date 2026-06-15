@@ -70,11 +70,11 @@ const open3D = () => {
       <span class="bv">{{ pct(touge.updown) }}</span>
     </div>
     <div class="card-tags">
-      <span v-if="touge.unevennessCount != null && touge.unevennessCount > 0" class="card-tag">
-        <svg class="bump-ico" viewBox="0 0 20 12"><path d="M0 9Q5 1 10 9Q15 17 20 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        ×{{ touge.unevennessCount }}
+      <span v-if="touge.unevennessCount != null" class="card-tag">
+        <svg class="bump-ico" viewBox="0 0 20 18"><path d="M0 9Q5 1 10 9Q15 17 20 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        {{ touge.unevennessCount > 0 ? `×${touge.unevennessCount}` : 'なし' }}
       </span>
-      <span v-if="touge.buildingCnt != null && touge.buildingCnt > 0" class="card-tag">🏠 ×{{ touge.buildingCnt }}</span>
+      <span v-if="touge.buildingCnt != null" class="card-tag">🏠 {{ touge.buildingCnt > 0 ? `×${touge.buildingCnt}` : 'なし' }}</span>
     </div>
     <div class="card-actions">
       <a

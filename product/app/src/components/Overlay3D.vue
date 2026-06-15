@@ -299,9 +299,11 @@ const open3DView = async (t: TougeVM) => {
       ),
     );
 
-    // 建物ポリゴン
+    // 建物ポリゴン（実ポリゴン座標 → 押し出しメッシュ、初期非表示）
     const bldgPolys = t.buildings || [];
     const bldgObjs: Object3D[] = [];
+    const roadXY = geomList.map((p) => toXYZ(p[0], p[1], 0));
+    const MIN_OFFSET = 5;
     if (bldgPolys.length) {
       const interpElev = (lat: number, lng: number) => {
         const fx =
@@ -323,7 +325,8 @@ const open3DView = async (t: TougeVM) => {
           e11 * tx * ty
         );
       };
-      const BLDG_H = 6;
+      const BLDG_SCALE = Math.max(1, Math.min(5, 0.3 / SCALE));
+      const BLDG_H = 4;
       const bldgMat = new THREE.MeshStandardMaterial({
         color: 0xe8e8e8,
         roughness: 0.5,
@@ -357,23 +360,51 @@ const open3DView = async (t: TougeVM) => {
         cLat /= ring.length;
         cLng /= ring.length;
         const bElev = interpElev(cLat, cLng);
+        const bz = (bElev - baseElev) * Z_SCALE;
+        const rawCoords = ring.map((c) => toXYZ(c[0], c[1], 0));
+        let cx = 0, cy = 0;
+        rawCoords.forEach((p) => { cx += p[0]; cy += p[1]; });
+        cx /= rawCoords.length;
+        cy /= rawCoords.length;
+        const sceneCoords = rawCoords.map((p) => [
+          cx + (p[0] - cx) * BLDG_SCALE,
+          cy + (p[1] - cy) * BLDG_SCALE,
+        ]);
+        let nearD = Infinity;
+        for (let i = 0; i < roadXY.length; i++) {
+          const d = Math.sqrt((roadXY[i][0] - cx) ** 2 + (roadXY[i][1] - cy) ** 2);
+          if (d < nearD) nearD = d;
+        }
+        let offX = 0, offY = 0;
+        if (nearD < MIN_OFFSET) {
+          let bestI = 0, bestD = Infinity;
+          for (let i = 0; i < roadXY.length; i++) {
+            const d = (roadXY[i][0] - cx) ** 2 + (roadXY[i][1] - cy) ** 2;
+            if (d < bestD) { bestD = d; bestI = i; }
+          }
+          const dx = cx - roadXY[bestI][0], dy = cy - roadXY[bestI][1];
+          const dl = Math.sqrt(dx * dx + dy * dy) || 1;
+          offX = (dx / dl) * MIN_OFFSET - dx;
+          offY = (dy / dl) * MIN_OFFSET - dy;
+        }
         const shape = new THREE.Shape();
-        const fp = ring.map((c) => toXYZ(c[0], c[1], 0));
-        shape.moveTo(fp[0][0], fp[0][1]);
-        for (let i = 1; i < fp.length; i++) shape.lineTo(fp[i][0], fp[i][1]);
+        shape.moveTo(sceneCoords[0][0] + offX, sceneCoords[0][1] + offY);
+        for (let i = 1; i < sceneCoords.length; i++)
+          shape.lineTo(sceneCoords[i][0] + offX, sceneCoords[i][1] + offY);
+        shape.closePath();
         try {
           const geo = new THREE.ExtrudeGeometry(shape, {
-            depth: BLDG_H * Z_SCALE,
+            depth: BLDG_H,
             bevelEnabled: false,
           });
           const mesh = new THREE.Mesh(geo, bldgMat);
-          mesh.position.z = (bElev - baseElev) * Z_SCALE + 0.15;
+          mesh.position.set(0, 0, bz);
           mesh.visible = false;
           group.add(mesh);
           bldgObjs.push(mesh);
           const edges = new THREE.EdgesGeometry(geo);
           const eLine = new THREE.LineSegments(edges, bEdgeMat);
-          eLine.position.z = mesh.position.z;
+          eLine.position.copy(mesh.position);
           eLine.visible = false;
           group.add(eLine);
           bldgObjs.push(eLine);

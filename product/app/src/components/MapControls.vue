@@ -1,16 +1,11 @@
 <script setup lang="ts">
-// 地図左上のコントロール（サイドバー開閉・3D地形トグル・交番レイヤートグル）。
-import { ref, watch } from "vue";
+// 地図左上のコントロール（3D地形トグル）。
+import { ref } from "vue";
 
 import { useMapInstance } from "@/composables/useMapInstance";
-import { useToast } from "@/composables/useToast";
-import { kobanLayer } from "@/map/kobanLayer";
 import { mapStyle } from "@/map/mapStyle";
-import { useTougeStore } from "@/stores/tougeStore";
 
-const store = useTougeStore();
 const { map } = useMapInstance();
-const { show: toast } = useToast();
 
 const terrainOn = ref(true);
 const toggleTerrain = () => {
@@ -25,6 +20,7 @@ const toggleTerrain = () => {
   );
 };
 
+/* DISABLED: 交番レイヤー
 const kobanVisible = ref(false);
 const kobanLoading = ref(false);
 
@@ -52,7 +48,6 @@ const toggleKoban = () => {
   }
 };
 
-// 県が切り替わったとき、交番レイヤーが表示中なら再取得
 watch(
   () => store.loadSeq,
   () => {
@@ -61,6 +56,7 @@ watch(
     }
   },
 );
+*/
 </script>
 
 <template>
@@ -68,6 +64,7 @@ watch(
     <button class="ctrl-btn" :aria-pressed="terrainOn" @click="toggleTerrain">
       ⛰ 3D地形
     </button>
+    <!-- DISABLED: 交番トグル
     <button
       class="ctrl-btn"
       :aria-pressed="String(kobanVisible)"
@@ -75,6 +72,7 @@ watch(
     >
       👮<span v-if="kobanLoading" class="ctrl-spin" />
     </button>
+    -->
   </div>
 </template>
 

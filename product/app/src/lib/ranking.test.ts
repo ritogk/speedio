@@ -51,8 +51,7 @@ describe("rankedList", () => {
   it("cornerプリセットではコーナー特化の道が1位になる", () => {
     const ranked = ranking.rank(items, "corner");
     expect(ranked[0].id).toBe(0);
-    // 重み(2.2,0.7,0.8)の正規化: 2.2/3.7
-    expect(ranked[0].score).toBeCloseTo(2.2 / 3.7);
+    expect(ranked[0].score).toBe(1.0);
   });
 
   it("nearbyプリセットはbalanceと同じ重みで全軸等価", () => {
