@@ -305,27 +305,7 @@ main{flex:1;position:relative;min-height:0}
 .loading-overlay p{color:#fff;font-size:12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.loc-pulse{position:relative;width:40px;height:40px}
-.loc-pulse::before,.loc-pulse::after{
-  content:"";position:absolute;border-radius:50%;
-  top:50%;left:50%;transform:translate(-50%,-50%);
-}
-.loc-pulse::before{
-  width:14px;height:14px;
-  background:var(--accent);
-  border:2.5px solid #fff;
-  box-shadow:0 1px 4px rgba(0,0,0,.3);
-  z-index:1;
-}
-.loc-pulse::after{
-  width:14px;height:14px;
-  background:var(--accent);opacity:.35;
-  animation:loc-ring 2s ease-out infinite;
-}
-@keyframes loc-ring{
-  0%{width:14px;height:14px;opacity:.35}
-  100%{width:40px;height:40px;opacity:0}
-}
+
 
 .toast{
   position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1500;
@@ -622,9 +602,7 @@ async function fetchKoban(code){ return; // DISABLED
 let locMarker = null;
 function placeLocMarker(lng, lat){
   if(locMarker) locMarker.remove();
-  const el = document.createElement("div");
-  el.className = "loc-pulse";
-  locMarker = new maplibregl.Marker({element:el, occludedOpacity:1}).setLngLat([lng, lat]).addTo(map);
+  locMarker = new maplibregl.Marker({color:cssVar("--route-red"), occludedOpacity:1}).setLngLat([lng, lat]).addTo(map);
   return locMarker;
 }
 const $ = id => document.getElementById(id);
