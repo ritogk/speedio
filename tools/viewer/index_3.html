@@ -440,13 +440,13 @@ main{flex:1;position:relative;min-height:0}
         <input id="searchInput" type="search" placeholder="🔍 峠名・道路種別で検索" autocomplete="off">
       </div>
       <section class="presets">
-        <div class="chip-row" role="group" aria-label="評価プリセット">
+        <div class="chip-row" role="group" aria-label="並び替え">
           <button class="chip" aria-pressed="true" data-preset="balance">バランス</button>
           <button class="chip" aria-pressed="false" data-preset="corner">コーナー</button>
           <button class="chip" aria-pressed="false" data-preset="updown">高低差</button>
           <button class="chip" aria-pressed="false" data-preset="nearby">📍 近く</button>
-          <button class="chip" aria-pressed="false" id="seclusionToggle" data-filter="seclusion">秘境</button>
-          <button class="chip" aria-pressed="false" id="uphillToggle" data-filter="uphill">起伏</button>
+          <button class="chip" aria-pressed="false" data-preset="seclusion">秘境</button>
+          <button class="chip" aria-pressed="false" data-preset="uphill">起伏</button>
         </div>
         <p class="preset-hint" id="presetHint">コーナー・高低差・道幅をバランスよく評価します。</p>
       </section>
@@ -498,22 +498,22 @@ const presetHints = {
   balance:"コーナー・高低差・道幅をバランスよく評価します。",
   corner:"ヘアピンや中速コーナーが連続する道を上位にします。",
   updown:"アップダウンと標高差の大きい道を上位にします。",
-  nearby:"現在地から30km以内の峠を表示します。"
+  nearby:"現在地から30km以内の峠を近い順に表示します。",
+  seclusion:"建物が少ない秘境度の高い道を上位にします。",
+  uphill:"アップダウンの回数が多い道を上位にします。"
 };
 const presetWeights = {
   balance:{corner:1,updown:1,width:1},
   corner:{corner:2.2,updown:0.7,width:0.8},
   updown:{corner:0.7,updown:2.2,width:0.8},
-  nearby:{corner:1,updown:1,width:1}
+  nearby:{corner:1,updown:1,width:1},
+  seclusion:{corner:1,updown:1,width:1},
+  uphill:{corner:1,updown:1,width:1}
 };
 let currentPreset = "balance";
 let userLatLng = null;
 let distanceFilter = null;
 let widthFilter = 0.85;
-let seclusionFilter = false;
-const SECLUSION_DENSITY_MAX = 2.0;
-let uphillFilter = false;
-const UPHILL_MIN = 2;
 let currentItems = [];
 const prefCache = {};
 const kobanCache = {};
@@ -581,7 +581,7 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 function cssVar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
-const BUMP_SVG = '<svg class="bump-ico" viewBox="0 0 20 12"><path d="M0 9Q5 1 10 9Q15 17 20 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const BUMP_SVG = '<svg class="bump-ico" viewBox="0 0 20 18"><path d="M0 9Q5 1 10 9Q15 17 20 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 function bumpIcons(n){
   return BUMP_SVG+' ×'+n;
 }
@@ -976,6 +976,26 @@ function streetViewUrl(poly){
 
 // ================= ランキング =================
 function rankedList(){
+  if(currentPreset === "corner"){
+    return [...currentItems]
+      .map(t=>({...t,_s:t.corner ?? 0}))
+      .sort((a,b)=>b._s-a._s);
+  }
+  if(currentPreset === "updown"){
+    return [...currentItems]
+      .map(t=>({...t,_s:t.updown ?? 0}))
+      .sort((a,b)=>b._s-a._s);
+  }
+  if(currentPreset === "seclusion"){
+    return [...currentItems]
+      .map(t=>({...t,_s:t.buildingDensity!=null ? -t.buildingDensity : 1}))
+      .sort((a,b)=>b._s-a._s);
+  }
+  if(currentPreset === "uphill"){
+    return [...currentItems]
+      .map(t=>({...t,_s:t.unevennessCount ?? 0}))
+      .sort((a,b)=>b._s-a._s);
+  }
   const w = presetWeights[currentPreset];
   const sum = w.corner + w.updown + w.width;
   return [...currentItems]
@@ -999,7 +1019,7 @@ function cardHtml(t, rank, total){
         <span class="bl">コーナー</span><div class="stacked"><span style="width:${t.pctStrong}%;background:var(--corner-strong)"></span><span style="width:${t.pctMedium}%;background:var(--corner-medium)"></span><span style="width:${t.pctWeak}%;background:var(--corner-weak)"></span><span style="width:${t.pctStraight}%;background:var(--straight)"></span></div><span class="bv">${t.pctStrong+t.pctMedium+t.pctWeak}%</span>
         <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
       </div>
-      <div class="card-tags">${t.unevennessCount!=null&&t.unevennessCount>0?`<span class="card-tag">${bumpIcons(t.unevennessCount)}</span>`:""}${t.buildingCnt!=null&&t.buildingCnt>0?`<span class="card-tag">🏠 ×${t.buildingCnt}</span>`:""}</div>
+      <div class="card-tags">${t.unevennessCount!=null?(t.unevennessCount>0?`<span class="card-tag">${bumpIcons(t.unevennessCount)}</span>`:`<span class="card-tag">${BUMP_SVG} なし</span>`):""}${t.buildingCnt!=null?(t.buildingCnt>0?`<span class="card-tag">🏠 ×${t.buildingCnt}</span>`:`<span class="card-tag">🏠 なし</span>`):""}</div>
       <div class="card-actions">
         <button class="btn primary" data-act="nav" data-poly='${JSON.stringify(t.poly)}'>🚗 行く</button>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">👁 路面</a>`:""}
@@ -1254,18 +1274,15 @@ function render(){
     lastRanked.forEach(t=>{
       t.distanceKm = haversineKm(userLatLng[0],userLatLng[1],t.center[0],t.center[1]);
     });
+    if(currentPreset === "nearby"){
+      lastRanked.sort((a,b)=>(a.distanceKm??Infinity)-(b.distanceKm??Infinity));
+    }
   }
   if(distanceFilter!=null && userLatLng){
     lastRanked = lastRanked.filter(t=>t.distanceKm<=distanceFilter);
   }
   if(widthFilter!=null){
     lastRanked = lastRanked.filter(t=>t.width>=widthFilter);
-  }
-  if(seclusionFilter){
-    lastRanked = lastRanked.filter(t=>t.buildingDensity!=null && t.buildingDensity<=SECLUSION_DENSITY_MAX);
-  }
-  if(uphillFilter){
-    lastRanked = lastRanked.filter(t=>t.unevennessCount!=null && t.unevennessCount>=UPHILL_MIN);
   }
   renderCards();
   drawMap(lastRanked);
@@ -1431,7 +1448,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
         document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
         chip.setAttribute("aria-pressed","true");
         currentPreset = "nearby";
-        distanceFilter = 20;
+        distanceFilter = 30;
         $("presetHint").textContent = presetHints.nearby;
         visibleCount = PAGE_N;
         let code = null;
@@ -1619,24 +1636,6 @@ $("kobanToggle").addEventListener("click",e=>{
     const code = $("prefSelect").value;
     if(code) fetchKoban(code);
   }
-});
-// 秘境フィルター ON/OFF
-$("seclusionToggle").addEventListener("click",e=>{
-  const btn = e.currentTarget;
-  const on = btn.getAttribute("aria-pressed") !== "true";
-  btn.setAttribute("aria-pressed", String(on));
-  seclusionFilter = on;
-  visibleCount = PAGE_N;
-  render();
-});
-// 峠越えフィルター ON/OFF
-$("uphillToggle").addEventListener("click",e=>{
-  const btn = e.currentTarget;
-  const on = btn.getAttribute("aria-pressed") !== "true";
-  btn.setAttribute("aria-pressed", String(on));
-  uphillFilter = on;
-  visibleCount = PAGE_N;
-  render();
 });
 
 // ボトムシート
