@@ -498,7 +498,7 @@ const presetHints = {
   balance:"コーナー・高低差・道幅をバランスよく評価します。",
   corner:"ヘアピンや中速コーナーが連続する道を上位にします。",
   updown:"アップダウンと標高差の大きい道を上位にします。",
-  nearby:"現在地から20km以内の峠を表示します。"
+  nearby:"現在地から30km以内の峠を表示します。"
 };
 const presetWeights = {
   balance:{corner:1,updown:1,width:1},
@@ -1446,7 +1446,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
         showLoading(false);
         if(code && PREFECTURES[code]){
           $("prefSelect").value = code;
-          toast(`現在地は${PREFECTURES[code]}。20km以内の峠を表示します`);
+          toast(`現在地は${PREFECTURES[code]}。30km以内の峠を表示します`);
           switchPref(code);
         }else{
           toast("現在地の都道府県を判定できませんでした");
@@ -1468,7 +1468,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
     }else{
       chip.setAttribute("aria-pressed","true");
       currentPreset = preset;
-      distanceFilter = preset === "nearby" ? 20 : null;
+      distanceFilter = preset === "nearby" ? 30 : null;
     }
     if(currentPreset !== "nearby") try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
     $("presetHint").textContent = presetHints[currentPreset];
