@@ -178,7 +178,7 @@ main{flex:1;position:relative;min-height:0}
 .sheet-head{display:flex;align-items:baseline;gap:8px}
 .sheet-head h2{font-size:13px;font-weight:700;letter-spacing:.04em}
 .sheet-head .count{font-size:11px;color:var(--ink-soft)}
-.sheet-head .pref-name{margin-left:auto;font-size:11px;color:var(--ink-soft);letter-spacing:.06em}
+.sheet-head .pref-name{margin-left:auto;font-size:10px;color:var(--ink-soft);letter-spacing:.04em;text-align:right;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .panel-body{flex:1;overflow-y:auto;min-height:0;padding:4px 14px 24px;-webkit-overflow-scrolling:touch}
 
 .searchbox{padding:2px 0 8px}
@@ -493,12 +493,31 @@ const PREFECTURES = {
   "43":"熊本県","44":"大分県","45":"宮崎県","46":"鹿児島県","47":"沖縄県"
 };
 const HIGHWAY_LABEL = {trunk:"国道(主要)",trunk_link:"国道(主要)",primary:"国道",primary_link:"国道",secondary:"県道",secondary_link:"県道",tertiary:"一般道"};
+const ADJACENT = {
+  "01":[],"02":["03","05"],"03":["02","04","05","06"],"04":["03","05","06","07"],
+  "05":["02","03","04","06"],"06":["03","04","05","07","15"],"07":["04","06","08","09","10","15"],
+  "08":["07","09","11","12"],"09":["07","08","10","11"],"10":["07","09","11","15","20"],
+  "11":["08","09","10","12","13","19","20"],"12":["08","11","13"],"13":["11","12","14","19"],
+  "14":["13","19","22"],"15":["06","07","10","16","20"],"16":["15","17","20","21"],
+  "17":["16","18","21"],"18":["17","21","25","26"],"19":["11","13","14","20","22"],
+  "20":["10","11","15","16","19","21","22","23"],"21":["16","17","18","20","23","24","25"],
+  "22":["14","19","20","23"],"23":["20","21","22","24"],"24":["21","23","25","26","29","30"],
+  "25":["18","21","24","26"],"26":["18","25","27","28","29","30"],
+  "27":["26","28","29","30"],"28":["26","27","30","31","33"],
+  "29":["24","26","27","30"],"30":["24","26","27","29"],
+  "31":["28","32","33"],"32":["31","34","35"],"33":["28","31","34"],
+  "34":["32","33","35"],"35":["32","34"],
+  "36":["37","38","39"],"37":["36","38"],"38":["36","37","39"],
+  "39":["36","38"],"40":["41","43","44","46"],"41":["40","42"],
+  "42":["41"],"43":["40","44","45","46"],"44":["40","43","45"],
+  "45":["43","44","46"],"46":["40","43","45"],"47":[]
+};
 
 const presetHints = {
   balance:"コーナー・高低差・道幅をバランスよく評価します。",
   corner:"ヘアピンや中速コーナーが連続する道を上位にします。",
   updown:"アップダウンと標高差の大きい道を上位にします。",
-  nearby:"現在地から30km以内の峠を近い順に表示します。",
+  nearby:"現在地から50km以内の峠を近い順に表示します（隣接県含む）。",
   seclusion:"建物が少ない秘境度の高い道を上位にします。",
   uphill:"アップダウンの回数が多い道を上位にします。"
 };
@@ -513,6 +532,20 @@ const presetWeights = {
 let currentPreset = "balance";
 let userLatLng = null;
 let distanceFilter = null;
+let globalIdCounter = 0;
+async function fetchPrefItems(code){
+  if(prefCache[code]) return prefCache[code];
+  try{
+    const res = await fetch(`./targets/${code}/target.slim.json`);
+    if(!res.ok) return [];
+    const raw = await res.json();
+    const base = globalIdCounter;
+    globalIdCounter += raw.length;
+    const items = raw.map((r,i) => toViewModel(r, base + i));
+    prefCache[code] = items;
+    return items;
+  }catch(e){ return []; }
+}
 let widthFilter = 0.85;
 let currentItems = [];
 const prefCache = {};
@@ -1370,33 +1403,38 @@ function drawGhost(){
 map.on("render", drawGhost); // カメラ移動・地形読み込みに毎フレーム追従させる
 
 // ================= 県の読み込み =================
-async function switchPref(code){
+const loadedPrefs = new Set();
+function updatePrefLabel(){
+  const names = [...loadedPrefs].sort().map(c=>PREFECTURES[c]).filter(Boolean);
+  $("prefName").textContent = names.length ? names.join("・") : "未選択";
+}
+async function switchPref(code, replace=true){
   if(!code) return;
   cancelOrbit();
-  try{ localStorage.setItem("touge.pref", code); }catch(e){}
-  $("prefName").textContent = `${PREFECTURES[code]} / ${code}`;
   visibleCount = PAGE_N;
   searchQuery = "";
   $("searchInput").value = "";
   highlightOnMap(null);
-  if(prefCache[code]){
-    currentItems = prefCache[code];
-    afterLoad();
-    return;
+  if(replace){
+    loadedPrefs.clear();
   }
+  loadedPrefs.add(code);
+  updatePrefLabel();
+  try{ localStorage.setItem("touge.pref", code); }catch(e){}
   showLoading(true, `${PREFECTURES[code]}のデータを読み込み中…`);
   try{
-    // slim版（ビュワー用に軽量化+gzip配信）。Cache-Controlに任せてブラウザ/CDNキャッシュを効かせる
-    const res = await fetch(`./targets/${code}/target.slim.json`);
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const raw = await res.json();
-    currentItems = raw.map(toViewModel);
-    prefCache[code] = currentItems;
+    const items = await fetchPrefItems(code);
+    if(replace){
+      currentItems = items;
+    }else{
+      const seen = new Set(currentItems.map(t=>t.id));
+      currentItems = [...currentItems, ...items.filter(t=>!seen.has(t.id))];
+    }
     afterLoad();
   }catch(err){
     console.error(err);
-    toast(`${PREFECTURES[code]}のデータを読み込めませんでした（targets/${code}/target.json）`);
-    currentItems = [];
+    toast(`${PREFECTURES[code]}のデータを読み込めませんでした`);
+    if(replace){ currentItems = []; }
     render();
   }finally{
     showLoading(false);
@@ -1423,7 +1461,15 @@ const sel = $("prefSelect");
 sel.innerHTML = '<option value="">都道府県を選ぶ</option>' +
   Object.entries(PREFECTURES).sort((a,b)=>a[0].localeCompare(b[0]))
     .map(([c,n])=>`<option value="${c}">${n}</option>`).join("");
-sel.addEventListener("change",e=>switchPref(e.target.value));
+sel.addEventListener("change",e=>{
+  const code = e.target.value;
+  if(!code) return;
+  if(loadedPrefs.has(code)){
+    toast(`${PREFECTURES[code]}は読み込み済みです`);
+    return;
+  }
+  switchPref(code, loadedPrefs.size === 0);
+});
 {
   const longest = Object.values(PREFECTURES).reduce((a,b)=>a.length>=b.length?a:b);
   const m = document.createElement("span");
@@ -1448,7 +1494,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
         document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
         chip.setAttribute("aria-pressed","true");
         currentPreset = "nearby";
-        distanceFilter = 30;
+        distanceFilter = 50;
         $("presetHint").textContent = presetHints.nearby;
         visibleCount = PAGE_N;
         let code = null;
@@ -1460,12 +1506,24 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
             if(muni) code = String(muni).padStart(5,"0").slice(0,2);
           }
         }catch(err){}
-        showLoading(false);
         if(code && PREFECTURES[code]){
           $("prefSelect").value = code;
-          toast(`現在地は${PREFECTURES[code]}。30km以内の峠を表示します`);
-          switchPref(code);
+          const codes = [code, ...(ADJACENT[code]||[])];
+          loadedPrefs.clear();
+          codes.forEach(c=>loadedPrefs.add(c));
+          updatePrefLabel();
+          showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
+          const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
+          const seen = new Set();
+          currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
+          showLoading(false);
+          toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県から50km以内の峠を表示`);
+          render();
+          const b = new maplibregl.LngLatBounds();
+          currentItems.forEach(t=>{ if(t.distanceKm!=null && t.distanceKm<=50) t.poly.forEach(p=>b.extend([p[1],p[0]])); });
+          if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
         }else{
+          showLoading(false);
           toast("現在地の都道府県を判定できませんでした");
           if(currentItems.length) render();
         }
@@ -1478,19 +1536,35 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
     const isActive = chip.getAttribute("aria-pressed") === "true";
     document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
     if(isActive){
-      // 再押下でバランスに戻す
       document.querySelector('.chip[data-preset="balance"]').setAttribute("aria-pressed","true");
       currentPreset = "balance";
       distanceFilter = null;
     }else{
       chip.setAttribute("aria-pressed","true");
       currentPreset = preset;
-      distanceFilter = preset === "nearby" ? 30 : null;
+      distanceFilter = preset === "nearby" ? 50 : null;
     }
-    if(currentPreset !== "nearby") try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
-    $("presetHint").textContent = presetHints[currentPreset];
-    visibleCount = PAGE_N;
-    render();
+    if(currentPreset === "nearby" && userLatLng){
+      const code = $("prefSelect").value;
+      const codes = [code, ...(ADJACENT[code]||[])];
+      (async()=>{
+        loadedPrefs.clear();
+        codes.forEach(c=>loadedPrefs.add(c));
+        updatePrefLabel();
+        showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
+        const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
+        const seen = new Set();
+        currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
+        showLoading(false);
+        visibleCount = PAGE_N;
+        render();
+      })();
+    }else{
+      if(currentPreset !== "nearby") try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
+      $("presetHint").textContent = presetHints[currentPreset];
+      visibleCount = PAGE_N;
+      render();
+    }
   });
 });
 
@@ -1573,12 +1647,30 @@ $("locateBtn").addEventListener("click",()=>{
       }catch(err){
         console.warn("[峠サーチャー] reverse geocode failed:", err);
       }
-      showLoading(false);
       if(code && PREFECTURES[code]){
         $("prefSelect").value = code;
-        toast(`現在地は${PREFECTURES[code]}。おすすめの峠を表示します`);
-        switchPref(code);
+        document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
+        document.querySelector('.chip[data-preset="nearby"]').setAttribute("aria-pressed","true");
+        currentPreset = "nearby";
+        distanceFilter = 50;
+        $("presetHint").textContent = presetHints.nearby;
+        visibleCount = PAGE_N;
+        const codes = [code, ...(ADJACENT[code]||[])];
+        loadedPrefs.clear();
+        codes.forEach(c=>loadedPrefs.add(c));
+        updatePrefLabel();
+        showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
+        const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
+        const seen = new Set();
+        currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
+        showLoading(false);
+        toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県から50km以内の峠を表示`);
+        render();
+        const b = new maplibregl.LngLatBounds();
+        currentItems.forEach(t=>{ if(t.distanceKm!=null && t.distanceKm<=50) t.poly.forEach(p=>b.extend([p[1],p[0]])); });
+        if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
       }else{
+        showLoading(false);
         map.flyTo({center:[lng, lat], zoom:11, duration:1000});
         toast("現在地の都道府県を判定できませんでした。県を選ぶと峠を表示します");
         if(currentItems.length) render();
