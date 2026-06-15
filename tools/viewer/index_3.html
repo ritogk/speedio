@@ -305,6 +305,28 @@ main{flex:1;position:relative;min-height:0}
 .loading-overlay p{color:#fff;font-size:12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+.loc-pulse{position:relative;width:40px;height:40px}
+.loc-pulse::before,.loc-pulse::after{
+  content:"";position:absolute;border-radius:50%;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.loc-pulse::before{
+  width:14px;height:14px;
+  background:var(--accent);
+  border:2.5px solid #fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.3);
+  z-index:1;
+}
+.loc-pulse::after{
+  width:14px;height:14px;
+  background:var(--accent);opacity:.35;
+  animation:loc-ring 2s ease-out infinite;
+}
+@keyframes loc-ring{
+  0%{width:14px;height:14px;opacity:.35}
+  100%{width:40px;height:40px;opacity:0}
+}
+
 .toast{
   position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1500;
   background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:12px;
@@ -597,6 +619,14 @@ async function fetchKoban(code){ return; // DISABLED
 }
 
 // ================= ユーティリティ =================
+let locMarker = null;
+function placeLocMarker(lng, lat){
+  if(locMarker) locMarker.remove();
+  const el = document.createElement("div");
+  el.className = "loc-pulse";
+  locMarker = new maplibregl.Marker({element:el, occludedOpacity:1}).setLngLat([lng, lat]).addTo(map);
+  return locMarker;
+}
 const $ = id => document.getElementById(id);
 function showLoading(on, text){
   $("loading").classList.toggle("show", on);
@@ -1489,7 +1519,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
       navigator.geolocation.getCurrentPosition(async pos=>{
         const lat = pos.coords.latitude, lng = pos.coords.longitude;
         userLatLng = [lat, lng];
-        new maplibregl.Marker({color:cssVar("--route-red"), occludedOpacity:1}).setLngLat([lng, lat]).addTo(map);
+        placeLocMarker(lng, lat);
         drawRangeRings(lat, lng);
         document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
         chip.setAttribute("aria-pressed","true");
@@ -1633,7 +1663,7 @@ $("locateBtn").addEventListener("click",()=>{
     async pos=>{
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
       userLatLng = [lat, lng];
-      new maplibregl.Marker({color:cssVar("--route-red"), occludedOpacity:1}).setLngLat([lng, lat]).addTo(map);
+      placeLocMarker(lng, lat);
       drawRangeRings(lat, lng);
       // 国土地理院の逆ジオコーダで市区町村コードを取得（先頭2桁が県コード）
       let code = null;
@@ -1980,7 +2010,8 @@ async function open3DView(t){
         const e01=gridElevs[(iy+1)*GRID+ix], e11=gridElevs[(iy+1)*GRID+ix+1];
         return e00*(1-tx)*(1-ty)+e10*tx*(1-ty)+e01*(1-tx)*ty+e11*tx*ty;
       };
-      const BLDG_H = 4 * SCALE;
+      const BLDG_SCALE = Math.max(1, Math.min(5, 0.3 / SCALE));
+      const BLDG_H = 2.5 * BLDG_SCALE;
       const bldgMat = new THREE.MeshStandardMaterial({
         color:0xE8E8E8, roughness:.5, metalness:.15,
         emissive:0xCCDDEE, emissiveIntensity:.25
@@ -1995,10 +2026,14 @@ async function open3DView(t){
         cLat/=ring.length; cLng/=ring.length;
         const bElev = interpElev(cLat, cLng);
         const bz = (bElev - baseElev) * Z_SCALE;
-        const sceneCoords = ring.map(c => toXYZ(c[0], c[1], 0));
+        const rawCoords = ring.map(c => toXYZ(c[0], c[1], 0));
         let cx=0, cy=0;
-        sceneCoords.forEach(p => { cx+=p[0]; cy+=p[1]; });
-        cx/=sceneCoords.length; cy/=sceneCoords.length;
+        rawCoords.forEach(p => { cx+=p[0]; cy+=p[1]; });
+        cx/=rawCoords.length; cy/=rawCoords.length;
+        const sceneCoords = rawCoords.map(p => [
+          cx + (p[0] - cx) * BLDG_SCALE,
+          cy + (p[1] - cy) * BLDG_SCALE
+        ]);
         // 道路との最小距離を確保
         let nearD = Infinity;
         for(let i=0;i<roadXY.length;i++){
