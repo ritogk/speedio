@@ -1989,7 +1989,7 @@ async function open3DView(t){
         return e00*(1-tx)*(1-ty)+e10*tx*(1-ty)+e01*(1-tx)*ty+e11*tx*ty;
       };
       const BLDG_SCALE = Math.max(1, Math.min(5, 0.3 / SCALE));
-      const BLDG_H = 2.5 * BLDG_SCALE;
+      const BLDG_H = 4;
       const bldgMat = new THREE.MeshStandardMaterial({
         color:0xE8E8E8, roughness:.5, metalness:.15,
         emissive:0xCCDDEE, emissiveIntensity:.25
