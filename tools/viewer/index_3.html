@@ -907,12 +907,7 @@ function flyToTouge(t){
   flightAbort = ()=>{ cancelled = true; cleanup(); };
   map.flyTo(target);
   map.once("moveend", ()=>{
-    const userTookOver = cancelled;
     cleanup();
-    if(!userTookOver){
-      map.jumpTo(target);
-      orbitAround(target.center);
-    }
   });
 }
 
