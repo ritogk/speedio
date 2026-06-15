@@ -407,7 +407,7 @@ main{flex:1;position:relative;min-height:0}
     <div class="map-float" id="mapFloat"></div>
     <div class="map-ctrl">
       <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">⛰ 3D地形</button>
-      <button class="ctrl-btn" id="kobanToggle" aria-pressed="false">👮</button>
+      <button class="ctrl-btn" id="kobanToggle" aria-pressed="false" style="display:none">👮</button>
     </div>
 
     <div class="view-ctrl" id="viewCtrl">
@@ -519,7 +519,7 @@ const prefCache = {};
 const kobanCache = {};
 let kobanVisible = false;
 
-function kobanSpin(on){
+function kobanSpin(on){ return; // DISABLED
   const btn = document.getElementById("kobanToggle");
   if(!btn) return;
   const old = btn.querySelector(".ctrl-spin");
@@ -527,7 +527,7 @@ function kobanSpin(on){
   if(on) btn.insertAdjacentHTML("beforeend",' <span class="ctrl-spin"></span>');
 }
 
-async function fetchKoban(code){
+async function fetchKoban(code){ return; // DISABLED
   if(!mapReady) await new Promise(r=>map.once("load",r));
   const name = PREFECTURES[code];
   if(!name) return;
@@ -1290,7 +1290,7 @@ function revealAndSelect(t){
 function selectCard(id,scroll){
   document.querySelectorAll(".card").forEach(c=>c.classList.toggle("active", Number(c.dataset.id)===id));
   if(scroll){
-    requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
       const card = document.querySelector(`.card[data-id="${id}"]`);
       const body = document.querySelector(".panel-body");
       if(card && body){
@@ -1303,7 +1303,7 @@ function selectCard(id,scroll){
         panel.style.transform = "translateY(calc(100% - "+h+"px))";
         document.documentElement.style.setProperty("--card-peek-h", h);
       }
-    });
+    }));
   }
   highlightOnMap(id);
 }
