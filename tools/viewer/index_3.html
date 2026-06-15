@@ -718,7 +718,7 @@ map.on("load", () => {
     id:"rings-fill", type:"fill", source:"rings",
     paint:{
       "fill-color":["interpolate",["linear"],["get","r"],10,"#4A9E60",40,"#B89E40",70,"#B07040",100,"#9E4A4A"],
-      "fill-opacity":["interpolate",["linear"],["get","r"],10,.15,100,.06]
+      "fill-opacity":["interpolate",["linear"],["get","r"],10,.22,100,.10]
     }
   });
   map.addLayer({
@@ -1875,7 +1875,7 @@ async function open3DView(t){
     const roadXY = geomList.map(p => toXYZ(p[0], p[1], 0));
     const MIN_OFFSET = 5;
 
-    // 建物マーカー（slim.jsonの事前データ → 道路脇のボックス、初期非表示）
+    // 建物ポリゴン（実ポリゴン座標 → 押し出しメッシュ、初期非表示）
     const bldgPolys = t.buildings || [];
     const bldgObjs = [];
     if(bldgPolys.length){
@@ -1889,8 +1889,7 @@ async function open3DView(t){
         const e01=gridElevs[(iy+1)*GRID+ix], e11=gridElevs[(iy+1)*GRID+ix+1];
         return e00*(1-tx)*(1-ty)+e10*tx*(1-ty)+e01*(1-tx)*ty+e11*tx*ty;
       };
-      const boxSize = 2.5;
-      const boxGeo = new THREE.BoxGeometry(boxSize, boxSize, boxSize * 2.5);
+      const BLDG_H = 4 * SCALE;
       const bldgMat = new THREE.MeshStandardMaterial({
         color:0xE8E8E8, roughness:.5, metalness:.15,
         emissive:0xCCDDEE, emissiveIntensity:.25
@@ -1904,24 +1903,38 @@ async function open3DView(t){
         ring.forEach(c=>{ cLat+=c[0]; cLng+=c[1]; });
         cLat/=ring.length; cLng/=ring.length;
         const bElev = interpElev(cLat, cLng);
-        const [bx, by] = toXYZ(cLat, cLng, 0);
-        // 最寄りの道路点を探してオフセット
-        let nearI=0, nearD=Infinity;
+        const bz = (bElev - baseElev) * Z_SCALE;
+        const sceneCoords = ring.map(c => toXYZ(c[0], c[1], 0));
+        let cx=0, cy=0;
+        sceneCoords.forEach(p => { cx+=p[0]; cy+=p[1]; });
+        cx/=sceneCoords.length; cy/=sceneCoords.length;
+        // 道路との最小距離を確保
+        let nearD = Infinity;
         for(let i=0;i<roadXY.length;i++){
-          const d=(roadXY[i][0]-bx)**2+(roadXY[i][1]-by)**2;
-          if(d<nearD){nearD=d;nearI=i;}
+          const d = Math.sqrt((roadXY[i][0]-cx)**2+(roadXY[i][1]-cy)**2);
+          if(d<nearD) nearD=d;
         }
-        let ox=bx-roadXY[nearI][0], oy=by-roadXY[nearI][1];
-        const dist=Math.sqrt(ox*ox+oy*oy)||1;
-        if(dist<MIN_OFFSET){ ox=ox/dist*MIN_OFFSET; oy=oy/dist*MIN_OFFSET; }
-        const fx=roadXY[nearI][0]+ox, fy=roadXY[nearI][1]+oy;
-        const bz=(bElev-baseElev)*Z_SCALE;
-        const mesh = new THREE.Mesh(boxGeo, bldgMat);
-        mesh.position.set(fx, fy, bz + boxSize);
+        let offX=0, offY=0;
+        if(nearD < MIN_OFFSET){
+          const nearI = roadXY.reduce((best,p,i)=>{
+            const d=(p[0]-cx)**2+(p[1]-cy)**2;
+            return d<best.d?{d,i}:best;
+          },{d:Infinity,i:0}).i;
+          const dx=cx-roadXY[nearI][0], dy=cy-roadXY[nearI][1];
+          const dl=Math.sqrt(dx*dx+dy*dy)||1;
+          offX=(dx/dl)*MIN_OFFSET-dx; offY=(dy/dl)*MIN_OFFSET-dy;
+        }
+        const shape = new THREE.Shape();
+        shape.moveTo(sceneCoords[0][0]+offX, sceneCoords[0][1]+offY);
+        for(let i=1;i<sceneCoords.length;i++) shape.lineTo(sceneCoords[i][0]+offX, sceneCoords[i][1]+offY);
+        shape.closePath();
+        const extGeo = new THREE.ExtrudeGeometry(shape, { depth: BLDG_H, bevelEnabled: false });
+        const mesh = new THREE.Mesh(extGeo, bldgMat);
+        mesh.position.set(0, 0, bz);
         mesh.visible = false;
         group.add(mesh);
         bldgObjs.push(mesh);
-        const edges = new THREE.EdgesGeometry(boxGeo);
+        const edges = new THREE.EdgesGeometry(extGeo);
         const eLine = new THREE.LineSegments(edges, bEdgeMat);
         eLine.position.copy(mesh.position);
         eLine.visible = false;
