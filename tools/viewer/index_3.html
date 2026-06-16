@@ -1797,7 +1797,7 @@ $("terrainToggle").addEventListener("click",e=>{
   const on = btn.getAttribute("aria-pressed") !== "true";
   btn.setAttribute("aria-pressed", on);
   map.setTerrain(on ? {source:"gsiTerrain", exaggeration:1.2} : null);
-  map.easeTo(on ? {pitch:55, duration:600} : {pitch:0, duration:600});
+  if(on && map.getPitch() < 10) map.easeTo({pitch:55, duration:600});
 });
 // 交番レイヤー ON/OFF
 $("kobanToggle").addEventListener("click",e=>{
