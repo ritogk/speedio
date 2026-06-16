@@ -767,8 +767,8 @@ map.on("load", () => {
   map.addLayer({
     id:"rings-fill", type:"fill", source:"rings",
     paint:{
-      "fill-color":["interpolate",["linear"],["get","r"],10,"#4A9E60",40,"#B89E40",70,"#B07040",100,"#9E4A4A"],
-      "fill-opacity":["interpolate",["linear"],["get","r"],10,.22,100,.10]
+      "fill-color":["interpolate",["linear"],["get","r"],10,"#4A9E60",30,"#B89E40",50,"#B07040",70,"#9E4A4A"],
+      "fill-opacity":["interpolate",["linear"],["get","r"],10,.22,70,.10]
     }
   });
   map.addLayer({
@@ -1690,7 +1690,7 @@ function drawRangeRings(lat, lng){
     }
     return pts;
   }
-  for(let r = 100; r >= 10; r -= 10){
+  for(let r = 70; r >= 10; r -= 10){
     const coords = [circleCoords(r, false)];
     if(r > 10) coords.push(circleCoords(r - 10, true));
     features.push({type:"Feature",properties:{r},geometry:{type:"Polygon",coordinates:coords}});
