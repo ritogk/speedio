@@ -1,4 +1,4 @@
-// 現在地からの距離サークル（10km刻み・100kmまで）の描画。
+// 現在地からの距離サークル（10km刻み・70kmまで）の描画。
 
 import maplibregl, {
   type GeoJSONSource,
@@ -35,11 +35,11 @@ const createRangeRings = (): RangeRingsLayer => {
             ["get", "r"],
             10,
             "#4A9E60",
-            40,
+            30,
             "#B89E40",
-            70,
+            50,
             "#B07040",
-            100,
+            70,
             "#9E4A4A",
           ],
           "fill-opacity": [
@@ -48,7 +48,7 @@ const createRangeRings = (): RangeRingsLayer => {
             ["get", "r"],
             10,
             0.22,
-            100,
+            70,
             0.10,
           ],
         },

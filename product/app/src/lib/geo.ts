@@ -38,7 +38,7 @@ export const geo: Geo = {
     return Array.from({ length: max }, (_, i) => points[Math.round(i * step)]);
   },
 
-  buildRangeRings: (lat, lng, step = 10, maxKm = 100) => {
+  buildRangeRings: (lat, lng, step = 10, maxKm = 70) => {
     const latRad = (lat * Math.PI) / 180;
     const rings: RangeRing[] = [];
     for (let r = step; r <= maxKm; r += step) {

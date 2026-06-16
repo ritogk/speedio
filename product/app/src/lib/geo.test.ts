@@ -50,12 +50,10 @@ describe("decimate", () => {
 });
 
 describe("buildRangeRings", () => {
-  it("10km刻みで100kmまで10本の円を生成する", () => {
+  it("10km刻みで70kmまで7本の円を生成する", () => {
     const rings = geo.buildRangeRings(35.0, 137.0);
-    expect(rings).toHaveLength(10);
-    expect(rings.map((r) => r.r)).toEqual([
-      10, 20, 30, 40, 50, 60, 70, 80, 90, 100,
-    ]);
+    expect(rings).toHaveLength(7);
+    expect(rings.map((r) => r.r)).toEqual([10, 20, 30, 40, 50, 60, 70]);
   });
 
   it("円は129点で閉じ、ラベルは北端に置かれる", () => {

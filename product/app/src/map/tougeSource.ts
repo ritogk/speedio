@@ -85,8 +85,19 @@ export const tougeSource: TougeSource = {
       source: SOURCE,
       layout: { "line-cap": "round", "line-join": "round" },
       paint: {
+        "line-color": "#4a7fbf",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 8, 14, 15],
+        "line-opacity": ["*", 0.9, ["coalesce", ["get", "fade"], 1]],
+      },
+    });
+    map.addLayer({
+      id: "touge-white",
+      type: "line",
+      source: SOURCE,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
         "line-color": "#ffffff",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 4, 14, 8.5],
+        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 4.5, 14, 9.5],
         "line-opacity": ["*", 0.9, ["coalesce", ["get", "fade"], 1]],
       },
     });
@@ -112,7 +123,7 @@ export const tougeSource: TougeSource = {
       },
     });
 
-    for (const layer of ["touge-line", "touge-casing"]) {
+    for (const layer of ["touge-line", "touge-white", "touge-casing"]) {
       map.on("click", layer, (e) => {
         const tid = e.features?.[0]?.properties?.tid;
         if (typeof tid === "number") onSelect(tid);

@@ -8,7 +8,7 @@ import MapLegend from "@/components/MapLegend.vue";
 import ViewRotateControls from "@/components/ViewRotateControls.vue";
 import { useGeolocate } from "@/composables/useGeolocate";
 import { useMapInstance } from "@/composables/useMapInstance";
-import { MARKER_N, PREFECTURE_ENTRIES } from "@/lib/constants";
+import { MARKER_N } from "@/lib/constants";
 import { camera, type CameraDirector } from "@/map/camera";
 import { kobanLayer } from "@/map/kobanLayer";
 import { rangeRings } from "@/map/rangeRings";
@@ -18,10 +18,6 @@ import { useTougeStore } from "@/stores/tougeStore";
 const store = useTougeStore();
 const { locate } = useGeolocate();
 const { map, mapReady, init, dispose } = useMapInstance();
-
-const onPrefChange = (e: Event) => {
-  void store.switchPref((e.target as HTMLSelectElement).value);
-};
 
 const container = ref<HTMLElement | null>(null);
 let director: CameraDirector | null = null;
@@ -90,12 +86,15 @@ watch(
     director?.cancelOrbit();
     const b = new maplibregl.LngLatBounds();
     store.ranked.forEach((t) => b.extend([t.center[1], t.center[0]]));
-    m.fitBounds(b, {
-      padding: currentPadding(50),
-      pitch: 55,
-      bearing: -10,
-      duration: 1200,
-    });
+    const doFit = () =>
+      m.fitBounds(b, {
+        padding: currentPadding(50),
+        pitch: 55,
+        bearing: -10,
+        duration: 1200,
+      });
+    if (mapReady.value) doFit();
+    else m.once("load", doFit);
   },
 );
 
@@ -122,21 +121,6 @@ watch(
   <div ref="container" class="map-container"></div>
 
   <div class="map-float">
-    <select
-      class="pref-select"
-      :value="store.prefCode ?? ''"
-      aria-label="都道府県を選択"
-      @change="onPrefChange"
-    >
-      <option value="">都道府県を選ぶ</option>
-      <option
-        v-for="[code, name] in PREFECTURE_ENTRIES"
-        :key="code"
-        :value="code"
-      >
-        {{ name }}
-      </option>
-    </select>
     <button class="locate-btn" @click="locate">
       📍<span class="locate-label"> 現在地</span>
     </button>
@@ -162,25 +146,6 @@ watch(
   display: flex;
   gap: 6px;
   align-items: center;
-}
-
-.map-float .pref-select {
-  margin-left: 0;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--card);
-  color: var(--ink);
-  padding: 5px 28px 5px 14px;
-  cursor: pointer;
-  appearance: none;
-  max-width: 42vw;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%231A1C1F' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 11px center;
 }
 
 .map-float .locate-btn {
@@ -212,16 +177,10 @@ watch(
     pointer-events: auto;
   }
 
-  .map-float .pref-select {
-    font-size: 12px;
-    padding: 7px 26px 7px 12px;
-    background-position: right 9px center;
-    max-width: 55vw;
-  }
-
   .map-float .locate-btn {
     padding: 7px 10px;
     margin-left: auto;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
   }
 
   .map-float .locate-label {

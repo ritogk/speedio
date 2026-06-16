@@ -19,7 +19,11 @@ const createDataLoader = (): DataLoader => {
       if (!res.ok)
         throw new Error(`targets/${code}/target.slim.json: HTTP ${res.status}`);
       const raw = (await res.json()) as RawTouge[];
-      const items = raw.map(tougeViewModel.fromRaw);
+      const items = raw.map((r, i) => {
+        const vm = tougeViewModel.fromRaw(r, i);
+        vm._pref = code;
+        return vm;
+      });
       prefCache.set(code, items);
       return items;
     },

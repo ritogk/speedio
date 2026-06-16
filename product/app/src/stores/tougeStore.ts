@@ -208,6 +208,47 @@ export const useTougeStore = defineStore("touge", () => {
     }
   };
 
+  /** 追加読み込み（既存データを保持したまま新しい県を追加） */
+  const addPrefs = async (codes: string[]) => {
+    loading.value = true;
+    loadingText.value = `周辺${codes.length}県のデータを追加読み込み中…`;
+    try {
+      const results = await Promise.all(codes.map((c) => dataLoader.loadPref(c)));
+      const seen = new Set(items.value.map((t) => t.id));
+      items.value = [...items.value, ...results.flat().filter((t) => !seen.has(t.id))];
+      loadSeq.value++;
+    } catch (err) {
+      console.error(err);
+      toast("データの追加読み込みに失敗しました");
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  /** 県を個別に削除 */
+  const removePref = (code: string) => {
+    loadedPrefs.value = new Set([...loadedPrefs.value].filter((c) => c !== code));
+    items.value = items.value.filter((t) => t._pref !== code);
+    if (loadedPrefs.value.size === 0) {
+      prefCode.value = null;
+      try { localStorage.removeItem("touge.pref"); } catch { /* ignore */ }
+    } else {
+      const first = [...loadedPrefs.value][0];
+      prefCode.value = first;
+      try { localStorage.setItem("touge.pref", first); } catch { /* ignore */ }
+    }
+    loadSeq.value++;
+  };
+
+  /** 全県クリア */
+  const clearAllPrefs = () => {
+    loadedPrefs.value = new Set();
+    items.value = [];
+    prefCode.value = null;
+    try { localStorage.removeItem("touge.pref"); } catch { /* ignore */ }
+    loadSeq.value++;
+  };
+
   const switchPref = async (code: string, replace = true) => {
     if (!code || !PREFECTURES[code]) return;
     prefCode.value = code;
@@ -276,6 +317,9 @@ export const useTougeStore = defineStore("touge", () => {
     open3D,
     close3D,
     loadAdjacentForNearby,
+    addPrefs,
+    removePref,
+    clearAllPrefs,
     switchPref,
   };
 });

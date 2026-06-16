@@ -1,17 +1,22 @@
 <script setup lang="ts">
 // 並び替えプリセットの切り替えチップ。
+import maplibregl from "maplibre-gl";
+
 import { useGeolocate } from "@/composables/useGeolocate";
-import { PRESET_HINTS, PRESET_LABELS } from "@/lib/constants";
+import { useMapInstance } from "@/composables/useMapInstance";
+import { ADJACENT, PREFECTURES, PRESET_HINTS, PRESET_LABELS } from "@/lib/constants";
 import { useTougeStore } from "@/stores/tougeStore";
 import type { PresetKey } from "@/types/touge";
 
 const store = useTougeStore();
 const presets = Object.keys(PRESET_LABELS) as PresetKey[];
-const { locate } = useGeolocate();
+const geo = useGeolocate();
+const { map, mapReady } = useMapInstance();
 
 const onPresetClick = (p: PresetKey) => {
   if (p === "nearby" && !store.userLatLng) {
-    locate(() => {
+    if (geo.locatingBusy) return;
+    geo.locate(() => {
       store.setPreset("nearby");
       store.distanceFilter = 50;
     });
@@ -23,8 +28,37 @@ const onPresetClick = (p: PresetKey) => {
   } else {
     store.setPreset(p);
     store.distanceFilter = p === "nearby" ? 50 : null;
-    if (p === "nearby" && store.userLatLng && store.prefCode) {
-      void store.loadAdjacentForNearby(store.prefCode);
+    if (p === "nearby" && store.userLatLng) {
+      const code = [...store.loadedPrefs][0] || store.prefCode;
+      if (!code) return;
+      const codes = [code, ...(ADJACENT[code] || [])];
+      void (async () => {
+        store.loadedPrefs = new Set(codes);
+        store.loading = true;
+        store.loadingText = `周辺${codes.length}県のデータを読み込み中…`;
+        await store.loadAdjacentForNearby(code);
+        // fitBounds after render for nearby 2nd-press
+        const m = map.value;
+        if (m && store.ranked.length) {
+          const b = new maplibregl.LngLatBounds();
+          store.ranked
+            .filter((t) => t.distanceKm != null && t.distanceKm <= 50)
+            .forEach((t) =>
+              t.poly.forEach((pt) => b.extend([pt[1], pt[0]])),
+            );
+          if (!b.isEmpty()) {
+            const doFit = () =>
+              m.fitBounds(b, {
+                padding: { top: 50, left: 50, right: 50, bottom: 50 },
+                pitch: 55,
+                bearing: -10,
+                duration: 1200,
+              });
+            if (mapReady.value) doFit();
+            else m.once("load", doFit);
+          }
+        }
+      })();
     }
   }
 };

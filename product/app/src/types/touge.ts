@@ -114,6 +114,8 @@ export interface TougeVM {
   elevSections: ElevSections | null;
   /** 現在地からの直線距離(km)。位置情報未取得時は undefined */
   distanceKm?: number;
+  /** 所属県コード（複数県データ混在時のフィルタ用） */
+  _pref?: string;
 }
 
 export interface RankedTouge extends TougeVM {

@@ -2,6 +2,7 @@
 // ランキングパネル（PC: サイドバー / モバイル: 3段階ボトムシート）。検索・プリセット・カード一覧を持つ。
 import { nextTick, onMounted, onUnmounted, provide, ref, watch } from "vue";
 
+import PrefTags from "@/components/PrefTags.vue";
 import PresetChips from "@/components/PresetChips.vue";
 import TougeCardList from "@/components/TougeCardList.vue";
 import { MOBILE_MAX_WIDTH } from "@/lib/constants";
@@ -163,7 +164,7 @@ onUnmounted(() => {
       <div class="sheet-head">
         <div class="panel-logo">峠</div>
         <span class="count">{{ store.resultCountLabel }}</span>
-        <span class="pref-name">{{ store.prefLabel }}</span>
+        <span class="pref-name" style="display: none">{{ store.prefLabel }}</span>
       </div>
     </div>
     <div
@@ -172,6 +173,7 @@ onUnmounted(() => {
       @mousedown="onMouseDown"
       @click.capture="onBodyClick"
     >
+      <PrefTags />
       <div class="searchbox">
         <input
           v-model="store.searchQuery"

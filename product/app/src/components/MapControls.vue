@@ -13,11 +13,9 @@ const toggleTerrain = () => {
   if (!m) return;
   terrainOn.value = !terrainOn.value;
   m.setTerrain(terrainOn.value ? mapStyle.terrain : null);
-  m.easeTo(
-    terrainOn.value
-      ? { pitch: 55, duration: 600 }
-      : { pitch: 0, duration: 600 },
-  );
+  if (terrainOn.value && m.getPitch() < 10) {
+    m.easeTo({ pitch: 55, duration: 600 });
+  }
 };
 
 /* DISABLED: 交番レイヤー
