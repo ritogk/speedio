@@ -561,6 +561,7 @@ let currentItems = [];
 const prefCache = {};
 const kobanCache = {};
 let kobanVisible = false;
+let locatingBusy = false;
 
 function kobanSpin(on){ return; // DISABLED
   const btn = document.getElementById("kobanToggle");
@@ -1457,8 +1458,11 @@ function removePref(code){
   updatePrefLabel();
   if(loadedPrefs.size === 0){
     $("prefSelect").value = "";
+    try{ localStorage.removeItem("touge.pref"); }catch(e){}
   } else {
-    $("prefSelect").value = [...loadedPrefs][0];
+    const first = [...loadedPrefs][0];
+    $("prefSelect").value = first;
+    try{ localStorage.setItem("touge.pref", first); }catch(e){}
   }
   render();
 }
@@ -1467,6 +1471,7 @@ function clearAllPrefs(){
   currentItems = [];
   updatePrefLabel();
   $("prefSelect").value = "";
+  try{ localStorage.removeItem("touge.pref"); }catch(e){}
   render();
 }
 async function switchPref(code, replace=true){
@@ -1505,9 +1510,13 @@ function afterLoad(){
   render();
   const list = rankedList();
   if(list.length){
-    const b = new maplibregl.LngLatBounds();
-    list.forEach(t=>b.extend([t.center[1], t.center[0]]));
-    map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
+    const doFit = ()=>{
+      const b = new maplibregl.LngLatBounds();
+      list.forEach(t=>b.extend([t.center[1], t.center[0]]));
+      map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
+    };
+    if(mapReady) doFit();
+    else map.once("load", doFit);
   }
   if(window.innerWidth<=760) setSheet("half");
   if(kobanVisible){
@@ -1547,6 +1556,8 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
     const preset = chip.dataset.preset;
     if(preset === "nearby" && !userLatLng){
       if(!navigator.geolocation){ toast("このブラウザは位置情報に対応していません"); return; }
+      if(locatingBusy) return;
+      locatingBusy = true;
       showLoading(true, "現在地を取得中…");
       navigator.geolocation.getCurrentPosition(async pos=>{
         const lat = pos.coords.latitude, lng = pos.coords.longitude;
@@ -1561,7 +1572,10 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
         visibleCount = PAGE_N;
         let code = null;
         try{
-          const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`);
+          const ac = new AbortController();
+          const tid = setTimeout(()=>ac.abort(), 5000);
+          const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`, {signal:ac.signal});
+          clearTimeout(tid);
           if(res.ok){
             const data = await res.json();
             const muni = data?.results?.muniCd;
@@ -1569,7 +1583,6 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
           }
         }catch(err){}
         if(code && PREFECTURES[code]){
-          $("prefSelect").value = code;
           const codes = [code, ...(ADJACENT[code]||[])];
           loadedPrefs.clear();
           codes.forEach(c=>loadedPrefs.add(c));
@@ -1589,10 +1602,12 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
           toast("現在地の都道府県を判定できませんでした");
           if(currentItems.length) render();
         }
+        locatingBusy = false;
       }, ()=>{
+        locatingBusy = false;
         showLoading(false);
         toast("位置情報を取得できませんでした");
-      });
+      }, {enableHighAccuracy:false, timeout:10000, maximumAge:300000});
       return;
     }
     const isActive = chip.getAttribute("aria-pressed") === "true";
@@ -1607,7 +1622,8 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
       distanceFilter = preset === "nearby" ? 50 : null;
     }
     if(currentPreset === "nearby" && userLatLng){
-      const code = $("prefSelect").value;
+      const code = [...loadedPrefs][0] || localStorage.getItem("touge.pref");
+      if(!code){ toast("先に都道府県を選択してください"); return; }
       const codes = [code, ...(ADJACENT[code]||[])];
       (async()=>{
         loadedPrefs.clear();
@@ -1620,6 +1636,9 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
         showLoading(false);
         visibleCount = PAGE_N;
         render();
+        const b = new maplibregl.LngLatBounds();
+        lastRanked.forEach(t=>{ if(t.distanceKm!=null && t.distanceKm<=50) t.poly.forEach(p=>b.extend([p[1],p[0]])); });
+        if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
       })();
     }else{
       if(currentPreset !== "nearby") try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
@@ -1641,8 +1660,8 @@ try{
   }
   const savedPref = localStorage.getItem("touge.pref");
   if(savedPref && PREFECTURES[savedPref]){
-    sel.value = savedPref;
     switchPref(savedPref);
+    sel.value = "";
   }
 }catch(e){}
 
@@ -1690,6 +1709,8 @@ function drawRangeRings(lat, lng){
 
 $("locateBtn").addEventListener("click",()=>{
   if(!navigator.geolocation){ toast("このブラウザは位置情報に対応していません"); return; }
+  if(locatingBusy) return;
+  locatingBusy = true;
   showLoading(true, "現在地を取得中…");
   navigator.geolocation.getCurrentPosition(
     async pos=>{
@@ -1697,10 +1718,12 @@ $("locateBtn").addEventListener("click",()=>{
       userLatLng = [lat, lng];
       placeLocMarker(lng, lat);
       drawRangeRings(lat, lng);
-      // 国土地理院の逆ジオコーダで市区町村コードを取得（先頭2桁が県コード）
       let code = null;
       try{
-        const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`);
+        const ac = new AbortController();
+        const tid = setTimeout(()=>ac.abort(), 5000);
+        const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`, {signal:ac.signal});
+        clearTimeout(tid);
         if(res.ok){
           const data = await res.json();
           const muni = data?.results?.muniCd;
@@ -1710,38 +1733,36 @@ $("locateBtn").addEventListener("click",()=>{
         console.warn("[峠サーチャー] reverse geocode failed:", err);
       }
       if(code && PREFECTURES[code]){
-        $("prefSelect").value = code;
-        document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
-        document.querySelector('.chip[data-preset="nearby"]').setAttribute("aria-pressed","true");
-        currentPreset = "nearby";
-        distanceFilter = 50;
-        $("presetHint").textContent = presetHints.nearby;
-        visibleCount = PAGE_N;
         const codes = [code, ...(ADJACENT[code]||[])];
-        loadedPrefs.clear();
-        codes.forEach(c=>loadedPrefs.add(c));
+        const newCodes = codes.filter(c => !loadedPrefs.has(c));
+        newCodes.forEach(c => loadedPrefs.add(c));
         updatePrefLabel();
-        showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
-        const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
-        const seen = new Set();
-        currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
+        if(newCodes.length){
+          showLoading(true, `周辺${newCodes.length}県のデータを追加読み込み中…`);
+          const results = await Promise.all(newCodes.map(c => fetchPrefItems(c)));
+          const seen = new Set(currentItems.map(t=>t.id));
+          currentItems = [...currentItems, ...results.flat().filter(t => !seen.has(t.id))];
+        }
         showLoading(false);
-        toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県から50km以内の峠を表示`);
+        toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県を表示`);
         render();
         const b = new maplibregl.LngLatBounds();
-        currentItems.forEach(t=>{ if(t.distanceKm!=null && t.distanceKm<=50) t.poly.forEach(p=>b.extend([p[1],p[0]])); });
+        currentItems.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
         if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
       }else{
         showLoading(false);
         map.flyTo({center:[lng, lat], zoom:11, duration:1000});
-        toast("現在地の都道府県を判定できませんでした。県を選ぶと峠を表示します");
+        toast("現在地の都道府県を判定できませんでした");
         if(currentItems.length) render();
       }
+      locatingBusy = false;
     },
     ()=>{
+      locatingBusy = false;
       showLoading(false);
       toast("位置情報を取得できませんでした");
-    }
+    },
+    {enableHighAccuracy:false, timeout:10000, maximumAge:300000}
   );
 });
 
