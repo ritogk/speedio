@@ -10,6 +10,7 @@ interface DataLoader {
 
 const createDataLoader = (): DataLoader => {
   const prefCache = new Map<string, TougeVM[]>();
+  let globalIdCounter = 0;
 
   return {
     loadPref: async (code) => {
@@ -19,8 +20,10 @@ const createDataLoader = (): DataLoader => {
       if (!res.ok)
         throw new Error(`targets/${code}/target.slim.json: HTTP ${res.status}`);
       const raw = (await res.json()) as RawTouge[];
+      const base = globalIdCounter;
+      globalIdCounter += raw.length;
       const items = raw.map((r, i) => {
-        const vm = tougeViewModel.fromRaw(r, i);
+        const vm = tougeViewModel.fromRaw(r, base + i);
         vm._pref = code;
         return vm;
       });

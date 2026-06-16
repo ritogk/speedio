@@ -31,7 +31,7 @@ const onPrefChange = (e: Event) => {
       aria-label="都道府県を選択"
       @change="onPrefChange"
     >
-      <option value="">+ 県を追加</option>
+      <option value="">＋ 県を追加</option>
       <option
         v-for="[code, name] in PREFECTURE_ENTRIES"
         :key="code"

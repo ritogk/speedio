@@ -78,14 +78,16 @@ onUnmounted(() => {
 watch(() => store.ranked, drawTouges);
 
 // 県データ読み込み完了時は県全体が収まるようにカメラを引く
+// removePref/clearAllPrefs/nearby(自前fitBounds)ではスキップ
 watch(
   () => store.loadSeq,
   () => {
+    if (!store.fitBoundsOnLoad) return;
     const m = map.value;
-    if (!m || !store.ranked.length) return;
+    if (!m || !store.items.length) return;
     director?.cancelOrbit();
     const b = new maplibregl.LngLatBounds();
-    store.ranked.forEach((t) => b.extend([t.center[1], t.center[0]]));
+    store.items.forEach((t) => b.extend([t.center[1], t.center[0]]));
     const doFit = () =>
       m.fitBounds(b, {
         padding: currentPadding(50),

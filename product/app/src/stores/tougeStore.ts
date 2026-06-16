@@ -65,6 +65,8 @@ export const useTougeStore = defineStore("touge", () => {
   const loading = ref(false);
   const loadingText = ref("読み込み中…");
   const loadSeq = ref(0);
+  /** loadSeq増加時にMapViewがfitBoundsすべきかどうか。removePref/clearAllPrefsやnearby(自前fitBounds)ではfalse */
+  const fitBoundsOnLoad = ref(true);
   const sheetState = ref<SheetState>("peek");
   const sidebarHidden = ref(false);
   /** 3Dオーバーレイで表示中の峠。null なら非表示 */
@@ -199,6 +201,7 @@ export const useTougeStore = defineStore("touge", () => {
       const results = await Promise.all(codes.map((c) => dataLoader.loadPref(c)));
       const seen = new Set<number>();
       items.value = results.flat().filter((t) => (seen.has(t.id) ? false : (seen.add(t.id), true)));
+      fitBoundsOnLoad.value = false; // PresetChips does its own fitBounds
       loadSeq.value++;
     } catch (err) {
       console.error(err);
@@ -216,6 +219,7 @@ export const useTougeStore = defineStore("touge", () => {
       const results = await Promise.all(codes.map((c) => dataLoader.loadPref(c)));
       const seen = new Set(items.value.map((t) => t.id));
       items.value = [...items.value, ...results.flat().filter((t) => !seen.has(t.id))];
+      fitBoundsOnLoad.value = true;
       loadSeq.value++;
     } catch (err) {
       console.error(err);
@@ -237,6 +241,7 @@ export const useTougeStore = defineStore("touge", () => {
       prefCode.value = first;
       try { localStorage.setItem("touge.pref", first); } catch { /* ignore */ }
     }
+    fitBoundsOnLoad.value = false;
     loadSeq.value++;
   };
 
@@ -246,6 +251,7 @@ export const useTougeStore = defineStore("touge", () => {
     items.value = [];
     prefCode.value = null;
     try { localStorage.removeItem("touge.pref"); } catch { /* ignore */ }
+    fitBoundsOnLoad.value = false;
     loadSeq.value++;
   };
 
@@ -272,6 +278,7 @@ export const useTougeStore = defineStore("touge", () => {
         const seen = new Set(items.value.map((t) => t.id));
         items.value = [...items.value, ...newItems.filter((t) => !seen.has(t.id))];
       }
+      fitBoundsOnLoad.value = true;
       loadSeq.value++;
       if (isMobile()) sheetState.value = "half";
     } catch (err) {
@@ -293,6 +300,7 @@ export const useTougeStore = defineStore("touge", () => {
     loading,
     loadingText,
     loadSeq,
+    fitBoundsOnLoad,
     sheetState,
     sidebarHidden,
     overlay3dTarget,

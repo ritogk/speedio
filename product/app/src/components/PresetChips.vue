@@ -2,24 +2,117 @@
 // 並び替えプリセットの切り替えチップ。
 import maplibregl from "maplibre-gl";
 
-import { useGeolocate } from "@/composables/useGeolocate";
 import { useMapInstance } from "@/composables/useMapInstance";
-import { ADJACENT, PREFECTURES, PRESET_HINTS, PRESET_LABELS } from "@/lib/constants";
+import { useToast } from "@/composables/useToast";
+import { ADJACENT, COLORS, PREFECTURES, PRESET_HINTS, PRESET_LABELS } from "@/lib/constants";
+import { rangeRings } from "@/map/rangeRings";
 import { useTougeStore } from "@/stores/tougeStore";
 import type { PresetKey } from "@/types/touge";
 
 const store = useTougeStore();
 const presets = Object.keys(PRESET_LABELS) as PresetKey[];
-const geo = useGeolocate();
 const { map, mapReady } = useMapInstance();
+const { show: toast } = useToast();
+
+let locatingBusy = false;
+let positionMarker: maplibregl.Marker | null = null;
+
+/** nearby first-press: 自前の位置取得→逆ジオコーダ→隣接県ロード→fitBounds */
+const nearbyFirstPress = () => {
+  if (!navigator.geolocation) {
+    toast("このブラウザは位置情報に対応していません");
+    return;
+  }
+  if (locatingBusy) return;
+  locatingBusy = true;
+  store.loading = true;
+  store.loadingText = "現在地を取得中…";
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      store.userLatLng = [lat, lng];
+
+      // 現在地マーカーと距離サークル
+      const m = map.value;
+      if (m) {
+        positionMarker?.remove();
+        positionMarker = new maplibregl.Marker({ color: COLORS.routeRed, occludedOpacity: 1 })
+          .setLngLat([lng, lat])
+          .addTo(m);
+        if (mapReady.value) rangeRings.draw(m, lat, lng);
+        else m.once("load", () => rangeRings.draw(m, lat, lng));
+      }
+
+      // preset/filterを先にセット
+      store.setPreset("nearby");
+      store.distanceFilter = 50;
+
+      // 逆ジオコーダで県判定
+      let code: string | null = null;
+      try {
+        const ac = new AbortController();
+        const tid = setTimeout(() => ac.abort(), 5000);
+        const res = await fetch(
+          `https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`,
+          { signal: ac.signal },
+        );
+        clearTimeout(tid);
+        if (res.ok) {
+          const data = await res.json();
+          const muni = data?.results?.muniCd;
+          if (muni) code = String(muni).padStart(5, "0").slice(0, 2);
+        }
+      } catch (err) {
+        console.warn("[峠サーチャー] reverse geocode failed:", err);
+      }
+
+      if (code && PREFECTURES[code]) {
+        const codes = [code, ...(ADJACENT[code] || [])];
+        // loadedPrefs をクリアして隣接県だけにする
+        await store.loadAdjacentForNearby(code);
+        store.loading = false;
+        toast(`${PREFECTURES[code]}＋周辺${codes.length - 1}県から50km以内の峠を表示`);
+
+        // fitBounds: 50km以内のランク済みアイテムで
+        if (m && store.ranked.length) {
+          const b = new maplibregl.LngLatBounds();
+          store.ranked
+            .filter((t) => t.distanceKm != null && t.distanceKm <= 50)
+            .forEach((t) => {
+              t.poly.forEach((pt) => b.extend([pt[1], pt[0]]));
+            });
+          if (!b.isEmpty()) {
+            const doFit = () =>
+              m.fitBounds(b, {
+                padding: { top: 50, left: 50, right: 50, bottom: 50 },
+                pitch: 55,
+                bearing: -10,
+                duration: 1200,
+              });
+            if (mapReady.value) doFit();
+            else m.once("load", doFit);
+          }
+        }
+      } else {
+        store.loading = false;
+        toast("現在地の都道府県を判定できませんでした");
+      }
+      locatingBusy = false;
+    },
+    () => {
+      locatingBusy = false;
+      store.loading = false;
+      toast("位置情報を取得できませんでした");
+    },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
+  );
+};
 
 const onPresetClick = (p: PresetKey) => {
   if (p === "nearby" && !store.userLatLng) {
-    if (geo.locatingBusy) return;
-    geo.locate(() => {
-      store.setPreset("nearby");
-      store.distanceFilter = 50;
-    });
+    nearbyFirstPress();
     return;
   }
   if (store.preset === p) {
@@ -31,13 +124,10 @@ const onPresetClick = (p: PresetKey) => {
     if (p === "nearby" && store.userLatLng) {
       const code = [...store.loadedPrefs][0] || store.prefCode;
       if (!code) return;
-      const codes = [code, ...(ADJACENT[code] || [])];
       void (async () => {
-        store.loadedPrefs = new Set(codes);
-        store.loading = true;
-        store.loadingText = `周辺${codes.length}県のデータを読み込み中…`;
         await store.loadAdjacentForNearby(code);
-        // fitBounds after render for nearby 2nd-press
+        store.loading = false;
+        // fitBounds: 50km以内のランク済みアイテムで
         const m = map.value;
         if (m && store.ranked.length) {
           const b = new maplibregl.LngLatBounds();

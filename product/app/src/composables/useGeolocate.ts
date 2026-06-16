@@ -94,9 +94,7 @@ export const useGeolocate = (): Geolocate => {
             store.loading = false;
             onSuccess?.();
             map.value?.flyTo({ center: [lng, lat], zoom: 11, duration: 1000 });
-            toast(
-              "現在地の都道府県を判定できませんでした。県を選ぶと峠を表示します",
-            );
+            toast("現在地の都道府県を判定できませんでした");
           }
           state.locatingBusy = false;
         },
