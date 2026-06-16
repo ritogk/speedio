@@ -4,7 +4,7 @@ from typing import Union
 from shapely.geometry import MultiPolygon
 from .overpass_fallback import call_with_fallback
 
-def fetch_graph(search_area_polygon : MultiPolygon) -> Union[nx.Graph, None]:
+def fetch_graph(search_area_polygon : MultiPolygon, refresh_cache=False) -> Union[nx.Graph, None]:
     ox.settings.use_cache = True
     ox.settings.log_console = False
     try:
@@ -15,6 +15,7 @@ def fetch_graph(search_area_polygon : MultiPolygon) -> Union[nx.Graph, None]:
             simplify=True,
             retain_all=True,
             custom_filter='["highway"~"secondary|secondary_link|primary|primary_link|trunk|trunk_link|tertiary"]["lanes"!=1]["bridge"="yes"]',
+            refresh_cache=refresh_cache,
         )
     except Exception:
         return None

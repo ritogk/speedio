@@ -3,7 +3,7 @@ import networkx as nx
 from shapely.geometry import MultiPolygon
 from .overpass_fallback import call_with_fallback
 
-def fetch_graph(search_area_polygon : MultiPolygon) -> nx.Graph:
+def fetch_graph(search_area_polygon : MultiPolygon, refresh_cache=False) -> nx.Graph:
     ox.settings.use_cache = True
     ox.settings.log_console = False
 
@@ -13,4 +13,5 @@ def fetch_graph(search_area_polygon : MultiPolygon) -> nx.Graph:
         network_type="drive",
         simplify=True,
         retain_all=True,
+        refresh_cache=refresh_cache,
     )

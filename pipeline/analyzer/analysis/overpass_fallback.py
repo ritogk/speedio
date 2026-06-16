@@ -1,6 +1,9 @@
 import osmnx as ox
 import time
+import pickle
 import requests as _requests
+from hashlib import sha1
+from pathlib import Path
 
 OVERPASS_ENDPOINTS = [
     "https://overpass-api.de/api",
@@ -8,7 +11,10 @@ OVERPASS_ENDPOINTS = [
     "https://maps.mail.ru/osm/tools/overpass/api",
 ]
 
+CACHE_DIR = Path(__file__).resolve().parents[3] / "data" / "cache_overpass"
+
 _active_endpoint = None
+
 
 def _health_check(endpoint, timeout=15):
     try:
@@ -20,6 +26,7 @@ def _health_check(endpoint, timeout=15):
         return resp.status_code == 200
     except Exception:
         return False
+
 
 def _select_endpoint():
     global _active_endpoint
@@ -36,9 +43,29 @@ def _select_endpoint():
     print(f"  ⚠️ No healthy endpoint, falling back to: {_active_endpoint}")
     return _active_endpoint
 
-def call_with_fallback(func, *args, max_retries_per_endpoint=2, **kwargs):
+
+def _cache_key(func, args, kwargs):
+    parts = [func.__name__]
+    for a in args:
+        if hasattr(a, "wkt"):
+            parts.append(a.wkt)
+        else:
+            parts.append(str(a))
+    for k in sorted(kwargs.keys()):
+        parts.append(f"{k}={kwargs[k]}")
+    return sha1("|".join(parts).encode()).hexdigest()
+
+
+def call_with_fallback(func, *args, max_retries_per_endpoint=2, refresh_cache=False, **kwargs):
     global _active_endpoint
     last_error = None
+
+    key = _cache_key(func, args, kwargs)
+    cache_path = CACHE_DIR / f"{key}.pkl"
+
+    if not refresh_cache and cache_path.exists():
+        print(f"  📦 Cache hit: {cache_path.name}")
+        return pickle.loads(cache_path.read_bytes())
 
     alive = _select_endpoint()
     print(f"  ✅ Overpass endpoint selected: {alive}")
@@ -53,6 +80,11 @@ def call_with_fallback(func, *args, max_retries_per_endpoint=2, **kwargs):
                 print(f"  🌐 Overpass: {endpoint} (attempt {attempt + 1})")
                 result = func(*args, **kwargs)
                 _active_endpoint = endpoint
+
+                CACHE_DIR.mkdir(parents=True, exist_ok=True)
+                cache_path.write_bytes(pickle.dumps(result))
+                print(f"  💾 Cached: {cache_path.name}")
+
                 return result
             except Exception as e:
                 error_msg = str(e)

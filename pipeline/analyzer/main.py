@@ -21,11 +21,12 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     consider_gsi_width = env["CONSIDER_GSI_WIDTH"]
     create_video = env["CREATE_VIDEO"]
     create_terrain = env["CREATE_TERRAIN"]
+    refresh_cache = env["REFRESH_CACHE"]
 
     execution_timer_ins = ExecutionTimer()
     # ベースとなるグラフを取得する
     execution_timer_ins.start("🗾 load openstreetmap data", ExecutionType.FETCH)
-    graph = graph_feather.fetch_graph(search_area_polygon)
+    graph = graph_feather.fetch_graph(search_area_polygon, refresh_cache=refresh_cache)
     execution_timer_ins.stop()
 
     # グラフをGeoDataFrameに変換する
@@ -81,7 +82,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
 
     # 全graphを取得する
     execution_timer_ins.start("🗾 load openstreetmap all data", ExecutionType.FETCH)
-    g_all = graph_all_feather.fetch_graph(search_area_polygon)
+    g_all = graph_all_feather.fetch_graph(search_area_polygon, refresh_cache=refresh_cache)
     execution_timer_ins.stop()
 
     # エッジ内のnodeから分岐数を取得する
@@ -150,7 +151,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
 
     # トンネルのデータを取得する
     execution_timer_ins.start("🗾 load osm tunnel data", ExecutionType.FETCH)
-    graph_tunnel = graph_tunnel_feather.fetch_graph(search_area_polygon)
+    graph_tunnel = graph_tunnel_feather.fetch_graph(search_area_polygon, refresh_cache=refresh_cache)
     in_tunnel = graph_tunnel is not None and len(graph_tunnel.edges) >= 1
     if in_tunnel:
         gdf_tunnel_edges = ox.graph_to_gdfs(graph_tunnel, nodes=False, edges=True)
@@ -179,7 +180,7 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     
     # 橋のデータを取得する
     execution_timer_ins.start("🌉 load osm bridge data", ExecutionType.FETCH)
-    graph_bridge = graph_bridge_feather.fetch_graph(search_area_polygon)
+    graph_bridge = graph_bridge_feather.fetch_graph(search_area_polygon, refresh_cache=refresh_cache)
     in_bridge = graph_bridge is not None and len(graph_bridge.edges) >= 1
     if in_bridge:
         gdf_bridge_edges = ox.graph_to_gdfs(graph_bridge, nodes=False, edges=True)

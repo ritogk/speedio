@@ -5,6 +5,7 @@ from .overpass_fallback import call_with_fallback
 
 def fetch_graph(
     search_area_polygon : MultiPolygon,
+    refresh_cache=False,
 ) -> nx.Graph:
     ox.settings.use_cache = True
     ox.settings.log_console = False
@@ -17,4 +18,5 @@ def fetch_graph(
         simplify=True,
         retain_all=True,
         custom_filter='["highway"~"secondary|secondary_link|primary|primary_link|trunk|trunk_link|tertiary"]["lanes"!=1]',
+        refresh_cache=refresh_cache,
     )

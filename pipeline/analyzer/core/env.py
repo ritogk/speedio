@@ -15,6 +15,7 @@ def getEnv():
     SHOW_CORNER = os.getenv("SHOW_CORNER")
     CREATE_VIDEO = os.getenv("CREATE_VIDEO")
     CREATE_TERRAIN = os.getenv("CREATE_TERRAIN")
+    REFRESH_CACHE = os.getenv("REFRESH_CACHE")
     return {
         "USE_CUSTOM_AREA": True if USE_CUSTOM_AREA == "1" else False,
         "CUSTOM_AREA_POINT_ST": CUSTOM_AREA_POINT_ST.replace(" ", "").split(","),
@@ -25,4 +26,5 @@ def getEnv():
         "SHOW_CORNER": True if SHOW_CORNER == "1" else False,
         "CREATE_VIDEO": True if CREATE_VIDEO == "1" else False,
         "CREATE_TERRAIN": True if CREATE_TERRAIN == "1" else False,
+        "REFRESH_CACHE": True if REFRESH_CACHE == "1" else False,
     }
