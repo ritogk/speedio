@@ -24,7 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from analyzer.analysis.column_generater_module.core.linstring_to_polygon import create_vertical_polygon
 
 
-BUCKET = "speediomainstack-createbucketefe7ef15-bdy9vvhyqygf"
+BUCKET = "speedio-old-viewer-788594208758"
+LOCAL_TARGETS = Path(__file__).resolve().parents[2] / "data" / "targets"
 PREFS = [f"{i:02d}" for i in range(1, 48)]
 
 
@@ -126,18 +127,16 @@ def main():
     cur = conn.cursor()
     try:
         for code in prefs:
-            src = f"s3://{BUCKET}/targets/{code}/target.json"
+            raw_path = LOCAL_TARGETS / code / "target.json"
+            if not raw_path.exists():
+                print(f"[{code}] SKIP (local target.json not found)")
+                continue
             dst = f"s3://{BUCKET}/targets/{code}/target.slim.json"
+            data = json.loads(raw_path.read_text())
+            slim = [slim_touge(t, cur) for t in data]
+            body = json.dumps(slim, ensure_ascii=False, separators=(",", ":")).encode()
             with tempfile.TemporaryDirectory() as tmp:
-                raw_path = Path(tmp) / "target.json"
                 gz_path = Path(tmp) / "target.slim.json"
-                r = subprocess.run(["aws", "s3", "cp", src, str(raw_path), "--only-show-errors"])
-                if r.returncode != 0:
-                    print(f"[{code}] SKIP (download failed)")
-                    continue
-                data = json.loads(raw_path.read_text())
-                slim = [slim_touge(t, cur) for t in data]
-                body = json.dumps(slim, ensure_ascii=False, separators=(",", ":")).encode()
                 gz_path.write_bytes(gzip.compress(body, 9))
                 subprocess.run([
                     "aws", "s3", "cp", str(gz_path), dst,
@@ -146,7 +145,7 @@ def main():
                     "--cache-control", "public, max-age=86400",
                     "--only-show-errors",
                 ], check=True)
-                print(f"[{code}] {raw_path.stat().st_size/1e6:6.1f}MB -> slim {len(body)/1e6:5.2f}MB -> gzip {gz_path.stat().st_size/1e6:5.2f}MB ({len(slim)}件)")
+            print(f"[{code}] {raw_path.stat().st_size/1e6:6.1f}MB -> slim {len(body)/1e6:5.2f}MB -> gzip {len(gzip.compress(body,9))/1e6:5.2f}MB ({len(slim)}件)")
     finally:
         cur.close()
         conn.close()

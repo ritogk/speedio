@@ -20,7 +20,7 @@ def generate(gdf: GeoDataFrame) -> Series:
     def func(row):
         # 連続する左コーナー、右コーナー、ストレートをグループ化してセクションとする
         sections = group_continuous_section(row['steering_wheel_angle_info'])
-        
+
         # ストレート区間が100m未満の場合は半分に分割して前後のセクションと結合する ※1
         sections = merge_min_straight_section(sections)
 
@@ -43,14 +43,14 @@ def generate(gdf: GeoDataFrame) -> Series:
             distance = 0
             for i in range(len(points) - 1):
                 distance += geodesic(reversed(points[i]), reversed(points[i+1])).meters
-            
+
             # ステアリング角度の最大値、平均値を取得
             max_steering_angle = max(steering_angle_info, key=lambda x: x['steering_angle'])['steering_angle']
             avg_steering_angle = sum([x['steering_angle'] for x in steering_angle_info]) / len(steering_angle_info)
 
             # ステアリング角度を調整する
             adjusted_steering_angle, elevation_height = adjust_steering_angle(max_steering_angle, points, row.elevation, distance, row.geometry.coords)
-            
+
             datas.append({
                 'max_steering_angle': max_steering_angle,
                 'avg_steering_angle': avg_steering_angle,
@@ -111,7 +111,7 @@ def group_continuous_section(target):
         direction = current_segment['direction']
         if angle < STRAIGHT_ANGLE:
             direction = 'straight'
-        
+
         if direction == old_direction:
             section_work.append(current_segment)
         else:
@@ -181,7 +181,7 @@ def merge_min_straight_section(sections):
         # ストレートを削除
         adjusted_sections.remove(min_straight_first)
     return adjusted_sections
-    
+
 
 # 連続する同一方向のコーナーをマージ
 # 同じ方向のコーナーが連続する場合は結合する。
@@ -208,14 +208,14 @@ def adjust_steering_angle(steering_angle, points, elevation, distance, coords) -
     point_st = points[1]
     point_end = points[-2]
     coords = list(coords)
-    
+
     index_st = coords.index(point_st)
     index_end = coords.index(point_end)
     elevation_section = elevation[index_st:index_end+1]
     # 始点と終点の間の標高値を追加(ステアリング切れ角の座標は中間点なのでそれを補完するためのもの)
     elevation_section.insert(0, (elevation[index_st - 1] + elevation[index_st]) / 2)
     elevation_section.append((elevation[index_end + 1] + elevation[index_end]) / 2)
-    
+
     # 標高の高さを取得
     elevation_min = min(elevation_section)
     elevation_max = max(elevation_section)
