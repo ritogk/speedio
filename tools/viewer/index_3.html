@@ -821,7 +821,12 @@ map.on("load", () => {
   map.addLayer({
     id:"touge-casing", type:"line", source:"touge",
     layout:{"line-cap":"round","line-join":"round"},
-    paint:{"line-color":"#ffffff","line-width":["interpolate",["linear"],["zoom"],8,4,14,8.5],"line-opacity":["*",.9,["coalesce",["get","fade"],1]]}
+    paint:{"line-color":"#4a7fbf","line-width":["interpolate",["linear"],["zoom"],8,8,14,15],"line-opacity":["*",.9,["coalesce",["get","fade"],1]]}
+  });
+  map.addLayer({
+    id:"touge-white", type:"line", source:"touge",
+    layout:{"line-cap":"round","line-join":"round"},
+    paint:{"line-color":"#ffffff","line-width":["interpolate",["linear"],["zoom"],8,4.5,14,9.5],"line-opacity":["*",.9,["coalesce",["get","fade"],1]]}
   });
   map.addLayer({
     id:"touge-line", type:"line", source:"touge",
