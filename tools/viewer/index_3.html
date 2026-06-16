@@ -43,14 +43,13 @@ body{
 
 header{display:none}
 .pref-select{
-  margin-left:auto;
-  font:inherit;font-size:13px;font-weight:500;
+  font:inherit;font-size:11px;font-weight:500;
   border:1px solid var(--line);border-radius:999px;
   background:var(--card);color:var(--ink);
-  padding:5px 28px 5px 14px;cursor:pointer;
-  appearance:none;max-width:42vw;
+  padding:4px 24px 4px 10px;cursor:pointer;
+  appearance:none;max-width:45vw;flex-shrink:0;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%231A1C1F' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 11px center;
+  background-repeat:no-repeat;background-position:right 8px center;
 }
 .locate-btn{
   font:inherit;font-size:12px;font-weight:500;cursor:pointer;
@@ -62,13 +61,6 @@ header{display:none}
 @media (max-width:760px){
   .map-float{pointer-events:none}
   .map-float>*{pointer-events:auto}
-  .map-float .pref-select{
-    margin-left:0;
-    font-size:12px;padding:7px 26px 7px 12px;
-    background-position:right 9px center;
-    box-shadow:0 1px 4px rgba(0,0,0,.18);
-    max-width:55vw;
-  }
   .map-float .locate-btn{
     padding:7px 10px;
     box-shadow:0 1px 4px rgba(0,0,0,.18);
@@ -83,10 +75,6 @@ header{display:none}
 .map-float{
   position:absolute;top:10px;right:10px;z-index:1250;
   display:flex;gap:6px;align-items:center;
-}
-.map-float .pref-select{
-  margin-left:0;
-  box-shadow:0 1px 4px rgba(0,0,0,.18);
 }
 .map-float .locate-btn{
   box-shadow:0 1px 4px rgba(0,0,0,.18);
@@ -181,6 +169,25 @@ main{flex:1;position:relative;min-height:0}
 .sheet-head .pref-name{margin-left:auto;font-size:10px;color:var(--ink-soft);letter-spacing:.04em;text-align:right;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .panel-body{flex:1;overflow-y:auto;min-height:0;padding:4px 14px 24px;-webkit-overflow-scrolling:touch}
 
+.pref-tags{display:flex;flex-wrap:wrap;gap:4px;padding:0 0 8px;align-items:center}
+.pref-tag{
+  display:inline-flex;align-items:center;gap:2px;
+  font-size:11px;font-weight:500;color:var(--ink);
+  background:var(--paper-deep);border:1px solid var(--line);border-radius:999px;
+  padding:3px 6px 3px 8px;white-space:nowrap;
+}
+.pref-tag .pref-tag-x{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:14px;height:14px;border-radius:50%;border:none;background:transparent;
+  font-size:12px;line-height:1;color:var(--ink-soft);cursor:pointer;padding:0;
+}
+.pref-tag .pref-tag-x:hover{background:var(--contour);color:var(--ink)}
+.pref-clear{
+  font:inherit;font-size:10px;color:var(--ink-soft);cursor:pointer;
+  border:1px dashed var(--contour);border-radius:999px;
+  background:transparent;padding:3px 8px;white-space:nowrap;
+}
+.pref-clear:hover{color:var(--accent);border-color:var(--accent)}
 .searchbox{padding:2px 0 8px}
 .searchbox input{
   width:100%;font:inherit;font-size:13px;
@@ -434,10 +441,11 @@ main{flex:1;position:relative;min-height:0}
       <div class="sheet-head">
         <div class="panel-logo">峠</div>
         <span class="count" id="resultCount"></span>
-        <span class="pref-name" id="prefName">未選択</span>
+        <span class="pref-name" id="prefName" style="display:none">未選択</span>
       </div>
     </div>
     <div class="panel-body">
+      <div class="pref-tags" id="prefTags"></div>
       <div class="searchbox">
         <input id="searchInput" type="search" placeholder="🔍 峠名・道路種別で検索" autocomplete="off">
       </div>
@@ -543,7 +551,7 @@ async function fetchPrefItems(code){
     const raw = await res.json();
     const base = globalIdCounter;
     globalIdCounter += raw.length;
-    const items = raw.map((r,i) => toViewModel(r, base + i));
+    const items = raw.map((r,i) => { const vm = toViewModel(r, base + i); vm._pref = code; return vm; });
     prefCache[code] = items;
     return items;
   }catch(e){ return []; }
@@ -842,7 +850,7 @@ map.on("load", () => {
     }
   });
   // 道路ラインを直接クリック/タップで選択（casingの方が太いのでタップ判定に含める）
-  ["touge-line","touge-casing"].forEach(layer=>{
+  ["touge-line","touge-white","touge-casing"].forEach(layer=>{
     map.on("click", layer, e=>{
       const tid = e.features?.[0]?.properties?.tid;
       const t = lastRanked.find(x=>x.id === tid);
@@ -1420,6 +1428,46 @@ const loadedPrefs = new Set();
 function updatePrefLabel(){
   const names = [...loadedPrefs].sort().map(c=>PREFECTURES[c]).filter(Boolean);
   $("prefName").textContent = names.length ? names.join("・") : "未選択";
+  renderPrefTags();
+}
+function renderPrefTags(){
+  const el = $("prefTags");
+  const sel = $("prefSelect");
+  el.querySelectorAll(".pref-tag, .pref-clear").forEach(n => n.remove());
+  const sorted = [...loadedPrefs].sort();
+  sorted.forEach(c => {
+    const span = document.createElement("span");
+    span.className = "pref-tag";
+    span.dataset.code = c;
+    span.innerHTML = `${PREFECTURES[c]}<button class="pref-tag-x" data-code="${c}">✕</button>`;
+    span.querySelector(".pref-tag-x").addEventListener("click", e => { e.stopPropagation(); removePref(c); });
+    el.appendChild(span);
+  });
+  if(sorted.length >= 2){
+    const btn = document.createElement("button");
+    btn.className = "pref-clear";
+    btn.textContent = "全クリア";
+    btn.addEventListener("click", clearAllPrefs);
+    el.appendChild(btn);
+  }
+}
+function removePref(code){
+  loadedPrefs.delete(code);
+  currentItems = currentItems.filter(t => t._pref !== code);
+  updatePrefLabel();
+  if(loadedPrefs.size === 0){
+    $("prefSelect").value = "";
+  } else {
+    $("prefSelect").value = [...loadedPrefs][0];
+  }
+  render();
+}
+function clearAllPrefs(){
+  loadedPrefs.clear();
+  currentItems = [];
+  updatePrefLabel();
+  $("prefSelect").value = "";
+  render();
 }
 async function switchPref(code, replace=true){
   if(!code) return;
@@ -1471,12 +1519,13 @@ function afterLoad(){
 // ================= UIイベント =================
 const sel = $("prefSelect");
 // JSオブジェクトは"10"以降の整数風キーが"01"〜"09"より先に並ぶため、明示的にコード順へソートする
-sel.innerHTML = '<option value="">都道府県を選ぶ</option>' +
+sel.innerHTML = '<option value="">＋ 県を追加</option>' +
   Object.entries(PREFECTURES).sort((a,b)=>a[0].localeCompare(b[0]))
     .map(([c,n])=>`<option value="${c}">${n}</option>`).join("");
 sel.addEventListener("change",e=>{
   const code = e.target.value;
   if(!code) return;
+  sel.value = "";
   if(loadedPrefs.has(code)){
     toast(`${PREFECTURES[code]}は読み込み済みです`);
     return;
@@ -1814,11 +1863,11 @@ window.addEventListener("resize",()=>{
   map.resize();
 });
 
-// ヘッダーの要素を地図上フローティングに移動
+// ヘッダーの要素を地図上フローティング / パネルに移動
 {
   const mf = $("mapFloat");
-  mf.appendChild($("prefSelect"));
   mf.appendChild($("locateBtn"));
+  $("prefTags").prepend($("prefSelect"));
 }
 
 // 固定レイアウトなのでページ自体は絶対にスクロールさせない
