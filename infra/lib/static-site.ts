@@ -49,6 +49,14 @@ export class StaticSite extends Construct {
         ]
       : [];
 
+    const longCachePolicy = new cloudfront.CachePolicy(this, "LongCachePolicy", {
+      defaultTtl: cdk.Duration.days(30),
+      maxTtl: cdk.Duration.days(365),
+      minTtl: cdk.Duration.seconds(0),
+      enableAcceptEncodingGzip: true,
+      enableAcceptEncodingBrotli: true,
+    });
+
     this.distribution = new cloudfront.Distribution(this, "Distribution", {
       domainNames: [props.subdomain],
       certificate: props.certificate,
@@ -58,7 +66,7 @@ export class StaticSite extends Construct {
         origin: origins.S3BucketOrigin.withOriginAccessControl(this.bucket),
         viewerProtocolPolicy:
           cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        cachePolicy: longCachePolicy,
         compress: true,
       },
       errorResponses,

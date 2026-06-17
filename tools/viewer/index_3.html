@@ -2042,14 +2042,64 @@ async function open3DView(t){
     terrGeo.setAttribute('position', new THREE.BufferAttribute(terrVerts, 3));
     terrGeo.setIndex(terrIdx);
     terrGeo.computeVertexNormals();
-    group.add(new THREE.Mesh(terrGeo, new THREE.MeshStandardMaterial({
+    const terrMat = new THREE.MeshStandardMaterial({
       color: 0x2d6b3a, roughness: .9, metalness: 0,
       transparent: true, opacity: .2, side: THREE.DoubleSide
-    })));
+    });
+    group.add(new THREE.Mesh(terrGeo, terrMat));
     group.add(new THREE.LineSegments(
       new THREE.WireframeGeometry(terrGeo),
       new THREE.LineBasicMaterial({color: 0x3a7a4d, transparent: true, opacity: .08})
     ));
+
+    // 地形スカート（bbox端の側面 + 底面）
+    {
+      const skirtDrop = 8;
+      const skirtZ = roadMinZ - skirtDrop;
+      const edges = [
+        {start: 0, step: 1, count: GRID},
+        {start: (GRID-1)*GRID, step: 1, count: GRID},
+        {start: 0, step: GRID, count: GRID},
+        {start: GRID-1, step: GRID, count: GRID},
+      ];
+      const skirtVerts = [];
+      const skirtIdx = [];
+      edges.forEach(edge => {
+        for(let k = 0; k < edge.count - 1; k++){
+          const i0 = edge.start + k * edge.step;
+          const i1 = edge.start + (k+1) * edge.step;
+          const ax = terrVerts[i0*3], ay = terrVerts[i0*3+1], az = terrVerts[i0*3+2];
+          const bx = terrVerts[i1*3], by = terrVerts[i1*3+1], bz = terrVerts[i1*3+2];
+          const base = skirtVerts.length / 3;
+          skirtVerts.push(ax,ay,az, bx,by,bz, bx,by,skirtZ, ax,ay,skirtZ);
+          skirtIdx.push(base,base+1,base+2, base,base+2,base+3);
+        }
+      });
+      const sideGeo = new THREE.BufferGeometry();
+      sideGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(skirtVerts), 3));
+      sideGeo.setIndex(skirtIdx);
+      sideGeo.computeVertexNormals();
+      group.add(new THREE.Mesh(sideGeo, new THREE.MeshStandardMaterial({
+        color: 0x2d6b3a, roughness: .9, metalness: 0,
+        transparent: true, opacity: .3, side: THREE.DoubleSide
+      })));
+      // 底面
+      const c0 = 0, c1 = GRID-1, c2 = (GRID-1)*GRID+GRID-1, c3 = (GRID-1)*GRID;
+      const floorVerts = new Float32Array([
+        terrVerts[c0*3],terrVerts[c0*3+1],skirtZ,
+        terrVerts[c1*3],terrVerts[c1*3+1],skirtZ,
+        terrVerts[c2*3],terrVerts[c2*3+1],skirtZ,
+        terrVerts[c3*3],terrVerts[c3*3+1],skirtZ
+      ]);
+      const floorGeo = new THREE.BufferGeometry();
+      floorGeo.setAttribute('position', new THREE.BufferAttribute(floorVerts, 3));
+      floorGeo.setIndex([0,2,1, 0,3,2]);
+      floorGeo.computeVertexNormals();
+      group.add(new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({
+        color: 0x2d6b3a, roughness: .9, metalness: 0,
+        transparent: true, opacity: .1, side: THREE.DoubleSide
+      })));
+    }
 
     // 道路中心線のXY座標（建物オフセット計算用）
     const roadXY = geomList.map(p => toXYZ(p[0], p[1], 0));

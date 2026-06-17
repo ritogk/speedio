@@ -7,7 +7,8 @@ target.slim.json を生成し、gzip圧縮(+Content-Encoding: gzip)でS3に併�
 - CloudFrontの自動圧縮は10MB超で効かないため、事前gzipで配信する
 - 座標は小数5桁(≈1m精度)に丸める
 
-usage: python3 build_slim_targets.py [pref_code ...]   # 省略時は全県
+usage: python3 build_slim_targets.py [--local] [pref_code ...]   # 省略時は全県
+       --local: S3にアップせず tools/viewer/targets/ に直接書き出す
 """
 import gzip
 import json
@@ -26,6 +27,7 @@ from analyzer.analysis.column_generater_module.core.linstring_to_polygon import 
 
 BUCKET = "speedio-old-viewer-788594208758"
 LOCAL_TARGETS = Path(__file__).resolve().parents[2] / "data" / "targets"
+VIEWER_TARGETS = Path(__file__).resolve().parents[2] / "tools" / "viewer" / "targets"
 PREFS = [f"{i:02d}" for i in range(1, 48)]
 
 
@@ -122,7 +124,9 @@ def slim_touge(t, cur=None):
 
 
 def main():
-    prefs = sys.argv[1:] or PREFS
+    args = sys.argv[1:]
+    local_mode = "--local" in args
+    prefs = [a for a in args if a != "--local"] or PREFS
     conn = psycopg2.connect(host="localhost", dbname="speedia", user="postgres", password="postgres")
     cur = conn.cursor()
     try:
@@ -131,21 +135,27 @@ def main():
             if not raw_path.exists():
                 print(f"[{code}] SKIP (local target.json not found)")
                 continue
-            dst = f"s3://{BUCKET}/targets/{code}/target.slim.json"
             data = json.loads(raw_path.read_text())
             slim = [slim_touge(t, cur) for t in data]
             body = json.dumps(slim, ensure_ascii=False, separators=(",", ":")).encode()
-            with tempfile.TemporaryDirectory() as tmp:
-                gz_path = Path(tmp) / "target.slim.json"
-                gz_path.write_bytes(gzip.compress(body, 9))
-                subprocess.run([
-                    "aws", "s3", "cp", str(gz_path), dst,
-                    "--content-type", "application/json",
-                    "--content-encoding", "gzip",
-                    "--cache-control", "public, max-age=86400",
-                    "--only-show-errors",
-                ], check=True)
-            print(f"[{code}] {raw_path.stat().st_size/1e6:6.1f}MB -> slim {len(body)/1e6:5.2f}MB -> gzip {len(gzip.compress(body,9))/1e6:5.2f}MB ({len(slim)}件)")
+            if local_mode:
+                out_dir = VIEWER_TARGETS / code
+                out_dir.mkdir(parents=True, exist_ok=True)
+                (out_dir / "target.slim.json").write_bytes(body)
+                print(f"[{code}] {len(body)/1e6:5.2f}MB ({len(slim)}件) -> {out_dir / 'target.slim.json'}")
+            else:
+                dst = f"s3://{BUCKET}/targets/{code}/target.slim.json"
+                with tempfile.TemporaryDirectory() as tmp:
+                    gz_path = Path(tmp) / "target.slim.json"
+                    gz_path.write_bytes(gzip.compress(body, 9))
+                    subprocess.run([
+                        "aws", "s3", "cp", str(gz_path), dst,
+                        "--content-type", "application/json",
+                        "--content-encoding", "gzip",
+                        "--cache-control", "public, max-age=2592000",
+                        "--only-show-errors",
+                    ], check=True)
+                print(f"[{code}] {raw_path.stat().st_size/1e6:6.1f}MB -> slim {len(body)/1e6:5.2f}MB -> gzip {len(gzip.compress(body,9))/1e6:5.2f}MB ({len(slim)}件)")
     finally:
         cur.close()
         conn.close()
