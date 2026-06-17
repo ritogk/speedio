@@ -1184,7 +1184,7 @@ function streetViewUrl(poly){
 function rankedList(){
   if(currentPreset === "corner"){
     return [...currentItems]
-      .map(t=>({...t,_s:t.corner ?? 0}))
+      .map(t=>({...t,_s:t.pctStrong*3 + t.pctMedium*2 + t.pctWeak*1}))
       .sort((a,b)=>b._s-a._s);
   }
   if(currentPreset === "updown"){
