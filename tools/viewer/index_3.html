@@ -2083,6 +2083,12 @@ if(localStorage.getItem("touge.admin") === "true"){
       const v = parseFloat(inp.value);
       if(!isNaN(v)) BALANCE_WEIGHTS[inp.dataset.w] = v;
     });
+    document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
+    document.querySelector('.chip[data-preset="balance"]').setAttribute("aria-pressed","true");
+    currentPreset = "balance";
+    distanceFilter = null;
+    $("presetHint").textContent = presetHints.balance;
+    visibleCount = PAGE_N;
     render();
     toast("重みを適用しました");
   });
