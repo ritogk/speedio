@@ -440,6 +440,25 @@ main{flex:1;position:relative;min-height:0}
   .print-page{max-width:none;padding:10mm}
   .print-canvas-wrap canvas{border:none}
 }
+
+.weight-panel{
+  position:absolute;right:10px;bottom:10px;z-index:1300;
+  background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:var(--radius);
+  padding:10px 12px;font-size:11px;width:220px;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);display:none;
+}
+.weight-panel.show{display:block}
+.weight-panel h4{font-size:11px;font-weight:700;margin-bottom:6px}
+.weight-panel label{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.weight-panel label span{width:80px;flex-shrink:0;text-align:right}
+.weight-panel input[type="number"]{width:50px;font:inherit;font-size:11px;border:1px solid var(--line);border-radius:4px;padding:2px 4px;text-align:right}
+.weight-panel button{margin-top:6px;width:100%;font:inherit;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--line);border-radius:6px;background:var(--paper-deep);padding:5px;color:var(--ink)}
+.weight-panel button:hover{border-color:var(--accent);color:var(--accent)}
+@media (max-width:760px){
+  .weight-panel{right:6px;bottom:calc(96px + 50px);width:200px;font-size:10px}
+  .weight-panel label span{width:70px}
+  .weight-panel input[type="number"]{width:44px}
+}
 </style>
 </head>
 <body>
@@ -474,6 +493,23 @@ main{flex:1;position:relative;min-height:0}
         <li><span class="swatch" style="background:var(--corner-weak)"></span>高速</li>
         <li><span class="swatch" style="background:var(--straight)"></span>ストレート</li>
       </ul>
+    </div>
+
+    <div class="weight-panel" id="weightPanel">
+      <h4>重み調整</h4>
+      <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
+      <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
+      <label><span>道幅</span><input type="number" step="0.1" data-w="width"></label>
+      <label><span>距離</span><input type="number" step="0.1" data-w="length"></label>
+      <label><span>建物</span><input type="number" step="0.1" data-w="building"></label>
+      <label><span>トンネル外</span><input type="number" step="0.1" data-w="tunnel_outside"></label>
+      <label><span>コーナー弱</span><input type="number" step="0.1" data-w="corner_week"></label>
+      <label><span>コーナー中</span><input type="number" step="0.1" data-w="corner_medium"></label>
+      <label><span>コーナー強</span><input type="number" step="0.1" data-w="corner_strong"></label>
+      <label><span>直線</span><input type="number" step="0.1" data-w="corner_none"></label>
+      <label><span>C.バランス</span><input type="number" step="0.1" data-w="corner_balance"></label>
+      <label><span>中央線</span><input type="number" step="0.1" data-w="claude_center_line_section"></label>
+      <button id="weightApply">適用</button>
     </div>
   </div>
 
@@ -595,14 +631,29 @@ const presetHints = {
   seclusion:"建物が少ない秘境度の高い道を上位にします。",
   uphill:"アップダウンの回数が多い道を上位にします。"
 };
-const presetWeights = {
-  balance:{corner:1,updown:1,width:1},
-  corner:{corner:2.2,updown:0.7,width:0.8},
-  updown:{corner:0.7,updown:2.2,width:0.8},
-  nearby:{corner:1,updown:1,width:1},
-  seclusion:{corner:1,updown:1,width:1},
-  uphill:{corner:1,updown:1,width:1}
+const BALANCE_WEIGHTS = {
+  elevation:0.7, elevation_unevenness:1, width:1.3, length:0.7,
+  building:1, tunnel_outside:1,
+  corner_week:1, corner_medium:1.3, corner_strong:1, corner_none:1.3,
+  corner_balance:1, claude_center_line_section:1.3
 };
+const BALANCE_DIVISOR = Object.keys(BALANCE_WEIGHTS).length;
+function calcBalanceScore(t, w){
+  return (
+    t.scoreElevation * w.elevation +
+    t.scoreElevationUnevenness * w.elevation_unevenness +
+    t.scoreWidth * w.width +
+    t.scoreLength * w.length +
+    t.scoreBuilding * w.building +
+    t.scoreTunnelOutside * w.tunnel_outside +
+    (t.scoreCornerWeek * w.corner_week +
+     t.scoreCornerMedium * w.corner_medium +
+     t.scoreCornerStrong * w.corner_strong +
+     t.scoreCornerNone * w.corner_none) +
+    t.scoreCornerBalance * w.corner_balance +
+    t.scoreClaudeCenterLineSection * w.claude_center_line_section
+  ) / BALANCE_DIVISOR;
+}
 let currentPreset = "balance";
 let userLatLng = null;
 let distanceFilter = null;
@@ -1063,6 +1114,18 @@ function toViewModel(raw, idx){
     pctWeak: Math.round(segWeak/segTotal*100),
     pctStraight: Math.round(segStraight/segTotal*100),
     corner, updown, width,
+    scoreElevation: raw.score_elevation ?? 0,
+    scoreElevationUnevenness: raw.score_elevation_unevenness ?? 0,
+    scoreWidth: raw.score_width ?? 0,
+    scoreLength: raw.score_length ?? 0,
+    scoreBuilding: raw.score_building ?? 0,
+    scoreTunnelOutside: raw.score_tunnel_outside ?? 0,
+    scoreCornerWeek: raw.score_corner_week ?? 0,
+    scoreCornerMedium: raw.score_corner_medium ?? 0,
+    scoreCornerStrong: raw.score_corner_strong ?? 0,
+    scoreCornerNone: raw.score_corner_none ?? 0,
+    scoreCornerBalance: raw.score_corner_balance ?? 0,
+    scoreClaudeCenterLineSection: raw.score_claude_center_line_section ?? 0,
     unevennessCount: raw.elevation_unevenness_count ?? null,
     uphillCnt: raw.uphill_cnt ?? null,
     downhillCnt: raw.downhill_cnt ?? null,
@@ -1115,10 +1178,8 @@ function rankedList(){
       .map(t=>({...t,_s:t.unevennessCount ?? 0}))
       .sort((a,b)=>b._s-a._s);
   }
-  const w = presetWeights[currentPreset];
-  const sum = w.corner + w.updown + w.width;
   return [...currentItems]
-    .map(t=>({...t,_s:(t.corner*w.corner + t.updown*w.updown + t.width*w.width)/sum}))
+    .map(t=>({...t,_s:calcBalanceScore(t, BALANCE_WEIGHTS)}))
     .sort((a,b)=>b._s-a._s);
 }
 const PAGE_N = 30;
@@ -2009,6 +2070,23 @@ window.addEventListener("scroll",()=>{
 
 window.addEventListener("beforeunload", ()=> saveFilter());
 document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilter(); });
+
+// ================= 重み調整パネル（管理者のみ） =================
+if(localStorage.getItem("touge.admin") === "true"){
+  const wp = $("weightPanel");
+  wp.classList.add("show");
+  wp.querySelectorAll("input[data-w]").forEach(inp=>{
+    inp.value = BALANCE_WEIGHTS[inp.dataset.w];
+  });
+  $("weightApply").addEventListener("click",()=>{
+    wp.querySelectorAll("input[data-w]").forEach(inp=>{
+      const v = parseFloat(inp.value);
+      if(!isNaN(v)) BALANCE_WEIGHTS[inp.dataset.w] = v;
+    });
+    render();
+    toast("重みを適用しました");
+  });
+}
 
 // ================= 3Dオーバーレイ =================
 let active3D = null;
