@@ -2076,6 +2076,7 @@ if(localStorage.getItem("touge.admin") === "true"){
   wp.querySelectorAll("input[data-w]").forEach(inp=>{
     inp.value = BALANCE_WEIGHTS[inp.dataset.w];
   });
+  wp.addEventListener("keydown",e=>{ if(e.key==="Enter") $("weightApply").click(); });
   $("weightApply").addEventListener("click",()=>{
     wp.querySelectorAll("input[data-w]").forEach(inp=>{
       const v = parseFloat(inp.value);
