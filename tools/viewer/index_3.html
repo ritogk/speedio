@@ -1460,9 +1460,8 @@ function removePref(code){
     $("prefSelect").value = "";
     try{ localStorage.removeItem("touge.pref"); }catch(e){}
   } else {
-    const first = [...loadedPrefs][0];
-    $("prefSelect").value = first;
-    try{ localStorage.setItem("touge.pref", first); }catch(e){}
+    $("prefSelect").value = "";
+    try{ localStorage.setItem("touge.pref", [...loadedPrefs][0]); }catch(e){}
   }
   render();
 }
