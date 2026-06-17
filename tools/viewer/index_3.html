@@ -1986,11 +1986,13 @@ async function open3DView(t){
       (elev - baseElev) * Z_SCALE
     ];
 
-    const PAD_RATIO = 0.2;
-    const gMinLat = minLat - (maxLat - minLat) * PAD_RATIO;
-    const gMaxLat = maxLat + (maxLat - minLat) * PAD_RATIO;
-    const gMinLng = minLng - (maxLng - minLng) * PAD_RATIO;
-    const gMaxLng = maxLng + (maxLng - minLng) * PAD_RATIO;
+    const BBOX_PAD = 8;
+    const padLat = BBOX_PAD / (DEG2M * SCALE);
+    const padLng = BBOX_PAD / (DEG2M * cosLat * SCALE);
+    const gMinLat = minLat - padLat;
+    const gMaxLat = maxLat + padLat;
+    const gMinLng = minLng - padLng;
+    const gMaxLng = maxLng + padLng;
     const GRID = 35;
     const gridPts = [];
     for(let j = 0; j < GRID; j++)
@@ -2021,10 +2023,16 @@ async function open3DView(t){
 
     const group = new THREE.Group();
 
+    let roadMinZ = Infinity;
+    for(let i = 0; i < geomList.length; i++){
+      const z = ((elevSmooth[i] ?? 0) - baseElev) * Z_SCALE + 0.3;
+      if(z < roadMinZ) roadMinZ = z;
+    }
+
     const terrVerts = new Float32Array(GRID * GRID * 3);
     for(let i = 0; i < gridPts.length; i++){
       const [x, y, z] = toXYZ(gridPts[i][0], gridPts[i][1], gridElevs[i]);
-      terrVerts[i*3] = x; terrVerts[i*3+1] = y; terrVerts[i*3+2] = z;
+      terrVerts[i*3] = x; terrVerts[i*3+1] = y; terrVerts[i*3+2] = Math.max(z, roadMinZ);
     }
     const terrIdx = [];
     for(let j = 0; j < GRID - 1; j++)
@@ -2238,7 +2246,7 @@ async function open3DView(t){
         rMinY=Math.min(rMinY,p.y);rMaxY=Math.max(rMaxY,p.y);
         rMinZ=Math.min(rMinZ,p.z);rMaxZ=Math.max(rMaxZ,p.z);
       });
-      const pad = 8;
+      const pad = BBOX_PAD;
       rMinX-=pad;rMaxX+=pad;rMinY-=pad;rMaxY+=pad;
 
       const dashMat = new THREE.LineDashedMaterial({
