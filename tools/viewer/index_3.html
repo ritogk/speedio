@@ -1784,7 +1784,102 @@ $("locateBtn").addEventListener("click",()=>{
     {enableHighAccuracy:false, timeout:10000, maximumAge:300000}
   );
 });
-$("locateBtn").click();
+async function restoreFilter(){
+  try{
+    const raw = localStorage.getItem("touge.loadedPrefs");
+    if(!raw) return false;
+    const codes = JSON.parse(raw).filter(c => PREFECTURES[c]);
+    if(!codes.length) return false;
+    const savedPreset = localStorage.getItem("touge.preset");
+    if(savedPreset && presetHints[savedPreset]){
+      currentPreset = savedPreset;
+      document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
+      const chip = document.querySelector(`.chip[data-preset="${savedPreset}"]`);
+      if(chip) chip.setAttribute("aria-pressed","true");
+      $("presetHint").textContent = presetHints[savedPreset];
+    }
+    const savedDist = localStorage.getItem("touge.distanceFilter");
+    if(savedDist!=null) distanceFilter = Number(savedDist);
+    const savedLatLng = localStorage.getItem("touge.userLatLng");
+    if(savedLatLng){
+      userLatLng = JSON.parse(savedLatLng);
+      placeLocMarker(userLatLng[1], userLatLng[0]);
+      drawRangeRings(userLatLng[0], userLatLng[1]);
+    }
+    loadedPrefs.clear();
+    codes.forEach(c=>loadedPrefs.add(c));
+    updatePrefLabel();
+    showLoading(true, `${codes.length}県のデータを復元中…`);
+    const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
+    const seen = new Set();
+    currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
+    showLoading(false);
+    render();
+    if(window.innerWidth<=760) setSheet("half");
+    const b = new maplibregl.LngLatBounds();
+    lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
+    if(!b.isEmpty()){
+      const doFit = ()=> map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
+      if(mapReady) doFit(); else map.once("load", doFit);
+    }
+    return true;
+  }catch(e){ return false; }
+}
+async function initialLoad(){
+  if(!navigator.geolocation) return;
+  showLoading(true, "現在地を取得中…");
+  navigator.geolocation.getCurrentPosition(
+    async pos=>{
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      userLatLng = [lat, lng];
+      placeLocMarker(lng, lat);
+      drawRangeRings(lat, lng);
+      let code = null;
+      try{
+        const ac = new AbortController();
+        const tid = setTimeout(()=>ac.abort(), 5000);
+        const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`, {signal:ac.signal});
+        clearTimeout(tid);
+        if(res.ok){
+          const data = await res.json();
+          const muni = data?.results?.muniCd;
+          if(muni) code = String(muni).padStart(5,"0").slice(0,2);
+        }
+      }catch(err){}
+      if(code && PREFECTURES[code]){
+        const codes = [code, ...(ADJACENT[code]||[])];
+        codes.forEach(c=>loadedPrefs.add(c));
+        updatePrefLabel();
+        showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
+        const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
+        const seen = new Set();
+        currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
+        showLoading(false);
+        toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県を読み込みました`);
+        saveFilter();
+        render();
+        if(window.innerWidth<=760) setSheet("half");
+        const b = new maplibregl.LngLatBounds();
+        lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
+        if(!b.isEmpty()){
+          const doFit = ()=> map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
+          if(mapReady) doFit(); else map.once("load", doFit);
+        }
+      }else{
+        showLoading(false);
+        toast("現在地の都道府県を判定できませんでした");
+      }
+    },
+    ()=>{
+      showLoading(false);
+      toast("位置情報を取得できませんでした");
+    },
+    {enableHighAccuracy:false, timeout:10000, maximumAge:300000}
+  );
+}
+restoreFilter().then(restored => {
+  if(!restored) initialLoad();
+});
 
 // ===== スマホ用ビュー操作 =====
 // 長押し: なめらかに回転し続ける / 短いタップ: 45°だけ回転（+初回はヒント表示）
