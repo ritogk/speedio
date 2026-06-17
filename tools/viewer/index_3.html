@@ -397,6 +397,49 @@ main{flex:1;position:relative;min-height:0}
   .side-handle:hover{color:var(--ink);background:var(--paper-deep)}
   .panel.hidden-side .side-handle .chevron{transform:scaleX(-1)}
 }
+
+.print-overlay{
+  position:fixed;inset:0;z-index:2500;
+  background:#fff;display:none;flex-direction:column;overflow:auto;
+}
+.print-overlay.show{display:flex}
+.print-toolbar{
+  position:sticky;top:0;z-index:10;
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px;background:#fff;border-bottom:1px solid var(--line);
+}
+.print-close{
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--line);background:var(--paper-deep);
+  font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.print-exec{
+  font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  border:none;border-radius:6px;
+  background:var(--accent);color:#fff;padding:8px 18px;margin-left:auto;
+}
+.print-page{max-width:800px;width:100%;margin:0 auto;padding:24px 20px 40px}
+.print-page h2{font-size:20px;font-weight:700;margin-bottom:2px}
+.print-route-label{font-size:13px;color:var(--ink-soft);margin-bottom:8px}
+.print-meta{font-size:14px;margin-bottom:6px;line-height:1.7}
+.print-meta b{font-weight:600}
+.print-bars{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.print-bars .stacked{flex:1;height:10px;border-radius:5px}
+.print-bars-label{font-size:12px;color:var(--ink-soft);white-space:nowrap}
+.print-canvas-wrap canvas{width:100%;display:block;border:1px solid var(--line);border-radius:var(--radius)}
+.print-legend-row{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--ink-soft)}
+.print-legend-row span{display:flex;align-items:center;gap:5px}
+.print-legend-row i{width:20px;height:5px;border-radius:3px;display:inline-block}
+@media print{
+  html,body{height:auto !important;overflow:visible !important}
+  body{display:block !important}
+  main{display:block !important;overflow:visible !important;height:auto !important;position:static !important}
+  header,.map-area,.panel,.loading-overlay,.toast,.overlay-3d{display:none !important}
+  .print-overlay{position:static !important;display:flex !important;overflow:visible !important;height:auto !important}
+  .print-toolbar{display:none !important}
+  .print-page{max-width:none;padding:10mm}
+  .print-canvas-wrap canvas{border:none}
+}
 </style>
 </head>
 <body>
@@ -478,6 +521,26 @@ main{flex:1;position:relative;min-height:0}
     </div>
     <div class="overlay-3d-legend" id="legend3d"></div>
     <div class="overlay-3d-hint">1本指で回転 ・ 2本指で移動/ズーム</div>
+  </div>
+
+  <div class="print-overlay" id="printOverlay">
+    <div class="print-toolbar">
+      <button class="print-close" id="closePrint">✕</button>
+      <button class="print-exec" id="execPrint">🖨 印刷する</button>
+    </div>
+    <div class="print-page">
+      <h2 id="printName"></h2>
+      <div class="print-route-label" id="printRouteLabel"></div>
+      <div class="print-meta" id="printMeta"></div>
+      <div class="print-bars" id="printBars"></div>
+      <div class="print-canvas-wrap"><canvas id="printCanvas"></canvas></div>
+      <div class="print-legend-row">
+        <span><i style="background:#FF453A"></i>低速コーナー</span>
+        <span><i style="background:#FF9F0A"></i>中速</span>
+        <span><i style="background:#30D158"></i>高速</span>
+        <span><i style="background:#98989D"></i>ストレート</span>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -1079,6 +1142,7 @@ function cardHtml(t, rank, total){
         <button class="btn primary" data-act="nav" data-poly='${JSON.stringify(t.poly)}'>🚗 行く</button>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">👁 路面</a>`:""}
         <button class="btn" data-act="3d"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 9l10 6 10-6-10-6z"/><path d="M2 15l10 6 10-6"/><path d="M2 9v6"/><path d="M22 9v6"/></svg> 3D</button>
+        <button class="btn" data-act="print">🖨 印刷</button>
       </div>
       <div class="thumb" data-tid="${t.id}"><span class="thumb-spin"></span></div>
     </article>`;
@@ -1119,6 +1183,11 @@ function renderCards(){
       if(e.target.closest('[data-act="3d"]')){
         const t = ranked.find(x=>x.id === Number(card.dataset.id));
         if(t) open3DView(t);
+        return;
+      }
+      if(e.target.closest('[data-act="print"]')){
+        const t = ranked.find(x=>x.id === Number(card.dataset.id));
+        if(t) openPrintView(t);
         return;
       }
       const t = ranked.find(x=>x.id === Number(card.dataset.id));
@@ -2491,7 +2560,106 @@ function close3DView(){
 }
 
 $("close3d").addEventListener("click", close3DView);
-document.addEventListener("keydown", e => { if(e.key === "Escape" && active3D) close3DView(); });
+
+// ================= 印刷プレビュー =================
+function openPrintView(t){
+  $("printName").textContent = t.name;
+  $("printRouteLabel").textContent = t.routeLabel;
+  $("printMeta").innerHTML = `全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b>`
+    + (t.unevennessCount != null ? ` ・ 起伏 <b>${t.unevennessCount}回</b>` : '')
+    + (t.buildingCnt != null ? ` ・ 建物 <b>${t.buildingCnt}棟</b>` : '');
+  $("printBars").innerHTML =
+    `<span class="print-bars-label">コーナー ${t.pctStrong+t.pctMedium+t.pctWeak}%</span>`
+    + `<div class="stacked"><span style="width:${t.pctStrong}%;background:#FF453A"></span>`
+    + `<span style="width:${t.pctMedium}%;background:#FF9F0A"></span>`
+    + `<span style="width:${t.pctWeak}%;background:#30D158"></span>`
+    + `<span style="width:${t.pctStraight}%;background:#98989D"></span></div>`;
+  const canvas = $("printCanvas");
+  const dpr = 2;
+  canvas.width = 760 * dpr;
+  canvas.height = 500 * dpr;
+  renderPrintCanvas(t, canvas, dpr);
+  $("printOverlay").classList.add("show");
+}
+
+function renderPrintCanvas(t, canvas, dpr){
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const PAD = 40 * dpr;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, W, H);
+  const secs = t.roadSection || [];
+  const allPts = [];
+  if(secs.length){
+    secs.forEach(sec => (sec.points||[]).forEach(p => allPts.push(p)));
+  }
+  const usePoly = !allPts.length && t.poly.length >= 2;
+  if(usePoly) t.poly.forEach(p => allPts.push([p[1], p[0]]));
+  if(allPts.length < 2) return;
+  let minLng=Infinity, maxLng=-Infinity, minLat=Infinity, maxLat=-Infinity;
+  allPts.forEach(p => {
+    minLng = Math.min(minLng, p[0]); maxLng = Math.max(maxLng, p[0]);
+    minLat = Math.min(minLat, p[1]); maxLat = Math.max(maxLat, p[1]);
+  });
+  const cosLat = Math.cos((minLat+maxLat)/2*Math.PI/180);
+  const spanX = (maxLng-minLng)*cosLat || 1e-9;
+  const spanY = (maxLat-minLat) || 1e-9;
+  const scale = Math.min((W-PAD*2)/spanX, (H-PAD*2)/spanY);
+  const cx = W/2, cy = H/2;
+  const midLng = (minLng+maxLng)/2, midLat = (minLat+maxLat)/2;
+  const toXY = (lng, lat) => [
+    cx + (lng-midLng)*cosLat*scale,
+    cy - (lat-midLat)*scale
+  ];
+  const colors = {strong:'#FF453A', medium:'#FF9F0A', weak:'#30D158', straight:'#98989D', none:'#98989D'};
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#D8D8D8';
+  ctx.lineWidth = 8 * dpr;
+  if(secs.length){
+    secs.forEach(sec => {
+      const pts = sec.points || [];
+      if(pts.length < 2) return;
+      ctx.beginPath();
+      pts.forEach((p,i) => { const [x,y]=toXY(p[0],p[1]); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+      ctx.stroke();
+    });
+  }else{
+    ctx.beginPath();
+    t.poly.forEach((p,i) => { const [x,y]=toXY(p[1],p[0]); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.stroke();
+  }
+  ctx.lineWidth = 5 * dpr;
+  if(secs.length){
+    secs.forEach(sec => {
+      const pts = sec.points || [];
+      if(pts.length < 2) return;
+      const lv = sec.section_type === 'straight' ? 'straight' : (sec.corner_level || 'weak');
+      ctx.strokeStyle = colors[lv] || colors.straight;
+      ctx.beginPath();
+      pts.forEach((p,i) => { const [x,y]=toXY(p[0],p[1]); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+      ctx.stroke();
+    });
+  }else{
+    ctx.strokeStyle = colors.weak;
+    ctx.beginPath();
+    t.poly.forEach((p,i) => { const [x,y]=toXY(p[1],p[0]); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.stroke();
+  }
+}
+
+function closePrintView(){
+  $("printOverlay").classList.remove("show");
+}
+
+$("closePrint").addEventListener("click", closePrintView);
+$("execPrint").addEventListener("click", () => window.print());
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape"){
+    if($("printOverlay").classList.contains("show")) closePrintView();
+    else if(active3D) close3DView();
+  }
+});
 }
 
 // ===== MapLibreローダー（CDNフォールバック付き） =====
