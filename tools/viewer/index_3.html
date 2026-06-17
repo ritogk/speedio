@@ -1538,6 +1538,13 @@ sel.addEventListener("change",e=>{
     toast(`${PREFECTURES[code]}は読み込み済みです`);
     return;
   }
+  if(currentPreset === "nearby"){
+    document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
+    document.querySelector('.chip[data-preset="balance"]').setAttribute("aria-pressed","true");
+    currentPreset = "balance";
+    distanceFilter = null;
+    $("presetHint").textContent = presetHints.balance;
+  }
   switchPref(code, loadedPrefs.size === 0);
 });
 {
