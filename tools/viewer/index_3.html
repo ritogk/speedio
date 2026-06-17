@@ -448,7 +448,7 @@ main{flex:1;position:relative;min-height:0}
   <div class="logo">峠</div>
   <h1>峠サーチャー <span style="font-size:11px;color:var(--ink-soft)">3D</span></h1>
   <select class="pref-select" id="prefSelect" aria-label="都道府県を選択"></select>
-  <button class="locate-btn" id="locateBtn">📍<span class="locate-label"> 現在地</span></button>
+  <button class="locate-btn" id="locateBtn">📍<span class="locate-label"> 周辺を探す</span></button>
 </header>
 
 <main>
@@ -1495,6 +1495,15 @@ map.on("render", drawGhost); // カメラ移動・地形読み込みに毎フレ
 
 // ================= 県の読み込み =================
 const loadedPrefs = new Set();
+function saveFilter(){
+  try{
+    localStorage.setItem("touge.loadedPrefs", JSON.stringify([...loadedPrefs]));
+    localStorage.setItem("touge.preset", currentPreset);
+    if(distanceFilter!=null) localStorage.setItem("touge.distanceFilter", String(distanceFilter));
+    else localStorage.removeItem("touge.distanceFilter");
+    if(userLatLng) localStorage.setItem("touge.userLatLng", JSON.stringify(userLatLng));
+  }catch(e){}
+}
 function updatePrefLabel(){
   const names = [...loadedPrefs].sort().map(c=>PREFECTURES[c]).filter(Boolean);
   $("prefName").textContent = names.length ? names.join("・") : "未選択";
@@ -1525,13 +1534,8 @@ function removePref(code){
   loadedPrefs.delete(code);
   currentItems = currentItems.filter(t => t._pref !== code);
   updatePrefLabel();
-  if(loadedPrefs.size === 0){
-    $("prefSelect").value = "";
-    try{ localStorage.removeItem("touge.pref"); }catch(e){}
-  } else {
-    $("prefSelect").value = "";
-    try{ localStorage.setItem("touge.pref", [...loadedPrefs][0]); }catch(e){}
-  }
+  $("prefSelect").value = "";
+  saveFilter();
   render();
 }
 function clearAllPrefs(){
@@ -1539,7 +1543,7 @@ function clearAllPrefs(){
   currentItems = [];
   updatePrefLabel();
   $("prefSelect").value = "";
-  try{ localStorage.removeItem("touge.pref"); }catch(e){}
+  saveFilter();
   render();
 }
 async function switchPref(code, replace=true){
@@ -1554,7 +1558,7 @@ async function switchPref(code, replace=true){
   }
   loadedPrefs.add(code);
   updatePrefLabel();
-  try{ localStorage.setItem("touge.pref", code); }catch(e){}
+  saveFilter();
   showLoading(true, `${PREFECTURES[code]}のデータを読み込み中…`);
   try{
     const items = await fetchPrefItems(code);
@@ -1651,6 +1655,7 @@ async function activateNearby(lat, lng){
     loadedPrefs.clear();
     codes.forEach(c=>loadedPrefs.add(c));
     updatePrefLabel();
+    saveFilter();
     showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
     const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
     const seen = new Set();
@@ -1681,6 +1686,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
         navigator.geolocation.getCurrentPosition(async pos=>{
           const lat = pos.coords.latitude, lng = pos.coords.longitude;
           userLatLng = [lat, lng];
+          saveFilter();
           placeLocMarker(lng, lat);
           drawRangeRings(lat, lng);
           await activateNearby(lat, lng);
@@ -1705,7 +1711,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
       chip.setAttribute("aria-pressed","true");
       currentPreset = preset;
     }
-    if(currentPreset !== "nearby") try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
+    saveFilter();
     $("presetHint").textContent = presetHints[currentPreset];
     visibleCount = PAGE_N;
     render();
@@ -1764,6 +1770,7 @@ $("locateBtn").addEventListener("click",()=>{
     async pos=>{
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
       userLatLng = [lat, lng];
+      saveFilter();
       placeLocMarker(lng, lat);
       drawRangeRings(lat, lng);
       await activateNearby(lat, lng);
@@ -1909,6 +1916,9 @@ window.addEventListener("resize",()=>{
 window.addEventListener("scroll",()=>{
   if(window.scrollX || window.scrollY) window.scrollTo(0,0);
 });
+
+window.addEventListener("beforeunload", ()=> saveFilter());
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilter(); });
 
 // ================= 3Dオーバーレイ =================
 let active3D = null;
