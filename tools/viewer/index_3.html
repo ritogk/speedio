@@ -47,7 +47,7 @@ header{display:none}
   border:1px solid var(--line);border-radius:999px;
   background:var(--card);color:var(--ink);
   padding:5px 28px 5px 12px;cursor:pointer;
-  appearance:none;max-width:45vw;flex-shrink:0;
+  appearance:none;flex-shrink:0;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%231A1C1F' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 10px center;
 }
@@ -1541,9 +1541,10 @@ sel.addEventListener("change",e=>{
   switchPref(code, loadedPrefs.size === 0);
 });
 {
-  const longest = Object.values(PREFECTURES).reduce((a,b)=>a.length>=b.length?a:b);
+  const candidates = ["＋ 県を追加", ...Object.values(PREFECTURES)];
+  const longest = candidates.reduce((a,b)=>a.length>=b.length?a:b);
   const m = document.createElement("span");
-  m.style.cssText = "position:absolute;visibility:hidden;font:inherit;font-size:13px;font-weight:500;white-space:nowrap";
+  m.style.cssText = "position:absolute;visibility:hidden;font:inherit;font-size:12px;font-weight:500;white-space:nowrap";
   m.textContent = longest;
   document.body.appendChild(m);
   sel.style.width = (m.offsetWidth + 48) + "px";
