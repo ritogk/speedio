@@ -1495,7 +1495,7 @@ async function switchPref(code, replace=true){
       const seen = new Set(currentItems.map(t=>t.id));
       currentItems = [...currentItems, ...items.filter(t=>!seen.has(t.id))];
     }
-    afterLoad();
+    afterLoad(replace ? null : items);
   }catch(err){
     console.error(err);
     toast(`${PREFECTURES[code]}のデータを読み込めませんでした`);
@@ -1505,13 +1505,13 @@ async function switchPref(code, replace=true){
     showLoading(false);
   }
 }
-function afterLoad(){
+function afterLoad(focusItems){
   render();
-  const list = rankedList();
+  const list = focusItems || rankedList();
   if(list.length){
     const doFit = ()=>{
       const b = new maplibregl.LngLatBounds();
-      list.forEach(t=>b.extend([t.center[1], t.center[0]]));
+      list.forEach(t=>t.poly.forEach(p=>b.extend([p[1], p[0]])));
       map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
     };
     if(mapReady) doFit();
