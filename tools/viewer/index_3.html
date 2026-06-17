@@ -253,6 +253,10 @@ main{flex:1;position:relative;min-height:0}
   font-size:10px;font-weight:500;color:var(--ink-soft);
   border:1px solid var(--contour);border-radius:999px;padding:1px 8px;white-space:nowrap;
 }
+.loc-chip{
+  font-size:10px;font-weight:500;color:var(--ink-soft);
+  background:var(--paper-deep);border-radius:4px;padding:1px 6px;white-space:nowrap;
+}
 .card-top h3{font-size:14px;font-weight:700;flex-basis:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative}
 .card-top h3::after{
   content:attr(data-full);display:none;
@@ -448,12 +452,17 @@ main{flex:1;position:relative;min-height:0}
   box-shadow:0 2px 8px rgba(0,0,0,.15);display:none;
 }
 .weight-panel.show{display:block}
-.weight-panel h4{font-size:10px;font-weight:700;margin-bottom:4px}
+.weight-panel .wp-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.weight-panel h4{font-size:10px;font-weight:700;margin:0}
+.weight-panel .wp-toggle{font-size:12px;color:var(--ink-soft);background:none;border:none;cursor:pointer;padding:0 2px;line-height:1}
+.weight-panel .wp-body{margin-top:4px}
+.weight-panel.collapsed .wp-body{display:none}
+.weight-panel.collapsed{padding:4px 8px}
 .weight-panel label{display:flex;align-items:center;gap:3px;margin-bottom:2px}
 .weight-panel label span{width:62px;flex-shrink:0;text-align:right}
 .weight-panel input[type="number"]{width:42px;font:inherit;font-size:10px;border:1px solid var(--line);border-radius:3px;padding:1px 3px;text-align:right}
-.weight-panel button{margin-top:4px;width:100%;font:inherit;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--line);border-radius:4px;background:var(--paper-deep);padding:4px;color:var(--ink)}
-.weight-panel button:hover{border-color:var(--accent);color:var(--accent)}
+.weight-panel button.wp-apply{margin-top:4px;width:100%;font:inherit;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--line);border-radius:4px;background:var(--paper-deep);padding:4px;color:var(--ink)}
+.weight-panel button.wp-apply:hover{border-color:var(--accent);color:var(--accent)}
 @media (max-width:760px){
   .weight-panel{right:6px;bottom:calc(96px + 50px)}
 }
@@ -493,21 +502,26 @@ main{flex:1;position:relative;min-height:0}
       </ul>
     </div>
 
-    <div class="weight-panel" id="weightPanel">
-      <h4>重み調整</h4>
-      <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
-      <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
-      <label><span>道幅</span><input type="number" step="0.1" data-w="width"></label>
-      <label><span>距離</span><input type="number" step="0.1" data-w="length"></label>
-      <label><span>建物</span><input type="number" step="0.1" data-w="building"></label>
-      <label><span>トンネル外</span><input type="number" step="0.1" data-w="tunnel_outside"></label>
-      <label><span>コーナー弱</span><input type="number" step="0.1" data-w="corner_week"></label>
-      <label><span>コーナー中</span><input type="number" step="0.1" data-w="corner_medium"></label>
-      <label><span>コーナー強</span><input type="number" step="0.1" data-w="corner_strong"></label>
-      <label><span>直線</span><input type="number" step="0.1" data-w="corner_none"></label>
-      <label><span>C.バランス</span><input type="number" step="0.1" data-w="corner_balance"></label>
-      <label><span>中央線</span><input type="number" step="0.1" data-w="claude_center_line_section"></label>
-      <button id="weightApply">適用</button>
+    <div class="weight-panel collapsed" id="weightPanel">
+      <div class="wp-head" id="wpHead">
+        <h4>重み調整</h4>
+        <span class="wp-toggle" id="wpToggle">▲</span>
+      </div>
+      <div class="wp-body">
+        <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
+        <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
+        <label><span>道幅</span><input type="number" step="0.1" data-w="width"></label>
+        <label><span>距離</span><input type="number" step="0.1" data-w="length"></label>
+        <label><span>建物</span><input type="number" step="0.1" data-w="building"></label>
+        <label><span>トンネル外</span><input type="number" step="0.1" data-w="tunnel_outside"></label>
+        <label><span>コーナー弱</span><input type="number" step="0.1" data-w="corner_week"></label>
+        <label><span>コーナー中</span><input type="number" step="0.1" data-w="corner_medium"></label>
+        <label><span>コーナー強</span><input type="number" step="0.1" data-w="corner_strong"></label>
+        <label><span>直線</span><input type="number" step="0.1" data-w="corner_none"></label>
+        <label><span>C.バランス</span><input type="number" step="0.1" data-w="corner_balance"></label>
+        <label><span>中央線</span><input type="number" step="0.1" data-w="claude_center_line_section"></label>
+        <button class="wp-apply" id="weightApply">適用</button>
+      </div>
     </div>
   </div>
 
@@ -744,6 +758,21 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 function cssVar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+
+const cityCache = {};
+async function fetchCity(lat, lng){
+  const key = `${lat.toFixed(3)}_${lng.toFixed(3)}`;
+  if(cityCache[key]) return cityCache[key];
+  try{
+    const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`);
+    if(!res.ok) return null;
+    const data = await res.json();
+    const full = data.results?.lv01Nm || "";
+    const city = full.replace(/(市|町|村|区).*$/, "$1");
+    cityCache[key] = city || null;
+    return city || null;
+  }catch{ return null; }
+}
 const BUMP_SVG = '<svg class="bump-ico" viewBox="0 0 20 18"><path d="M0 9Q5 1 10 9Q15 17 20 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 function bumpIcons(n){
   return BUMP_SVG+' ×'+n;
@@ -1190,7 +1219,7 @@ function cardHtml(t, rank, total){
   return `
     <article class="card" data-id="${t.id}" tabindex="0">
       <div class="card-top">
-        <span class="rank-num">${rank+1}</span><span class="route-oval">${escapeHtml(t.routeLabel)}</span>${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}<h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
+        <span class="rank-num">${rank+1}</span>${t._pref?`<span class="loc-chip">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:""}<span class="loc-chip city-chip" data-lat="${t.center[0]}" data-lng="${t.center[1]}"></span><span class="route-oval">${escapeHtml(t.routeLabel)}</span>${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}<h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
       </div>
       <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b></p>
       <div class="bars">
@@ -1258,6 +1287,16 @@ function renderCards(){
   if(thumbObserver){
     document.querySelectorAll("#cards .thumb").forEach(el=>thumbObserver.observe(el));
   }
+
+  document.querySelectorAll(".city-chip").forEach(el=>{
+    const lat = parseFloat(el.dataset.lat);
+    const lng = parseFloat(el.dataset.lng);
+    if(!lat || !lng) { el.remove(); return; }
+    fetchCity(lat, lng).then(city=>{
+      if(city) el.textContent = city;
+      else el.remove();
+    });
+  });
 }
 
 // ===== ルートサムネ =====
@@ -2075,6 +2114,10 @@ if(localStorage.getItem("touge.admin") === "true"){
   wp.classList.add("show");
   wp.querySelectorAll("input[data-w]").forEach(inp=>{
     inp.value = BALANCE_WEIGHTS[inp.dataset.w];
+  });
+  $("wpHead").addEventListener("click",()=>{
+    wp.classList.toggle("collapsed");
+    $("wpToggle").textContent = wp.classList.contains("collapsed") ? "▲" : "▼";
   });
   wp.addEventListener("keydown",e=>{ if(e.key==="Enter") $("weightApply").click(); });
   $("weightApply").addEventListener("click",()=>{
