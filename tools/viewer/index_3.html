@@ -248,16 +248,13 @@ main{flex:1;position:relative;min-height:0}
   background:var(--paper-deep);border:1.5px solid var(--contour);
   display:flex;align-items:center;justify-content:center;
 }
-.card-top{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
+.card-top{display:flex;flex-direction:column;gap:5px;margin-bottom:5px}
+.card-labels{display:flex;align-items:center;gap:7px}
 .route-oval{
   font-size:10px;font-weight:500;color:var(--ink-soft);
   border:1px solid var(--contour);border-radius:999px;padding:1px 8px;white-space:nowrap;
 }
-.loc-chip{
-  font-size:10px;font-weight:500;color:var(--ink-soft);
-  background:var(--paper-deep);border-radius:4px;padding:1px 6px;white-space:nowrap;
-}
-.card-top h3{font-size:14px;font-weight:700;flex-basis:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative}
+.card-top h3{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative}
 .card-top h3::after{
   content:attr(data-full);display:none;
   position:absolute;left:0;top:calc(100% + 4px);z-index:10;
@@ -1219,7 +1216,7 @@ function cardHtml(t, rank, total){
   return `
     <article class="card" data-id="${t.id}" tabindex="0">
       <div class="card-top">
-        <span class="rank-num">${rank+1}</span>${t._pref?`<span class="loc-chip">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:""}<span class="loc-chip city-chip" data-lat="${t.center[0]}" data-lng="${t.center[1]}"></span><span class="route-oval">${escapeHtml(t.routeLabel)}</span>${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}<h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
+        <div class="card-labels"><span class="rank-num">${rank+1}</span>${t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:""}<span class="route-oval city-oval" data-lat="${t.center[0]}" data-lng="${t.center[1]}" style="display:none"></span>${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}</div><h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
       </div>
       <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b></p>
       <div class="bars">
@@ -1288,12 +1285,12 @@ function renderCards(){
     document.querySelectorAll("#cards .thumb").forEach(el=>thumbObserver.observe(el));
   }
 
-  document.querySelectorAll(".city-chip").forEach(el=>{
+  document.querySelectorAll(".city-oval").forEach(el=>{
     const lat = parseFloat(el.dataset.lat);
     const lng = parseFloat(el.dataset.lng);
-    if(!lat || !lng) { el.remove(); return; }
+    if(!lat || !lng){ el.remove(); return; }
     fetchCity(lat, lng).then(city=>{
-      if(city) el.textContent = city;
+      if(city){ el.textContent = city; el.style.display = ""; }
       else el.remove();
     });
   });
