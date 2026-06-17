@@ -1558,63 +1558,72 @@ sel.addEventListener("change",e=>{
   m.remove();
 }
 
+async function activateNearby(lat, lng){
+  document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
+  document.querySelector('.chip[data-preset="nearby"]').setAttribute("aria-pressed","true");
+  currentPreset = "nearby";
+  distanceFilter = 50;
+  $("presetHint").textContent = presetHints.nearby;
+  visibleCount = PAGE_N;
+  let code = null;
+  try{
+    const ac = new AbortController();
+    const tid = setTimeout(()=>ac.abort(), 5000);
+    const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`, {signal:ac.signal});
+    clearTimeout(tid);
+    if(res.ok){
+      const data = await res.json();
+      const muni = data?.results?.muniCd;
+      if(muni) code = String(muni).padStart(5,"0").slice(0,2);
+    }
+  }catch(err){}
+  if(code && PREFECTURES[code]){
+    const codes = [code, ...(ADJACENT[code]||[])];
+    loadedPrefs.clear();
+    codes.forEach(c=>loadedPrefs.add(c));
+    updatePrefLabel();
+    showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
+    const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
+    const seen = new Set();
+    currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
+    showLoading(false);
+    toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県から50km以内の峠を表示`);
+    render();
+    setSheet("half");
+    const b = new maplibregl.LngLatBounds();
+    lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
+    if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
+  }else{
+    showLoading(false);
+    toast("現在地の都道府県を判定できませんでした");
+    if(currentItems.length) render();
+  }
+}
+
 document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
   chip.addEventListener("click",()=>{
     const preset = chip.dataset.preset;
-    if(preset === "nearby" && !userLatLng){
-      if(!navigator.geolocation){ toast("このブラウザは位置情報に対応していません"); return; }
-      if(locatingBusy) return;
-      locatingBusy = true;
-      showLoading(true, "現在地を取得中…");
-      navigator.geolocation.getCurrentPosition(async pos=>{
-        const lat = pos.coords.latitude, lng = pos.coords.longitude;
-        userLatLng = [lat, lng];
-        placeLocMarker(lng, lat);
-        drawRangeRings(lat, lng);
-        document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
-        chip.setAttribute("aria-pressed","true");
-        currentPreset = "nearby";
-        distanceFilter = 50;
-        $("presetHint").textContent = presetHints.nearby;
-        visibleCount = PAGE_N;
-        let code = null;
-        try{
-          const ac = new AbortController();
-          const tid = setTimeout(()=>ac.abort(), 5000);
-          const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`, {signal:ac.signal});
-          clearTimeout(tid);
-          if(res.ok){
-            const data = await res.json();
-            const muni = data?.results?.muniCd;
-            if(muni) code = String(muni).padStart(5,"0").slice(0,2);
-          }
-        }catch(err){}
-        if(code && PREFECTURES[code]){
-          const codes = [code, ...(ADJACENT[code]||[])];
-          loadedPrefs.clear();
-          codes.forEach(c=>loadedPrefs.add(c));
-          updatePrefLabel();
-          showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
-          const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
-          const seen = new Set();
-          currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
+    if(preset === "nearby" && currentPreset !== "nearby"){
+      if(!userLatLng){
+        if(!navigator.geolocation){ toast("このブラウザは位置情報に対応していません"); return; }
+        if(locatingBusy) return;
+        locatingBusy = true;
+        showLoading(true, "現在地を取得中…");
+        navigator.geolocation.getCurrentPosition(async pos=>{
+          const lat = pos.coords.latitude, lng = pos.coords.longitude;
+          userLatLng = [lat, lng];
+          placeLocMarker(lng, lat);
+          drawRangeRings(lat, lng);
+          await activateNearby(lat, lng);
+          locatingBusy = false;
+        }, ()=>{
+          locatingBusy = false;
           showLoading(false);
-          toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県から50km以内の峠を表示`);
-          render();
-          const b = new maplibregl.LngLatBounds();
-          currentItems.forEach(t=>{ if(t.distanceKm!=null && t.distanceKm<=50) t.poly.forEach(p=>b.extend([p[1],p[0]])); });
-          if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
-        }else{
-          showLoading(false);
-          toast("現在地の都道府県を判定できませんでした");
-          if(currentItems.length) render();
-        }
-        locatingBusy = false;
-      }, ()=>{
-        locatingBusy = false;
-        showLoading(false);
-        toast("位置情報を取得できませんでした");
-      }, {enableHighAccuracy:false, timeout:10000, maximumAge:300000});
+          toast("位置情報を取得できませんでした");
+        }, {enableHighAccuracy:false, timeout:10000, maximumAge:300000});
+      }else{
+        activateNearby(userLatLng[0], userLatLng[1]);
+      }
       return;
     }
     const isActive = chip.getAttribute("aria-pressed") === "true";
@@ -1626,33 +1635,11 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
     }else{
       chip.setAttribute("aria-pressed","true");
       currentPreset = preset;
-      distanceFilter = preset === "nearby" ? 50 : null;
     }
-    if(currentPreset === "nearby" && userLatLng){
-      const code = [...loadedPrefs][0] || localStorage.getItem("touge.pref");
-      if(!code){ toast("先に都道府県を選択してください"); return; }
-      const codes = [code, ...(ADJACENT[code]||[])];
-      (async()=>{
-        loadedPrefs.clear();
-        codes.forEach(c=>loadedPrefs.add(c));
-        updatePrefLabel();
-        showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
-        const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
-        const seen = new Set();
-        currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
-        showLoading(false);
-        visibleCount = PAGE_N;
-        render();
-        const b = new maplibregl.LngLatBounds();
-        lastRanked.forEach(t=>{ if(t.distanceKm!=null && t.distanceKm<=50) t.poly.forEach(p=>b.extend([p[1],p[0]])); });
-        if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
-      })();
-    }else{
-      if(currentPreset !== "nearby") try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
-      $("presetHint").textContent = presetHints[currentPreset];
-      visibleCount = PAGE_N;
-      render();
-    }
+    if(currentPreset !== "nearby") try{ localStorage.setItem("touge.preset", currentPreset); }catch(e){}
+    $("presetHint").textContent = presetHints[currentPreset];
+    visibleCount = PAGE_N;
+    render();
   });
 });
 
@@ -1710,48 +1697,7 @@ $("locateBtn").addEventListener("click",()=>{
       userLatLng = [lat, lng];
       placeLocMarker(lng, lat);
       drawRangeRings(lat, lng);
-      document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
-      document.querySelector('.chip[data-preset="nearby"]').setAttribute("aria-pressed","true");
-      currentPreset = "nearby";
-      distanceFilter = 50;
-      $("presetHint").textContent = presetHints.nearby;
-      visibleCount = PAGE_N;
-      let code = null;
-      try{
-        const ac = new AbortController();
-        const tid = setTimeout(()=>ac.abort(), 5000);
-        const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`, {signal:ac.signal});
-        clearTimeout(tid);
-        if(res.ok){
-          const data = await res.json();
-          const muni = data?.results?.muniCd;
-          if(muni) code = String(muni).padStart(5,"0").slice(0,2);
-        }
-      }catch(err){
-        console.warn("[峠サーチャー] reverse geocode failed:", err);
-      }
-      if(code && PREFECTURES[code]){
-        const codes = [code, ...(ADJACENT[code]||[])];
-        loadedPrefs.clear();
-        codes.forEach(c => loadedPrefs.add(c));
-        updatePrefLabel();
-        showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
-        const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
-        const seen = new Set();
-        currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
-        showLoading(false);
-        toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県から50km以内の峠を表示`);
-        render();
-        setSheet("half");
-        const b = new maplibregl.LngLatBounds();
-        lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
-        if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
-      }else{
-        showLoading(false);
-        map.flyTo({center:[lng, lat], zoom:11, duration:1000});
-        toast("現在地の都道府県を判定できませんでした");
-        if(currentItems.length) render();
-      }
+      await activateNearby(lat, lng);
       locatingBusy = false;
     },
     ()=>{
