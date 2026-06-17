@@ -518,6 +518,7 @@ main{flex:1;position:relative;min-height:0}
       <button class="overlay-3d-toggle active" id="toggle3dSection">セクション</button>
       <button class="overlay-3d-toggle" id="toggle3dColor" style="display:none">登り/下り</button>
       <button class="overlay-3d-toggle" id="toggle3dBuildings" style="display:none">🏠 建物</button>
+      <button class="overlay-3d-toggle" id="toggle3dPrint" style="display:none">🖨 印刷</button>
     </div>
     <div class="overlay-3d-legend" id="legend3d"></div>
     <div class="overlay-3d-hint">1本指で回転 ・ 2本指で移動/ズーム</div>
@@ -1142,7 +1143,6 @@ function cardHtml(t, rank, total){
         <button class="btn primary" data-act="nav" data-poly='${JSON.stringify(t.poly)}'>🚗 行く</button>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">👁 路面</a>`:""}
         <button class="btn" data-act="3d"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 9l10 6 10-6-10-6z"/><path d="M2 15l10 6 10-6"/><path d="M2 9v6"/><path d="M22 9v6"/></svg> 3D</button>
-        <button class="btn" data-act="print">🖨 印刷</button>
       </div>
       <div class="thumb" data-tid="${t.id}"><span class="thumb-spin"></span></div>
     </article>`;
@@ -1183,11 +1183,6 @@ function renderCards(){
       if(e.target.closest('[data-act="3d"]')){
         const t = ranked.find(x=>x.id === Number(card.dataset.id));
         if(t) open3DView(t);
-        return;
-      }
-      if(e.target.closest('[data-act="print"]')){
-        const t = ranked.find(x=>x.id === Number(card.dataset.id));
-        if(t) openPrintView(t);
         return;
       }
       const t = ranked.find(x=>x.id === Number(card.dataset.id));
@@ -2631,6 +2626,14 @@ async function open3DView(t){
       };
     }else{
       bldgBtn.style.display = "none";
+    }
+
+    const printBtn = $("toggle3dPrint");
+    if(localStorage.getItem("touge.admin") === "true"){
+      printBtn.style.display = "";
+      printBtn.onclick = ()=> openPrintView(t);
+    }else{
+      printBtn.style.display = "none";
     }
 
     active3D = {renderer, scene, animId, onResize};
