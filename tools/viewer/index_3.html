@@ -1649,21 +1649,6 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
   });
 });
 
-// ===== 前回の状態を復元（県・プリセット） =====
-try{
-  const savedPreset = localStorage.getItem("touge.preset");
-  if(savedPreset && presetWeights[savedPreset] && savedPreset !== "nearby"){
-    currentPreset = savedPreset;
-    document.querySelectorAll(".presets .chip").forEach(c=>
-      c.setAttribute("aria-pressed", c.dataset.preset === savedPreset));
-    $("presetHint").textContent = presetHints[savedPreset];
-  }
-  const savedPref = localStorage.getItem("touge.pref");
-  if(savedPref && PREFECTURES[savedPref]){
-    switchPref(savedPref);
-    sel.value = "";
-  }
-}catch(e){}
 
 $("searchInput").addEventListener("input",e=>{
   searchQuery = e.target.value;
@@ -1718,6 +1703,12 @@ $("locateBtn").addEventListener("click",()=>{
       userLatLng = [lat, lng];
       placeLocMarker(lng, lat);
       drawRangeRings(lat, lng);
+      document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
+      document.querySelector('.chip[data-preset="nearby"]').setAttribute("aria-pressed","true");
+      currentPreset = "nearby";
+      distanceFilter = 50;
+      $("presetHint").textContent = presetHints.nearby;
+      visibleCount = PAGE_N;
       let code = null;
       try{
         const ac = new AbortController();
@@ -1734,20 +1725,19 @@ $("locateBtn").addEventListener("click",()=>{
       }
       if(code && PREFECTURES[code]){
         const codes = [code, ...(ADJACENT[code]||[])];
-        const newCodes = codes.filter(c => !loadedPrefs.has(c));
-        newCodes.forEach(c => loadedPrefs.add(c));
+        loadedPrefs.clear();
+        codes.forEach(c => loadedPrefs.add(c));
         updatePrefLabel();
-        if(newCodes.length){
-          showLoading(true, `周辺${newCodes.length}県のデータを追加読み込み中…`);
-          const results = await Promise.all(newCodes.map(c => fetchPrefItems(c)));
-          const seen = new Set(currentItems.map(t=>t.id));
-          currentItems = [...currentItems, ...results.flat().filter(t => !seen.has(t.id))];
-        }
+        showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
+        const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
+        const seen = new Set();
+        currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
         showLoading(false);
-        toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県を表示`);
+        toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県から50km以内の峠を表示`);
         render();
+        setSheet("half");
         const b = new maplibregl.LngLatBounds();
-        currentItems.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
+        lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
         if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
       }else{
         showLoading(false);
@@ -1765,6 +1755,7 @@ $("locateBtn").addEventListener("click",()=>{
     {enableHighAccuracy:false, timeout:10000, maximumAge:300000}
   );
 });
+$("locateBtn").click();
 
 // ===== スマホ用ビュー操作 =====
 // 長押し: なめらかに回転し続ける / 短いタップ: 45°だけ回転（+初回はヒント表示）
