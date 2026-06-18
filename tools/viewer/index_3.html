@@ -322,6 +322,7 @@ main{flex:1;position:relative;min-height:0}
   max-width:90vw;text-align:center;
 }
 .toast.show{opacity:.95}
+.toast.error{background:var(--accent);border-color:var(--accent);color:#fff}
 
 .overlay-3d{
   position:fixed;inset:0;z-index:2000;
@@ -442,6 +443,89 @@ main{flex:1;position:relative;min-height:0}
   .print-canvas-wrap canvas{border:none}
 }
 
+.settings-btn{
+  font:inherit;font-size:12px;font-weight:500;cursor:pointer;
+  border:1px solid var(--line);border-radius:999px;
+  background:var(--card);color:var(--ink);padding:5px 12px;
+  flex-shrink:0;margin-left:auto;white-space:nowrap;
+}
+.settings-btn:hover{border-color:var(--accent);color:var(--accent)}
+.settings-overlay{
+  position:fixed;inset:0;z-index:2600;
+  background:rgba(0,0,0,.45);
+  display:none;align-items:center;justify-content:center;
+}
+.settings-overlay.show{display:flex}
+@media (max-width:760px){
+  .settings-overlay{align-items:flex-end}
+  .settings-panel{border-radius:14px 14px 0 0 !important;max-height:70dvh}
+}
+.settings-panel{
+  background:var(--paper);border-radius:var(--radius);
+  width:100%;max-width:360px;overflow:hidden;
+  animation:slideUp .25s ease-out;
+}
+.settings-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid var(--line);
+}
+.settings-head h3{font-size:15px;font-weight:700;margin:0}
+.settings-close{
+  width:30px;height:30px;border-radius:50%;
+  border:1px solid var(--line);background:var(--paper-deep);
+  font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.settings-body{padding:16px}
+.settings-label{font-size:13px;font-weight:600}
+.settings-desc{font-size:11px;color:var(--ink-soft);margin:2px 0 10px}
+.settings-nav-options{display:flex;flex-direction:column;gap:6px}
+.settings-nav-opt{
+  font:inherit;font-size:13px;font-weight:500;cursor:pointer;
+  border:2px solid var(--line);border-radius:var(--radius);
+  background:var(--card);color:var(--ink);padding:12px 14px;
+  text-align:left;display:flex;align-items:center;gap:8px;
+  transition:border-color .15s;
+}
+.settings-nav-opt:hover{border-color:var(--contour)}
+.settings-nav-opt.active{border-color:var(--accent);background:#FEF2F2}
+
+.nav-picker-overlay{
+  position:fixed;inset:0;z-index:2600;
+  background:rgba(0,0,0,.45);
+  display:none;align-items:flex-end;justify-content:center;
+}
+.nav-picker-overlay.show{display:flex}
+.nav-picker{
+  background:var(--paper);border-radius:14px 14px 0 0;
+  width:100%;max-width:400px;padding:20px 16px calc(env(safe-area-inset-bottom,0px) + 16px);
+  animation:slideUp .25s ease-out;
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.nav-picker h3{font-size:14px;font-weight:700;text-align:center;margin-bottom:14px}
+.nav-picker-btns{display:flex;flex-direction:column;gap:8px}
+.nav-picker-btn{
+  font:inherit;font-size:14px;font-weight:600;cursor:pointer;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--card);color:var(--ink);padding:14px;
+  display:flex;align-items:center;gap:10px;
+  transition:border-color .15s;
+}
+.nav-picker-btn:hover{border-color:var(--accent)}
+.nav-ico{font-size:22px;flex-shrink:0;line-height:1}
+.nav-picker-btn .nav-label{text-align:left}
+.nav-picker-btn .nav-sub{font-size:11px;font-weight:400;color:var(--ink-soft);margin-top:1px}
+.nav-picker-remember{
+  display:flex;align-items:center;gap:6px;
+  margin-top:12px;font-size:12px;color:var(--ink-soft);cursor:pointer;
+}
+.nav-picker-remember input{margin:0}
+.nav-picker-cancel{
+  display:block;width:100%;margin-top:10px;
+  font:inherit;font-size:13px;font-weight:500;cursor:pointer;
+  border:none;background:transparent;color:var(--ink-soft);padding:8px;
+}
+.nav-picker-cancel:hover{color:var(--ink)}
+
 .weight-panel{
   position:absolute;right:10px;bottom:10px;z-index:1300;
   background:rgba(255,255,255,.75);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(6px);
@@ -530,6 +614,7 @@ main{flex:1;position:relative;min-height:0}
         <div class="panel-logo">峠</div>
         <span class="count" id="resultCount"></span>
         <span class="pref-name" id="prefName" style="display:none">未選択</span>
+        <button class="settings-btn" id="settingsBtn" aria-label="設定">⚙ 設定</button>
       </div>
     </div>
     <div class="panel-body">
@@ -551,6 +636,43 @@ main{flex:1;position:relative;min-height:0}
       <div id="cards"></div>
     </div>
   </section>
+
+  <div class="settings-overlay" id="settingsOverlay">
+    <div class="settings-panel">
+      <div class="settings-head">
+        <h3>設定</h3>
+        <button class="settings-close" id="settingsClose">✕</button>
+      </div>
+      <div class="settings-body">
+        <div class="settings-item">
+          <div class="settings-label">ナビアプリ</div>
+          <div class="settings-desc">「行く」ボタンで使うナビアプリ</div>
+          <div class="settings-nav-options" id="navOptions">
+            <button class="settings-nav-opt" data-nav="google">📍 Google Maps</button>
+            <button class="settings-nav-opt" data-nav="yahoo">🚙 Yahoo! カーナビ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-picker-overlay" id="navPicker">
+    <div class="nav-picker">
+      <h3>ナビアプリを選択</h3>
+      <div class="nav-picker-btns">
+        <button class="nav-picker-btn" data-nav="google">
+          <span class="nav-ico">📍</span>
+          <div class="nav-label">Google Maps<div class="nav-sub">ブラウザで経路案内</div></div>
+        </button>
+        <button class="nav-picker-btn" data-nav="yahoo">
+          <span class="nav-ico">🚙</span>
+          <div class="nav-label">Yahoo! カーナビ<div class="nav-sub">アプリで経路案内</div></div>
+        </button>
+      </div>
+      <label class="nav-picker-remember"><input type="checkbox" id="navRemember" checked>次回から同じアプリで開く</label>
+      <button class="nav-picker-cancel" id="navCancel">キャンセル</button>
+    </div>
+  </div>
 
   <div class="loading-overlay" id="loading"><div class="spinner"></div><p id="loadingText">読み込み中…</p></div>
   <div class="toast" id="toast"></div>
@@ -744,12 +866,14 @@ function showLoading(on, text){
   if(text) $("loadingText").textContent = text;
 }
 let toastTimer = null;
-function toast(msg){
+function toast(msg, type){
   const el = $("toast");
   el.textContent = msg;
+  el.classList.remove("error");
+  if(type === "error") el.classList.add("error");
   el.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>el.classList.remove("show"), 3500);
+  toastTimer = setTimeout(()=>{ el.classList.remove("show","error"); }, 3500);
 }
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1167,6 +1291,11 @@ function googleMapUrl(poly, lat, lng){
   const origin = lat!=null ? `${lat},${lng}` : "current+location";
   return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${ed[0]},${ed[1]}&waypoints=${st[0]},${st[1]}|${ct[0]},${ct[1]}`;
 }
+function yahooCarNaviUrl(poly){
+  if(!poly.length) return "#";
+  const st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
+  return `yjcarnavi://navi/select?point=current&point=${st[0]},${st[1]},&point=${ct[0]},${ct[1]},&point=${ed[0]},${ed[1]},`;
+}
 // ライン中央点のストリートビューを進行方向向きで開くURL（target.json内の旧形式URLは廃止されたため自前生成）
 function streetViewUrl(poly){
   if(poly.length < 2) return null;
@@ -1179,6 +1308,74 @@ function streetViewUrl(poly){
   const heading = Math.round((Math.atan2(y,x)*180/Math.PI + 360) % 360);
   return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c[0]},${c[1]}&heading=${heading}&pitch=0&fov=90`;
 }
+
+// ================= ナビアプリ選択 =================
+const isMobileDevice = true; // TODO: revert to /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+const NAV_KEY = "touge_nav_app";
+let pendingNavTouge = null;
+
+const NAV_LABELS = {google:"Google Maps", yahoo:"Yahoo!カーナビ"};
+
+function openNav(t){
+  if(!isMobileDevice){
+    window.open(googleMapUrl(t.poly), "_blank");
+    return;
+  }
+  const saved = localStorage.getItem(NAV_KEY);
+  if(saved){
+    launchNav(saved, t);
+    return;
+  }
+  pendingNavTouge = t;
+  $("navPicker").classList.add("show");
+}
+function launchNav(app, t){
+  if(app === "yahoo"){
+    const now = Date.now();
+    window.location.href = yahooCarNaviUrl(t.poly);
+    setTimeout(()=>{
+      if(Date.now() - now < 2000) toast("Yahoo! カーナビアプリをインストールしてください", "error");
+    }, 1500);
+  } else {
+    window.open(googleMapUrl(t.poly), "_blank");
+  }
+}
+function closeNavPicker(){ $("navPicker").classList.remove("show"); pendingNavTouge = null; }
+
+// 設定画面
+function openSettings(){
+  const saved = localStorage.getItem(NAV_KEY);
+  document.querySelectorAll(".settings-nav-opt").forEach(b=>{
+    b.classList.toggle("active", b.dataset.nav === saved);
+  });
+  $("settingsOverlay").classList.add("show");
+}
+function closeSettings(){ $("settingsOverlay").classList.remove("show"); }
+$("settingsBtn").addEventListener("click", openSettings);
+$("settingsClose").addEventListener("click", closeSettings);
+$("settingsOverlay").addEventListener("click", e=>{ if(e.target === $("settingsOverlay")) closeSettings(); });
+$("navOptions").addEventListener("click", e=>{
+  const btn = e.target.closest("[data-nav]");
+  if(!btn) return;
+  const app = btn.dataset.nav;
+  localStorage.setItem(NAV_KEY, app);
+  document.querySelectorAll(".settings-nav-opt").forEach(b=> b.classList.toggle("active", b.dataset.nav === app));
+  toast(`ナビアプリを ${NAV_LABELS[app]} に設定しました`);
+});
+
+$("navPicker").addEventListener("click", e=>{
+  const btn = e.target.closest("[data-nav]");
+  if(btn && pendingNavTouge){
+    const app = btn.dataset.nav;
+    if($("navRemember").checked) localStorage.setItem(NAV_KEY, app);
+    const t = pendingNavTouge;
+    closeNavPicker();
+    launchNav(app, t);
+    return;
+  }
+  if(e.target === $("navPicker")) closeNavPicker();
+});
+$("navCancel").addEventListener("click", closeNavPicker);
 
 // ================= ランキング =================
 function rankedList(){
@@ -1225,7 +1422,7 @@ function cardHtml(t, rank, total){
       </div>
       <div class="card-tags">${t.unevennessCount!=null?(t.unevennessCount>0?`<span class="card-tag">${bumpIcons(t.unevennessCount)}</span>`:`<span class="card-tag">${BUMP_SVG} なし</span>`):""}${t.buildingCnt!=null?(t.buildingCnt>0?`<span class="card-tag">🏠 ×${t.buildingCnt}</span>`:`<span class="card-tag">🏠 なし</span>`):""}</div>
       <div class="card-actions">
-        <button class="btn primary" data-act="nav" data-poly='${JSON.stringify(t.poly)}'>🚗 行く</button>
+        <button class="btn primary" data-act="nav" data-id="${t.id}">🚗 行く</button>
         ${sv?`<a class="btn" href="${sv}" target="_blank" rel="noopener" data-act="link">👁 路面</a>`:""}
         <button class="btn" data-act="3d"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 9l10 6 10-6-10-6z"/><path d="M2 15l10 6 10-6"/><path d="M2 9v6"/><path d="M22 9v6"/></svg> 3D</button>
       </div>
@@ -1257,12 +1454,12 @@ function renderCards(){
 
   document.querySelectorAll(".card").forEach(card=>{
     card.addEventListener("click",e=>{
-      if(e.target.dataset.act === "link") return;
+      if(e.target.closest('[data-act="link"]')) return;
       const navBtn = e.target.closest('[data-act="nav"]');
       if(navBtn){
         e.stopPropagation();
-        const poly = JSON.parse(navBtn.dataset.poly);
-        location.href = googleMapUrl(poly);
+        const t = ranked.find(x=>x.id === Number(navBtn.dataset.id));
+        if(t) openNav(t);
         return;
       }
       if(e.target.closest('[data-act="3d"]')){
@@ -1294,6 +1491,7 @@ function renderCards(){
       else el.remove();
     });
   });
+
 }
 
 // ===== ルートサムネ =====
