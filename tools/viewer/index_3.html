@@ -1323,7 +1323,7 @@ function streetViewUrl(poly){
 }
 
 // ================= ナビアプリ選択 =================
-const isMobileDevice = true; // TODO: revert to /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const NAV_KEY = "touge_nav_app";
 let pendingNavTouge = null;
 
