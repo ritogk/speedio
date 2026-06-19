@@ -893,20 +893,6 @@ function escapeHtml(s){
 }
 function cssVar(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
 
-const cityCache = {};
-async function fetchCity(lat, lng){
-  const key = `${lat.toFixed(3)}_${lng.toFixed(3)}`;
-  if(cityCache[key]) return cityCache[key];
-  try{
-    const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`);
-    if(!res.ok) return null;
-    const data = await res.json();
-    const full = data.results?.lv01Nm || "";
-    const city = full.replace(/(市|町|村|区).*$/, "$1");
-    cityCache[key] = city || null;
-    return city || null;
-  }catch{ return null; }
-}
 const BUMP_SVG = '<svg class="bump-ico" viewBox="0 0 20 18"><path d="M0 9Q5 1 10 9Q15 17 20 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 function bumpIcons(n){
   return BUMP_SVG+' ×'+n;
@@ -1290,6 +1276,8 @@ function toViewModel(raw, idx){
     unevennessCount: raw.elevation_unevenness_count ?? null,
     uphillCnt: raw.uphill_cnt ?? null,
     downhillCnt: raw.downhill_cnt ?? null,
+    prefecture: raw.prefecture || null,
+    city: raw.city || null,
     center, poly,
     roadSection: secs,
     elevationSmooth: raw.elevation_smooth || [],
@@ -1427,7 +1415,7 @@ function cardHtml(t, rank, total){
   return `
     <article class="card" data-id="${t.id}" tabindex="0">
       <div class="card-top">
-        <div class="card-labels"><span class="rank-num">${rank+1}</span>${t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:""}<span class="route-oval city-oval" data-lat="${t.center[0]}" data-lng="${t.center[1]}" style="display:none"></span>${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}</div><h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
+        <div class="card-labels"><span class="rank-num">${rank+1}</span>${t.prefecture?`<span class="route-oval">${escapeHtml(t.prefecture)}</span>`:(t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:"")}${t.city?`<span class="route-oval">${escapeHtml(t.city)}</span>`:""}${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}</div><h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
       </div>
       <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b></p>
       <div class="bars">
@@ -1496,15 +1484,6 @@ function renderCards(){
     document.querySelectorAll("#cards .thumb").forEach(el=>thumbObserver.observe(el));
   }
 
-  document.querySelectorAll(".city-oval").forEach(el=>{
-    const lat = parseFloat(el.dataset.lat);
-    const lng = parseFloat(el.dataset.lng);
-    if(!lat || !lng){ el.remove(); return; }
-    fetchCity(lat, lng).then(city=>{
-      if(city){ el.textContent = city; el.style.display = ""; }
-      else el.remove();
-    });
-  });
 
 }
 
