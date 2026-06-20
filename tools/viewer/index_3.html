@@ -271,9 +271,7 @@ main{flex:1;position:relative;min-height:0}
 }
 .card-top h3:hover::after{display:block}
 .dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap}
-.visited-tag{font-size:10px;margin-left:6px;color:var(--accent);font-weight:600}
-.hide-visited-label{font-size:12px;color:var(--ink-soft);cursor:pointer;margin-top:4px;display:flex;align-items:center;gap:4px}
-.meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
+.visited-tag{font-size:10px;margin-left:6px;color:var(--accent);font-weight:600}.meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
 .meta b{color:var(--ink);font-weight:500}
 .bars{display:grid;grid-template-columns:58px 1fr 28px;gap:3px 8px;align-items:center}
 .bars .bl{font-size:10px;color:var(--ink-soft)}
@@ -660,9 +658,9 @@ main{flex:1;position:relative;min-height:0}
           <button class="chip" aria-pressed="false" data-preset="updown">高低差</button>
           <button class="chip" aria-pressed="false" data-preset="seclusion">秘境</button>
           <button class="chip" aria-pressed="false" data-preset="uphill">起伏</button>
+          <button class="chip" aria-pressed="false" id="hideVisitedBtn" style="display:none">🚗済 非表示</button>
         </div>
         <p class="preset-hint" id="presetHint">コーナー・高低差・道幅をバランスよく評価します。</p>
-        <label class="hide-visited-label" id="hideVisitedLabel" style="display:none"><input type="checkbox" id="hideVisitedCb"> 行った峠を非表示</label>
       </section>
       <div id="cards"></div>
     </div>
@@ -825,7 +823,7 @@ function saveVisited(){ localStorage.setItem("touge.visited", JSON.stringify([..
 let pendingVisitKey = null;
 let pendingVisitTimer = null;
 let pendingVisitTs = 0;
-function updateVisitedUi(){ $("hideVisitedLabel").style.display = visitedKeys.size ? "" : "none"; }
+function updateVisitedUi(){ $("hideVisitedBtn").style.display = visitedKeys.size ? "" : "none"; }
 function commitPendingVisit(){
   if(!pendingVisitKey) return;
   visitedKeys.add(pendingVisitKey);
@@ -2144,8 +2142,9 @@ $("searchInput").addEventListener("input",e=>{
   searchQuery = e.target.value;
   render();
 });
-$("hideVisitedCb").addEventListener("change",e=>{
-  hideVisited = e.target.checked;
+$("hideVisitedBtn").addEventListener("click",()=>{
+  hideVisited = !hideVisited;
+  $("hideVisitedBtn").setAttribute("aria-pressed", hideVisited ? "true" : "false");
   render();
 });
 
