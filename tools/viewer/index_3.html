@@ -2003,16 +2003,6 @@ sel.addEventListener("change",e=>{
   }
   switchPref(code, loadedPrefs.size === 0);
 });
-{
-  const candidates = ["＋ 県を追加", "📍 周辺まとめて", ...Object.values(PREFECTURES)];
-  const longest = candidates.reduce((a,b)=>a.length>=b.length?a:b);
-  const m = document.createElement("span");
-  m.style.cssText = "position:absolute;visibility:hidden;font:inherit;font-size:12px;font-weight:500;white-space:nowrap";
-  m.textContent = longest;
-  document.body.appendChild(m);
-  sel.style.width = (m.offsetWidth + 48) + "px";
-  m.remove();
-}
 
 async function loadNearbyPrefs(){
   if(!navigator.geolocation){ toast("このブラウザは位置情報に対応していません"); return; }
