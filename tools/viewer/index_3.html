@@ -1315,7 +1315,7 @@ function googleMapUrl(poly, lat, lng){
   if(!poly.length) return "#";
   const st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
   const origin = lat!=null ? `${lat},${lng}` : "current+location";
-  return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${ed[0]},${ed[1]}&waypoints=${st[0]},${st[1]}|${ct[0]},${ct[1]}`;
+  return `https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=${origin}&destination=${ed[0]},${ed[1]}&waypoints=${st[0]},${st[1]}|${ct[0]},${ct[1]}`;
 }
 function yahooCarNaviUrl(poly){
   if(!poly.length) return "#";
