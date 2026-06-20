@@ -1982,7 +1982,7 @@ function afterLoad(focusItems){
 // ================= UIイベント =================
 const sel = $("prefSelect");
 // JSオブジェクトは"10"以降の整数風キーが"01"〜"09"より先に並ぶため、明示的にコード順へソートする
-sel.innerHTML = '<option value="">＋ 県を追加</option><option value="nearby">📍 周辺の県</option>' +
+sel.innerHTML = '<option value="">＋ 県を追加</option><option value="nearby">📍 周辺まとめて</option>' +
   Object.entries(PREFECTURES).sort((a,b)=>a[0].localeCompare(b[0]))
     .map(([c,n])=>`<option value="${c}">${n}</option>`).join("");
 sel.addEventListener("change",e=>{
@@ -2004,7 +2004,7 @@ sel.addEventListener("change",e=>{
   switchPref(code, loadedPrefs.size === 0);
 });
 {
-  const candidates = ["＋ 県を追加", "📍 周辺の県", ...Object.values(PREFECTURES)];
+  const candidates = ["＋ 県を追加", "📍 周辺まとめて", ...Object.values(PREFECTURES)];
   const longest = candidates.reduce((a,b)=>a.length>=b.length?a:b);
   const m = document.createElement("span");
   m.style.cssText = "position:absolute;visibility:hidden;font:inherit;font-size:12px;font-weight:500;white-space:nowrap";
