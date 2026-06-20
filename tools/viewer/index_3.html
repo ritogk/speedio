@@ -186,18 +186,6 @@ main{flex:1;position:relative;min-height:0}
   font-size:13px;line-height:1;color:var(--ink-soft);cursor:pointer;padding:0;
 }
 .pref-tag .pref-tag-x:hover{background:var(--contour);color:var(--ink)}
-.pref-clear{
-  font:inherit;font-size:12px;font-weight:500;color:var(--ink-soft);cursor:pointer;
-  border:1px dashed var(--contour);border-radius:999px;
-  background:transparent;padding:5px 12px;white-space:nowrap;
-}
-.pref-clear:hover{color:var(--accent);border-color:var(--accent)}
-.pref-nearby-load{
-  font:inherit;font-size:12px;font-weight:500;color:var(--ink-soft);cursor:pointer;
-  border:1px dashed var(--contour);border-radius:999px;
-  background:transparent;padding:5px 12px;white-space:nowrap;
-}
-.pref-nearby-load:hover{color:var(--accent);border-color:var(--accent)}
 .searchbox{padding:2px 0 8px}
 .searchbox input{
   width:100%;font:inherit;font-size:13px;
@@ -1922,7 +1910,7 @@ function updatePrefLabel(){
 function renderPrefTags(){
   const el = $("prefTags");
   const sel = $("prefSelect");
-  el.querySelectorAll(".pref-tag, .pref-clear, .pref-nearby-load").forEach(n => n.remove());
+  el.querySelectorAll(".pref-tag").forEach(n => n.remove());
   const sorted = [...loadedPrefs].sort();
   sorted.forEach(c => {
     const span = document.createElement("span");
@@ -1932,30 +1920,10 @@ function renderPrefTags(){
     span.querySelector(".pref-tag-x").addEventListener("click", e => { e.stopPropagation(); removePref(c); });
     el.appendChild(span);
   });
-  if(sorted.length >= 2){
-    const btn = document.createElement("button");
-    btn.className = "pref-clear";
-    btn.textContent = "全クリア";
-    btn.addEventListener("click", clearAllPrefs);
-    el.appendChild(btn);
-  }
-  const nb = document.createElement("button");
-  nb.className = "pref-nearby-load";
-  nb.textContent = "📍 周辺読込";
-  nb.addEventListener("click", loadNearbyPrefs);
-  el.appendChild(nb);
 }
 function removePref(code){
   loadedPrefs.delete(code);
   currentItems = currentItems.filter(t => t._pref !== code);
-  updatePrefLabel();
-  $("prefSelect").value = "";
-  saveFilter();
-  render();
-}
-function clearAllPrefs(){
-  loadedPrefs.clear();
-  currentItems = [];
   updatePrefLabel();
   $("prefSelect").value = "";
   saveFilter();
@@ -2014,13 +1982,14 @@ function afterLoad(focusItems){
 // ================= UIイベント =================
 const sel = $("prefSelect");
 // JSオブジェクトは"10"以降の整数風キーが"01"〜"09"より先に並ぶため、明示的にコード順へソートする
-sel.innerHTML = '<option value="">＋ 県を追加</option>' +
+sel.innerHTML = '<option value="">＋ 追加</option><option value="nearby">📍 周辺の県</option>' +
   Object.entries(PREFECTURES).sort((a,b)=>a[0].localeCompare(b[0]))
     .map(([c,n])=>`<option value="${c}">${n}</option>`).join("");
 sel.addEventListener("change",e=>{
   const code = e.target.value;
   if(!code) return;
   sel.value = "";
+  if(code === "nearby"){ loadNearbyPrefs(); return; }
   if(loadedPrefs.has(code)){
     toast(`${PREFECTURES[code]}は読み込み済みです`);
     return;
@@ -2035,7 +2004,7 @@ sel.addEventListener("change",e=>{
   switchPref(code, loadedPrefs.size === 0);
 });
 {
-  const candidates = ["＋ 県を追加", ...Object.values(PREFECTURES)];
+  const candidates = ["＋ 追加", "📍 周辺の県", ...Object.values(PREFECTURES)];
   const longest = candidates.reduce((a,b)=>a.length>=b.length?a:b);
   const m = document.createElement("span");
   m.style.cssText = "position:absolute;visibility:hidden;font:inherit;font-size:12px;font-weight:500;white-space:nowrap";
