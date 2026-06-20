@@ -1950,11 +1950,10 @@ async function loadNearbyPrefs(){
   locatingBusy = true;
   showLoading(true, "現在地を取得中…");
   const getPos = () => new Promise((resolve, reject) => {
-    if(userLatLng){ resolve(userLatLng); return; }
     navigator.geolocation.getCurrentPosition(
       pos => { const ll = [pos.coords.latitude, pos.coords.longitude]; userLatLng = ll; placeLocMarker(ll[1], ll[0]); drawRangeRings(ll[0], ll[1]); resolve(ll); },
       reject,
-      {enableHighAccuracy:false, timeout:10000, maximumAge:300000}
+      {enableHighAccuracy:true, timeout:10000, maximumAge:0}
     );
   });
   let lat, lng;
@@ -2029,7 +2028,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
           locatingBusy = false;
           showLoading(false);
           toast("位置情報を取得できませんでした");
-        }, {enableHighAccuracy:false, timeout:10000, maximumAge:300000});
+        }, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
         return;
       }
     }
@@ -2118,7 +2117,7 @@ $("locateBtn").addEventListener("click",()=>{
       showLoading(false);
       toast("位置情報を取得できませんでした");
     },
-    {enableHighAccuracy:false, timeout:10000, maximumAge:300000}
+    {enableHighAccuracy:true, timeout:10000, maximumAge:0}
   );
 });
 async function restoreFilter(){
@@ -2211,7 +2210,7 @@ async function initialLoad(){
       showLoading(false);
       toast("位置情報を取得できませんでした");
     },
-    {enableHighAccuracy:false, timeout:10000, maximumAge:300000}
+    {enableHighAccuracy:true, timeout:10000, maximumAge:0}
   );
 }
 restoreFilter().then(restored => {
