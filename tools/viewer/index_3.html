@@ -2057,7 +2057,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
     }else{
       chip.setAttribute("aria-pressed","true");
       currentPreset = preset;
-      if(preset === "nearby") distanceFilter = 50;
+      distanceFilter = preset === "nearby" ? 50 : null;
     }
     saveFilter();
     $("presetHint").textContent = presetHints[currentPreset];
