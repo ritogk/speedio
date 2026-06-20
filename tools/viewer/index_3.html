@@ -1209,12 +1209,65 @@ map.on("load", () => {
     map.on("mouseenter", layer, ()=>{ map.getCanvas().style.cursor = "pointer"; });
     map.on("mouseleave", layer, ()=>{ map.getCanvas().style.cursor = ""; });
   });
+  // JARTIC交通量センサー表示
+  map.addSource("jartic",{type:"geojson",data:{type:"FeatureCollection",features:[]}});
+  map.addLayer({
+    id:"jartic-glow",type:"circle",source:"jartic",
+    paint:{
+      "circle-radius":["interpolate",["linear"],["get","vol"],0,12,1000,22,5000,36],
+      "circle-color":"rgba(88,166,255,0.08)",
+      "circle-blur":0.8
+    }
+  },"touge-casing");
+  map.addLayer({
+    id:"jartic-dot",type:"circle",source:"jartic",
+    paint:{
+      "circle-radius":["interpolate",["linear"],["get","vol"],0,4,1000,7,5000,12],
+      "circle-color":"#58a6ff",
+      "circle-opacity":0.85,
+      "circle-stroke-width":1,
+      "circle-stroke-color":"rgba(88,166,255,0.3)"
+    }
+  },"touge-casing");
+  map.addLayer({
+    id:"jartic-label",type:"symbol",source:"jartic",
+    minzoom:10,
+    layout:{"text-field":["concat",["get","vol"],"台/h"],"text-size":11,"text-offset":[0,1.2],"text-allow-overlap":false},
+    paint:{"text-color":"#58a6ff","text-halo-color":"rgba(0,0,0,0.7)","text-halo-width":1}
+  });
+  loadJartic();
+  map.on("moveend", loadJartic);
+
   mapReady = true;
   if(pendingGeojson){ map.getSource("touge").setData(pendingGeojson); pendingGeojson = null; }
 });
 
 let markers = [];
 let pendingGeojson = null;
+let jarticBusy = false;
+async function loadJartic(){
+  if(!mapReady || jarticBusy) return;
+  jarticBusy = true;
+  try{
+    const b = map.getBounds();
+    const now = new Date();
+    const t = new Date(now.getTime() - 60*60*1000);
+    const tc = `${t.getFullYear()}${String(t.getMonth()+1).padStart(2,'0')}${String(t.getDate()).padStart(2,'0')}${String(t.getHours()).padStart(2,'0')}00`;
+    const bbox = `BBOX(ジオメトリ,${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()},'EPSG:4326')`;
+    const cql = `${bbox} AND 時間コード=${tc}`;
+    const url = `https://api.jartic-open-traffic.org/geoserver?service=WFS&version=2.0.0&request=GetFeature&typeNames=t_travospublic_measure_1h&srsName=EPSG:4326&outputFormat=application/json&cql_filter=${encodeURIComponent(cql)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const features = (data.features||[]).map(f=>{
+      const p = f.properties;
+      const vol = (p["上り・小型交通量"]||0)+(p["下り・小型交通量"]||0)+(p["上り・大型交通量"]||0)+(p["下り・大型交通量"]||0);
+      return {type:"Feature",properties:{vol},geometry:f.geometry};
+    });
+    map.getSource("jartic").setData({type:"FeatureCollection",features});
+  }catch(e){ console.warn("JARTIC:",e); }
+  jarticBusy = false;
+}
 
 function drawMap(list){
   // GeoJSON生成: road_sectionをコーナーレベル毎のLineStringに
