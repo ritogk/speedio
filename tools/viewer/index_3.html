@@ -1234,7 +1234,6 @@ map.on("load", () => {
     paint:{"text-color":"#58a6ff","text-halo-color":"rgba(0,0,0,0.7)","text-halo-width":1}
   });
   loadJartic();
-  map.on("moveend", loadJartic);
 
   mapReady = true;
   if(pendingGeojson){ map.getSource("touge").setData(pendingGeojson); pendingGeojson = null; }
@@ -1242,29 +1241,16 @@ map.on("load", () => {
 
 let markers = [];
 let pendingGeojson = null;
-let jarticBusy = false;
+let jarticLoaded = false;
 async function loadJartic(){
-  if(!mapReady || jarticBusy) return;
-  jarticBusy = true;
+  if(!mapReady || jarticLoaded) return;
+  jarticLoaded = true;
   try{
-    const b = map.getBounds();
-    const now = new Date();
-    const t = new Date(now.getTime() - 60*60*1000);
-    const tc = `${t.getFullYear()}${String(t.getMonth()+1).padStart(2,'0')}${String(t.getDate()).padStart(2,'0')}${String(t.getHours()).padStart(2,'0')}00`;
-    const bbox = `BBOX(ジオメトリ,${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()},'EPSG:4326')`;
-    const cql = `${bbox} AND 時間コード=${tc}`;
-    const url = `https://api.jartic-open-traffic.org/geoserver?service=WFS&version=2.0.0&request=GetFeature&typeNames=t_travospublic_measure_1h&srsName=EPSG:4326&outputFormat=application/json&cql_filter=${encodeURIComponent(cql)}`;
-    const res = await fetch(url);
+    const res = await fetch("./jartic.json");
     if(!res.ok) throw new Error(res.status);
     const data = await res.json();
-    const features = (data.features||[]).map(f=>{
-      const p = f.properties;
-      const vol = (p["上り・小型交通量"]||0)+(p["下り・小型交通量"]||0)+(p["上り・大型交通量"]||0)+(p["下り・大型交通量"]||0);
-      return {type:"Feature",properties:{vol},geometry:f.geometry};
-    });
-    map.getSource("jartic").setData({type:"FeatureCollection",features});
+    map.getSource("jartic").setData(data);
   }catch(e){ console.warn("JARTIC:",e); }
-  jarticBusy = false;
 }
 
 function drawMap(list){
