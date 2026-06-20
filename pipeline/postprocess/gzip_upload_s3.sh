@@ -29,12 +29,14 @@ echo "done gzip terrain_elevations"
 echo "start s3 upload"
 find "$TARGETS_DEST_DIR" -type f -name "*.json" | while read -r file; do
   aws s3 cp "$file" "s3://${S3_BUCKET}/targets/${file#$TARGETS_DEST_DIR/}" \
-    --content-type application/json --content-encoding gzip
+    --content-type application/json --content-encoding gzip \
+    --cache-control "public, max-age=2592000"
 done
 
 find "$TERRAIN_ELEVATIONS_DEST_DIR" -type f -name "*.json" | while read -r file; do
   aws s3 cp "$file" "s3://${S3_BUCKET}/terrain_elevations/${file#$TERRAIN_ELEVATIONS_DEST_DIR/}" \
-    --content-type application/json --content-encoding gzip
+    --content-type application/json --content-encoding gzip \
+    --cache-control "public, max-age=2592000"
 done
 
 rm -rf "$TARGETS_DEST_DIR" "$TERRAIN_ELEVATIONS_DEST_DIR"

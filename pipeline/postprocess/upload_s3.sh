@@ -40,7 +40,8 @@ total_files=${#files[@]}
 if (( total_files > 0 )); then
   current=0
   for file in "${files[@]}"; do
-    aws s3 cp "$file" "s3://${S3_BUCKET}/targets/${file#$TARGETS_SOURCE_DIR/}" >/dev/null 2>&1
+    aws s3 cp "$file" "s3://${S3_BUCKET}/targets/${file#$TARGETS_SOURCE_DIR/}" \
+      --cache-control "public, max-age=2592000" >/dev/null 2>&1
     ((current++))
     show_progress "$current" "$total_files"
   done
@@ -56,7 +57,8 @@ total_files=${#files[@]}
 if (( total_files > 0 )); then
   current=0
   for file in "${files[@]}"; do
-    aws s3 cp "$file" "s3://${S3_BUCKET}/terrain_elevations/${file#$TERRAIN_ELEVATIONS_SOURCE_DIR/}" >/dev/null 2>&1
+    aws s3 cp "$file" "s3://${S3_BUCKET}/terrain_elevations/${file#$TERRAIN_ELEVATIONS_SOURCE_DIR/}" \
+      --cache-control "public, max-age=2592000" >/dev/null 2>&1
     ((current++))
     show_progress "$current" "$total_files"
   done
