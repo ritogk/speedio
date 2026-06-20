@@ -1290,15 +1290,8 @@ function flyToTouge(t){
   const st = t.poly[0], ed = t.poly[t.poly.length-1];
   const bearing = Math.atan2(ed[1]-st[1], ed[0]-st[0]) * 180 / Math.PI;
   const mobile = window.innerWidth <= 760;
-  const target = {
-    center:[t.center[1], t.center[0]],
-    zoom: mobile ? 12.8 : 13.5,
-    pitch: mobile ? 64 : 70,
-    bearing,
-    padding:viewPadding(0),
-    duration:1800,
-    essential:true
-  };
+  const b = new maplibregl.LngLatBounds();
+  t.poly.forEach(p=>b.extend([p[1],p[0]]));
   cancelOrbit();
   if(flightAbort) flightAbort();
   let cancelled = false;
@@ -1307,7 +1300,14 @@ function flyToTouge(t){
   userEvents.forEach(ev=>map.on(ev,onUser));
   const cleanup = ()=>{ userEvents.forEach(ev=>map.off(ev,onUser)); flightAbort = null; };
   flightAbort = ()=>{ cancelled = true; cleanup(); };
-  map.flyTo(target);
+  map.fitBounds(b, {
+    padding:viewPadding(30),
+    pitch: mobile ? 64 : 70,
+    bearing,
+    maxZoom: mobile ? 14 : 14.5,
+    duration:1800,
+    essential:true
+  });
   map.once("moveend", ()=>{
     cleanup();
   });
@@ -1823,19 +1823,19 @@ function revealAndSelect(t){
 }
 function selectCard(id,scroll){
   document.querySelectorAll(".card").forEach(c=>c.classList.toggle("active", Number(c.dataset.id)===id));
-  if(scroll){
+  const card = document.querySelector(`.card[data-id="${id}"]`);
+  if(card && isMobile()){
+    const h = $("sheetHandle").offsetHeight + card.offsetHeight + 14;
+    panel.style.transform = "translateY(calc(100% - "+h+"px))";
+    document.documentElement.style.setProperty("--card-peek-h", h);
+  }
+  if(scroll && card){
     requestAnimationFrame(()=>{
-      const card = document.querySelector(`.card[data-id="${id}"]`);
       const body = document.querySelector(".panel-body");
-      if(card && body){
+      if(body){
         const bodyRect = body.getBoundingClientRect();
         const cardRect = card.getBoundingClientRect();
         body.scrollTo({top: body.scrollTop + cardRect.top - bodyRect.top, behavior:"smooth"});
-      }
-      if(card && isMobile()){
-        const h = $("sheetHandle").offsetHeight + card.offsetHeight + 14;
-        panel.style.transform = "translateY(calc(100% - "+h+"px))";
-        document.documentElement.style.setProperty("--card-peek-h", h);
       }
     });
   }
