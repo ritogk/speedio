@@ -2657,13 +2657,13 @@ async function open3DView(t){
         const extGeo = new THREE.ExtrudeGeometry(shape, { depth: BLDG_H, bevelEnabled: false });
         const mesh = new THREE.Mesh(extGeo, bldgMat);
         mesh.position.set(0, 0, bz);
-        mesh.visible = false;
+        mesh.visible = true;
         group.add(mesh);
         bldgObjs.push(mesh);
         const edges = new THREE.EdgesGeometry(extGeo);
         const eLine = new THREE.LineSegments(edges, bEdgeMat);
         eLine.position.copy(mesh.position);
-        eLine.visible = false;
+        eLine.visible = true;
         group.add(eLine);
         bldgObjs.push(eLine);
       });
@@ -2995,7 +2995,8 @@ async function open3DView(t){
     const bldgBtn = $("toggle3dBuildings");
     if(bldgObjs.length){
       bldgBtn.style.display = "";
-      let bldgVisible = false;
+      let bldgVisible = true;
+      bldgBtn.classList.add("active");
       bldgBtn.onclick = ()=>{
         bldgVisible = !bldgVisible;
         bldgObjs.forEach(o => o.visible = bldgVisible);
