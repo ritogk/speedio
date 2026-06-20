@@ -63,9 +63,9 @@ header{display:none}
   .map-float{pointer-events:none}
   .map-float>*{pointer-events:auto}
   .map-float .locate-btn{
-    padding:0;
+    padding:0;font-size:11px;
     box-shadow:0 1px 4px rgba(0,0,0,.18);
-    border-radius:50%;width:38px;height:38px;
+    border-radius:50%;width:32px;height:32px;
     display:flex;align-items:center;justify-content:center;
   }
   .map-float .locate-label{display:none}
@@ -130,6 +130,8 @@ main{flex:1;position:relative;min-height:0}
 }
 /* ボトムシートの開き具合に追従して回転ボタン・凡例を持ち上げる */
 @media (max-width:760px){
+  .view-ctrl button{width:34px;height:34px;font-size:15px}
+  .view-ctrl{gap:6px}
   .view-ctrl,.legend{transition:bottom .28s cubic-bezier(.3,.9,.3,1),opacity .2s}
   body:has(.panel.half) .view-ctrl{bottom:calc(44dvh + 14px)}
   body:has(.panel.half) .legend{bottom:calc(44dvh + 10px)}
@@ -572,15 +574,15 @@ main{flex:1;position:relative;min-height:0}
 /* ================= Mobile Search Overlay ================= */
 .m-search-pill{
   display:none;
-  position:absolute;top:10px;left:10px;right:54px;z-index:1250;
+  position:absolute;top:10px;left:10px;right:46px;z-index:1250;
   background:var(--paper);border-radius:999px;
-  padding:9px 14px;font-size:13px;color:var(--ink-soft);
-  box-shadow:0 2px 8px rgba(0,0,0,.18);
-  align-items:center;gap:6px;cursor:pointer;
+  padding:7px 12px;font-size:12px;color:var(--ink-soft);
+  box-shadow:0 1px 6px rgba(0,0,0,.16);
+  align-items:center;gap:5px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;
 }
-.m-search-pill .m-sp-icon{font-size:14px;flex-shrink:0;opacity:.6}
-.m-search-pill .m-sp-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.m-search-pill .m-sp-icon{font-size:13px;flex-shrink:0;opacity:.6}
+.m-search-pill .m-sp-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
 .m-search-pill .m-sp-sep{color:var(--contour);flex-shrink:0}
 .m-search-pill .m-sp-pref{
   font-size:11px;font-weight:600;color:var(--ink);
@@ -589,15 +591,15 @@ main{flex:1;position:relative;min-height:0}
 
 .m-filter-bar{
   display:none;
-  position:absolute;top:52px;left:0;right:0;z-index:1240;
-  padding:4px 10px;gap:5px;
+  position:absolute;top:44px;left:0;right:0;z-index:1240;
+  padding:3px 10px;gap:4px;
   overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
 }
 .m-filter-bar::-webkit-scrollbar{display:none}
 .m-filter-bar .m-fchip{
-  font:inherit;font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap;
+  font:inherit;font-size:10px;font-weight:500;cursor:pointer;white-space:nowrap;
   border:1px solid rgba(0,0,0,.08);border-radius:999px;
-  background:rgba(255,255,255,.92);color:var(--ink);padding:5px 11px;flex-shrink:0;
+  background:rgba(255,255,255,.92);color:var(--ink);padding:4px 10px;flex-shrink:0;
   box-shadow:0 1px 3px rgba(0,0,0,.1);
   -webkit-tap-highlight-color:transparent;
 }
@@ -635,8 +637,8 @@ main{flex:1;position:relative;min-height:0}
 
 .m-terrain-btn{
   display:none;
-  position:absolute;top:56px;right:10px;z-index:1250;
-  width:38px;height:38px;border-radius:50%;
+  position:absolute;top:48px;right:10px;z-index:1250;
+  width:32px;height:32px;border-radius:50%;
   border:1px solid var(--line);
   background:rgba(255,255,255,.92);color:var(--ink);
   box-shadow:0 1px 4px rgba(0,0,0,.18);
@@ -648,7 +650,7 @@ main{flex:1;position:relative;min-height:0}
 
 .m-layer-popup{
   display:none;
-  position:absolute;top:56px;right:54px;z-index:1260;
+  position:absolute;top:48px;right:46px;z-index:1260;
   background:var(--paper);border:1px solid var(--line);border-radius:12px;
   box-shadow:0 4px 16px rgba(0,0,0,.18);
   padding:10px;gap:10px;
@@ -766,7 +768,7 @@ main{flex:1;position:relative;min-height:0}
   .panel .pref-tags-wrap{display:none}
   .panel .presets{display:none}
   .map-ctrl{display:none}
-  .map-float{top:10px;right:10px}
+  .map-float{top:8px;right:8px}
 }
 </style>
 </head>
@@ -794,7 +796,7 @@ main{flex:1;position:relative;min-height:0}
 
     <div class="map-float" id="mapFloat"></div>
     <button class="m-terrain-btn" id="mTerrainBtn" aria-label="地図レイヤー">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
     </button>
     <div class="m-layer-popup" id="mLayerPopup">
       <button class="m-layer-opt" id="mLayer2d">
