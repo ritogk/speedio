@@ -1982,7 +1982,7 @@ function afterLoad(focusItems){
 // ================= UIイベント =================
 const sel = $("prefSelect");
 // JSオブジェクトは"10"以降の整数風キーが"01"〜"09"より先に並ぶため、明示的にコード順へソートする
-sel.innerHTML = '<option value="">＋ 県を追加</option><option value="nearby">周辺まとめて</option>' +
+sel.innerHTML = '<option value="">＋ 県を追加</option><option value="nearby">周辺の県をまとめて</option>' +
   Object.entries(PREFECTURES).sort((a,b)=>a[0].localeCompare(b[0]))
     .map(([c,n])=>`<option value="${c}">${n}</option>`).join("");
 sel.addEventListener("change",e=>{
