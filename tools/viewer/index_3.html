@@ -1313,13 +1313,21 @@ function toViewModel(raw, idx){
 }
 function googleMapUrl(poly, lat, lng){
   if(!poly.length) return "#";
-  const st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
+  let st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
+  if(lat!=null){
+    const d2 = (a,b) => (a[0]-b)*(a[0]-b)+(a[1]-lng)*(a[1]-lng);
+    if(d2(ed,[lat,lng]) < d2(st,[lat,lng])){ [st, ed] = [ed, st]; }
+  }
   const origin = lat!=null ? `${lat},${lng}` : "current+location";
   return `https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=${origin}&destination=${ed[0]},${ed[1]}&waypoints=${st[0]},${st[1]}|${ct[0]},${ct[1]}`;
 }
-function yahooCarNaviUrl(poly){
+function yahooCarNaviUrl(poly, lat, lng){
   if(!poly.length) return "#";
-  const st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
+  let st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
+  if(lat!=null){
+    const d2 = (a,b) => (a[0]-b)*(a[0]-b)+(a[1]-lng)*(a[1]-lng);
+    if(d2(ed,[lat,lng]) < d2(st,[lat,lng])){ [st, ed] = [ed, st]; }
+  }
   return `yjcarnavi://navi/select?point=current&point=${st[0]},${st[1]},&point=${ct[0]},${ct[1]},&point=${ed[0]},${ed[1]},`;
 }
 // ライン中央点のストリートビューを進行方向向きで開くURL（target.json内の旧形式URLは廃止されたため自前生成）
@@ -1358,7 +1366,7 @@ function openNav(t){
 function launchNav(app, t){
   if(app === "yahoo"){
     const now = Date.now();
-    window.location.href = yahooCarNaviUrl(t.poly);
+    window.location.href = yahooCarNaviUrl(t.poly, userLatLng?.[0], userLatLng?.[1]);
     setTimeout(()=>{
       if(Date.now() - now < 2000) toast("Yahoo! カーナビアプリをインストールしてください", "error");
     }, 1500);
