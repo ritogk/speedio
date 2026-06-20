@@ -2366,7 +2366,6 @@ function setSheet(state){
   panel.classList.toggle("card-peek",state==="card-peek");
   panel.classList.toggle("full",state==="full");
   if(state !== "card-peek") panel.style.transform = "";
-  setTimeout(()=>map.resize(),300);
 }
 handle.addEventListener("click",()=>{
   if(!isMobile()) return;
