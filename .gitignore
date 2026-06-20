@@ -24,3 +24,6 @@ __pycache__/
 .history
 
 pipeline/analyzer/shape
+
+*.png
+/cache/
