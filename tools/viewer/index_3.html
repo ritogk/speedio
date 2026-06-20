@@ -821,11 +821,22 @@ async function checkDataVersion(){
     if(prev && prev !== v){
       dataVersionChanged = true;
       prefCache = {};
+      globalRouteKeys.clear();
     }
     localStorage.setItem("touge.dataVersion", v);
   }catch(e){}
 }
 let prefCache = {};
+const globalRouteKeys = new Set();
+function routeDedupeKey(r){
+  const gl = r.geometry_list || [];
+  if(!gl.length) return null;
+  const p1 = `${gl[0][0]},${gl[0][1]}`;
+  const p2 = `${gl[gl.length-1][0]},${gl[gl.length-1][1]}`;
+  const name = Array.isArray(r.name) ? r.name.filter(Boolean).join("/") : (r.name || "");
+  const sorted = p1 < p2 ? `${p1}-${p2}` : `${p2}-${p1}`;
+  return `${name}|${sorted}`;
+}
 async function fetchPrefItems(code){
   if(prefCache[code]) return prefCache[code];
   await checkDataVersion();
@@ -834,9 +845,16 @@ async function fetchPrefItems(code){
     const res = await fetch(`./targets/${code}/target.slim.json`, opts);
     if(!res.ok) return [];
     const raw = await res.json();
+    const deduped = raw.filter(r => {
+      const key = routeDedupeKey(r);
+      if(!key) return true;
+      if(globalRouteKeys.has(key)) return false;
+      globalRouteKeys.add(key);
+      return true;
+    });
     const base = globalIdCounter;
-    globalIdCounter += raw.length;
-    const items = raw.map((r,i) => { const vm = toViewModel(r, base + i); vm._pref = code; return vm; });
+    globalIdCounter += deduped.length;
+    const items = deduped.map((r,i) => { const vm = toViewModel(r, base + i); vm._pref = code; return vm; });
     prefCache[code] = items;
     return items;
   }catch(e){ return []; }
