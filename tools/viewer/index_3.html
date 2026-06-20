@@ -808,10 +808,30 @@ let currentPreset = "balance";
 let userLatLng = null;
 let distanceFilter = null;
 let globalIdCounter = 0;
+let dataVersionChecked = false;
+let dataVersionChanged = false;
+async function checkDataVersion(){
+  if(dataVersionChecked) return;
+  dataVersionChecked = true;
+  try{
+    const res = await fetch("./data-version.json", {cache:"no-store"});
+    if(!res.ok) return;
+    const {v} = await res.json();
+    const prev = localStorage.getItem("touge.dataVersion");
+    if(prev && prev !== v){
+      dataVersionChanged = true;
+      prefCache = {};
+    }
+    localStorage.setItem("touge.dataVersion", v);
+  }catch(e){}
+}
+let prefCache = {};
 async function fetchPrefItems(code){
   if(prefCache[code]) return prefCache[code];
+  await checkDataVersion();
   try{
-    const res = await fetch(`./targets/${code}/target.slim.json`);
+    const opts = dataVersionChanged ? {cache:"reload"} : {};
+    const res = await fetch(`./targets/${code}/target.slim.json`, opts);
     if(!res.ok) return [];
     const raw = await res.json();
     const base = globalIdCounter;
@@ -823,7 +843,6 @@ async function fetchPrefItems(code){
 }
 let widthFilter = 0.85;
 let currentItems = [];
-const prefCache = {};
 const kobanCache = {};
 let kobanVisible = false;
 let locatingBusy = false;
@@ -1957,6 +1976,11 @@ async function loadNearbyPrefs(){
     loadedPrefs.clear();
     codes.forEach(c=>loadedPrefs.add(c));
     updatePrefLabel();
+    document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
+    document.querySelector('.chip[data-preset="balance"]').setAttribute("aria-pressed","true");
+    currentPreset = "balance";
+    distanceFilter = null;
+    $("presetHint").textContent = presetHints.balance;
     saveFilter();
     showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
     const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
