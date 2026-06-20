@@ -212,8 +212,11 @@ main{flex:1;position:relative;min-height:0}
 .more-btn:hover{border-style:solid;color:var(--accent);border-color:var(--accent)}
 .no-hit{font-size:12px;color:var(--ink-soft);padding:10px 0}
 
-.presets{padding:4px 0 10px;border-bottom:1px dashed var(--contour);margin-bottom:10px}
-.chip-row{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:2px}
+.presets{padding:4px 0 10px;border-bottom:1px dashed var(--contour);margin-bottom:10px;position:relative}
+.presets::after{content:"";position:absolute;top:4px;right:0;width:28px;height:30px;pointer-events:none;background:linear-gradient(to right,transparent,var(--card));transition:opacity .2s}
+.presets.scrolled-end::after{opacity:0}
+.chip-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chip-row::-webkit-scrollbar{display:none}
 .chip{
   font:inherit;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;
   border:1px solid var(--line);border-radius:999px;
@@ -377,6 +380,8 @@ main{flex:1;position:relative;min-height:0}
 .overlay-3d-legend i{width:14px;height:4px;border-radius:2px;display:inline-block;flex-shrink:0}
 
 @media (min-width:761px){
+  .chip-row{flex-wrap:wrap;overflow-x:visible}
+  .presets::after{display:none}
   .panel{
     left:0;right:auto;top:0;bottom:0;height:auto;
     width:350px;border-radius:0;border-top:0;border-right:1px solid var(--line);
@@ -2191,6 +2196,14 @@ $("hideVisitedBtn").addEventListener("click",()=>{
   render();
 });
 
+{
+  const row = document.querySelector(".chip-row");
+  const sec = document.querySelector(".presets");
+  row.addEventListener("scroll", ()=>{
+    const atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4;
+    sec.classList.toggle("scrolled-end", atEnd);
+  }, {passive:true});
+}
 
 // 現在地から10km刻み・100kmまでの距離サークルを描く
 let ringLabelMarkers = [];
