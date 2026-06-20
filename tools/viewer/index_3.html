@@ -1218,45 +1218,12 @@ map.on("load", () => {
     map.on("mouseenter", layer, ()=>{ map.getCanvas().style.cursor = "pointer"; });
     map.on("mouseleave", layer, ()=>{ map.getCanvas().style.cursor = ""; });
   });
-  // JARTIC交通量センサー表示
-  map.addSource("jartic",{type:"geojson",data:{type:"FeatureCollection",features:[]}});
-  map.addLayer({
-    id:"jartic-glow",type:"circle",source:"jartic",
-    paint:{
-      "circle-radius":["interpolate",["linear"],["get","vol"],0,14,1000,26,5000,40],
-      "circle-color":"rgba(255,160,10,0.1)",
-      "circle-blur":0.8
-    }
-  });
-  map.addLayer({
-    id:"jartic-dot",type:"circle",source:"jartic",
-    paint:{
-      "circle-radius":["interpolate",["linear"],["get","vol"],0,4,1000,8,5000,14],
-      "circle-color":"#FF9F0A",
-      "circle-opacity":0.9,
-      "circle-stroke-width":1.5,
-      "circle-stroke-color":"rgba(255,160,10,0.4)"
-    }
-  });
-  loadJartic();
-
   mapReady = true;
   if(pendingGeojson){ map.getSource("touge").setData(pendingGeojson); pendingGeojson = null; }
 });
 
 let markers = [];
 let pendingGeojson = null;
-let jarticLoaded = false;
-async function loadJartic(){
-  if(!mapReady || jarticLoaded) return;
-  jarticLoaded = true;
-  try{
-    const res = await fetch("./jartic.json");
-    if(!res.ok) throw new Error(res.status);
-    const data = await res.json();
-    map.getSource("jartic").setData(data);
-  }catch(e){ console.warn("JARTIC:",e); }
-}
 
 function drawMap(list){
   // GeoJSON生成: road_sectionをコーナーレベル毎のLineStringに
