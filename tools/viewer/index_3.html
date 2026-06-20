@@ -589,7 +589,7 @@ main{flex:1;position:relative;min-height:0}
 
 .m-filter-bar{
   display:none;
-  position:absolute;top:48px;left:0;right:0;z-index:1240;
+  position:absolute;top:52px;left:0;right:0;z-index:1240;
   padding:4px 10px;gap:5px;
   overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
 }
@@ -2116,6 +2116,13 @@ function selectCard(id,scroll){
     requestAnimationFrame(()=>{
       const body = document.querySelector(".panel-body");
       if(body){
+        const cards = $("cards");
+        const bodyH = body.clientHeight;
+        const lastCard = cards.querySelector(".card:last-child");
+        if(lastCard){
+          const needed = bodyH - lastCard.offsetHeight;
+          cards.style.paddingBottom = Math.max(0, needed) + "px";
+        }
         const bodyRect = body.getBoundingClientRect();
         const cardRect = card.getBoundingClientRect();
         body.scrollTo({top: body.scrollTop + cardRect.top - bodyRect.top, behavior:"smooth"});
