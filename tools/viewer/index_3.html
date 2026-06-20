@@ -564,6 +564,8 @@ main{flex:1;position:relative;min-height:0}
 .weight-panel input[type="number"]{width:42px;font:inherit;font-size:10px;border:1px solid var(--line);border-radius:3px;padding:1px 3px;text-align:right}
 .weight-panel button.wp-apply{margin-top:4px;width:100%;font:inherit;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--line);border-radius:4px;background:var(--paper-deep);padding:4px;color:var(--ink)}
 .weight-panel button.wp-apply:hover{border-color:var(--accent);color:var(--accent)}
+.weight-panel .wp-section{font-size:9px;font-weight:700;color:var(--ink-soft);border-bottom:1px solid var(--line);padding-bottom:2px;margin-bottom:3px}
+.weight-panel .wp-pin-row{display:flex;gap:3px;align-items:center;margin-bottom:2px}
 @media (max-width:760px){
   .weight-panel{right:6px;bottom:calc(96px + 50px)}
 }
@@ -605,10 +607,17 @@ main{flex:1;position:relative;min-height:0}
 
     <div class="weight-panel collapsed" id="weightPanel">
       <div class="wp-head" id="wpHead">
-        <h4>重み調整</h4>
+        <h4>管理者パネル</h4>
         <span class="wp-toggle" id="wpToggle">▲</span>
       </div>
       <div class="wp-body">
+        <div class="wp-section">ピン設置</div>
+        <div class="wp-pin-row">
+          <input type="text" id="adminLatLng" placeholder="35.681,139.767" style="width:120px;font:inherit;font-size:10px;border:1px solid var(--line);border-radius:3px;padding:2px 4px">
+          <button class="wp-apply" id="adminPinBtn" style="width:auto;margin:0;padding:2px 8px">設置</button>
+          <button class="wp-apply" id="adminPinClear" style="width:auto;margin:0;padding:2px 8px">消去</button>
+        </div>
+        <div class="wp-section" style="margin-top:6px">重み調整</div>
         <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
         <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
         <label><span>道幅</span><input type="number" step="0.1" data-w="width"></label>
@@ -2423,7 +2432,7 @@ window.addEventListener("scroll",()=>{
 window.addEventListener("beforeunload", ()=> saveFilter());
 document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilter(); });
 
-// ================= 重み調整パネル（管理者のみ） =================
+// ================= 管理者パネル =================
 if(localStorage.getItem("touge.admin") === "true"){
   const wp = $("weightPanel");
   wp.classList.add("show");
@@ -2435,6 +2444,27 @@ if(localStorage.getItem("touge.admin") === "true"){
     $("wpToggle").textContent = wp.classList.contains("collapsed") ? "▲" : "▼";
   });
   wp.addEventListener("keydown",e=>{ if(e.key==="Enter") $("weightApply").click(); });
+
+  let adminPin = null;
+  $("adminPinBtn").addEventListener("click",()=>{
+    const val = $("adminLatLng").value.trim();
+    const parts = val.split(/[,\s]+/).map(Number);
+    if(parts.length < 2 || parts.some(isNaN)){ toast("緯度,経度 の形式で入力"); return; }
+    const [lat, lng] = parts;
+    if(adminPin) adminPin.remove();
+    adminPin = new maplibregl.Marker({color:"#2563eb", occludedOpacity:1}).setLngLat([lng, lat]).addTo(map);
+    map.flyTo({center:[lng, lat], zoom:14, duration:800});
+  });
+  $("adminPinClear").addEventListener("click",()=>{
+    if(adminPin){ adminPin.remove(); adminPin = null; }
+  });
+
+  map.on("contextmenu", e=>{
+    const {lat, lng} = e.lngLat;
+    const text = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+    navigator.clipboard.writeText(text).then(()=> toast(`コピー: ${text}`));
+    e.preventDefault();
+  });
   $("weightApply").addEventListener("click",()=>{
     wp.querySelectorAll("input[data-w]").forEach(inp=>{
       const v = parseFloat(inp.value);
