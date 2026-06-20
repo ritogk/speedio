@@ -169,7 +169,11 @@ main{flex:1;position:relative;min-height:0}
 .sheet-head .pref-name{margin-left:auto;font-size:10px;color:var(--ink-soft);letter-spacing:.04em;text-align:right;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .panel-body{flex:1;overflow-y:auto;min-height:0;padding:4px 14px 24px;-webkit-overflow-scrolling:touch}
 
-.pref-tags{display:flex;flex-wrap:wrap;gap:4px;padding:0 0 8px;align-items:center}
+.pref-tags-wrap{position:relative;padding:0 0 8px}
+.pref-tags-wrap::after{content:"";position:absolute;top:0;right:0;width:28px;height:30px;pointer-events:none;background:linear-gradient(to right,transparent,var(--card));transition:opacity .2s}
+.pref-tags-wrap.scrolled-end::after{opacity:0}
+.pref-tags{display:flex;gap:4px;overflow-x:auto;align-items:center;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.pref-tags::-webkit-scrollbar{display:none}
 .pref-tag{
   display:inline-flex;align-items:center;gap:3px;
   font-size:12px;font-weight:500;color:var(--ink);
@@ -382,6 +386,8 @@ main{flex:1;position:relative;min-height:0}
 @media (min-width:761px){
   .chip-row{flex-wrap:wrap;overflow-x:visible}
   .presets::after{display:none}
+  .pref-tags{flex-wrap:wrap;overflow-x:visible}
+  .pref-tags-wrap::after{display:none}
   .panel{
     left:0;right:auto;top:0;bottom:0;height:auto;
     width:350px;border-radius:0;border-top:0;border-right:1px solid var(--line);
@@ -650,7 +656,7 @@ main{flex:1;position:relative;min-height:0}
       </div>
     </div>
     <div class="panel-body">
-      <div class="pref-tags" id="prefTags"></div>
+      <div class="pref-tags-wrap" id="prefTagsWrap"><div class="pref-tags" id="prefTags"></div></div>
       <div class="searchbox">
         <input id="searchInput" type="search" placeholder="🔍 峠名・道路種別で検索" autocomplete="off">
       </div>
@@ -2196,6 +2202,15 @@ $("hideVisitedBtn").addEventListener("click",()=>{
   row.addEventListener("scroll", ()=>{
     const atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4;
     sec.classList.toggle("scrolled-end", atEnd);
+  }, {passive:true});
+}
+
+{
+  const row = $("prefTags");
+  const wrap = $("prefTagsWrap");
+  row.addEventListener("scroll", ()=>{
+    const atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4;
+    wrap.classList.toggle("scrolled-end", atEnd);
   }, {passive:true});
 }
 
