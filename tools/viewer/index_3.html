@@ -248,8 +248,6 @@ main{flex:1;position:relative;min-height:0}
   background:var(--paper-deep);border:1.5px solid var(--contour);
   display:flex;align-items:center;justify-content:center;
 }
-.rank-num.tier-1{background:#FF3CAC;color:#fff;border-color:#FF3CAC;font-weight:700}
-.rank-num.tier-2{background:#00D4AA;color:#fff;border-color:#00D4AA;font-weight:700}
 .card-top{display:flex;flex-direction:column;gap:5px;margin-bottom:5px}
 .card-labels{display:flex;align-items:center;gap:7px}
 .route-oval{
@@ -289,21 +287,12 @@ main{flex:1;position:relative;min-height:0}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 
 .rank-marker{
-  background:rgba(0,0,0,.65);color:#fff;border:1.5px solid rgba(255,255,255,.45);
+  background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.5);
+  text-shadow:-1px -1px 0 rgba(0,0,0,.6),1px -1px 0 rgba(0,0,0,.6),-1px 1px 0 rgba(0,0,0,.6),1px 1px 0 rgba(0,0,0,.6);
   border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:500;
-  box-shadow:0 1px 3px rgba(0,0,0,.4);
-  width:26px;height:26px;cursor:pointer;
-}
-.rank-marker.tier-1{
-  background:#FF3CAC;border:2px solid #fff;
-  width:32px;height:32px;font-size:14px;font-weight:700;
-  box-shadow:0 0 0 2px rgba(255,60,172,.4),0 2px 6px rgba(0,0,0,.5);
-}
-.rank-marker.tier-2{
-  background:#00D4AA;color:#fff;border:2px solid rgba(255,255,255,.7);
-  width:28px;height:28px;font-size:13px;font-weight:600;
-  box-shadow:0 1px 4px rgba(0,0,0,.45);
+  font-size:10px;font-weight:500;
+  box-shadow:0 1px 2px rgba(0,0,0,.4);
+  width:20px;height:20px;cursor:pointer;
 }
 .ring-label{
   font-size:10px;color:#fff;
@@ -756,7 +745,7 @@ function initApp(){
 "use strict";
 
 // ================= 定数 =================
-const MARKER_N = 0;
+const MARKER_N = 20;
 function tierOf(rank, total){
   const t1 = Math.max(3, Math.round(total * 0.10));
   const t2 = Math.max(10, Math.round(total * 0.30));
@@ -1349,6 +1338,12 @@ function flyToTouge(t){
   });
 }
 
+function cleanCity(city){
+  if(!city) return null;
+  const m = city.match(/^(.+市).+区$/);
+  return m ? m[1] : city;
+}
+
 // ================= ビューモデル =================
 function toViewModel(raw, idx){
   const poly = raw.geometry_list || [];
@@ -1406,7 +1401,7 @@ function toViewModel(raw, idx){
     uphillCnt: raw.uphill_cnt ?? null,
     downhillCnt: raw.downhill_cnt ?? null,
     prefecture: raw.prefecture || null,
-    city: raw.city || null,
+    city: cleanCity(raw.city),
     center, poly,
     roadSection: secs,
     elevationSmooth: raw.elevation_smooth || [],
@@ -1558,7 +1553,7 @@ function cardHtml(t, rank, total){
   return `
     <article class="card" data-id="${t.id}" tabindex="0">
       <div class="card-top">
-        <div class="card-labels"><span class="rank-num${tierOf(rank,total)===2?" tier-2":""}">${rank+1}</span>${t.prefecture?`<span class="route-oval">${escapeHtml(t.prefecture)}</span>`:(t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:"")}${t.city?`<span class="route-oval">${escapeHtml(t.city)}</span>`:""}${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}</div><h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
+        <div class="card-labels"><span class="rank-num">${rank+1}</span>${t.prefecture?`<span class="route-oval">${escapeHtml(t.prefecture)}</span>`:(t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:"")}${t.city?`<span class="route-oval">${escapeHtml(t.city)}</span>`:""}${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}</div><h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
       </div>
       <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b>${t.stableKey&&visitedKeys.has(t.stableKey)?` <span class="visited-tag">🚗済</span>`:""}</p>
       <div class="bars">
