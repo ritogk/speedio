@@ -272,6 +272,7 @@ main{flex:1;position:relative;min-height:0}
 .card-top h3:hover::after{display:block}
 .dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap}
 .visited-tag{font-size:13px;margin-left:4px}
+.hide-visited-label{font-size:12px;color:var(--ink-soft);cursor:pointer;margin-top:4px;display:flex;align-items:center;gap:4px}
 .meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
 .meta b{color:var(--ink);font-weight:500}
 .bars{display:grid;grid-template-columns:58px 1fr 28px;gap:3px 8px;align-items:center}
@@ -661,6 +662,7 @@ main{flex:1;position:relative;min-height:0}
           <button class="chip" aria-pressed="false" data-preset="uphill">起伏</button>
         </div>
         <p class="preset-hint" id="presetHint">コーナー・高低差・道幅をバランスよく評価します。</p>
+        <label class="hide-visited-label" id="hideVisitedLabel" style="display:none"><input type="checkbox" id="hideVisitedCb"> 行った峠を非表示</label>
       </section>
       <div id="cards"></div>
     </div>
@@ -823,10 +825,12 @@ function saveVisited(){ localStorage.setItem("touge.visited", JSON.stringify([..
 let pendingVisitKey = null;
 let pendingVisitTimer = null;
 let pendingVisitTs = 0;
+function updateVisitedUi(){ $("hideVisitedLabel").style.display = visitedKeys.size ? "" : "none"; }
 function commitPendingVisit(){
   if(!pendingVisitKey) return;
   visitedKeys.add(pendingVisitKey);
   saveVisited();
+  updateVisitedUi();
   toast("行った峠に記録しました");
   pendingVisitKey = null;
   pendingVisitTimer = null;
@@ -844,6 +848,7 @@ document.addEventListener("visibilitychange", ()=>{
     }
   }
 });
+let hideVisited = false;
 let dataVersionChecked = false;
 let dataVersionChanged = false;
 async function checkDataVersion(){
@@ -1182,14 +1187,13 @@ map.on("load", () => {
     id:"touge-line", type:"line", source:"touge",
     layout:{"line-cap":"round","line-join":"round"},
     paint:{
-      "line-color":["case",["==",["get","visited"],1],"#999999",
-        ["match",["get","level"],
+      "line-color":["match",["get","level"],
         "strong",levelColor.strong,
         "medium",levelColor.medium,
         "weak",levelColor.weak,
-        levelColor.straight]],
+        levelColor.straight],
       "line-width":["interpolate",["linear"],["zoom"],8,2,14,4.5],
-      "line-opacity":["*",["coalesce",["get","fade"],1],["case",["==",["get","visited"],1],0.5,1]]
+      "line-opacity":["coalesce",["get","fade"],1]
     }
   });
   // 道路ラインを直接クリック/タップで選択（casingの方が太いのでタップ判定に含める）
@@ -1214,16 +1218,15 @@ function drawMap(list){
   const features = [];
   list.forEach((t,i)=>{
     const fade = fadeOf(i, list.length, 0.25);
-    const vis = t.stableKey && visitedKeys.has(t.stableKey) ? 1 : 0;
     if(t.roadSection.length){
       t.roadSection.forEach(sec=>{
         const pts = (sec.points||[]);
         if(pts.length < 2) return;
         const lv = (sec.section_type === "straight") ? "straight" : (sec.corner_level || "weak");
-        features.push({type:"Feature",properties:{level:lv,fade,tid:t.id,visited:vis},geometry:{type:"LineString",coordinates:pts}});
+        features.push({type:"Feature",properties:{level:lv,fade,tid:t.id},geometry:{type:"LineString",coordinates:pts}});
       });
     }else if(t.poly.length){
-      features.push({type:"Feature",properties:{level:"weak",fade,tid:t.id,visited:vis},
+      features.push({type:"Feature",properties:{level:"weak",fade,tid:t.id},
         geometry:{type:"LineString",coordinates:t.poly.map(p=>[p[1],p[0]])}});
     }
   });
@@ -1792,6 +1795,9 @@ function render(){
   if(widthFilter!=null){
     lastRanked = lastRanked.filter(t=>t.width>=widthFilter);
   }
+  if(hideVisited){
+    lastRanked = lastRanked.filter(t=>!t.stableKey || !visitedKeys.has(t.stableKey));
+  }
   renderCards();
   const q = searchQuery.trim().toLowerCase();
   const mapList = q ? lastRanked.filter(t => t.name.toLowerCase().includes(q) || t.routeLabel.toLowerCase().includes(q)) : lastRanked;
@@ -2138,6 +2144,10 @@ $("searchInput").addEventListener("input",e=>{
   searchQuery = e.target.value;
   render();
 });
+$("hideVisitedCb").addEventListener("change",e=>{
+  hideVisited = e.target.checked;
+  render();
+});
 
 
 // 現在地から10km刻み・100kmまでの距離サークルを描く
@@ -2297,6 +2307,7 @@ async function initialLoad(){
 restoreFilter().then(restored => {
   if(!restored) initialLoad();
 });
+updateVisitedUi();
 
 // ===== スマホ用ビュー操作 =====
 // 長押し: なめらかに回転し続ける / 短いタップ: 45°だけ回転（+初回はヒント表示）
