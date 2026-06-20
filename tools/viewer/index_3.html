@@ -1316,18 +1316,25 @@ function isEndCloser(poly, lat, lng){
   const d2 = (a) => (a[0]-lat)*(a[0]-lat)+(a[1]-lng)*(a[1]-lng);
   return d2(poly[poly.length-1]) < d2(poly[0]);
 }
+function routeNeedsCenter(poly){
+  if(poly.length < 2) return false;
+  const st = poly[0], ed = poly[poly.length-1];
+  return haversineKm(st[0], st[1], ed[0], ed[1]) > 5;
+}
 function googleMapUrl(poly, lat, lng){
   if(!poly.length) return "#";
   let st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
   if(isEndCloser(poly, lat, lng)){ [st, ed] = [ed, st]; }
   const origin = lat!=null ? `${lat},${lng}` : "current+location";
-  return `https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=${origin}&destination=${ed[0]},${ed[1]}&waypoints=${st[0]},${st[1]}|${ct[0]},${ct[1]}`;
+  const wp = routeNeedsCenter(poly) ? `${st[0]},${st[1]}|${ct[0]},${ct[1]}` : `${st[0]},${st[1]}`;
+  return `https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=${origin}&destination=${ed[0]},${ed[1]}&waypoints=${wp}`;
 }
 function yahooCarNaviUrl(poly, lat, lng){
   if(!poly.length) return "#";
   let st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
   if(isEndCloser(poly, lat, lng)){ [st, ed] = [ed, st]; }
-  return `yjcarnavi://navi/select?point=current&point=${st[0]},${st[1]},&point=${ct[0]},${ct[1]},&point=${ed[0]},${ed[1]},`;
+  const wp = routeNeedsCenter(poly) ? `&point=${ct[0]},${ct[1]},` : "";
+  return `yjcarnavi://navi/select?point=current&point=${st[0]},${st[1]},${wp}&point=${ed[0]},${ed[1]},`;
 }
 // ライン中央点のストリートビューを進行方向向きで開くURL（target.json内の旧形式URLは廃止されたため自前生成）
 function streetViewUrl(poly){
