@@ -18,7 +18,9 @@ JSONデータ（targets/*.json）はブラウザに30日キャッシュさせて
 
 ### データ更新時の手順
 
-1. 新しいJSONデータをS3にアップロード（`upload_s3.sh` or `gzip_upload_s3.sh`）
+slim再生成（`build_slim_targets.py`）やJSONデータの更新を行った場合は、**必ず**以下の手順でバージョンも上げること。
+
+1. 新しいJSONデータをS3にアップロード（`upload_s3.sh` or `gzip_upload_s3.sh` or `build_slim_targets.py`）
 2. `tools/viewer/data-version.json` の `v` を更新（例: `{"v":"2026-07-01"}`）
 3. `data-version.json` をS3にアップ: `aws s3 cp tools/viewer/data-version.json s3://speedio-old-viewer-788594208758/data-version.json --cache-control "no-cache"`
 4. CloudFront Invalidation: `aws cloudfront create-invalidation --distribution-id EBM4FK68PMJX0 --paths "/data-version.json" "/targets/*"`
