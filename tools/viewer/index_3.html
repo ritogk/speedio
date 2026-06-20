@@ -1223,21 +1223,21 @@ map.on("load", () => {
   map.addLayer({
     id:"jartic-glow",type:"circle",source:"jartic",
     paint:{
-      "circle-radius":["interpolate",["linear"],["get","vol"],0,12,1000,22,5000,36],
-      "circle-color":"rgba(88,166,255,0.08)",
+      "circle-radius":["interpolate",["linear"],["get","vol"],0,14,1000,26,5000,40],
+      "circle-color":"rgba(255,160,10,0.1)",
       "circle-blur":0.8
     }
-  },"touge-casing");
+  });
   map.addLayer({
     id:"jartic-dot",type:"circle",source:"jartic",
     paint:{
-      "circle-radius":["interpolate",["linear"],["get","vol"],0,4,1000,7,5000,12],
-      "circle-color":"#58a6ff",
-      "circle-opacity":0.85,
-      "circle-stroke-width":1,
-      "circle-stroke-color":"rgba(88,166,255,0.3)"
+      "circle-radius":["interpolate",["linear"],["get","vol"],0,4,1000,8,5000,14],
+      "circle-color":"#FF9F0A",
+      "circle-opacity":0.9,
+      "circle-stroke-width":1.5,
+      "circle-stroke-color":"rgba(255,160,10,0.4)"
     }
-  },"touge-casing");
+  });
   loadJartic();
 
   mapReady = true;
