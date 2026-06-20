@@ -1232,12 +1232,6 @@ map.on("load", () => {
       "circle-stroke-color":"rgba(88,166,255,0.3)"
     }
   },"touge-casing");
-  map.addLayer({
-    id:"jartic-label",type:"symbol",source:"jartic",
-    minzoom:10,
-    layout:{"text-field":["concat",["get","vol"],"台/h"],"text-size":11,"text-offset":[0,1.2],"text-allow-overlap":false},
-    paint:{"text-color":"#58a6ff","text-halo-color":"rgba(0,0,0,0.7)","text-halo-width":1}
-  });
   loadJartic();
 
   mapReady = true;
