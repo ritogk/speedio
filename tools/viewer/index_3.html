@@ -1724,7 +1724,9 @@ function render(){
     lastRanked = lastRanked.filter(t=>t.width>=widthFilter);
   }
   renderCards();
-  drawMap(lastRanked);
+  const q = searchQuery.trim().toLowerCase();
+  const mapList = q ? lastRanked.filter(t => t.name.toLowerCase().includes(q) || t.routeLabel.toLowerCase().includes(q)) : lastRanked;
+  drawMap(mapList);
 }
 
 // 地図上のライン/マーカーから選んだとき、リスト側でそのカードまで開いて選択する
@@ -2062,7 +2064,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
 
 $("searchInput").addEventListener("input",e=>{
   searchQuery = e.target.value;
-  renderCards();
+  render();
 });
 
 
