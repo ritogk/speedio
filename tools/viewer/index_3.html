@@ -1321,7 +1321,7 @@ function googleMapUrl(poly, lat, lng){
   let st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
   if(isEndCloser(poly, lat, lng)){ [st, ed] = [ed, st]; }
   const origin = lat!=null ? `${lat},${lng}` : "current+location";
-  return `https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=${origin}&destination=${ed[0]},${ed[1]}&waypoints=via:${st[0]},${st[1]}|via:${ct[0]},${ct[1]}`;
+  return `https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=${origin}&destination=${ed[0]},${ed[1]}&waypoints=${st[0]},${st[1]}|${ct[0]},${ct[1]}`;
 }
 function yahooCarNaviUrl(poly, lat, lng){
   if(!poly.length) return "#";
