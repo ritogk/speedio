@@ -271,6 +271,7 @@ main{flex:1;position:relative;min-height:0}
 }
 .card-top h3:hover::after{display:block}
 .dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap}
+.visited-tag{font-size:13px;margin-left:4px}
 .meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
 .meta b{color:var(--ink);font-weight:500}
 .bars{display:grid;grid-template-columns:58px 1fr 28px;gap:3px 8px;align-items:center}
@@ -808,6 +809,32 @@ let currentPreset = "balance";
 let userLatLng = null;
 let distanceFilter = null;
 let globalIdCounter = 0;
+const visitedKeys = new Set(JSON.parse(localStorage.getItem("touge.visited") || "[]"));
+function saveVisited(){ localStorage.setItem("touge.visited", JSON.stringify([...visitedKeys])); }
+let pendingVisitKey = null;
+let pendingVisitTimer = null;
+let pendingVisitTs = 0;
+function commitPendingVisit(){
+  if(!pendingVisitKey) return;
+  visitedKeys.add(pendingVisitKey);
+  saveVisited();
+  toast("行った峠に記録しました");
+  pendingVisitKey = null;
+  pendingVisitTimer = null;
+  pendingVisitTs = 0;
+  render();
+}
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "hidden" && pendingVisitKey){
+    pendingVisitTs = Date.now();
+  }
+  if(document.visibilityState === "visible" && pendingVisitKey && pendingVisitTs){
+    if(Date.now() - pendingVisitTs >= 30000){
+      clearTimeout(pendingVisitTimer);
+      commitPendingVisit();
+    }
+  }
+});
 let dataVersionChecked = false;
 let dataVersionChanged = false;
 async function checkDataVersion(){
@@ -1146,13 +1173,14 @@ map.on("load", () => {
     id:"touge-line", type:"line", source:"touge",
     layout:{"line-cap":"round","line-join":"round"},
     paint:{
-      "line-color":["match",["get","level"],
+      "line-color":["case",["==",["get","visited"],1],"#999999",
+        ["match",["get","level"],
         "strong",levelColor.strong,
         "medium",levelColor.medium,
         "weak",levelColor.weak,
-        levelColor.straight],
+        levelColor.straight]],
       "line-width":["interpolate",["linear"],["zoom"],8,2,14,4.5],
-      "line-opacity":["coalesce",["get","fade"],1]
+      "line-opacity":["*",["coalesce",["get","fade"],1],["case",["==",["get","visited"],1],0.5,1]]
     }
   });
   // 道路ラインを直接クリック/タップで選択（casingの方が太いのでタップ判定に含める）
@@ -1176,16 +1204,17 @@ function drawMap(list){
   // GeoJSON生成: road_sectionをコーナーレベル毎のLineStringに
   const features = [];
   list.forEach((t,i)=>{
-    const fade = fadeOf(i, list.length, 0.25); // 下位ほど薄く（下限25%）
+    const fade = fadeOf(i, list.length, 0.25);
+    const vis = t.stableKey && visitedKeys.has(t.stableKey) ? 1 : 0;
     if(t.roadSection.length){
       t.roadSection.forEach(sec=>{
-        const pts = (sec.points||[]); // [lng,lat]のままでOK(GeoJSONはlng,lat順)
+        const pts = (sec.points||[]);
         if(pts.length < 2) return;
         const lv = (sec.section_type === "straight") ? "straight" : (sec.corner_level || "weak");
-        features.push({type:"Feature",properties:{level:lv,fade,tid:t.id},geometry:{type:"LineString",coordinates:pts}});
+        features.push({type:"Feature",properties:{level:lv,fade,tid:t.id,visited:vis},geometry:{type:"LineString",coordinates:pts}});
       });
     }else if(t.poly.length){
-      features.push({type:"Feature",properties:{level:"weak",fade,tid:t.id},
+      features.push({type:"Feature",properties:{level:"weak",fade,tid:t.id,visited:vis},
         geometry:{type:"LineString",coordinates:t.poly.map(p=>[p[1],p[0]])}});
     }
   });
@@ -1292,8 +1321,16 @@ function toViewModel(raw, idx){
     else segStraight+=n;
   });
   const segTotal = segStrong+segMedium+segWeak+segStraight || 1;
+  const _gl = poly;
+  let stableKey = null;
+  if(_gl.length){
+    const _p1 = `${_gl[0][0]},${_gl[0][1]}`;
+    const _p2 = `${_gl[_gl.length-1][0]},${_gl[_gl.length-1][1]}`;
+    const _sorted = _p1 < _p2 ? `${_p1}-${_p2}` : `${_p2}-${_p1}`;
+    stableKey = `${name}|${_sorted}`;
+  }
   return {
-    id: idx, name,
+    id: idx, name, stableKey,
     routeLabel: HIGHWAY_LABEL[Array.isArray(raw.highway) ? raw.highway[0] : raw.highway] || "一般道",
     lengthKm: Math.round((raw.length || 0) / 100) / 10,
     height: Math.round(raw.elevation_height || 0),
@@ -1368,6 +1405,11 @@ let pendingNavTouge = null;
 const NAV_LABELS = {google:"Google Maps", yahoo:"Yahoo!カーナビ"};
 
 function openNav(t){
+  if(t.stableKey){
+    pendingVisitKey = t.stableKey;
+    clearTimeout(pendingVisitTimer);
+    pendingVisitTimer = setTimeout(()=>{ commitPendingVisit(); }, 30000);
+  }
   if(!isMobileDevice){
     window.open(googleMapUrl(t.poly, userLatLng?.[0], userLatLng?.[1]), "_blank");
     return;
@@ -1467,7 +1509,7 @@ function cardHtml(t, rank, total){
   return `
     <article class="card" data-id="${t.id}" tabindex="0">
       <div class="card-top">
-        <div class="card-labels"><span class="rank-num">${rank+1}</span>${t.prefecture?`<span class="route-oval">${escapeHtml(t.prefecture)}</span>`:(t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:"")}${t.city?`<span class="route-oval">${escapeHtml(t.city)}</span>`:""}${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}</div><h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
+        <div class="card-labels"><span class="rank-num">${rank+1}</span>${t.prefecture?`<span class="route-oval">${escapeHtml(t.prefecture)}</span>`:(t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:"")}${t.city?`<span class="route-oval">${escapeHtml(t.city)}</span>`:""}${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}${t.stableKey&&visitedKeys.has(t.stableKey)?`<span class="visited-tag">&#127937;</span>`:""}</div><h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
       </div>
       <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b></p>
       <div class="bars">
