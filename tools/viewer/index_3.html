@@ -248,6 +248,8 @@ main{flex:1;position:relative;min-height:0}
   background:var(--paper-deep);border:1.5px solid var(--contour);
   display:flex;align-items:center;justify-content:center;
 }
+.rank-num.tier-1{background:#FF3CAC;color:#fff;border-color:#FF3CAC;font-weight:700}
+.rank-num.tier-2{background:#00D4AA;color:#fff;border-color:#00D4AA;font-weight:700}
 .card-top{display:flex;flex-direction:column;gap:5px;margin-bottom:5px}
 .card-labels{display:flex;align-items:center;gap:7px}
 .route-oval{
@@ -292,6 +294,16 @@ main{flex:1;position:relative;min-height:0}
   font-size:12px;font-weight:500;
   box-shadow:0 1px 3px rgba(0,0,0,.4);
   width:26px;height:26px;cursor:pointer;
+}
+.rank-marker.tier-1{
+  background:#FF3CAC;border:2px solid #fff;
+  width:32px;height:32px;font-size:14px;font-weight:700;
+  box-shadow:0 0 0 2px rgba(255,60,172,.4),0 2px 6px rgba(0,0,0,.5);
+}
+.rank-marker.tier-2{
+  background:#00D4AA;color:#fff;border:2px solid rgba(255,255,255,.7);
+  width:28px;height:28px;font-size:13px;font-weight:600;
+  box-shadow:0 1px 4px rgba(0,0,0,.45);
 }
 .ring-label{
   font-size:10px;color:#fff;
@@ -744,7 +756,13 @@ function initApp(){
 "use strict";
 
 // ================= 定数 =================
-const MARKER_N = 20;
+const MARKER_N = 0;
+function tierOf(rank, total){
+  const t1 = Math.max(3, Math.round(total * 0.10));
+  const t2 = Math.max(10, Math.round(total * 0.30));
+  const t3 = Math.max(20, Math.round(total * 0.60));
+  return rank < t1 ? 1 : rank < t2 ? 2 : rank < t3 ? 3 : 4;
+}
 // ランクに応じたフェード係数（1位=1.0 → 最下位=下限値）
 function fadeOf(i, len, floor){
   if(len <= 1) return 1;
@@ -1176,12 +1194,27 @@ map.on("load", () => {
   map.addLayer({
     id:"touge-casing", type:"line", source:"touge",
     layout:{"line-cap":"round","line-join":"round"},
-    paint:{"line-color":["case",["==",["get","visited"],1],"#9B30FF","#4a7fbf"],"line-width":["interpolate",["linear"],["zoom"],8,8,14,15],"line-opacity":["*",.9,["coalesce",["get","fade"],1]]}
+    paint:{
+      "line-color":["case",["==",["get","visited"],1],"#9B30FF",
+        ["step",["get","tier"],"#FF3CAC",2,"#00D4AA",3,"#4a7fbf",4,"#6B7580"]],
+      "line-width":["interpolate",["linear"],["zoom"],
+        8,["step",["get","tier"],13,2,11,3,8,4,6],
+        14,["step",["get","tier"],22,2,19,3,15,4,12]],
+      "line-blur":["step",["get","tier"],6,2,4,3,0,4,0],
+      "line-opacity":["*",.85,["coalesce",["get","fade"],1]]
+    }
   });
   map.addLayer({
     id:"touge-white", type:"line", source:"touge",
     layout:{"line-cap":"round","line-join":"round"},
-    paint:{"line-color":"#ffffff","line-width":["interpolate",["linear"],["zoom"],8,4.5,14,9.5],"line-opacity":["*",.9,["coalesce",["get","fade"],1]]}
+    paint:{
+      "line-color":"#ffffff",
+      "line-width":["interpolate",["linear"],["zoom"],
+        8,["step",["get","tier"],9,2,7,3,4.5,4,3.5],
+        14,["step",["get","tier"],16,2,13,3,9.5,4,7.5]],
+      "line-blur":["step",["get","tier"],4,2,3,3,0,4,0],
+      "line-opacity":["*",.8,["coalesce",["get","fade"],1]]
+    }
   });
   map.addLayer({
     id:"touge-line", type:"line", source:"touge",
@@ -1192,7 +1225,9 @@ map.on("load", () => {
         "medium",levelColor.medium,
         "weak",levelColor.weak,
         levelColor.straight],
-      "line-width":["interpolate",["linear"],["zoom"],8,2,14,4.5],
+      "line-width":["interpolate",["linear"],["zoom"],
+        8,["step",["get","tier"],3,2,2.5,3,2,4,1.5],
+        14,["step",["get","tier"],6,2,5.25,3,4.5,4,3.5]],
       "line-opacity":["coalesce",["get","fade"],1]
     }
   });
@@ -1217,17 +1252,18 @@ function drawMap(list){
   // GeoJSON生成: road_sectionをコーナーレベル毎のLineStringに
   const features = [];
   list.forEach((t,i)=>{
-    const fade = fadeOf(i, list.length, 0.25);
+    const tier = tierOf(i, list.length);
+    const fade = tier === 1 ? 1.0 : tier === 2 ? Math.max(0.7, fadeOf(i, list.length, 0.25)) : fadeOf(i, list.length, 0.25);
     const tv = (t.stableKey && visitedKeys.has(t.stableKey)) ? 1 : 0;
     if(t.roadSection.length){
       t.roadSection.forEach(sec=>{
         const pts = (sec.points||[]);
         if(pts.length < 2) return;
         const lv = (sec.section_type === "straight") ? "straight" : (sec.corner_level || "weak");
-        features.push({type:"Feature",properties:{level:lv,fade,tid:t.id,visited:tv},geometry:{type:"LineString",coordinates:pts}});
+        features.push({type:"Feature",properties:{level:lv,fade,tid:t.id,visited:tv,tier},geometry:{type:"LineString",coordinates:pts}});
       });
     }else if(t.poly.length){
-      features.push({type:"Feature",properties:{level:"weak",fade,tid:t.id,visited:tv},
+      features.push({type:"Feature",properties:{level:"weak",fade,tid:t.id,visited:tv,tier},
         geometry:{type:"LineString",coordinates:t.poly.map(p=>[p[1],p[0]])}});
     }
   });
@@ -1240,7 +1276,7 @@ function drawMap(list){
   markers = [];
   list.slice(0, MARKER_N).forEach((t,i)=>{
     const el = document.createElement("div");
-    el.className = "rank-marker";
+    el.className = "rank-marker tier-" + tierOf(i, list.length);
     el.textContent = i+1;
     el.addEventListener("click",()=>revealAndSelect(t));
     const m = new maplibregl.Marker({element:el, occludedOpacity:1})
@@ -1522,7 +1558,7 @@ function cardHtml(t, rank, total){
   return `
     <article class="card" data-id="${t.id}" tabindex="0">
       <div class="card-top">
-        <div class="card-labels"><span class="rank-num">${rank+1}</span>${t.prefecture?`<span class="route-oval">${escapeHtml(t.prefecture)}</span>`:(t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:"")}${t.city?`<span class="route-oval">${escapeHtml(t.city)}</span>`:""}${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}</div><h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
+        <div class="card-labels"><span class="rank-num${tierOf(rank,total)===2?" tier-2":""}">${rank+1}</span>${t.prefecture?`<span class="route-oval">${escapeHtml(t.prefecture)}</span>`:(t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:"")}${t.city?`<span class="route-oval">${escapeHtml(t.city)}</span>`:""}${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}</div><h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
       </div>
       <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b>${t.stableKey&&visitedKeys.has(t.stableKey)?` <span class="visited-tag">🚗済</span>`:""}</p>
       <div class="bars">
