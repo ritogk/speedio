@@ -59,7 +59,7 @@ run = "uv run python server.py"
 description = "結果確認 viewer (静的HTML, port 7001)"
 dir = "tools/viewer"
 run = """
-explorer.exe 'http://localhost:7001' &
+explorer.exe 'http://localhost:7001/index_3.html' &
 python3 -m http.server 7001
 """
 

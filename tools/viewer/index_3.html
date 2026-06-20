@@ -188,6 +188,12 @@ main{flex:1;position:relative;min-height:0}
   background:transparent;padding:5px 12px;white-space:nowrap;
 }
 .pref-clear:hover{color:var(--accent);border-color:var(--accent)}
+.pref-nearby-load{
+  font:inherit;font-size:12px;font-weight:500;color:var(--ink-soft);cursor:pointer;
+  border:1px dashed var(--contour);border-radius:999px;
+  background:transparent;padding:5px 12px;white-space:nowrap;
+}
+.pref-nearby-load:hover{color:var(--accent);border-color:var(--accent)}
 .searchbox{padding:2px 0 8px}
 .searchbox input{
   width:100%;font:inherit;font-size:13px;
@@ -1319,7 +1325,7 @@ const NAV_LABELS = {google:"Google Maps", yahoo:"Yahoo!カーナビ"};
 
 function openNav(t){
   if(!isMobileDevice){
-    window.open(googleMapUrl(t.poly), "_blank");
+    window.open(googleMapUrl(t.poly, userLatLng?.[0], userLatLng?.[1]), "_blank");
     return;
   }
   const saved = localStorage.getItem(NAV_KEY);
@@ -1338,7 +1344,9 @@ function launchNav(app, t){
       if(Date.now() - now < 2000) toast("Yahoo! カーナビアプリをインストールしてください", "error");
     }, 1500);
   } else {
-    window.open(googleMapUrl(t.poly), "_blank");
+    const url = googleMapUrl(t.poly, userLatLng?.[0], userLatLng?.[1]);
+    if(isMobileDevice) window.location.href = url;
+    else window.open(url, "_blank");
   }
 }
 function closeNavPicker(){ $("navPicker").classList.remove("show"); pendingNavTouge = null; }
@@ -1793,7 +1801,7 @@ function updatePrefLabel(){
 function renderPrefTags(){
   const el = $("prefTags");
   const sel = $("prefSelect");
-  el.querySelectorAll(".pref-tag, .pref-clear").forEach(n => n.remove());
+  el.querySelectorAll(".pref-tag, .pref-clear, .pref-nearby-load").forEach(n => n.remove());
   const sorted = [...loadedPrefs].sort();
   sorted.forEach(c => {
     const span = document.createElement("span");
@@ -1810,6 +1818,11 @@ function renderPrefTags(){
     btn.addEventListener("click", clearAllPrefs);
     el.appendChild(btn);
   }
+  const nb = document.createElement("button");
+  nb.className = "pref-nearby-load";
+  nb.textContent = "📍 周辺読込";
+  nb.addEventListener("click", loadNearbyPrefs);
+  el.appendChild(nb);
 }
 function removePref(code){
   loadedPrefs.delete(code);
@@ -1912,13 +1925,21 @@ sel.addEventListener("change",e=>{
   m.remove();
 }
 
-async function activateNearby(lat, lng){
-  document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
-  document.querySelector('.chip[data-preset="nearby"]').setAttribute("aria-pressed","true");
-  currentPreset = "nearby";
-  distanceFilter = 50;
-  $("presetHint").textContent = presetHints.nearby;
-  visibleCount = PAGE_N;
+async function loadNearbyPrefs(){
+  if(!navigator.geolocation){ toast("このブラウザは位置情報に対応していません"); return; }
+  if(locatingBusy) return;
+  locatingBusy = true;
+  showLoading(true, "現在地を取得中…");
+  const getPos = () => new Promise((resolve, reject) => {
+    if(userLatLng){ resolve(userLatLng); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => { const ll = [pos.coords.latitude, pos.coords.longitude]; userLatLng = ll; placeLocMarker(ll[1], ll[0]); drawRangeRings(ll[0], ll[1]); resolve(ll); },
+      reject,
+      {enableHighAccuracy:false, timeout:10000, maximumAge:300000}
+    );
+  });
+  let lat, lng;
+  try{ [lat, lng] = await getPos(); }catch(e){ locatingBusy = false; showLoading(false); toast("位置情報を取得できませんでした"); return; }
   let code = null;
   try{
     const ac = new AbortController();
@@ -1942,7 +1963,7 @@ async function activateNearby(lat, lng){
     const seen = new Set();
     currentItems = results.flat().filter(t => seen.has(t.id) ? false : (seen.add(t.id), true));
     showLoading(false);
-    toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県から50km以内の峠を表示`);
+    toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県を読み込みました`);
     render();
     setSheet("half");
     const b = new maplibregl.LngLatBounds();
@@ -1953,6 +1974,7 @@ async function activateNearby(lat, lng){
     toast("現在地の都道府県を判定できませんでした");
     if(currentItems.length) render();
   }
+  locatingBusy = false;
 }
 
 document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
@@ -1964,23 +1986,28 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
         if(locatingBusy) return;
         locatingBusy = true;
         showLoading(true, "現在地を取得中…");
-        navigator.geolocation.getCurrentPosition(async pos=>{
+        navigator.geolocation.getCurrentPosition(pos=>{
           const lat = pos.coords.latitude, lng = pos.coords.longitude;
           userLatLng = [lat, lng];
           saveFilter();
           placeLocMarker(lng, lat);
           drawRangeRings(lat, lng);
-          await activateNearby(lat, lng);
           locatingBusy = false;
+          document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
+          chip.setAttribute("aria-pressed","true");
+          currentPreset = "nearby";
+          distanceFilter = 50;
+          $("presetHint").textContent = presetHints.nearby;
+          visibleCount = PAGE_N;
+          saveFilter();
+          render();
         }, ()=>{
           locatingBusy = false;
           showLoading(false);
           toast("位置情報を取得できませんでした");
         }, {enableHighAccuracy:false, timeout:10000, maximumAge:300000});
-      }else{
-        activateNearby(userLatLng[0], userLatLng[1]);
+        return;
       }
-      return;
     }
     const isActive = chip.getAttribute("aria-pressed") === "true";
     document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
@@ -1991,6 +2018,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
     }else{
       chip.setAttribute("aria-pressed","true");
       currentPreset = preset;
+      if(preset === "nearby") distanceFilter = 50;
     }
     saveFilter();
     $("presetHint").textContent = presetHints[currentPreset];
@@ -2048,13 +2076,17 @@ $("locateBtn").addEventListener("click",()=>{
   locatingBusy = true;
   showLoading(true, "現在地を取得中…");
   navigator.geolocation.getCurrentPosition(
-    async pos=>{
+    pos=>{
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
       userLatLng = [lat, lng];
       saveFilter();
       placeLocMarker(lng, lat);
       drawRangeRings(lat, lng);
-      await activateNearby(lat, lng);
+      cancelOrbit();
+      map.flyTo({center:[lng, lat], zoom:11, pitch:55, bearing:0, padding:viewPadding(0), duration:1400, essential:true});
+      showLoading(false);
+      toast("現在地を更新しました");
+      if(currentItems.length && currentPreset === "nearby") render();
       locatingBusy = false;
     },
     ()=>{
