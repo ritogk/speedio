@@ -1523,7 +1523,7 @@ function cardHtml(t, rank, total){
       <div class="card-top">
         <div class="card-labels"><span class="rank-num">${rank+1}</span>${t.prefecture?`<span class="route-oval">${escapeHtml(t.prefecture)}</span>`:(t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:"")}${t.city?`<span class="route-oval">${escapeHtml(t.city)}</span>`:""}${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}</div><h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
       </div>
-      <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b>${t.stableKey&&visitedKeys.has(t.stableKey)?` <span class="visited-tag">走行済</span>`:""}</p>
+      <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b>${t.stableKey&&visitedKeys.has(t.stableKey)?` <span class="visited-tag">🚗済</span>`:""}</p>
       <div class="bars">
         <span class="bl">コーナー</span><div class="stacked"><span style="width:${t.pctStrong}%;background:var(--corner-strong)"></span><span style="width:${t.pctMedium}%;background:var(--corner-medium)"></span><span style="width:${t.pctWeak}%;background:var(--corner-weak)"></span><span style="width:${t.pctStraight}%;background:var(--straight)"></span></div><span class="bv">${t.pctStrong+t.pctMedium+t.pctWeak}%</span>
         <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
