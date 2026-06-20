@@ -1311,23 +1311,22 @@ function toViewModel(raw, idx){
     googleEarthUrl: raw.google_earth_url
   };
 }
+function isEndCloser(poly, lat, lng){
+  if(!poly.length || lat == null) return false;
+  const d2 = (a) => (a[0]-lat)*(a[0]-lat)+(a[1]-lng)*(a[1]-lng);
+  return d2(poly[poly.length-1]) < d2(poly[0]);
+}
 function googleMapUrl(poly, lat, lng){
   if(!poly.length) return "#";
   let st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
-  if(lat!=null){
-    const d2 = (a) => (a[0]-lat)*(a[0]-lat)+(a[1]-lng)*(a[1]-lng);
-    if(d2(ed) < d2(st)){ [st, ed] = [ed, st]; }
-  }
+  if(isEndCloser(poly, lat, lng)){ [st, ed] = [ed, st]; }
   const origin = lat!=null ? `${lat},${lng}` : "current+location";
   return `https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=${origin}&destination=${ed[0]},${ed[1]}&waypoints=${st[0]},${st[1]}|${ct[0]},${ct[1]}`;
 }
 function yahooCarNaviUrl(poly, lat, lng){
   if(!poly.length) return "#";
   let st = poly[0], ct = poly[Math.floor(poly.length/2)], ed = poly[poly.length-1];
-  if(lat!=null){
-    const d2 = (a) => (a[0]-lat)*(a[0]-lat)+(a[1]-lng)*(a[1]-lng);
-    if(d2(ed) < d2(st)){ [st, ed] = [ed, st]; }
-  }
+  if(isEndCloser(poly, lat, lng)){ [st, ed] = [ed, st]; }
   return `yjcarnavi://navi/select?point=current&point=${st[0]},${st[1]},&point=${ct[0]},${ct[1]},&point=${ed[0]},${ed[1]},`;
 }
 // ライン中央点のストリートビューを進行方向向きで開くURL（target.json内の旧形式URLは廃止されたため自前生成）
@@ -2695,6 +2694,7 @@ async function open3DView(t){
     const leftPts = pts3.map((p, i) => p.clone().addScaledVector(smoothNormals[i], -ROAD_W));
     const rightPts = pts3.map((p, i) => p.clone().addScaledVector(smoothNormals[i], ROAD_W));
     const centerPts = pts3.map(p => p.clone());
+    if(isEndCloser(geomList, userLatLng?.[0], userLatLng?.[1])) centerPts.reverse();
 
     // 登り/下り判定（elevation_unevenness_sectionsから各ポイントに割り当て）
     const ELEV_HEX = { up:0xE8553D, down:0x4A90D9, flat:0x98989D };
