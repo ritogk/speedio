@@ -1319,7 +1319,7 @@ function isEndCloser(poly, lat, lng){
 function routeNeedsCenter(poly){
   if(poly.length < 2) return false;
   const st = poly[0], ed = poly[poly.length-1];
-  return haversineKm(st[0], st[1], ed[0], ed[1]) > 5;
+  return haversineKm(st[0], st[1], ed[0], ed[1]) > 10;
 }
 function googleMapUrl(poly, lat, lng){
   if(!poly.length) return "#";
