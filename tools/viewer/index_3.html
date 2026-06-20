@@ -2003,6 +2003,14 @@ sel.addEventListener("change",e=>{
   }
   switchPref(code, loadedPrefs.size === 0);
 });
+{
+  const m = document.createElement("span");
+  m.style.cssText = "position:absolute;visibility:hidden;font:inherit;font-size:12px;font-weight:500;white-space:nowrap";
+  m.textContent = "＋ 県を追加";
+  document.body.appendChild(m);
+  sel.style.width = (m.offsetWidth + 32) + "px";
+  m.remove();
+}
 
 async function loadNearbyPrefs(){
   if(!navigator.geolocation){ toast("このブラウザは位置情報に対応していません"); return; }
