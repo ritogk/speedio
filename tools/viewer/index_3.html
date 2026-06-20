@@ -1727,7 +1727,7 @@ function render(){
   const q = searchQuery.trim().toLowerCase();
   const mapList = q ? lastRanked.filter(t => t.name.toLowerCase().includes(q) || t.routeLabel.toLowerCase().includes(q)) : lastRanked;
   drawMap(mapList);
-  if(q && mapList.length){
+  if(mapList.length){
     const b = new maplibregl.LngLatBounds();
     mapList.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
     if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
