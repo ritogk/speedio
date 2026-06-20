@@ -32,6 +32,7 @@
   --straight:#98989D;
   --radius:8px;
   --header-h:52px;
+  --sheet-peek:96px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overscroll-behavior:none;touch-action:manipulation}
@@ -62,11 +63,12 @@ header{display:none}
   .map-float{pointer-events:none}
   .map-float>*{pointer-events:auto}
   .map-float .locate-btn{
-    padding:7px 10px;
+    padding:0;
     box-shadow:0 1px 4px rgba(0,0,0,.18);
+    border-radius:50%;width:38px;height:38px;
+    display:flex;align-items:center;justify-content:center;
   }
   .map-float .locate-label{display:none}
-  .map-float .locate-btn{margin-left:auto}
 }
 @media (max-width:480px){
   .locate-btn .locate-label{display:none}
@@ -111,7 +113,7 @@ main{flex:1;position:relative;min-height:0}
 
 /* ビュー操作（長押しで回転 / タップで北向きリセット） */
 .view-ctrl{
-  position:absolute;right:10px;bottom:calc(96px + 14px);z-index:1100;
+  position:absolute;right:10px;bottom:calc(var(--sheet-peek) + 14px);z-index:1100;
   display:flex;flex-direction:column;gap:8px;
 }
 .view-ctrl button{
@@ -138,7 +140,7 @@ main{flex:1;position:relative;min-height:0}
 }
 
 .legend{
-  position:absolute;left:10px;bottom:calc(96px + 10px);z-index:1100;
+  position:absolute;left:10px;bottom:calc(var(--sheet-peek) + 10px);z-index:1100;
   font-size:10px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.85);
   pointer-events:none;
 }
@@ -153,7 +155,7 @@ main{flex:1;position:relative;min-height:0}
   border-radius:14px 14px 0 0;
   display:flex;flex-direction:column;
   height:80dvh;
-  transform:translateY(calc(100% - 96px));
+  transform:translateY(calc(100% - var(--sheet-peek)));
   transition:transform .28s cubic-bezier(.3,.9,.3,1);
   touch-action:none;
   box-shadow:0 -4px 16px rgba(0,0,0,.15);
@@ -564,7 +566,207 @@ main{flex:1;position:relative;min-height:0}
 .weight-panel .wp-section{font-size:9px;font-weight:700;color:var(--ink-soft);border-bottom:1px solid var(--line);padding-bottom:2px;margin-bottom:3px}
 .weight-panel .wp-pin-row{display:flex;gap:3px;align-items:center;margin-bottom:2px}
 @media (max-width:760px){
-  .weight-panel{right:6px;bottom:calc(96px + 50px)}
+  .weight-panel{right:6px;bottom:calc(var(--sheet-peek) + 50px)}
+}
+
+/* ================= Mobile Search Overlay ================= */
+.m-search-pill{
+  display:none;
+  position:absolute;top:10px;left:10px;right:54px;z-index:1250;
+  background:var(--paper);border-radius:999px;
+  padding:9px 14px;font-size:13px;color:var(--ink-soft);
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+  align-items:center;gap:6px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.m-search-pill .m-sp-icon{font-size:14px;flex-shrink:0;opacity:.6}
+.m-search-pill .m-sp-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.m-search-pill .m-sp-sep{color:var(--contour);flex-shrink:0}
+.m-search-pill .m-sp-pref{
+  font-size:11px;font-weight:600;color:var(--ink);
+  flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+.m-filter-bar{
+  display:none;
+  position:absolute;top:48px;left:0;right:0;z-index:1240;
+  padding:4px 10px;gap:5px;
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.m-filter-bar::-webkit-scrollbar{display:none}
+.m-filter-bar .m-fchip{
+  font:inherit;font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap;
+  border:1px solid rgba(0,0,0,.08);border-radius:999px;
+  background:rgba(255,255,255,.92);color:var(--ink);padding:5px 11px;flex-shrink:0;
+  box-shadow:0 1px 3px rgba(0,0,0,.1);
+  -webkit-tap-highlight-color:transparent;
+}
+.m-filter-bar .m-fchip[aria-pressed="true"]{
+  background:var(--ink);border-color:var(--ink);color:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.15);
+}
+
+.m-sort-select{
+  display:none;align-items:center;gap:6px;padding:0 0 8px;
+}
+.m-sort-select .m-sort-label{font-size:11px;color:var(--ink-soft);flex-shrink:0}
+.m-sort-select .m-sort-btn{
+  font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  border:none;background:transparent;color:var(--ink);
+  padding:0;display:flex;align-items:center;gap:3px;
+  -webkit-tap-highlight-color:transparent;
+}
+.m-sort-select .m-sort-btn .m-sort-arrow{font-size:10px;color:var(--ink-soft)}
+.m-sort-menu{
+  position:absolute;left:14px;right:14px;z-index:1300;
+  background:var(--paper);border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 4px 16px rgba(0,0,0,.15);
+  padding:4px 0;display:none;
+}
+.m-sort-menu.show{display:block}
+.m-sort-menu button{
+  font:inherit;font-size:13px;font-weight:500;
+  width:100%;text-align:left;padding:10px 16px;
+  border:none;background:transparent;color:var(--ink);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.m-sort-menu button:active{background:var(--paper-deep)}
+.m-sort-menu button.active{color:var(--accent);font-weight:700}
+
+.m-terrain-btn{
+  display:none;
+  position:absolute;top:56px;right:10px;z-index:1250;
+  width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.92);color:var(--ink);
+  box-shadow:0 1px 4px rgba(0,0,0,.18);
+  cursor:pointer;
+  align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+}
+.m-terrain-btn svg{display:block}
+
+.m-layer-popup{
+  display:none;
+  position:absolute;top:56px;right:54px;z-index:1260;
+  background:var(--paper);border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);
+  padding:10px;gap:10px;
+  animation:m-so-in .15s ease-out;
+}
+.m-layer-popup.show{display:flex}
+.m-layer-opt{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  border:none;background:transparent;padding:0;
+}
+.m-layer-thumb{
+  width:64px;height:64px;border-radius:8px;
+  border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--paper-deep);color:var(--ink-soft);
+  transition:border-color .12s;
+}
+.m-layer-opt.active .m-layer-thumb{border-color:var(--accent);border-width:3px}
+.m-layer-opt .m-layer-name{
+  font-size:11px;font-weight:600;color:var(--ink);
+}
+.m-layer-opt.active .m-layer-name{color:var(--accent)}
+
+.m-search-overlay{
+  position:fixed;top:0;left:0;right:0;z-index:2700;
+  max-height:70dvh;
+  background:var(--paper);
+  border-radius:0 0 14px 14px;
+  box-shadow:0 4px 20px rgba(0,0,0,.2);
+  display:none;flex-direction:column;
+  animation:m-so-in .2s ease-out;
+}
+.m-search-overlay.show{display:flex}
+.m-search-backdrop{
+  position:fixed;inset:0;z-index:2699;
+  background:rgba(0,0,0,.25);
+  display:none;
+}
+.m-search-backdrop.show{display:block}
+@keyframes m-so-in{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:none}}
+.m-so-head{
+  display:flex;align-items:center;gap:10px;
+  padding:env(safe-area-inset-top, 8px) 14px 10px;
+  border-bottom:1px solid var(--line);
+  flex-shrink:0;
+}
+.m-so-input{
+  flex:1;font:inherit;font-size:15px;
+  border:none;background:transparent;color:var(--ink);
+  padding:8px 0;outline:none;
+}
+.m-so-input::placeholder{color:var(--ink-soft)}
+.m-so-cancel{
+  font:inherit;font-size:14px;font-weight:500;
+  border:none;background:transparent;color:var(--accent);
+  cursor:pointer;padding:4px 2px;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
+}
+.m-so-body{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:12px 14px 40px;
+}
+.m-so-section{
+  font-size:11px;font-weight:700;color:var(--ink-soft);
+  letter-spacing:.04em;margin:18px 0 8px;
+}
+.m-so-section:first-child{margin-top:0}
+.m-so-results .mock-hit{
+  padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.m-so-results .mock-hit:last-child{border-bottom:none}
+.m-so-results .hit-name{font-size:14px;font-weight:600}
+.m-so-results .hit-meta{font-size:12px;color:var(--ink-soft);margin-top:2px}
+.m-so-results .hit-match{color:var(--accent)}
+
+.m-region-group{margin-bottom:14px}
+.m-region-title{
+  font-size:11px;font-weight:700;color:var(--ink-soft);
+  margin-bottom:6px;letter-spacing:.04em;
+}
+.m-pref-grid{display:flex;flex-wrap:wrap;gap:6px}
+.m-pref-chip{
+  font:inherit;font-size:13px;font-weight:500;
+  border:1px solid var(--line);border-radius:8px;
+  background:var(--paper);color:var(--ink);
+  padding:8px 12px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .12s, border-color .12s;
+}
+.m-pref-chip.selected{
+  background:var(--accent);border-color:var(--accent);color:#fff;
+}
+.m-pref-chip:active{background:var(--paper-deep)}
+.m-pref-chip.selected:active{background:#C10500}
+
+.m-so-nearby-btn{
+  font:inherit;font-size:13px;font-weight:600;
+  border:1px dashed var(--contour);border-radius:8px;
+  background:transparent;color:var(--ink);
+  padding:12px;width:100%;cursor:pointer;
+  margin-bottom:16px;
+  -webkit-tap-highlight-color:transparent;
+}
+.m-so-nearby-btn:active{background:var(--paper-deep)}
+
+@media (max-width:760px){
+  :root{--sheet-peek:56px}
+  .m-search-pill{display:flex}
+  .m-filter-bar{display:flex}
+  .m-sort-select{display:flex}
+  .m-terrain-btn{display:flex}
+  .panel .searchbox{display:none}
+  .panel .pref-tags-wrap{display:none}
+  .panel .presets{display:none}
+  .map-ctrl{display:none}
+  .map-float{top:10px;right:10px}
 }
 </style>
 </head>
@@ -582,7 +784,32 @@ main{flex:1;position:relative;min-height:0}
     <div id="map"></div>
     <svg id="ghostLine" aria-hidden="true"></svg>
 
+    <div class="m-search-pill" id="mSearchPill">
+      <span class="m-sp-icon">🔍</span>
+      <span class="m-sp-text" id="mSpText">峠を検索</span>
+      <span class="m-sp-sep" id="mSpSep" style="display:none">|</span>
+      <span class="m-sp-pref" id="mSpPref"></span>
+    </div>
+    <div class="m-filter-bar" id="mFilterBar"></div>
+
     <div class="map-float" id="mapFloat"></div>
+    <button class="m-terrain-btn" id="mTerrainBtn" aria-label="地図レイヤー">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
+    </button>
+    <div class="m-layer-popup" id="mLayerPopup">
+      <button class="m-layer-opt" id="mLayer2d">
+        <div class="m-layer-thumb">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18"/></svg>
+        </div>
+        <span class="m-layer-name">2D</span>
+      </button>
+      <button class="m-layer-opt active" id="mLayer3d">
+        <div class="m-layer-thumb">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 20 L8.5 9 L13 16 L17 11 L22 20Z"/><path d="M2 20h20"/></svg>
+        </div>
+        <span class="m-layer-name">3D</span>
+      </button>
+    </div>
     <div class="map-ctrl">
       <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">3D地形</button>
       <button class="ctrl-btn" id="kobanToggle" aria-pressed="false" style="display:none">👮</button>
@@ -661,6 +888,11 @@ main{flex:1;position:relative;min-height:0}
         </div>
         <p class="preset-hint" id="presetHint">コーナー・高低差・道幅をバランスよく評価します。</p>
       </section>
+      <div class="m-sort-select" id="mSortSelect">
+        <span class="m-sort-label">並べ替え</span>
+        <button class="m-sort-btn" id="mSortBtn"><span id="mSortCurrent">バランス</span><span class="m-sort-arrow">▾</span></button>
+      </div>
+      <div style="position:relative"><div class="m-sort-menu" id="mSortMenu"></div></div>
       <div id="cards"></div>
     </div>
   </section>
@@ -699,6 +931,22 @@ main{flex:1;position:relative;min-height:0}
       </div>
       <label class="nav-picker-remember"><input type="checkbox" id="navRemember" checked>次回から同じアプリで開く</label>
       <button class="nav-picker-cancel" id="navCancel">キャンセル</button>
+    </div>
+  </div>
+
+  <div class="m-search-backdrop" id="mSearchBackdrop"></div>
+  <div class="m-search-overlay" id="mSearchOverlay">
+    <div class="m-so-head">
+      <input class="m-so-input" id="mSoInput" type="search" placeholder="峠名・道路種別で検索" autocomplete="off" enterkeyhint="search">
+      <button class="m-so-cancel" id="mSoCancel">閉じる</button>
+    </div>
+    <div class="m-so-body">
+      <div class="m-so-results" id="mSoResults"></div>
+      <div id="mSoPrefSection">
+        <div class="m-so-section" id="mSoPrefLabel">都道府県</div>
+        <button class="m-so-nearby-btn" id="mSoNearby">📍 現在地の周辺をまとめて読み込む</button>
+        <div id="mSoPrefGrid"></div>
+      </div>
     </div>
   </div>
 
@@ -799,7 +1047,7 @@ const presetHints = {
 const BALANCE_WEIGHTS = {
   elevation:0.7, elevation_unevenness:1, width:1.3, length:0.7,
   building:1, tunnel_outside:1,
-  corner_week:1, corner_medium:1.3, corner_strong:1, corner_none:1.3,
+  corner_week:1, corner_medium:1.3, corner_strong:1, corner_none:1,
   corner_balance:1, claude_center_line_section:1.3
 };
 const BALANCE_DIVISOR = Object.keys(BALANCE_WEIGHTS).length;
@@ -856,6 +1104,7 @@ document.addEventListener("visibilitychange", ()=>{
   }
 });
 let hideVisited = false;
+let showOnlyVisited = false;
 let dataVersionChecked = false;
 let dataVersionChanged = false;
 async function checkDataVersion(){
@@ -1282,7 +1531,7 @@ function viewPadding(extra){
     const p = document.getElementById("panel");
     const rect = p.getBoundingClientRect();
     const sheet = Math.max(0, window.innerHeight - rect.top);
-    return {top:e+10, left:e+10, right:e+10, bottom:e+sheet+14};
+    return {top:e+80, left:e+10, right:e+10, bottom:e+sheet+14};
   }
   return {top:e, left:e, right:e, bottom:e};
 }
@@ -1830,6 +2079,9 @@ function render(){
   if(hideVisited){
     lastRanked = lastRanked.filter(t=>!t.stableKey || !visitedKeys.has(t.stableKey));
   }
+  if(showOnlyVisited){
+    lastRanked = lastRanked.filter(t=>t.stableKey && visitedKeys.has(t.stableKey));
+  }
   renderCards();
   const q = searchQuery.trim().toLowerCase();
   const mapList = q ? lastRanked.filter(t => t.name.toLowerCase().includes(q) || t.routeLabel.toLowerCase().includes(q)) : lastRanked;
@@ -1937,6 +2189,7 @@ function updatePrefLabel(){
   const names = [...loadedPrefs].sort().map(c=>PREFECTURES[c]).filter(Boolean);
   $("prefName").textContent = names.length ? names.join("・") : "未選択";
   renderPrefTags();
+  document.dispatchEvent(new CustomEvent("pref-changed"));
 }
 function renderPrefTags(){
   const el = $("prefTags");
@@ -3277,10 +3530,307 @@ $("closePrint").addEventListener("click", closePrintView);
 $("execPrint").addEventListener("click", () => window.print());
 document.addEventListener("keydown", e => {
   if(e.key === "Escape"){
-    if($("printOverlay").classList.contains("show")) closePrintView();
+    if($("mSearchOverlay").classList.contains("show")) closeMobileSearch();
+    else if($("printOverlay").classList.contains("show")) closePrintView();
     else if(active3D) close3DView();
   }
 });
+
+// ================= モバイル検索UI =================
+{
+  const REGIONS = [
+    {name:"北海道", codes:["01"]},
+    {name:"東北", codes:["02","03","04","05","06","07"]},
+    {name:"関東", codes:["08","09","10","11","12","13","14"]},
+    {name:"中部", codes:["15","16","17","18","19","20","21","22","23"]},
+    {name:"関西", codes:["24","25","26","27","28","29","30"]},
+    {name:"中国", codes:["31","32","33","34","35"]},
+    {name:"四国", codes:["36","37","38","39"]},
+    {name:"九州・沖縄", codes:["40","41","42","43","44","45","46","47"]}
+  ];
+
+  const overlay = $("mSearchOverlay");
+  const soInput = $("mSoInput");
+  const soResults = $("mSoResults");
+  const prefGrid = $("mSoPrefGrid");
+  const pill = $("mSearchPill");
+  const filterBar = $("mFilterBar");
+
+  // 地域グループ都道府県グリッドを構築
+  REGIONS.forEach(region => {
+    const group = document.createElement("div");
+    group.className = "m-region-group";
+    group.innerHTML = `<div class="m-region-title">${region.name}</div>`;
+    const grid = document.createElement("div");
+    grid.className = "m-pref-grid";
+    region.codes.forEach(code => {
+      const btn = document.createElement("button");
+      btn.className = "m-pref-chip";
+      btn.dataset.code = code;
+      btn.textContent = PREFECTURES[code].replace(/[県府都]$/, "");
+      btn.addEventListener("click", () => {
+        if(loadedPrefs.has(code)){
+          removePref(code);
+          btn.classList.remove("selected");
+        }else{
+          switchPref(code, loadedPrefs.size === 0);
+          btn.classList.add("selected");
+        }
+        syncMobilePrefState();
+      });
+      grid.appendChild(btn);
+    });
+    group.appendChild(grid);
+    prefGrid.appendChild(group);
+  });
+
+  // === 地図上フィルターバー（フィルターのみ） ===
+  const hvBtn = $("hideVisitedBtn");
+  const nearbyChip = document.querySelector('.presets .chip[data-preset="nearby"]');
+
+  // 周辺50km
+  const fNearby = document.createElement("button");
+  fNearby.className = "m-fchip";
+  fNearby.textContent = "📍 周辺50km";
+  fNearby.setAttribute("aria-pressed", nearbyChip.getAttribute("aria-pressed"));
+  fNearby.addEventListener("click", () => {
+    nearbyChip.click();
+    syncFilterChips();
+    syncSortMenu();
+  });
+  filterBar.appendChild(fNearby);
+
+  // 未走行
+  const fUnvisited = document.createElement("button");
+  fUnvisited.className = "m-fchip";
+  fUnvisited.textContent = "未走行";
+  fUnvisited.setAttribute("aria-pressed", hideVisited ? "true" : "false");
+  fUnvisited.addEventListener("click", () => {
+    hideVisited = !hideVisited;
+    if(hideVisited) showOnlyVisited = false;
+    fUnvisited.setAttribute("aria-pressed", hideVisited ? "true" : "false");
+    fVisited.setAttribute("aria-pressed", "false");
+    hvBtn.setAttribute("aria-pressed", hideVisited ? "true" : "false");
+    render();
+  });
+  filterBar.appendChild(fUnvisited);
+
+  // 走行済
+  const fVisited = document.createElement("button");
+  fVisited.className = "m-fchip";
+  fVisited.textContent = "走行済";
+  fVisited.setAttribute("aria-pressed", "false");
+  fVisited.addEventListener("click", () => {
+    showOnlyVisited = !showOnlyVisited;
+    if(showOnlyVisited) hideVisited = false;
+    fVisited.setAttribute("aria-pressed", showOnlyVisited ? "true" : "false");
+    fUnvisited.setAttribute("aria-pressed", "false");
+    hvBtn.setAttribute("aria-pressed", "false");
+    render();
+  });
+  filterBar.appendChild(fVisited);
+
+  function syncFilterChips(){
+    fNearby.setAttribute("aria-pressed", nearbyChip.getAttribute("aria-pressed"));
+    fUnvisited.setAttribute("aria-pressed", hideVisited ? "true" : "false");
+    fVisited.setAttribute("aria-pressed", showOnlyVisited ? "true" : "false");
+  }
+
+  // === ボトムシート内ソートドロップダウン ===
+  const sortMenu = $("mSortMenu");
+  const sortCurrentEl = $("mSortCurrent");
+  const SORT_PRESETS = [
+    {key:"balance", label:"バランス"},
+    {key:"corner", label:"コーナー重視"},
+    {key:"updown", label:"高低差重視"},
+    {key:"seclusion", label:"秘境度重視"},
+    {key:"uphill", label:"起伏重視"}
+  ];
+  SORT_PRESETS.forEach(({key, label}) => {
+    const btn = document.createElement("button");
+    btn.textContent = label;
+    btn.dataset.preset = key;
+    if(currentPreset === key) btn.classList.add("active");
+    btn.addEventListener("click", () => {
+      const orig = document.querySelector(`.presets .chip[data-preset="${key}"]`);
+      if(orig) orig.click();
+      syncSortMenu();
+      syncFilterChips();
+      sortMenu.classList.remove("show");
+    });
+    sortMenu.appendChild(btn);
+  });
+
+  $("mSortBtn").addEventListener("click", () => {
+    sortMenu.classList.toggle("show");
+  });
+  document.addEventListener("click", e => {
+    if(!e.target.closest("#mSortBtn") && !e.target.closest("#mSortMenu")){
+      sortMenu.classList.remove("show");
+    }
+  });
+
+  function syncSortMenu(){
+    const active = SORT_PRESETS.find(p => p.key === currentPreset);
+    sortCurrentEl.textContent = active ? active.label : "バランス";
+    sortMenu.querySelectorAll("button").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.preset === currentPreset);
+    });
+  }
+
+  // === モバイルレイヤーポップアップ ===
+  const mTerrain = $("mTerrainBtn");
+  const layerPopup = $("mLayerPopup");
+  const origTerrain = $("terrainToggle");
+
+  mTerrain.addEventListener("click", e => {
+    e.stopPropagation();
+    layerPopup.classList.toggle("show");
+  });
+  document.addEventListener("click", e => {
+    if(!e.target.closest("#mLayerPopup") && !e.target.closest("#mTerrainBtn")){
+      layerPopup.classList.remove("show");
+    }
+  });
+
+  function setLayer3d(on){
+    const current = origTerrain.getAttribute("aria-pressed") === "true";
+    if(current !== on) origTerrain.click();
+    $("mLayer2d").classList.toggle("active", !on);
+    $("mLayer3d").classList.toggle("active", on);
+    layerPopup.classList.remove("show");
+  }
+  $("mLayer2d").addEventListener("click", () => setLayer3d(false));
+  $("mLayer3d").addEventListener("click", () => setLayer3d(true));
+
+  function syncMobilePrefState(){
+    prefGrid.querySelectorAll(".m-pref-chip").forEach(btn => {
+      btn.classList.toggle("selected", loadedPrefs.has(btn.dataset.code));
+    });
+    updateMobilePillText();
+  }
+
+  function updateMobilePillText(){
+    const prefEl = $("mSpPref");
+    const sepEl = $("mSpSep");
+    const textEl = $("mSpText");
+    textEl.textContent = "峠を検索";
+
+    const names = [...loadedPrefs].sort().map(c => PREFECTURES[c]).filter(Boolean);
+    if(names.length === 0){
+      prefEl.textContent = "";
+      sepEl.style.display = "none";
+    }else{
+      sepEl.style.display = "";
+      if(names.length <= 2){
+        prefEl.textContent = names.join("・");
+      }else{
+        prefEl.textContent = names[0] + " +" + (names.length - 1);
+      }
+    }
+  }
+
+  const backdrop = $("mSearchBackdrop");
+
+  // 検索ピルをタップ → オーバーレイ表示
+  pill.addEventListener("click", () => {
+    syncMobilePrefState();
+    syncFilterChips();
+    soInput.value = searchQuery || "";
+    overlay.classList.add("show");
+    backdrop.classList.add("show");
+    renderSearchResults(soInput.value);
+    setTimeout(() => soInput.focus(), 100);
+  });
+
+  // 閉じる
+  function closeMobileSearch(){
+    overlay.classList.remove("show");
+    backdrop.classList.remove("show");
+    soInput.blur();
+  }
+  $("mSoCancel").addEventListener("click", closeMobileSearch);
+  backdrop.addEventListener("click", closeMobileSearch);
+
+  // 周辺ボタン
+  $("mSoNearby").addEventListener("click", () => {
+    closeMobileSearch();
+    loadNearbyPrefs();
+  });
+
+  // 検索入力
+  soInput.addEventListener("input", e => {
+    renderSearchResults(e.target.value);
+  });
+
+  function renderSearchResults(q){
+    q = (q || "").trim().toLowerCase();
+    if(!q){
+      soResults.innerHTML = "";
+      $("mSoPrefSection").style.display = "";
+      return;
+    }
+    const ranked = lastRanked.length ? lastRanked : currentItems;
+    const hits = ranked.filter(t =>
+      t.name.toLowerCase().includes(q) || t.routeLabel.toLowerCase().includes(q)
+    ).slice(0, 20);
+
+    if(hits.length){
+      soResults.innerHTML = '<div class="m-so-section">検索結果</div>' +
+        hits.map(t => {
+          const name = escapeHtml(t.name).replace(
+            new RegExp(`(${escapeHtml(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),
+            '<span class="hit-match">$1</span>'
+          );
+          const pref = t._pref ? PREFECTURES[t._pref] : "";
+          return `<div class="mock-hit" data-id="${t.id}">
+            <div class="hit-name">${name}</div>
+            <div class="hit-meta">${pref ? pref + " / " : ""}${t.routeLabel}</div>
+          </div>`;
+        }).join("");
+      soResults.querySelectorAll(".mock-hit").forEach(el => {
+        el.addEventListener("click", () => {
+          const id = Number(el.dataset.id);
+          const t = ranked.find(x => x.id === id) || currentItems.find(x => x.id === id);
+          if(t){
+            closeMobileSearch();
+            searchQuery = "";
+            $("searchInput").value = "";
+            revealAndSelect(t);
+          }
+        });
+      });
+      $("mSoPrefSection").style.display = "none";
+    }else{
+      soResults.innerHTML = '<div class="m-so-section">検索結果</div>' +
+        `<p style="font-size:13px;color:var(--ink-soft);padding:8px 0">「${escapeHtml(q)}」に一致する峠はありません</p>`;
+      $("mSoPrefSection").style.display = "";
+    }
+  }
+
+  // パネル内のプリセットチップ変更を監視してモバイル側も同期
+  const obsPresets = new MutationObserver(() => {
+    syncFilterChips();
+    syncSortMenu();
+    updateMobilePillText();
+  });
+  document.querySelectorAll(".presets .chip").forEach(chip => {
+    obsPresets.observe(chip, {attributes:true, attributeFilter:["aria-pressed"]});
+  });
+  obsPresets.observe(hvBtn, {attributes:true, attributeFilter:["aria-pressed"]});
+
+  // 都道府県変更イベントでピル側も更新
+  document.addEventListener("pref-changed", () => {
+    updateMobilePillText();
+    syncMobilePrefState();
+  });
+
+  // 初期状態を反映
+  updateMobilePillText();
+  syncMobilePrefState();
+  syncFilterChips();
+  syncSortMenu();
+}
 }
 
 // ===== MapLibreローダー（CDNフォールバック付き） =====
