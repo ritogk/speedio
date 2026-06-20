@@ -601,6 +601,7 @@ main{flex:1;position:relative;min-height:0}
         <li><span class="swatch" style="background:var(--corner-medium)"></span>中速</li>
         <li><span class="swatch" style="background:var(--corner-weak)"></span>高速</li>
         <li><span class="swatch" style="background:var(--straight)"></span>ストレート</li>
+        <li><span class="swatch" style="background:#9B30FF"></span>走行済</li>
       </ul>
     </div>
 
@@ -820,6 +821,8 @@ let distanceFilter = null;
 let globalIdCounter = 0;
 const visitedKeys = new Set(JSON.parse(localStorage.getItem("touge.visited") || "[]"));
 function saveVisited(){ localStorage.setItem("touge.visited", JSON.stringify([...visitedKeys])); }
+const visitedDates = JSON.parse(localStorage.getItem("touge.visitedDates") || "{}");
+const todayStr = new Date().toISOString().slice(0, 10);
 let pendingVisitKey = null;
 let pendingVisitTimer = null;
 let pendingVisitTs = 0;
@@ -828,6 +831,8 @@ function commitPendingVisit(){
   if(!pendingVisitKey) return;
   visitedKeys.add(pendingVisitKey);
   saveVisited();
+  visitedDates[pendingVisitKey] = todayStr;
+  localStorage.setItem("touge.visitedDates", JSON.stringify(visitedDates));
   updateVisitedUi();
   toast("行った峠に記録しました");
   pendingVisitKey = null;
@@ -1174,7 +1179,7 @@ map.on("load", () => {
   map.addLayer({
     id:"touge-casing", type:"line", source:"touge",
     layout:{"line-cap":"round","line-join":"round"},
-    paint:{"line-color":"#4a7fbf","line-width":["interpolate",["linear"],["zoom"],8,8,14,15],"line-opacity":["*",.9,["coalesce",["get","fade"],1]]}
+    paint:{"line-color":["case",["==",["get","visited"],1],"#9B30FF","#4a7fbf"],"line-width":["interpolate",["linear"],["zoom"],8,8,14,15],"line-opacity":["*",.9,["coalesce",["get","fade"],1]]}
   });
   map.addLayer({
     id:"touge-white", type:"line", source:"touge",
@@ -1216,15 +1221,16 @@ function drawMap(list){
   const features = [];
   list.forEach((t,i)=>{
     const fade = fadeOf(i, list.length, 0.25);
+    const tv = (t.stableKey && visitedKeys.has(t.stableKey)) ? 1 : 0;
     if(t.roadSection.length){
       t.roadSection.forEach(sec=>{
         const pts = (sec.points||[]);
         if(pts.length < 2) return;
         const lv = (sec.section_type === "straight") ? "straight" : (sec.corner_level || "weak");
-        features.push({type:"Feature",properties:{level:lv,fade,tid:t.id},geometry:{type:"LineString",coordinates:pts}});
+        features.push({type:"Feature",properties:{level:lv,fade,tid:t.id,visited:tv},geometry:{type:"LineString",coordinates:pts}});
       });
     }else if(t.poly.length){
-      features.push({type:"Feature",properties:{level:"weak",fade,tid:t.id},
+      features.push({type:"Feature",properties:{level:"weak",fade,tid:t.id,visited:tv},
         geometry:{type:"LineString",coordinates:t.poly.map(p=>[p[1],p[0]])}});
     }
   });
