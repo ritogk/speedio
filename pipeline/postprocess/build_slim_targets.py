@@ -54,7 +54,9 @@ def _fetch_city_single(lat, lng):
             with urllib.request.urlopen(url, timeout=5) as res:
                 data = json.loads(res.read())
             city = data.get("response", {}).get("location", [{}])[0].get("city", "")
-            return re.sub(r"^.+郡(?=.+[町村]$)", "", city) or None
+            city = re.sub(r"^.+郡(?=.+[町村]$)", "", city)
+            city = re.sub(r"^(.+市).+区$", r"\1", city)
+            return city or None
         except Exception:
             if attempt < 2:
                 time.sleep(0.5)
