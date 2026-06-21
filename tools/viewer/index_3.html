@@ -571,6 +571,8 @@ main{flex:1;position:relative;min-height:0}
 }
 .visit-confirm-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .visit-confirm-btn.primary:hover{opacity:.9}
+.visit-confirm-btn.secondary{border-color:var(--accent);color:var(--accent)}
+.visit-confirm-btn.secondary:hover{background:var(--accent);color:#fff}
 .visit-confirm-cancel{
   display:block;width:100%;margin-top:8px;
   font:inherit;font-size:13px;font-weight:500;cursor:pointer;
@@ -973,6 +975,7 @@ main{flex:1;position:relative;min-height:0}
       <div class="vc-card" id="vcCard"></div>
       <div class="visit-confirm-btns">
         <button class="visit-confirm-btn primary" id="vcYes">🚗 走行した</button>
+        <button class="visit-confirm-btn secondary" id="vcDriving">🚗 走行中</button>
       </div>
       <button class="visit-confirm-cancel" id="vcNo">まだ行ってない</button>
     </div>
@@ -1123,6 +1126,22 @@ let pendingVisitKey = null;
 let pendingVisitTouge = null;
 let pendingVisitTs = 0;
 function updateVisitedUi(){}
+function saveDriving(key, t){
+  localStorage.setItem("touge.driving", JSON.stringify({stableKey:key, touge:t, ts:Date.now()}));
+}
+function clearDriving(){ localStorage.removeItem("touge.driving"); }
+function restoreDriving(){
+  const raw = localStorage.getItem("touge.driving");
+  if(!raw) return;
+  try{
+    const d = JSON.parse(raw);
+    if(d.stableKey && d.touge){
+      pendingVisitKey = d.stableKey;
+      pendingVisitTouge = d.touge;
+      pendingVisitTs = d.ts || Date.now();
+    }
+  }catch(e){}
+}
 function commitPendingVisit(){
   if(!pendingVisitKey) return;
   visitedKeys.add(pendingVisitKey);
@@ -1130,6 +1149,7 @@ function commitPendingVisit(){
   visitedDates[pendingVisitKey] = todayStr;
   localStorage.setItem("touge.visitedDates", JSON.stringify(visitedDates));
   updateVisitedUi();
+  clearDriving();
   toast("行った峠に記録しました");
   pendingVisitKey = null;
   pendingVisitTouge = null;
@@ -1137,9 +1157,15 @@ function commitPendingVisit(){
   render();
 }
 function clearPendingVisit(){
+  clearDriving();
   pendingVisitKey = null;
   pendingVisitTouge = null;
   pendingVisitTs = 0;
+}
+function commitDriving(){
+  if(!pendingVisitKey || !pendingVisitTouge) return;
+  saveDriving(pendingVisitKey, pendingVisitTouge);
+  pendingVisitTs = Date.now();
 }
 function visitConfirmCardHtml(t){
   return `<article class="card">
@@ -1165,9 +1191,12 @@ document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState === "hidden" && pendingVisitKey){
     pendingVisitTs = Date.now();
   }
-  if(document.visibilityState === "visible" && pendingVisitKey && pendingVisitTs){
-    if(Date.now() - pendingVisitTs >= 60000){
-      showVisitConfirm();
+  if(document.visibilityState === "visible"){
+    if(!pendingVisitKey) restoreDriving();
+    if(pendingVisitKey && pendingVisitTs){
+      if(Date.now() - pendingVisitTs >= 60000){
+        showVisitConfirm();
+      }
     }
   }
 });
@@ -1283,6 +1312,7 @@ function placeLocMarker(lng, lat){
 }
 const $ = id => document.getElementById(id);
 $("vcYes").addEventListener("click", ()=>{ closeVisitConfirm(); commitPendingVisit(); });
+$("vcDriving").addEventListener("click", ()=>{ closeVisitConfirm(); commitDriving(); });
 $("vcNo").addEventListener("click", ()=>{ closeVisitConfirm(); clearPendingVisit(); });
 $("visitConfirm").addEventListener("click", e=>{ if(e.target === $("visitConfirm")){ closeVisitConfirm(); clearPendingVisit(); } });
 function showLoading(on, text){
