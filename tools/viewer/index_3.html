@@ -1647,11 +1647,17 @@ function flyToTouge(t){
   const b = new maplibregl.LngLatBounds();
   t.poly.forEach(p=>b.extend([p[1],p[0]]));
   cancelOrbit();
-  map.fitBounds(b, {
+  const cam = map.cameraForBounds(b, {
     padding:viewPadding(30),
-    pitch: mobile ? 64 : 70,
     bearing,
     maxZoom: mobile ? 14 : 14.5,
+  });
+  if(!cam) return;
+  map.flyTo({
+    center:cam.center,
+    zoom:cam.zoom,
+    pitch: mobile ? 64 : 70,
+    bearing,
     duration:1800,
     essential:true
   });
