@@ -509,11 +509,6 @@ main{flex:1;position:relative;min-height:0}
 }
 .settings-nav-opt:hover{border-color:var(--contour)}
 .settings-nav-opt.active{border-color:var(--accent);background:#FEF2F2}
-.settings-item+.settings-item{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
-.settings-input{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px;width:80px;text-align:right}
-.settings-input:focus{outline:none;border-color:var(--accent)}
-.settings-unit{font-size:12px;color:var(--ink-soft);margin-left:4px}
-
 .nav-picker-overlay{
   position:fixed;inset:0;z-index:2600;
   background:rgba(0,0,0,.45);
@@ -584,28 +579,28 @@ main{flex:1;position:relative;min-height:0}
 }
 .visit-confirm-cancel:hover{color:var(--ink)}
 
-.weight-panel{
+.admin-panel{
   position:absolute;right:10px;bottom:10px;z-index:1300;
   background:rgba(255,255,255,.75);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(6px);
   padding:6px 8px;font-size:10px;width:auto;
   box-shadow:0 2px 8px rgba(0,0,0,.15);display:none;
 }
-.weight-panel.show{display:block}
-.weight-panel .wp-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
-.weight-panel h4{font-size:10px;font-weight:700;margin:0}
-.weight-panel .wp-toggle{font-size:12px;color:var(--ink-soft);background:none;border:none;cursor:pointer;padding:0 2px;line-height:1}
-.weight-panel .wp-body{margin-top:4px}
-.weight-panel.collapsed .wp-body{display:none}
-.weight-panel.collapsed{padding:4px 8px}
-.weight-panel label{display:flex;align-items:center;gap:3px;margin-bottom:2px}
-.weight-panel label span{width:62px;flex-shrink:0;text-align:right}
-.weight-panel input[type="number"]{width:42px;font:inherit;font-size:10px;border:1px solid var(--line);border-radius:3px;padding:1px 3px;text-align:right}
-.weight-panel button.wp-apply{margin-top:4px;width:100%;font:inherit;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--line);border-radius:4px;background:var(--paper-deep);padding:4px;color:var(--ink)}
-.weight-panel button.wp-apply:hover{border-color:var(--accent);color:var(--accent)}
-.weight-panel .wp-section{font-size:9px;font-weight:700;color:var(--ink-soft);border-bottom:1px solid var(--line);padding-bottom:2px;margin-bottom:3px}
-.weight-panel .wp-pin-row{display:flex;gap:3px;align-items:center;margin-bottom:2px}
+.admin-panel.show{display:block}
+.admin-panel .wp-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.admin-panel h4{font-size:10px;font-weight:700;margin:0}
+.admin-panel .wp-toggle{font-size:12px;color:var(--ink-soft);background:none;border:none;cursor:pointer;padding:0 2px;line-height:1}
+.admin-panel .wp-body{margin-top:4px}
+.admin-panel.collapsed .wp-body{display:none}
+.admin-panel.collapsed{padding:4px 8px}
+.admin-panel label{display:flex;align-items:center;gap:3px;margin-bottom:2px}
+.admin-panel label span{width:62px;flex-shrink:0;text-align:right}
+.admin-panel input[type="number"]{width:42px;font:inherit;font-size:10px;border:1px solid var(--line);border-radius:3px;padding:1px 3px;text-align:right}
+.admin-panel button.wp-apply{margin-top:4px;width:100%;font:inherit;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--line);border-radius:4px;background:var(--paper-deep);padding:4px;color:var(--ink)}
+.admin-panel button.wp-apply:hover{border-color:var(--accent);color:var(--accent)}
+.admin-panel .wp-section{font-size:9px;font-weight:700;color:var(--ink-soft);border-bottom:1px solid var(--line);padding-bottom:2px;margin-bottom:3px}
+.admin-panel .wp-pin-row{display:flex;gap:3px;align-items:center;margin-bottom:2px}
 @media (max-width:760px){
-  .weight-panel{right:6px;bottom:calc(var(--sheet-peek) + 50px)}
+  .admin-panel{right:6px;bottom:calc(var(--sheet-peek) + 50px)}
 }
 
 /* ================= Mobile Search Overlay ================= */
@@ -869,7 +864,7 @@ main{flex:1;position:relative;min-height:0}
       </ul>
     </div>
 
-    <div class="weight-panel collapsed" id="weightPanel">
+    <div class="admin-panel collapsed" id="adminPanel">
       <div class="wp-head" id="wpHead">
         <h4>管理者パネル</h4>
         <span class="wp-toggle" id="wpToggle">▲</span>
@@ -881,6 +876,8 @@ main{flex:1;position:relative;min-height:0}
           <button class="wp-apply" id="adminPinBtn" style="width:auto;margin:0;padding:2px 8px">設置</button>
           <button class="wp-apply" id="adminPinClear" style="width:auto;margin:0;padding:2px 8px">消去</button>
         </div>
+        <div class="wp-section" style="margin-top:6px">訪問確認</div>
+        <label><span>待機(秒)</span><input type="number" id="visitDelayInput" min="1" max="3600" value="60"></label>
         <div class="wp-section" style="margin-top:6px">重み調整</div>
         <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
         <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
@@ -950,11 +947,6 @@ main{flex:1;position:relative;min-height:0}
             <button class="settings-nav-opt" data-nav="google">📍 Google Maps</button>
             <button class="settings-nav-opt" data-nav="yahoo">🚙 Yahoo! カーナビ</button>
           </div>
-        </div>
-        <div class="settings-item">
-          <div class="settings-label">訪問確認の待機時間</div>
-          <div class="settings-desc">ナビ起動後、アプリに戻った際に訪問確認を表示するまでの時間</div>
-          <input class="settings-input" id="visitDelayInput" type="number" min="1" max="3600" value="60"><span class="settings-unit">秒</span>
         </div>
       </div>
     </div>
@@ -1201,6 +1193,7 @@ function closeVisitConfirm(){ $("visitConfirm").classList.remove("show"); }
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState === "hidden" && pendingVisitKey){
     pendingVisitTs = Date.now();
+    saveDriving(pendingVisitKey, pendingVisitTouge);
   }
   if(document.visibilityState === "visible"){
     if(!pendingVisitKey) restoreDriving();
@@ -1815,6 +1808,7 @@ function openNav(t){
     pendingVisitKey = t.stableKey;
     pendingVisitTouge = t;
     pendingVisitTs = 0;
+    saveDriving(t.stableKey, t);
   }
   if(!isMobileDevice){
     window.open(googleMapUrl(t.poly, userLatLng?.[0], userLatLng?.[1]), "_blank");
@@ -1849,19 +1843,12 @@ function openSettings(){
   document.querySelectorAll(".settings-nav-opt").forEach(b=>{
     b.classList.toggle("active", b.dataset.nav === saved);
   });
-  $("visitDelayInput").value = parseInt(localStorage.getItem(VISIT_DELAY_KEY),10) || 60;
   $("settingsOverlay").classList.add("show");
 }
 function closeSettings(){ $("settingsOverlay").classList.remove("show"); }
 $("settingsBtn").addEventListener("click", openSettings);
 $("settingsClose").addEventListener("click", closeSettings);
 $("settingsOverlay").addEventListener("click", e=>{ if(e.target === $("settingsOverlay")) closeSettings(); });
-$("visitDelayInput").addEventListener("change", e=>{
-  const v = Math.max(1, Math.min(3600, parseInt(e.target.value,10) || 60));
-  e.target.value = v;
-  localStorage.setItem(VISIT_DELAY_KEY, v);
-  toast(`訪問確認の待機時間を ${v}秒 に設定しました`);
-});
 $("navOptions").addEventListener("click", e=>{
   const btn = e.target.closest("[data-nav]");
   if(!btn) return;
@@ -2854,10 +2841,16 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilt
 
 // ================= 管理者パネル =================
 if(localStorage.getItem("touge.admin") === "true"){
-  const wp = $("weightPanel");
+  const wp = $("adminPanel");
   wp.classList.add("show");
   wp.querySelectorAll("input[data-w]").forEach(inp=>{
     inp.value = BALANCE_WEIGHTS[inp.dataset.w];
+  });
+  $("visitDelayInput").value = parseInt(localStorage.getItem(VISIT_DELAY_KEY),10) || 60;
+  $("visitDelayInput").addEventListener("change", e=>{
+    const v = Math.max(1, Math.min(3600, parseInt(e.target.value,10) || 60));
+    e.target.value = v;
+    localStorage.setItem(VISIT_DELAY_KEY, v);
   });
   $("wpHead").addEventListener("click",()=>{
     wp.classList.toggle("collapsed");
