@@ -6,9 +6,9 @@
 <title>峠サーチャー 3D｜日本全国の峠道を探す</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="峠サーチャー">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <script type="importmap">
@@ -43,11 +43,6 @@ body{
   font-family:"Noto Sans JP",sans-serif;
   color:var(--ink);background:var(--bg);
   display:flex;flex-direction:column;overflow:hidden;
-}
-body::before{
-  content:'';position:fixed;top:0;left:0;right:0;
-  height:env(safe-area-inset-top,0px);
-  background:#000;z-index:9999;pointer-events:none;
 }
 
 header{display:none}
