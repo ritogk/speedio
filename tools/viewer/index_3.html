@@ -1644,18 +1644,14 @@ function flyToTouge(t){
   const st = t.poly[0], ed = t.poly[t.poly.length-1];
   const bearing = Math.atan2(ed[1]-st[1], ed[0]-st[0]) * 180 / Math.PI;
   const mobile = window.innerWidth <= 760;
+  const maxZ = mobile ? 14 : 14.5;
   const b = new maplibregl.LngLatBounds();
   t.poly.forEach(p=>b.extend([p[1],p[0]]));
   cancelOrbit();
-  const cam = map.cameraForBounds(b, {
-    padding:viewPadding(30),
-    bearing,
-    maxZoom: mobile ? 14 : 14.5,
-  });
-  if(!cam) return;
+  const cam = map.cameraForBounds(b, {bearing, maxZoom:maxZ, padding:30});
   map.flyTo({
-    center:cam.center,
-    zoom:cam.zoom,
+    center: cam?.center ?? [t.center[1], t.center[0]],
+    zoom: cam?.zoom ?? maxZ,
     pitch: mobile ? 64 : 70,
     bearing,
     duration:1800,
