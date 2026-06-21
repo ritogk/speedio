@@ -6,10 +6,7 @@
 <title>峠サーチャー 3D｜日本全国の峠道を探す</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<meta name="theme-color" content="#000000">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="峠サーチャー">
+<meta name="theme-color" content="#FFFFFF">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}
@@ -609,7 +606,7 @@ main{flex:1;position:relative;min-height:0}
 /* ================= Mobile Search Overlay ================= */
 .m-search-pill{
   display:none;
-  position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);left:10px;right:54px;z-index:1250;
+  position:absolute;top:10px;left:10px;right:54px;z-index:1250;
   background:var(--paper);border-radius:999px;
   padding:8px 14px;font-size:13px;color:var(--ink-soft);height:36px;
   box-shadow:0 1px 6px rgba(0,0,0,.16);
@@ -626,7 +623,7 @@ main{flex:1;position:relative;min-height:0}
 
 .m-filter-bar{
   display:none;
-  position:absolute;top:calc(env(safe-area-inset-top,0px) + 56px);left:0;right:0;z-index:1240;
+  position:absolute;top:56px;left:0;right:0;z-index:1240;
   padding:4px 10px;gap:5px;
   overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
 }
@@ -672,7 +669,7 @@ main{flex:1;position:relative;min-height:0}
 
 .m-terrain-btn{
   display:none;
-  position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);right:10px;z-index:1250;
+  position:absolute;top:10px;right:10px;z-index:1250;
   width:40px;height:40px;border-radius:50%;
   border:1px solid var(--line);
   background:rgba(255,255,255,.92);color:var(--ink);
