@@ -42,12 +42,12 @@ html,body{height:100%;overscroll-behavior:none;touch-action:manipulation}
 body{
   font-family:"Noto Sans JP",sans-serif;
   color:var(--ink);background:var(--bg);
+  display:flex;flex-direction:column;overflow:hidden;
 }
 body::before{
   content:'';position:fixed;top:0;left:0;right:0;
   height:env(safe-area-inset-top,0px);
   background:#000;z-index:9999;pointer-events:none;
-  display:flex;flex-direction:column;overflow:hidden;
 }
 
 header{display:none}
