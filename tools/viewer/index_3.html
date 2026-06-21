@@ -63,9 +63,9 @@ header{display:none}
   .map-float{pointer-events:none}
   .map-float>*{pointer-events:auto}
   .map-float .locate-btn{
-    padding:0;font-size:11px;
+    padding:0;font-size:13px;
     box-shadow:0 1px 4px rgba(0,0,0,.18);
-    border-radius:50%;width:32px;height:32px;
+    border-radius:50%;width:40px;height:40px;
     display:flex;align-items:center;justify-content:center;
   }
   .map-float .locate-label{display:none}
@@ -130,7 +130,7 @@ main{flex:1;position:relative;min-height:0}
 }
 /* ボトムシートの開き具合に追従して回転ボタン・凡例を持ち上げる */
 @media (max-width:760px){
-  .view-ctrl button{width:34px;height:34px;font-size:15px}
+  .view-ctrl button{width:40px;height:40px;font-size:17px}
   .view-ctrl{gap:6px}
   .view-ctrl,.legend{transition:bottom .28s cubic-bezier(.3,.9,.3,1),opacity .2s}
   body:has(.panel.half) .view-ctrl{bottom:calc(44dvh + 14px)}
@@ -547,6 +547,37 @@ main{flex:1;position:relative;min-height:0}
 }
 .nav-picker-cancel:hover{color:var(--ink)}
 
+.visit-confirm-overlay{
+  position:fixed;inset:0;z-index:2650;
+  background:rgba(0,0,0,.45);
+  display:none;align-items:flex-end;justify-content:center;
+}
+.visit-confirm-overlay.show{display:flex}
+.visit-confirm{
+  background:var(--paper);border-radius:14px 14px 0 0;
+  width:100%;max-width:400px;padding:24px 16px calc(env(safe-area-inset-bottom,0px) + 16px);
+  animation:slideUp .25s ease-out;text-align:center;
+}
+.visit-confirm h3{font-size:15px;font-weight:700;margin-bottom:12px}
+.vc-card{text-align:left;margin-bottom:16px}
+.vc-card .card{cursor:default;margin-bottom:0}
+.vc-card .card:hover{border-color:var(--line)}
+.visit-confirm-btns{display:flex;flex-direction:column;gap:8px}
+.visit-confirm-btn{
+  font:inherit;font-size:14px;font-weight:600;cursor:pointer;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--card);color:var(--ink);padding:14px;
+  transition:border-color .15s;
+}
+.visit-confirm-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.visit-confirm-btn.primary:hover{opacity:.9}
+.visit-confirm-cancel{
+  display:block;width:100%;margin-top:8px;
+  font:inherit;font-size:13px;font-weight:500;cursor:pointer;
+  border:none;background:transparent;color:var(--ink-soft);padding:8px;
+}
+.visit-confirm-cancel:hover{color:var(--ink)}
+
 .weight-panel{
   position:absolute;right:10px;bottom:10px;z-index:1300;
   background:rgba(255,255,255,.75);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(6px);
@@ -574,32 +605,32 @@ main{flex:1;position:relative;min-height:0}
 /* ================= Mobile Search Overlay ================= */
 .m-search-pill{
   display:none;
-  position:absolute;top:10px;left:10px;right:46px;z-index:1250;
+  position:absolute;top:10px;left:10px;right:54px;z-index:1250;
   background:var(--paper);border-radius:999px;
-  padding:7px 12px;font-size:12px;color:var(--ink-soft);height:32px;
+  padding:8px 14px;font-size:13px;color:var(--ink-soft);height:36px;
   box-shadow:0 1px 6px rgba(0,0,0,.16);
-  align-items:center;gap:5px;cursor:pointer;
+  align-items:center;gap:6px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;
 }
-.m-search-pill .m-sp-icon{font-size:13px;flex-shrink:0;opacity:.6}
-.m-search-pill .m-sp-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.m-search-pill .m-sp-icon{font-size:15px;flex-shrink:0;opacity:.6}
+.m-search-pill .m-sp-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
 .m-search-pill .m-sp-sep{color:var(--contour);flex-shrink:0}
 .m-search-pill .m-sp-pref{
-  font-size:11px;font-weight:600;color:var(--ink);
+  font-size:12px;font-weight:600;color:var(--ink);
   flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 
 .m-filter-bar{
   display:none;
-  position:absolute;top:48px;left:0;right:0;z-index:1240;
-  padding:3px 10px;gap:4px;
+  position:absolute;top:56px;left:0;right:0;z-index:1240;
+  padding:4px 10px;gap:5px;
   overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
 }
 .m-filter-bar::-webkit-scrollbar{display:none}
 .m-filter-bar .m-fchip{
-  font:inherit;font-size:10px;font-weight:500;cursor:pointer;white-space:nowrap;
+  font:inherit;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;
   border:1px solid rgba(0,0,0,.08);border-radius:999px;
-  background:rgba(255,255,255,.92);color:var(--ink);padding:4px 10px;flex-shrink:0;
+  background:rgba(255,255,255,.92);color:var(--ink);padding:6px 12px;flex-shrink:0;
   box-shadow:0 1px 3px rgba(0,0,0,.1);
   -webkit-tap-highlight-color:transparent;
 }
@@ -637,8 +668,8 @@ main{flex:1;position:relative;min-height:0}
 
 .m-terrain-btn{
   display:none;
-  position:absolute;top:48px;right:10px;z-index:1250;
-  width:32px;height:32px;border-radius:50%;
+  position:absolute;top:10px;right:10px;z-index:1250;
+  width:40px;height:40px;border-radius:50%;
   border:1px solid var(--line);
   background:rgba(255,255,255,.92);color:var(--ink);
   box-shadow:0 1px 4px rgba(0,0,0,.18);
@@ -650,7 +681,7 @@ main{flex:1;position:relative;min-height:0}
 
 .m-layer-popup{
   display:none;
-  position:absolute;top:48px;right:46px;z-index:1260;
+  position:absolute;top:58px;right:10px;z-index:1260;
   background:var(--paper);border:1px solid var(--line);border-radius:12px;
   box-shadow:0 4px 16px rgba(0,0,0,.18);
   padding:10px;gap:10px;
@@ -768,7 +799,7 @@ main{flex:1;position:relative;min-height:0}
   .panel .pref-tags-wrap{display:none}
   .panel .presets{display:none}
   .map-ctrl{display:none}
-  .map-float{top:8px;right:8px}
+  .map-float{top:56px;right:10px}
 }
 </style>
 </head>
@@ -796,7 +827,7 @@ main{flex:1;position:relative;min-height:0}
 
     <div class="map-float" id="mapFloat"></div>
     <button class="m-terrain-btn" id="mTerrainBtn" aria-label="地図レイヤー">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
     </button>
     <div class="m-layer-popup" id="mLayerPopup">
       <button class="m-layer-opt" id="mLayer2d">
@@ -933,6 +964,17 @@ main{flex:1;position:relative;min-height:0}
       </div>
       <label class="nav-picker-remember"><input type="checkbox" id="navRemember" checked>次回から同じアプリで開く</label>
       <button class="nav-picker-cancel" id="navCancel">キャンセル</button>
+    </div>
+  </div>
+
+  <div class="visit-confirm-overlay" id="visitConfirm">
+    <div class="visit-confirm">
+      <h3>この峠に行きましたか？</h3>
+      <div class="vc-card" id="vcCard"></div>
+      <div class="visit-confirm-btns">
+        <button class="visit-confirm-btn primary" id="vcYes">🚗 走行した</button>
+      </div>
+      <button class="visit-confirm-cancel" id="vcNo">まだ行ってない</button>
     </div>
   </div>
 
@@ -1078,7 +1120,7 @@ function saveVisited(){ localStorage.setItem("touge.visited", JSON.stringify([..
 const visitedDates = JSON.parse(localStorage.getItem("touge.visitedDates") || "{}");
 const todayStr = new Date().toISOString().slice(0, 10);
 let pendingVisitKey = null;
-let pendingVisitTimer = null;
+let pendingVisitTouge = null;
 let pendingVisitTs = 0;
 function updateVisitedUi(){}
 function commitPendingVisit(){
@@ -1090,18 +1132,42 @@ function commitPendingVisit(){
   updateVisitedUi();
   toast("行った峠に記録しました");
   pendingVisitKey = null;
-  pendingVisitTimer = null;
+  pendingVisitTouge = null;
   pendingVisitTs = 0;
   render();
 }
+function clearPendingVisit(){
+  pendingVisitKey = null;
+  pendingVisitTouge = null;
+  pendingVisitTs = 0;
+}
+function visitConfirmCardHtml(t){
+  return `<article class="card">
+    <div class="card-top">
+      <div class="card-labels">${t.prefecture?`<span class="route-oval">${escapeHtml(t.prefecture)}</span>`:(t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:"")}${t.city?`<span class="route-oval">${escapeHtml(t.city)}</span>`:""}</div>
+      <h3>${escapeHtml(t.name)}</h3>
+    </div>
+    <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b></p>
+    <div class="bars">
+      <span class="bl">コーナー</span><div class="stacked"><span style="width:${t.pctStrong}%;background:var(--corner-strong)"></span><span style="width:${t.pctMedium}%;background:var(--corner-medium)"></span><span style="width:${t.pctWeak}%;background:var(--corner-weak)"></span><span style="width:${t.pctStraight}%;background:var(--straight)"></span></div><span class="bv">${t.pctStrong+t.pctMedium+t.pctWeak}%</span>
+      <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
+    </div>
+    <div class="card-tags">${t.unevennessCount!=null?(t.unevennessCount>0?`<span class="card-tag">${bumpIcons(t.unevennessCount)}</span>`:`<span class="card-tag">${BUMP_SVG} なし</span>`):""}${t.buildingCnt!=null?(t.buildingCnt>0?`<span class="card-tag">🏠 ×${t.buildingCnt}</span>`:`<span class="card-tag">🏠 なし</span>`):""}</div>
+  </article>`;
+}
+function showVisitConfirm(){
+  if(!pendingVisitKey || !pendingVisitTouge) return;
+  $("vcCard").innerHTML = visitConfirmCardHtml(pendingVisitTouge);
+  $("visitConfirm").classList.add("show");
+}
+function closeVisitConfirm(){ $("visitConfirm").classList.remove("show"); }
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState === "hidden" && pendingVisitKey){
     pendingVisitTs = Date.now();
   }
   if(document.visibilityState === "visible" && pendingVisitKey && pendingVisitTs){
-    if(Date.now() - pendingVisitTs >= 30000){
-      clearTimeout(pendingVisitTimer);
-      commitPendingVisit();
+    if(Date.now() - pendingVisitTs >= 60000){
+      showVisitConfirm();
     }
   }
 });
@@ -1216,6 +1282,9 @@ function placeLocMarker(lng, lat){
   return locMarker;
 }
 const $ = id => document.getElementById(id);
+$("vcYes").addEventListener("click", ()=>{ closeVisitConfirm(); commitPendingVisit(); });
+$("vcNo").addEventListener("click", ()=>{ closeVisitConfirm(); clearPendingVisit(); });
+$("visitConfirm").addEventListener("click", e=>{ if(e.target === $("visitConfirm")){ closeVisitConfirm(); clearPendingVisit(); } });
 function showLoading(on, text){
   $("loading").classList.toggle("show", on);
   if(text) $("loadingText").textContent = text;
@@ -1472,8 +1541,13 @@ map.on("load", () => {
     }
   });
   // 道路ラインを直接クリック/タップで選択（casingの方が太いのでタップ判定に含める）
+  // 3レイヤーが同じクリックで全て発火するので、最初の1つだけ処理する
+  let lineClickHandled = false;
   ["touge-line","touge-white","touge-casing"].forEach(layer=>{
     map.on("click", layer, e=>{
+      if(lineClickHandled) return;
+      lineClickHandled = true;
+      setTimeout(()=>{ lineClickHandled = false; }, 0);
       const tid = e.features?.[0]?.properties?.tid;
       const t = lastRanked.find(x=>x.id === tid);
       if(t) revealAndSelect(t);
@@ -1530,10 +1604,17 @@ function drawMap(list){
 function viewPadding(extra){
   const e = extra || 0;
   if(window.innerWidth <= 760){
-    const p = document.getElementById("panel");
-    const rect = p.getBoundingClientRect();
-    const sheet = Math.max(0, window.innerHeight - rect.top);
-    return {top:e+80, left:e+10, right:e+10, bottom:e+sheet+14};
+    let sheet;
+    if(sheetState === "card-peek"){
+      sheet = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--card-peek-h")) || 96;
+    } else if(sheetState === "half"){
+      sheet = window.innerHeight * 0.44;
+    } else if(sheetState === "full"){
+      sheet = window.innerHeight * 0.8;
+    } else {
+      sheet = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sheet-peek")) || 56;
+    }
+    return {top:e+80, left:e+10, right:e+10, bottom:e+Math.round(sheet)+14};
   }
   return {top:e, left:e, right:e, bottom:e};
 }
@@ -1558,9 +1639,6 @@ function orbitAround(center){
 }
 
 // 峠に「滑空」するカメラ演出
-// 飛行中にリサイズ等で中断されると中途半端な位置で止まるため、
-// ユーザー自身の操作による中断でなければ最後に着地位置を保証する
-let flightAbort = null;
 function flyToTouge(t){
   if(!t.poly.length) return;
   const st = t.poly[0], ed = t.poly[t.poly.length-1];
@@ -1569,13 +1647,6 @@ function flyToTouge(t){
   const b = new maplibregl.LngLatBounds();
   t.poly.forEach(p=>b.extend([p[1],p[0]]));
   cancelOrbit();
-  if(flightAbort) flightAbort();
-  let cancelled = false;
-  const userEvents = ["dragstart","zoomstart","rotatestart","pitchstart"];
-  const onUser = e => { if(e.originalEvent) cancelled = true; };
-  userEvents.forEach(ev=>map.on(ev,onUser));
-  const cleanup = ()=>{ userEvents.forEach(ev=>map.off(ev,onUser)); flightAbort = null; };
-  flightAbort = ()=>{ cancelled = true; cleanup(); };
   map.fitBounds(b, {
     padding:viewPadding(30),
     pitch: mobile ? 64 : 70,
@@ -1583,9 +1654,6 @@ function flyToTouge(t){
     maxZoom: mobile ? 14 : 14.5,
     duration:1800,
     essential:true
-  });
-  map.once("moveend", ()=>{
-    cleanup();
   });
 }
 
@@ -1702,8 +1770,8 @@ const NAV_LABELS = {google:"Google Maps", yahoo:"Yahoo!カーナビ"};
 function openNav(t){
   if(t.stableKey){
     pendingVisitKey = t.stableKey;
-    clearTimeout(pendingVisitTimer);
-    pendingVisitTimer = setTimeout(()=>{ commitPendingVisit(); }, 30000);
+    pendingVisitTouge = t;
+    pendingVisitTs = 0;
   }
   if(!isMobileDevice){
     window.open(googleMapUrl(t.poly, userLatLng?.[0], userLatLng?.[1]), "_blank");
