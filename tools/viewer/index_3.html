@@ -287,7 +287,7 @@ main{flex:1;position:relative;min-height:0}
 .fill{height:100%;background:var(--gauge);border-radius:3px}
 .stacked{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--paper-deep)}
 .stacked span{height:100%}
-.closure-marker{cursor:pointer}
+.closure-marker{cursor:default}
 .cl-cause{font-size:10px;padding:1px 5px;border-radius:3px;color:#fff;display:inline-block}
 .cl-cause.disaster{background:#D84315}
 .cl-cause.construction{background:#F57F17}
@@ -1366,22 +1366,6 @@ function renderClosureMarkers(closures){
         "icon-ignore-placement": true,
       },
     });
-    map.on("click","closures-icon",e=>{
-      const f = e.features?.[0];
-      if(!f) return;
-      const p = f.properties;
-      const causeLabel = p.cause==="construction"?"工事":"災害等";
-      new maplibregl.Popup({offset:12, maxWidth:"240px"})
-        .setLngLat(e.lngLat)
-        .setHTML(`<div style="font-size:12px;line-height:1.5">
-          <div style="font-weight:600">${escapeHtml(p.road)}</div>
-          <div style="color:#666">${escapeHtml(p.start_loc)}〜${escapeHtml(p.end_loc)}</div>
-          <div style="margin-top:4px"><span class="cl-cause ${p.cause}">${causeLabel}</span> ${escapeHtml(p.start_date)}→${escapeHtml(p.end_date)}</div>
-        </div>`)
-        .addTo(map);
-    });
-    map.on("mouseenter","closures-icon",()=>{ map.getCanvas().style.cursor="pointer"; });
-    map.on("mouseleave","closures-icon",()=>{ map.getCanvas().style.cursor=""; });
   }
 }
 let widthFilter = 0.85;
