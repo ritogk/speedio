@@ -1680,13 +1680,13 @@ map.on("load", () => {
       "line-opacity":["coalesce",["get","fade"],1]
     }
   });
-  // 峠×物流道路の重複強調レイヤー（tougeラインの上に重ねる）
-  map.addSource("touge-logistics", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
+  // 峠×物流道路の重複強調レイヤー（本線=黄、補完路=緑）
+  map.addSource("touge-logistics",{type:"geojson",data:{type:"FeatureCollection",features:[]}});
   map.addLayer({
     id:"touge-logistics-glow", type:"line", source:"touge-logistics",
     layout:{"line-cap":"round","line-join":"round"},
     paint:{
-      "line-color":"#FFD600",
+      "line-color":["match",["get","cat"],1,"#FFD600","#43A047"],
       "line-width":["interpolate",["linear"],["zoom"],8,10,14,18],
       "line-blur":6,
       "line-opacity":.5
@@ -1696,7 +1696,7 @@ map.on("load", () => {
     id:"touge-logistics-line", type:"line", source:"touge-logistics",
     layout:{"line-cap":"round","line-join":"round"},
     paint:{
-      "line-color":"#FFD600",
+      "line-color":["match",["get","cat"],1,"#FFD600","#43A047"],
       "line-width":["interpolate",["linear"],["zoom"],8,2.5,14,5],
       "line-opacity":.85
     }
@@ -2909,8 +2909,8 @@ $("kobanToggle").addEventListener("click",e=>{
 
 // 重要物流道路レイヤー ON/OFF
 const logisticsCache={};let logisticsVisible=false;let logisticsGrid=null;const GRID_RES=0.001;
-function buildLogisticsGrid(features){const grid=new Set();features.forEach(f=>{const c=f.geometry.coordinates;for(let i=0;i<c.length;i++) grid.add(Math.round(c[i][0]/GRID_RES)+","+Math.round(c[i][1]/GRID_RES));});return grid;}
-function findOverlapSegments(tf,grid){if(!grid||!grid.size)return[];const out=[];tf.forEach(f=>{const c=f.geometry.coordinates;let run=[];for(let i=0;i<c.length;i++){const gx=Math.round(c[i][0]/GRID_RES),gy=Math.round(c[i][1]/GRID_RES);const hit=grid.has(gx+","+gy)||grid.has((gx+1)+","+gy)||grid.has((gx-1)+","+gy)||grid.has(gx+","+(gy+1))||grid.has(gx+","+(gy-1));if(hit)run.push(c[i]);else{if(run.length>=2)out.push({type:"Feature",properties:{},geometry:{type:"LineString",coordinates:run}});run=[];}}if(run.length>=2)out.push({type:"Feature",properties:{},geometry:{type:"LineString",coordinates:run}});});return out;}
+function buildLogisticsGrid(features){const grid=new Map();features.forEach(f=>{const cat=f.properties.cat||2;const c=f.geometry.coordinates;for(let i=0;i<c.length;i++){const k=Math.round(c[i][0]/GRID_RES)+","+Math.round(c[i][1]/GRID_RES);if(!grid.has(k)||cat<grid.get(k))grid.set(k,cat);}});return grid;}
+function findOverlapSegments(tf,grid){if(!grid||!grid.size)return[];const out=[];tf.forEach(f=>{const c=f.geometry.coordinates;let run=[],runCat=2;for(let i=0;i<c.length;i++){const gx=Math.round(c[i][0]/GRID_RES),gy=Math.round(c[i][1]/GRID_RES);let cat=0;[gx+","+gy,(gx+1)+","+gy,(gx-1)+","+gy,gx+","+(gy+1),gx+","+(gy-1)].forEach(k=>{if(grid.has(k)){const v=grid.get(k);if(!cat||v<cat)cat=v;}});if(cat){if(run.length&&cat!==runCat){if(run.length>=2)out.push({type:"Feature",properties:{cat:runCat},geometry:{type:"LineString",coordinates:run}});run=[run[run.length-1]];}run.push(c[i]);runCat=cat;}else{if(run.length>=2)out.push({type:"Feature",properties:{cat:runCat},geometry:{type:"LineString",coordinates:run}});run=[];runCat=2;}}if(run.length>=2)out.push({type:"Feature",properties:{cat:runCat},geometry:{type:"LineString",coordinates:run}});});return out;}
 function updateOverlapLayer(){if(!mapReady)return;if(!logisticsVisible||!logisticsGrid){map.getSource("touge-logistics").setData({type:"FeatureCollection",features:[]});return;}const td=map.getSource("touge")?._data;if(!td||!td.features)return;map.getSource("touge-logistics").setData({type:"FeatureCollection",features:findOverlapSegments(td.features,logisticsGrid)});}
 async function fetchLogistics(codes){const toFetch=codes.filter(c=>!logisticsCache[c]);if(toFetch.length)await Promise.all(toFetch.map(async c=>{try{const r=await fetch("./logistics/"+c+".geojson");if(!r.ok)return;const d=await r.json();logisticsCache[c]=d.features;}catch(e){}}));const all=codes.filter(c=>logisticsCache[c]).flatMap(c=>logisticsCache[c]);logisticsGrid=buildLogisticsGrid(all);if(mapReady)map.getSource("logistics").setData({type:"FeatureCollection",features:all});updateOverlapLayer();}
 function updateLogisticsLayer(){if(!logisticsVisible)return;fetchLogistics([...loadedPrefs]);}
