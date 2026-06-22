@@ -855,6 +855,7 @@ main{flex:1;position:relative;min-height:0}
     </div>
     <div class="map-ctrl">
       <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">3D地形</button>
+      <button class="ctrl-btn" id="logisticsToggle" aria-pressed="false">🚛 物流道路</button>
       <button class="ctrl-btn" id="kobanToggle" aria-pressed="false" style="display:none">👮</button>
     </div>
 
@@ -1571,6 +1572,54 @@ map.on("load", () => {
   map.on("mouseenter","koban-sym",()=>{ map.getCanvas().style.cursor="pointer"; });
   map.on("mouseleave","koban-sym",()=>{ map.getCanvas().style.cursor=""; });
 
+  // 重要物流道路レイヤー（峠ラインより下に配置）
+  map.addSource("logistics", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
+  map.addLayer({
+    id:"logistics-casing", type:"line", source:"logistics",
+    layout:{"line-cap":"round","line-join":"round","visibility":"none"},
+    paint:{
+      "line-color":"#D32F2F",
+      "line-width":["interpolate",["linear"],["zoom"],6,5,10,8,14,12],
+      "line-opacity":.15
+    }
+  });
+  map.addLayer({
+    id:"logistics-main", type:"line", source:"logistics",
+    filter:["==",["get","cat"],1],
+    layout:{"line-cap":"round","line-join":"round","visibility":"none"},
+    paint:{
+      "line-color":"#D32F2F",
+      "line-width":["interpolate",["linear"],["zoom"],6,2,10,4,14,6],
+      "line-opacity":.75
+    }
+  });
+  map.addLayer({
+    id:"logistics-alt", type:"line", source:"logistics",
+    filter:["==",["get","cat"],2],
+    layout:{"line-cap":"round","line-join":"round","visibility":"none"},
+    paint:{
+      "line-color":"#E57373",
+      "line-width":["interpolate",["linear"],["zoom"],6,1.5,10,3,14,5],
+      "line-opacity":.5,
+      "line-dasharray":[4,3]
+    }
+  });
+  ["logistics-main","logistics-alt"].forEach(layer=>{
+    map.on("click",layer,e=>{
+      const f = e.features?.[0];
+      if(!f) return;
+      const p = f.properties;
+      const catLabel = p.cat === 1 ? "重要物流道路（本線）" : "代替・補完路";
+      const name = p.name && p.name !== "-" ? p.name : "（路線名なし）";
+      new maplibregl.Popup({offset:8,closeButton:false,maxWidth:"220px"})
+        .setLngLat(e.lngLat)
+        .setHTML(`<div style="font-size:12px"><div style="font-weight:600;margin-bottom:2px">${escapeHtml(name)}</div><div style="color:#666">${catLabel}</div></div>`)
+        .addTo(map);
+    });
+    map.on("mouseenter",layer,()=>{ map.getCanvas().style.cursor="pointer"; });
+    map.on("mouseleave",layer,()=>{ map.getCanvas().style.cursor=""; });
+  });
+
   // 道路レイヤー（選択グロー + 白縁 + コーナー色分け）
   map.addSource("touge", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
   map.addLayer({
@@ -1625,6 +1674,28 @@ map.on("load", () => {
       "line-opacity":["coalesce",["get","fade"],1]
     }
   });
+  // 峠×物流道路の重複強調レイヤー（tougeラインの上に重ねる）
+  map.addSource("touge-logistics", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
+  map.addLayer({
+    id:"touge-logistics-glow", type:"line", source:"touge-logistics",
+    layout:{"line-cap":"round","line-join":"round"},
+    paint:{
+      "line-color":"#FFD600",
+      "line-width":["interpolate",["linear"],["zoom"],8,10,14,18],
+      "line-blur":6,
+      "line-opacity":.5
+    }
+  });
+  map.addLayer({
+    id:"touge-logistics-line", type:"line", source:"touge-logistics",
+    layout:{"line-cap":"round","line-join":"round"},
+    paint:{
+      "line-color":"#FFD600",
+      "line-width":["interpolate",["linear"],["zoom"],8,2.5,14,5],
+      "line-opacity":.85
+    }
+  });
+
   // 道路ラインを直接クリック/タップで選択（casingの方が太いのでタップ判定に含める）
   // 3レイヤーが同じクリックで全て発火するので、最初の1つだけ処理する
   let lineClickHandled = false;
@@ -1667,7 +1738,7 @@ function drawMap(list){
     }
   });
   const geojson = {type:"FeatureCollection", features};
-  if(mapReady) map.getSource("touge").setData(geojson);
+  if(mapReady){ map.getSource("touge").setData(geojson); updateOverlapLayer(); }
   else pendingGeojson = geojson;
 
   // ランクマーカー
@@ -2444,6 +2515,7 @@ function afterLoad(focusItems){
     const code = $("prefSelect").value;
     if(code) fetchKoban(code);
   }
+  updateLogisticsLayer();
 }
 
 // ================= UIイベント =================
@@ -2522,6 +2594,7 @@ async function loadNearbyPrefs(){
     showLoading(false);
     toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県を読み込みました`);
     render();
+    updateLogisticsLayer();
     setSheet("half");
     const b = new maplibregl.LngLatBounds();
     lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
@@ -2713,6 +2786,7 @@ async function restoreFilter(){
     currentItems = dedupeItems(results);
     showLoading(false);
     render();
+    updateLogisticsLayer();
     if(window.innerWidth<=760) setSheet("half");
     const b = new maplibregl.LngLatBounds();
     lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
@@ -2755,6 +2829,7 @@ async function initialLoad(){
         toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県を読み込みました`);
         saveFilter();
         render();
+        updateLogisticsLayer();
         if(window.innerWidth<=760) setSheet("half");
         const b = new maplibregl.LngLatBounds();
         lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
@@ -2825,6 +2900,15 @@ $("kobanToggle").addEventListener("click",e=>{
     if(code) fetchKoban(code);
   }
 });
+
+// 重要物流道路レイヤー ON/OFF
+const logisticsCache={};let logisticsVisible=false;let logisticsGrid=null;const GRID_RES=0.001;
+function buildLogisticsGrid(features){const grid=new Set();features.forEach(f=>{const c=f.geometry.coordinates;for(let i=0;i<c.length;i++) grid.add(Math.round(c[i][0]/GRID_RES)+","+Math.round(c[i][1]/GRID_RES));});return grid;}
+function findOverlapSegments(tf,grid){if(!grid||!grid.size)return[];const out=[];tf.forEach(f=>{const c=f.geometry.coordinates;let run=[];for(let i=0;i<c.length;i++){const gx=Math.round(c[i][0]/GRID_RES),gy=Math.round(c[i][1]/GRID_RES);const hit=grid.has(gx+","+gy)||grid.has((gx+1)+","+gy)||grid.has((gx-1)+","+gy)||grid.has(gx+","+(gy+1))||grid.has(gx+","+(gy-1));if(hit)run.push(c[i]);else{if(run.length>=2)out.push({type:"Feature",properties:{},geometry:{type:"LineString",coordinates:run}});run=[];}}if(run.length>=2)out.push({type:"Feature",properties:{},geometry:{type:"LineString",coordinates:run}});});return out;}
+function updateOverlapLayer(){if(!mapReady)return;if(!logisticsVisible||!logisticsGrid){map.getSource("touge-logistics").setData({type:"FeatureCollection",features:[]});return;}const td=map.getSource("touge")?._data;if(!td||!td.features)return;map.getSource("touge-logistics").setData({type:"FeatureCollection",features:findOverlapSegments(td.features,logisticsGrid)});}
+async function fetchLogistics(codes){const toFetch=codes.filter(c=>!logisticsCache[c]);if(toFetch.length)await Promise.all(toFetch.map(async c=>{try{const r=await fetch("./logistics/"+c+".geojson");if(!r.ok)return;const d=await r.json();logisticsCache[c]=d.features;}catch(e){}}));const all=codes.filter(c=>logisticsCache[c]).flatMap(c=>logisticsCache[c]);logisticsGrid=buildLogisticsGrid(all);if(mapReady)map.getSource("logistics").setData({type:"FeatureCollection",features:all});updateOverlapLayer();}
+function updateLogisticsLayer(){if(!logisticsVisible)return;fetchLogistics([...loadedPrefs]);}
+$("logisticsToggle").addEventListener("click",function(e){var btn=e.currentTarget;var on=btn.getAttribute("aria-pressed")!=="true";btn.setAttribute("aria-pressed",String(on));logisticsVisible=on;var vis=on?"visible":"none";["logistics-casing","logistics-main","logistics-alt"].forEach(function(id){map.setLayoutProperty(id,"visibility",vis)});if(on)updateLogisticsLayer();else{map.getSource("logistics").setData({type:"FeatureCollection",features:[]});updateOverlapLayer();}});
 
 // ボトムシート
 const panel = $("panel");
@@ -3836,11 +3920,22 @@ document.addEventListener("keydown", e => {
   });
   filterBar.appendChild(fFavorite);
 
+  const fLogistics = document.createElement("button");
+  fLogistics.className = "m-fchip";
+  fLogistics.textContent = "🚛 物流道路";
+  fLogistics.setAttribute("aria-pressed", "false");
+  fLogistics.addEventListener("click", () => {
+    $("logisticsToggle").click();
+    fLogistics.setAttribute("aria-pressed", logisticsVisible ? "true" : "false");
+  });
+  filterBar.appendChild(fLogistics);
+
   function syncFilterChips(){
     fNearby.setAttribute("aria-pressed", nearbyChip.getAttribute("aria-pressed"));
     fUnvisited.setAttribute("aria-pressed", hideVisited ? "true" : "false");
     fVisited.setAttribute("aria-pressed", showOnlyVisited ? "true" : "false");
     fFavorite.setAttribute("aria-pressed", showOnlyFavorites ? "true" : "false");
+    fLogistics.setAttribute("aria-pressed", logisticsVisible ? "true" : "false");
   }
 
   // === ボトムシート内ソートドロップダウン ===
