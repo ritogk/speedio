@@ -62,14 +62,6 @@ header{display:none}
 @media (max-width:760px){
   .map-float{pointer-events:none}
   .map-float>*{pointer-events:auto}
-  .m-filter-bar .locate-btn{
-    font:inherit;font-size:12px;font-weight:500;
-    border:1px solid rgba(0,0,0,.08);border-radius:999px;
-    background:rgba(255,255,255,.92);color:var(--ink);padding:6px 12px;
-    box-shadow:0 1px 3px rgba(0,0,0,.1);
-    width:auto;height:auto;
-  }
-  .m-filter-bar .locate-label{display:inline}
 }
 @media (max-width:480px){
   header .locate-btn .locate-label{display:none}
@@ -309,6 +301,7 @@ main{flex:1;position:relative;min-height:0}
   box-shadow:0 1px 2px rgba(0,0,0,.4);
   width:20px;height:20px;cursor:pointer;
 }
+
 .ring-label{
   font-size:10px;color:#fff;
   text-shadow:0 1px 2px rgba(0,0,0,.85);pointer-events:none;
@@ -617,7 +610,7 @@ main{flex:1;position:relative;min-height:0}
 /* ================= Mobile Search Overlay ================= */
 .m-search-pill{
   display:none;
-  position:absolute;top:10px;left:10px;right:54px;z-index:1250;
+  position:absolute;top:10px;left:10px;right:52px;z-index:1250;
   background:var(--paper);border-radius:999px;
   padding:8px 14px;font-size:13px;color:var(--ink-soft);height:36px;
   box-shadow:0 1px 6px rgba(0,0,0,.16);
@@ -692,7 +685,7 @@ main{flex:1;position:relative;min-height:0}
 .m-terrain-btn{
   display:none;
   position:absolute;top:10px;right:10px;z-index:1250;
-  width:40px;height:40px;border-radius:50%;
+  width:36px;height:36px;border-radius:50%;
   border:1px solid var(--line);
   background:rgba(255,255,255,.92);color:var(--ink);
   box-shadow:0 1px 4px rgba(0,0,0,.18);
@@ -701,6 +694,17 @@ main{flex:1;position:relative;min-height:0}
   -webkit-tap-highlight-color:transparent;
 }
 .m-terrain-btn svg{display:block}
+.m-locate-btn{
+  display:none;
+  position:absolute;top:56px;right:10px;z-index:1250;
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.92);color:var(--ink);
+  box-shadow:0 1px 4px rgba(0,0,0,.18);
+  cursor:pointer;font-size:16px;
+  align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+}
 
 .m-layer-popup{
   display:none;
@@ -818,6 +822,8 @@ main{flex:1;position:relative;min-height:0}
   .m-filter-wrap{display:block}
   .m-sort-select{display:flex}
   .m-terrain-btn{display:flex}
+  .m-locate-btn{display:flex}
+  .m-filter-wrap{right:52px}
   .panel .searchbox{display:none}
   .panel .pref-tags-wrap{display:none}
   .panel .presets{display:none}
@@ -850,8 +856,9 @@ main{flex:1;position:relative;min-height:0}
 
     <div class="map-float" id="mapFloat"></div>
     <button class="m-terrain-btn" id="mTerrainBtn" aria-label="地図レイヤー">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
     </button>
+    <button class="m-locate-btn" id="mLocateBtn" aria-label="現在地">📍</button>
     <div class="m-layer-popup" id="mLayerPopup">
       <button class="m-layer-opt" id="mLayer2d">
         <div class="m-layer-thumb">
@@ -1696,21 +1703,6 @@ map.on("load", () => {
       "line-opacity":.5,
       "line-dasharray":[4,3]
     }
-  });
-  ["logistics-main","logistics-alt"].forEach(layer=>{
-    map.on("click",layer,e=>{
-      const f = e.features?.[0];
-      if(!f) return;
-      const p = f.properties;
-      const catLabel = p.cat === 1 ? "重要物流道路（本線）" : "代替・補完路";
-      const name = p.name && p.name !== "-" ? p.name : "（路線名なし）";
-      new maplibregl.Popup({offset:8,closeButton:false,maxWidth:"220px"})
-        .setLngLat(e.lngLat)
-        .setHTML(`<div style="font-size:12px"><div style="font-weight:600;margin-bottom:2px">${escapeHtml(name)}</div><div style="color:#666">${catLabel}</div></div>`)
-        .addTo(map);
-    });
-    map.on("mouseenter",layer,()=>{ map.getCanvas().style.cursor="pointer"; });
-    map.on("mouseleave",layer,()=>{ map.getCanvas().style.cursor=""; });
   });
 
   // 道路レイヤー（選択グロー + 白縁 + コーナー色分け）
@@ -3004,13 +2996,15 @@ $("kobanToggle").addEventListener("click",e=>{
 });
 
 // 重要物流道路レイヤー ON/OFF
-const logisticsCache={};let logisticsVisible=false;let logisticsGrid=null;const GRID_RES=0.001;
-function buildLogisticsGrid(features){const grid=new Map();features.forEach(f=>{const cat=f.properties.cat||2;const c=f.geometry.coordinates;for(let i=0;i<c.length;i++){const k=Math.round(c[i][0]/GRID_RES)+","+Math.round(c[i][1]/GRID_RES);if(!grid.has(k)||cat<grid.get(k))grid.set(k,cat);}});return grid;}
-function findOverlapSegments(tf,grid){if(!grid||!grid.size)return[];const out=[];tf.forEach(f=>{const c=f.geometry.coordinates;let run=[],runCat=2;for(let i=0;i<c.length;i++){const gx=Math.round(c[i][0]/GRID_RES),gy=Math.round(c[i][1]/GRID_RES);let cat=0;[gx+","+gy,(gx+1)+","+gy,(gx-1)+","+gy,gx+","+(gy+1),gx+","+(gy-1)].forEach(k=>{if(grid.has(k)){const v=grid.get(k);if(!cat||v<cat)cat=v;}});if(cat){if(run.length&&cat!==runCat){if(run.length>=2)out.push({type:"Feature",properties:{cat:runCat},geometry:{type:"LineString",coordinates:run}});run=[run[run.length-1]];}run.push(c[i]);runCat=cat;}else{if(run.length>=2)out.push({type:"Feature",properties:{cat:runCat},geometry:{type:"LineString",coordinates:run}});run=[];runCat=2;}}if(run.length>=2)out.push({type:"Feature",properties:{cat:runCat},geometry:{type:"LineString",coordinates:run}});});return out;}
+const logisticsCache={};let logisticsVisible=false;let logisticsGrid=null;const GRID_RES=0.0002;
+const ENDPOINT_RADIUS=3;
+function buildLogisticsGrid(features){const grid=new Map();function _set(lng,lat,cat){const k=Math.round(lng/GRID_RES)+","+Math.round(lat/GRID_RES);const prev=grid.get(k);if(!prev)grid.set(k,cat);else if(cat<prev)grid.set(k,cat);}features.forEach(f=>{const cat=f.properties.cat||2;const c=f.geometry.coordinates;for(let i=0;i<c.length-1;i++){const dx=c[i+1][0]-c[i][0],dy=c[i+1][1]-c[i][1];const steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/GRID_RES));for(let s=0;s<=steps;s++){const t=s/steps;_set(c[i][0]+dx*t,c[i][1]+dy*t,cat);}}});return grid;}
+function hitGrid(pt,grid,r){const gx=Math.round(pt[0]/GRID_RES),gy=Math.round(pt[1]/GRID_RES);let best=0;for(let dx=-r;dx<=r;dx++)for(let dy=-r;dy<=r;dy++){const v=grid.get((gx+dx)+","+(gy+dy));if(v&&(!best||v<best))best=v;}return best;}
+function findOverlapSegments(tf,grid){if(!grid||!grid.size)return[];const out=[];tf.forEach(f=>{const c=f.geometry.coordinates;if(c.length<2)return;const startCat=hitGrid(c[0],grid,ENDPOINT_RADIUS);const endCat=hitGrid(c[c.length-1],grid,ENDPOINT_RADIUS);if(startCat&&endCat){out.push({type:"Feature",properties:{cat:Math.min(startCat,endCat)},geometry:f.geometry});}});return out;}
 function updateOverlapLayer(){if(!mapReady)return;if(!logisticsVisible||!logisticsGrid){map.getSource("touge-logistics").setData({type:"FeatureCollection",features:[]});return;}const td=map.getSource("touge")?._data;if(!td||!td.features)return;map.getSource("touge-logistics").setData({type:"FeatureCollection",features:findOverlapSegments(td.features,logisticsGrid)});}
 async function fetchLogistics(codes){const toFetch=codes.filter(c=>!logisticsCache[c]);if(toFetch.length)await Promise.all(toFetch.map(async c=>{try{const r=await fetch("./logistics/"+c+".geojson");if(!r.ok)return;const d=await r.json();logisticsCache[c]=d.features;}catch(e){}}));const all=codes.filter(c=>logisticsCache[c]).flatMap(c=>logisticsCache[c]);logisticsGrid=buildLogisticsGrid(all);if(mapReady)map.getSource("logistics").setData({type:"FeatureCollection",features:all});updateOverlapLayer();}
 function updateLogisticsLayer(){if(!logisticsVisible)return;fetchLogistics([...loadedPrefs]);}
-$("logisticsToggle").addEventListener("click",function(e){var btn=e.currentTarget;var on=btn.getAttribute("aria-pressed")!=="true";btn.setAttribute("aria-pressed",String(on));logisticsVisible=on;var vis=on?"visible":"none";["logistics-casing","logistics-main","logistics-alt"].forEach(function(id){map.setLayoutProperty(id,"visibility",vis)});if(on)updateLogisticsLayer();else{map.getSource("logistics").setData({type:"FeatureCollection",features:[]});updateOverlapLayer();}});
+$("logisticsToggle").addEventListener("click",function(e){var btn=e.currentTarget;var on=btn.getAttribute("aria-pressed")!=="true";btn.setAttribute("aria-pressed",String(on));logisticsVisible=on;var vis=on?"visible":"none";["logistics-casing","logistics-main","logistics-alt"].forEach(function(id){if(map.getLayer(id))map.setLayoutProperty(id,"visibility",vis)});if(on)updateLogisticsLayer();else{map.getSource("logistics").setData({type:"FeatureCollection",features:[]});updateOverlapLayer();}});
 
 let closureVisible = true;
 function toggleClosure(on){
@@ -3097,8 +3091,12 @@ window.addEventListener("resize",()=>{
 
 // ヘッダーの要素を地図上フローティング / パネルに移動
 {
-  if(window.innerWidth <= 760) $("mFilterBar").prepend($("locateBtn"));
   $("prefTags").prepend($("prefSelect"));
+}
+
+// 現在地ボタン（モバイル）
+{
+  $("mLocateBtn").addEventListener("click", () => $("locateBtn").click());
 }
 
 // フィルターバーのスクロールシャドウ
