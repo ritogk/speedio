@@ -86,7 +86,7 @@ export class ViewerStack extends cdk.Stack {
     bucket.grantPut(scraper, "road_closures/*");
 
     new events.Rule(this, "RoadClosureSchedule", {
-      schedule: events.Schedule.cron({ minute: "0" }),
+      schedule: events.Schedule.cron({ minute: "0", hour: "0" }),
       targets: [new eventsTargets.LambdaFunction(scraper)],
     });
 
