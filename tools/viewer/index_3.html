@@ -287,6 +287,10 @@ main{flex:1;position:relative;min-height:0}
 .fill{height:100%;background:var(--gauge);border-radius:3px}
 .stacked{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--paper-deep)}
 .stacked span{height:100%}
+.closure-marker{cursor:pointer}
+.cl-cause{font-size:10px;padding:1px 5px;border-radius:3px;color:#fff;display:inline-block}
+.cl-cause.disaster{background:#D84315}
+.cl-cause.construction{background:#F57F17}
 .card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
 .card-tag{font-size:10px;color:var(--ink-soft);background:var(--paper-deep);border-radius:4px;padding:2px 7px}
 .bump-ico{width:14px;height:10px;vertical-align:-1px}
@@ -858,10 +862,17 @@ main{flex:1;position:relative;min-height:0}
         </div>
         <span class="m-layer-name">物流道路</span>
       </button>
+      <button class="m-layer-opt active" id="mLayerClosure">
+        <div class="m-layer-thumb">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9" fill="rgba(180,30,30,.2)"/><path d="M8 8l8 8M16 8l-8 8"/></svg>
+        </div>
+        <span class="m-layer-name">通行止め</span>
+      </button>
     </div>
     <div class="map-ctrl">
       <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">3D地形</button>
       <button class="ctrl-btn" id="logisticsToggle" aria-pressed="false">🚛 物流道路</button>
+      <button class="ctrl-btn" id="closureToggle" aria-pressed="true">🚫 通行止め</button>
       <button class="ctrl-btn" id="kobanToggle" aria-pressed="false" style="display:none">👮</button>
     </div>
 
@@ -1289,6 +1300,89 @@ async function fetchPrefItems(code){
     prefCache[code] = items;
     return items;
   }catch(e){ return []; }
+}
+const closureCache = {};
+const closureMarkers = [];
+async function fetchClosures(code){
+  if(closureCache[code]) return closureCache[code];
+  try{
+    const res = await fetch(`./road_closures/${code}.json`);
+    if(!res.ok) return [];
+    const data = await res.json();
+    closureCache[code] = data.closures || [];
+    return closureCache[code];
+  }catch(e){ return []; }
+}
+function renderClosureBanner(){
+  const codes = [...loadedPrefs];
+  const all = codes.flatMap(c => (closureCache[c]||[]).map(cl=>({...cl, _pref:c})));
+  renderClosureMarkers(all);
+}
+let pendingClosures = null;
+function renderClosureMarkers(closures){
+  closureMarkers.forEach(m => m.remove());
+  closureMarkers.length = 0;
+  if(!mapReady){ pendingClosures = closures; return; }
+  const withCoords = closures.filter(c => c.lat != null && c.lng != null);
+  if(!withCoords.length) return;
+
+  const src = map.getSource("closures");
+  const geojson = {
+    type: "FeatureCollection",
+    features: withCoords.map(c => ({
+      type: "Feature",
+      geometry: {type: "Point", coordinates: [c.lng, c.lat]},
+      properties: {road: c.road||"", cause: c.cause||"", start_loc: c.start_loc||"", end_loc: c.end_loc||"", start_date: c.start_date||"", end_date: c.end_date||"未定"},
+    })),
+  };
+  if(src){ src.setData(geojson); }
+  else{
+    if(!map.hasImage("closure-icon")){
+      const sz = 40, cv = document.createElement("canvas");
+      cv.width = cv.height = sz;
+      const cx = cv.getContext("2d");
+      const r = sz/2;
+      cx.shadowColor = "rgba(0,0,0,.4)";
+      cx.shadowBlur = 2;
+      cx.shadowOffsetY = 1;
+      cx.beginPath(); cx.arc(r, r, r-3, 0, Math.PI*2);
+      cx.fillStyle = "rgba(180,30,30,.75)"; cx.fill();
+      cx.shadowColor = "transparent";
+      cx.lineWidth = 2; cx.strokeStyle = "rgba(255,255,255,.5)"; cx.stroke();
+      cx.lineWidth = 3; cx.lineCap = "round"; cx.strokeStyle = "#fff";
+      cx.shadowColor = "rgba(0,0,0,.6)"; cx.shadowBlur = 1; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
+      const d = 5.5;
+      cx.beginPath(); cx.moveTo(r-d, r-d); cx.lineTo(r+d, r+d); cx.stroke();
+      cx.beginPath(); cx.moveTo(r+d, r-d); cx.lineTo(r-d, r+d); cx.stroke();
+      map.addImage("closure-icon", {width:sz, height:sz, data:new Uint8Array(cx.getImageData(0,0,sz,sz).data)});
+    }
+    map.addSource("closures", {type:"geojson", data: geojson});
+    map.addLayer({
+      id: "closures-icon", type: "symbol", source: "closures",
+      layout: {
+        "icon-image": "closure-icon",
+        "icon-size": ["interpolate",["linear"],["zoom"],5,0.3,10,0.45,14,0.6],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      },
+    });
+    map.on("click","closures-icon",e=>{
+      const f = e.features?.[0];
+      if(!f) return;
+      const p = f.properties;
+      const causeLabel = p.cause==="construction"?"工事":"災害等";
+      new maplibregl.Popup({offset:12, maxWidth:"240px"})
+        .setLngLat(e.lngLat)
+        .setHTML(`<div style="font-size:12px;line-height:1.5">
+          <div style="font-weight:600">${escapeHtml(p.road)}</div>
+          <div style="color:#666">${escapeHtml(p.start_loc)}〜${escapeHtml(p.end_loc)}</div>
+          <div style="margin-top:4px"><span class="cl-cause ${p.cause}">${causeLabel}</span> ${escapeHtml(p.start_date)}→${escapeHtml(p.end_date)}</div>
+        </div>`)
+        .addTo(map);
+    });
+    map.on("mouseenter","closures-icon",()=>{ map.getCanvas().style.cursor="pointer"; });
+    map.on("mouseleave","closures-icon",()=>{ map.getCanvas().style.cursor=""; });
+  }
 }
 let widthFilter = 0.85;
 let currentItems = [];
@@ -1719,6 +1813,7 @@ map.on("load", () => {
   });
   mapReady = true;
   if(pendingGeojson){ map.getSource("touge").setData(pendingGeojson); pendingGeojson = null; }
+  if(pendingClosures){ renderClosureMarkers(pendingClosures); pendingClosures = null; }
 });
 
 let markers = [];
@@ -2471,6 +2566,7 @@ function removePref(code){
   updatePrefLabel();
   $("prefSelect").value = "";
   saveFilter();
+  renderClosureBanner();
   render();
 }
 async function switchPref(code, replace=true){
@@ -2488,7 +2584,7 @@ async function switchPref(code, replace=true){
   saveFilter();
   showLoading(true, `${PREFECTURES[code]}のデータを読み込み中…`);
   try{
-    const items = await fetchPrefItems(code);
+    const [items] = await Promise.all([fetchPrefItems(code), fetchClosures(code)]);
     if(replace){
       currentItems = dedupeItems([items]);
     }else{
@@ -2505,6 +2601,7 @@ async function switchPref(code, replace=true){
   }
 }
 function afterLoad(focusItems){
+  renderClosureBanner();
   render();
   const list = focusItems || rankedList();
   if(list.length){
@@ -2596,9 +2693,11 @@ async function loadNearbyPrefs(){
     saveFilter();
     showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
     const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
+    await Promise.all(codes.map(c => fetchClosures(c)));
     currentItems = dedupeItems(results);
     showLoading(false);
     toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県を読み込みました`);
+    renderClosureBanner();
     render();
     updateLogisticsLayer();
     setSheet("half");
@@ -2789,8 +2888,10 @@ async function restoreFilter(){
     updatePrefLabel();
     showLoading(true, `${codes.length}県のデータを復元中…`);
     const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
+    await Promise.all(codes.map(c => fetchClosures(c)));
     currentItems = dedupeItems(results);
     showLoading(false);
+    renderClosureBanner();
     render();
     updateLogisticsLayer();
     if(window.innerWidth<=760) setSheet("half");
@@ -2830,9 +2931,11 @@ async function initialLoad(){
         updatePrefLabel();
         showLoading(true, `周辺${codes.length}県のデータを読み込み中…`);
         const results = await Promise.all(codes.map(c => fetchPrefItems(c)));
+        await Promise.all(codes.map(c => fetchClosures(c)));
         currentItems = dedupeItems(results);
         showLoading(false);
         toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県を読み込みました`);
+        renderClosureBanner();
         saveFilter();
         render();
         updateLogisticsLayer();
@@ -2915,6 +3018,18 @@ function updateOverlapLayer(){if(!mapReady)return;if(!logisticsVisible||!logisti
 async function fetchLogistics(codes){const toFetch=codes.filter(c=>!logisticsCache[c]);if(toFetch.length)await Promise.all(toFetch.map(async c=>{try{const r=await fetch("./logistics/"+c+".geojson");if(!r.ok)return;const d=await r.json();logisticsCache[c]=d.features;}catch(e){}}));const all=codes.filter(c=>logisticsCache[c]).flatMap(c=>logisticsCache[c]);logisticsGrid=buildLogisticsGrid(all);if(mapReady)map.getSource("logistics").setData({type:"FeatureCollection",features:all});updateOverlapLayer();}
 function updateLogisticsLayer(){if(!logisticsVisible)return;fetchLogistics([...loadedPrefs]);}
 $("logisticsToggle").addEventListener("click",function(e){var btn=e.currentTarget;var on=btn.getAttribute("aria-pressed")!=="true";btn.setAttribute("aria-pressed",String(on));logisticsVisible=on;var vis=on?"visible":"none";["logistics-casing","logistics-main","logistics-alt"].forEach(function(id){map.setLayoutProperty(id,"visibility",vis)});if(on)updateLogisticsLayer();else{map.getSource("logistics").setData({type:"FeatureCollection",features:[]});updateOverlapLayer();}});
+
+let closureVisible = true;
+function toggleClosure(on){
+  closureVisible = on;
+  $("closureToggle").setAttribute("aria-pressed", String(on));
+  if(mapReady && map.getLayer("closures-icon")){
+    map.setLayoutProperty("closures-icon", "visibility", on ? "visible" : "none");
+  }
+}
+$("closureToggle").addEventListener("click", function(e){
+  toggleClosure(e.currentTarget.getAttribute("aria-pressed") !== "true");
+});
 
 // ボトムシート
 const panel = $("panel");
@@ -4002,6 +4117,10 @@ document.addEventListener("keydown", e => {
   $("mLayerLogistics").addEventListener("click", () => {
     $("logisticsToggle").click();
     $("mLayerLogistics").classList.toggle("active", logisticsVisible);
+  });
+  $("mLayerClosure").addEventListener("click", () => {
+    toggleClosure(!closureVisible);
+    $("mLayerClosure").classList.toggle("active", closureVisible);
   });
 
   function syncMobilePrefState(){

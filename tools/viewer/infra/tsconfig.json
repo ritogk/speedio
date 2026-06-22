@@ -9,7 +9,8 @@
     "strictNullChecks": true,
     "noImplicitReturns": true,
     "inlineSourceMap": true,
-    "inlineSources": true
+    "inlineSources": true,
+    "types": ["node"]
   },
   "exclude": ["node_modules", "cdk.out"]
 }

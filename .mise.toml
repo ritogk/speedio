@@ -63,6 +63,10 @@ explorer.exe 'http://localhost:7001/index_3.html' &
 python3 -m http.server 7001
 """
 
+[tasks."pipeline:viewer:closure"]
+description = "通行止め情報を取得 → tools/viewer/road_closures/"
+run = "python3 pipeline/road_closure/scrape.py"
+
 [tasks."pipeline:viewer:setup"]
 description = "viewer のシンボリックリンクを作成"
 dir = "tools/viewer"
