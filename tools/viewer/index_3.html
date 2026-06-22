@@ -3113,6 +3113,34 @@ window.addEventListener("resize",()=>{
   $("mLocateBtn").addEventListener("click", () => $("locateBtn").click());
 }
 
+// 管理者モード長押し切替（現在地ボタン10秒長押し）
+{
+  const ADMIN_KEY = "speedio_admin";
+  let adminTimer = null;
+  const clearAdmin = () => { clearTimeout(adminTimer); adminTimer = null; };
+  const startAdmin = (e) => {
+    clearAdmin();
+    adminTimer = setTimeout(() => {
+      adminTimer = null;
+      const wp = $("adminPanel");
+      const on = !wp.classList.contains("show");
+      wp.classList.toggle("show", on);
+      localStorage.setItem(ADMIN_KEY, on ? "1" : "0");
+      toast(on ? "管理者モード ON" : "管理者モード OFF");
+      e.preventDefault();
+    }, 10000);
+  };
+  ["locateBtn","mLocateBtn"].forEach(id => {
+    const el = $(id);
+    el.addEventListener("mousedown", startAdmin);
+    el.addEventListener("mouseup", clearAdmin);
+    el.addEventListener("mouseleave", clearAdmin);
+    el.addEventListener("touchstart", startAdmin, {passive:true});
+    el.addEventListener("touchend", clearAdmin);
+    el.addEventListener("touchcancel", clearAdmin);
+  });
+}
+
 // フィルターバーのスクロールシャドウ
 {
   const bar = $("mFilterBar");
@@ -3138,7 +3166,8 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilt
 // ================= 管理者パネル =================
 if(localStorage.getItem("touge.admin") === "true"){
   const wp = $("adminPanel");
-  wp.classList.add("show");
+  const ADMIN_KEY = "speedio_admin";
+  if(localStorage.getItem(ADMIN_KEY) === "1") wp.classList.add("show");
   wp.querySelectorAll("input[data-w]").forEach(inp=>{
     inp.value = BALANCE_WEIGHTS[inp.dataset.w];
   });
