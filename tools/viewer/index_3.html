@@ -1860,6 +1860,12 @@ function viewPadding(extra){
   }
   return {top:e, left:e, right:e, bottom:e};
 }
+const FIT_ZOOM_EXTRA = 0.9;
+function fitBoundsZoomed(b, opts){
+  const cam = map.cameraForBounds(b, opts);
+  if(!cam) return;
+  map.flyTo({...cam, zoom:cam.zoom + FIT_ZOOM_EXTRA, duration:opts.duration||1200});
+}
 
 // 着地後に峠の周りを一周するオービット演出（等速）
 const ORBIT_DEG_PER_SEC = 20; // 回転速度（360°÷20 = 一周18秒）
@@ -2422,7 +2428,7 @@ function render(){
   if(mapList.length){
     const b = new maplibregl.LngLatBounds();
     mapList.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
-    if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
+    if(!b.isEmpty()) fitBoundsZoomed(b, {padding:viewPadding(65), pitch:55, bearing:-10, duration:1200});
   }
 }
 
@@ -2593,7 +2599,7 @@ function afterLoad(focusItems){
     const doFit = ()=>{
       const b = new maplibregl.LngLatBounds();
       list.forEach(t=>t.poly.forEach(p=>b.extend([p[1], p[0]])));
-      map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
+      fitBoundsZoomed(b, {padding:viewPadding(65), pitch:55, bearing:-10, duration:1200});
     };
     if(mapReady) doFit();
     else map.once("load", doFit);
@@ -2689,7 +2695,7 @@ async function loadNearbyPrefs(){
     setSheet("half");
     const b = new maplibregl.LngLatBounds();
     lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
-    if(!b.isEmpty()) map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
+    if(!b.isEmpty()) fitBoundsZoomed(b, {padding:viewPadding(65), pitch:55, bearing:-10, duration:1200});
     else map.flyTo({center:[lng, lat], zoom:9, pitch:55, bearing:-10, duration:1200});
   }else{
     showLoading(false);
@@ -2835,7 +2841,7 @@ $("locateBtn").addEventListener("click",()=>{
       placeLocMarker(lng, lat);
       drawRangeRings(lat, lng);
       cancelOrbit();
-      map.flyTo({center:[lng, lat], zoom:11, pitch:55, bearing:0, padding:viewPadding(0), duration:1400, essential:true});
+      map.flyTo({center:[lng, lat], zoom:11, pitch:55, bearing:0, padding:viewPadding(65), duration:1400, essential:true});
       showLoading(false);
       toast("現在地を更新しました");
       if(currentItems.length && currentPreset === "nearby") render();
@@ -2885,7 +2891,7 @@ async function restoreFilter(){
     const b = new maplibregl.LngLatBounds();
     lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
     if(!b.isEmpty()){
-      const doFit = ()=> map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
+      const doFit = ()=> fitBoundsZoomed(b, {padding:viewPadding(65), pitch:55, bearing:-10, duration:1200});
       if(mapReady) doFit(); else map.once("load", doFit);
     }
     return true;
@@ -2930,7 +2936,7 @@ async function initialLoad(){
         const b = new maplibregl.LngLatBounds();
         lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
         if(!b.isEmpty()){
-          const doFit = ()=> map.fitBounds(b, {padding:viewPadding(50), pitch:55, bearing:-10, duration:1200});
+          const doFit = ()=> fitBoundsZoomed(b, {padding:viewPadding(65), pitch:55, bearing:-10, duration:1200});
           if(mapReady) doFit(); else map.once("load", doFit);
         }
       }else{
