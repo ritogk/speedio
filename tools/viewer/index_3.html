@@ -2653,6 +2653,7 @@ async function loadNearbyPrefs(){
   });
   let lat, lng;
   try{ [lat, lng] = await getPos(); }catch(e){ locatingBusy = false; showLoading(false); toast("位置情報を取得できませんでした"); return; }
+  try{
   let code = null;
   try{
     const ac = new AbortController();
@@ -2696,7 +2697,7 @@ async function loadNearbyPrefs(){
     if(currentItems.length) render();
     map.flyTo({center:[lng, lat], zoom:9, pitch:55, bearing:-10, duration:1200});
   }
-  locatingBusy = false;
+  }finally{ locatingBusy = false; }
 }
 
 document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
@@ -2819,13 +2820,15 @@ function drawRangeRings(lat, lng){
   });
 }
 
+let locatePinBusy = false;
 $("locateBtn").addEventListener("click",()=>{
   if(!navigator.geolocation){ toast("このブラウザは位置情報に対応していません"); return; }
-  if(locatingBusy) return;
-  locatingBusy = true;
+  if(locatePinBusy) return;
+  locatePinBusy = true;
   showLoading(true, "現在地を取得中…");
   navigator.geolocation.getCurrentPosition(
     pos=>{
+      locatePinBusy = false;
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
       userLatLng = [lat, lng];
       saveFilter();
@@ -2836,10 +2839,9 @@ $("locateBtn").addEventListener("click",()=>{
       showLoading(false);
       toast("現在地を更新しました");
       if(currentItems.length && currentPreset === "nearby") render();
-      locatingBusy = false;
     },
     ()=>{
-      locatingBusy = false;
+      locatePinBusy = false;
       showLoading(false);
       toast("位置情報を取得できませんでした");
     },
