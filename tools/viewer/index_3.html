@@ -1862,9 +1862,13 @@ function viewPadding(extra){
 }
 const FIT_ZOOM_EXTRA = 0.9;
 function fitBoundsZoomed(b, opts){
-  const cam = map.cameraForBounds(b, opts);
-  if(!cam) return;
-  map.flyTo({...cam, zoom:cam.zoom + FIT_ZOOM_EXTRA, duration:opts.duration||1200});
+  try{
+    const cam = map.cameraForBounds(b, opts);
+    if(!cam){ map.fitBounds(b, opts); return; }
+    map.flyTo({...cam, zoom:cam.zoom + FIT_ZOOM_EXTRA, duration:opts.duration||1200});
+  }catch(e){
+    try{ map.fitBounds(b, opts); }catch(e2){}
+  }
 }
 
 // 着地後に峠の周りを一周するオービット演出（等速）
