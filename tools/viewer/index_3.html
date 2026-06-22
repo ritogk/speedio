@@ -71,6 +71,13 @@ header{display:none}
   position:absolute;top:10px;right:10px;z-index:1250;
   display:flex;gap:6px;align-items:center;
 }
+.pc-locate-btn{
+  display:flex;width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--line);background:rgba(255,255,255,.92);color:var(--ink);
+  box-shadow:0 1px 4px rgba(0,0,0,.18);cursor:pointer;font-size:16px;
+  align-items:center;justify-content:center;
+}
+.pc-locate-btn:hover{border-color:var(--accent);color:var(--accent)}
 .panel-logo{
   display:none;
   font-size:15px;font-weight:700;line-height:1;
@@ -823,6 +830,7 @@ main{flex:1;position:relative;min-height:0}
   .m-sort-select{display:flex}
   .m-terrain-btn{display:flex}
   .m-locate-btn{display:flex}
+  .pc-locate-btn{display:none}
   .m-filter-wrap{right:52px}
   .panel .searchbox{display:none}
   .panel .pref-tags-wrap{display:none}
@@ -854,7 +862,9 @@ main{flex:1;position:relative;min-height:0}
     </div>
     <div class="m-filter-wrap" id="mFilterWrap"><div class="m-filter-bar" id="mFilterBar"></div></div>
 
-    <div class="map-float" id="mapFloat"></div>
+    <div class="map-float" id="mapFloat">
+      <button class="pc-locate-btn" id="pcLocateBtn" aria-label="現在地">📍</button>
+    </div>
     <button class="m-terrain-btn" id="mTerrainBtn" aria-label="地図レイヤー">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
     </button>
@@ -3108,36 +3118,37 @@ window.addEventListener("resize",()=>{
   $("prefTags").prepend($("prefSelect"));
 }
 
-// 現在地ボタン（モバイル）
+// 現在地ボタン（モバイル・PC）
 {
   $("mLocateBtn").addEventListener("click", () => $("locateBtn").click());
+  $("pcLocateBtn").addEventListener("click", () => $("locateBtn").click());
 }
 
-// 管理者モード長押し切替（現在地ボタン10秒長押し）
+// 管理者モード切替（右左右左右左の交互タップ）
 {
   const ADMIN_KEY = "speedio_admin";
-  let adminTimer = null;
-  const clearAdmin = () => { clearTimeout(adminTimer); adminTimer = null; };
-  const startAdmin = (e) => {
-    clearAdmin();
-    adminTimer = setTimeout(() => {
-      adminTimer = null;
-      const wp = $("adminPanel");
-      const on = !wp.classList.contains("show");
-      wp.classList.toggle("show", on);
-      localStorage.setItem(ADMIN_KEY, on ? "1" : "0");
-      toast(on ? "管理者モード ON" : "管理者モード OFF");
-      e.preventDefault();
-    }, 10000);
-  };
-  ["locateBtn","mLocateBtn"].forEach(id => {
-    const el = $(id);
-    el.addEventListener("mousedown", startAdmin);
-    el.addEventListener("mouseup", clearAdmin);
-    el.addEventListener("mouseleave", clearAdmin);
-    el.addEventListener("touchstart", startAdmin, {passive:true});
-    el.addEventListener("touchend", clearAdmin);
-    el.addEventListener("touchcancel", clearAdmin);
+  const SEQ = ["R","L","R","L","R","L"];
+  let progress = 0, seqTimer = null;
+  const reset = () => { progress = 0; clearTimeout(seqTimer); };
+  ["rotR","rotL"].forEach(id => {
+    $(id).addEventListener("click", () => {
+      const key = id === "rotR" ? "R" : "L";
+      if(key === SEQ[progress]){
+        progress++;
+        clearTimeout(seqTimer);
+        seqTimer = setTimeout(reset, 3000);
+        if(progress >= SEQ.length){
+          reset();
+          const wp = $("adminPanel");
+          const on = !wp.classList.contains("show");
+          wp.classList.toggle("show", on);
+          localStorage.setItem(ADMIN_KEY, on ? "1" : "0");
+          toast(on ? "管理者モード ON" : "管理者モード OFF");
+        }
+      } else {
+        reset();
+      }
+    });
   });
 }
 
