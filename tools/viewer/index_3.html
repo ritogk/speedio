@@ -1900,7 +1900,7 @@ function flyToTouge(t){
   const b = new maplibregl.LngLatBounds();
   t.poly.forEach(p=>b.extend([p[1],p[0]]));
   cancelOrbit();
-  const cam = map.cameraForBounds(b, {bearing, maxZoom:maxZ, padding:30});
+  const cam = map.cameraForBounds(b, {bearing, maxZoom:maxZ, padding:viewPadding(30)});
   map.flyTo({
     center: cam?.center ?? [t.center[1], t.center[0]],
     zoom: cam?.zoom ?? maxZ,
