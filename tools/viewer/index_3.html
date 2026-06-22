@@ -852,6 +852,12 @@ main{flex:1;position:relative;min-height:0}
         </div>
         <span class="m-layer-name">3D</span>
       </button>
+      <button class="m-layer-opt" id="mLayerLogistics">
+        <div class="m-layer-thumb">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 13h4l2-4h10l2 4h4"/><rect x="3" y="13" width="18" height="6" rx="2"/><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg>
+        </div>
+        <span class="m-layer-name">物流道路</span>
+      </button>
     </div>
     <div class="map-ctrl">
       <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">3D地形</button>
@@ -3920,22 +3926,11 @@ document.addEventListener("keydown", e => {
   });
   filterBar.appendChild(fFavorite);
 
-  const fLogistics = document.createElement("button");
-  fLogistics.className = "m-fchip";
-  fLogistics.textContent = "🚛 物流道路";
-  fLogistics.setAttribute("aria-pressed", "false");
-  fLogistics.addEventListener("click", () => {
-    $("logisticsToggle").click();
-    fLogistics.setAttribute("aria-pressed", logisticsVisible ? "true" : "false");
-  });
-  filterBar.appendChild(fLogistics);
-
   function syncFilterChips(){
     fNearby.setAttribute("aria-pressed", nearbyChip.getAttribute("aria-pressed"));
     fUnvisited.setAttribute("aria-pressed", hideVisited ? "true" : "false");
     fVisited.setAttribute("aria-pressed", showOnlyVisited ? "true" : "false");
     fFavorite.setAttribute("aria-pressed", showOnlyFavorites ? "true" : "false");
-    fLogistics.setAttribute("aria-pressed", logisticsVisible ? "true" : "false");
   }
 
   // === ボトムシート内ソートドロップダウン ===
@@ -4004,6 +3999,10 @@ document.addEventListener("keydown", e => {
   }
   $("mLayer2d").addEventListener("click", () => setLayer3d(false));
   $("mLayer3d").addEventListener("click", () => setLayer3d(true));
+  $("mLayerLogistics").addEventListener("click", () => {
+    $("logisticsToggle").click();
+    $("mLayerLogistics").classList.toggle("active", logisticsVisible);
+  });
 
   function syncMobilePrefState(){
     prefGrid.querySelectorAll(".m-pref-chip").forEach(btn => {
