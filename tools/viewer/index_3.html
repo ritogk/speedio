@@ -2183,7 +2183,7 @@ function renderCards(){
           if(favoriteKeys.has(t.stableKey)) favoriteKeys.delete(t.stableKey);
           else favoriteKeys.add(t.stableKey);
           saveFavorites();
-          if(showOnlyFavorites){ render(); return; }
+          if(showOnlyFavorites){ renderAndFit(); return; }
           const favBtn = e.target.closest('[data-act="fav"]');
           const isFav = favoriteKeys.has(t.stableKey);
           favBtn.textContent = isFav ? '★' : '☆';
@@ -2429,11 +2429,12 @@ function render(){
   const q = searchQuery.trim().toLowerCase();
   const mapList = q ? lastRanked.filter(t => t.name.toLowerCase().includes(q) || t.routeLabel.toLowerCase().includes(q)) : lastRanked;
   drawMap(mapList);
-  if(mapList.length){
-    const b = new maplibregl.LngLatBounds();
-    mapList.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
-    if(!b.isEmpty()) fitBoundsZoomed(b, {padding:viewPadding(65), pitch:55, bearing:-10, duration:1200});
-  }
+}
+function renderAndFit(){
+  render();
+  const b = new maplibregl.LngLatBounds();
+  lastRanked.forEach(t => t.poly.forEach(p => b.extend([p[1], p[0]])));
+  if(!b.isEmpty()) fitBoundsZoomed(b, {padding:viewPadding(65), pitch:55, bearing:-10, duration:1200});
 }
 
 // 地図上のライン/マーカーから選んだとき、リスト側でそのカードまで開いて選択する
@@ -2562,7 +2563,7 @@ function removePref(code){
   $("prefSelect").value = "";
   saveFilter();
   renderClosureBanner();
-  render();
+  renderAndFit();
 }
 async function switchPref(code, replace=true){
   if(!code) return;
@@ -2733,7 +2734,8 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
           $("presetHint").textContent = presetHints.nearby;
           visibleCount = PAGE_N;
           saveFilter();
-          render();
+          showLoading(false);
+          renderAndFit();
         }, ()=>{
           locatingBusy = false;
           showLoading(false);
@@ -2756,7 +2758,7 @@ document.querySelectorAll(".presets .chip[data-preset]").forEach(chip=>{
     saveFilter();
     $("presetHint").textContent = presetHints[currentPreset];
     visibleCount = PAGE_N;
-    render();
+    renderAndFit();
   });
 });
 
@@ -2768,12 +2770,12 @@ $("searchInput").addEventListener("input",e=>{
 $("hideVisitedBtn").addEventListener("click",()=>{
   hideVisited = !hideVisited;
   $("hideVisitedBtn").setAttribute("aria-pressed", hideVisited ? "true" : "false");
-  render();
+  renderAndFit();
 });
 $("showFavoritesBtn").addEventListener("click",()=>{
   showOnlyFavorites = !showOnlyFavorites;
   $("showFavoritesBtn").setAttribute("aria-pressed", showOnlyFavorites ? "true" : "false");
-  render();
+  renderAndFit();
 });
 
 {
@@ -3183,7 +3185,7 @@ if(localStorage.getItem("touge.admin") === "true"){
     distanceFilter = null;
     $("presetHint").textContent = presetHints.balance;
     visibleCount = PAGE_N;
-    render();
+    renderAndFit();
     toast("重みを適用しました");
   });
 }
@@ -4025,7 +4027,7 @@ document.addEventListener("keydown", e => {
     fUnvisited.setAttribute("aria-pressed", hideVisited ? "true" : "false");
     fVisited.setAttribute("aria-pressed", "false");
     hvBtn.setAttribute("aria-pressed", hideVisited ? "true" : "false");
-    render();
+    renderAndFit();
   });
   filterBar.appendChild(fUnvisited);
 
@@ -4040,7 +4042,7 @@ document.addEventListener("keydown", e => {
     fVisited.setAttribute("aria-pressed", showOnlyVisited ? "true" : "false");
     fUnvisited.setAttribute("aria-pressed", "false");
     hvBtn.setAttribute("aria-pressed", "false");
-    render();
+    renderAndFit();
   });
   filterBar.appendChild(fVisited);
 
@@ -4052,7 +4054,7 @@ document.addEventListener("keydown", e => {
     showOnlyFavorites = !showOnlyFavorites;
     fFavorite.setAttribute("aria-pressed", showOnlyFavorites ? "true" : "false");
     $("showFavoritesBtn").setAttribute("aria-pressed", showOnlyFavorites ? "true" : "false");
-    render();
+    renderAndFit();
   });
   filterBar.appendChild(fFavorite);
 
