@@ -591,7 +591,7 @@ main{flex:1;position:relative;min-height:0}
 .visit-confirm-cancel:hover{color:var(--ink)}
 
 .admin-panel{
-  position:absolute;right:10px;bottom:10px;z-index:1300;
+  position:fixed;right:10px;bottom:10px;z-index:2500;
   background:rgba(255,255,255,.75);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(6px);
   padding:6px 8px;font-size:10px;width:auto;
   box-shadow:0 2px 8px rgba(0,0,0,.15);display:none;
@@ -611,7 +611,7 @@ main{flex:1;position:relative;min-height:0}
 .admin-panel .wp-section{font-size:9px;font-weight:700;color:var(--ink-soft);border-bottom:1px solid var(--line);padding-bottom:2px;margin-bottom:3px}
 .admin-panel .wp-pin-row{display:flex;gap:3px;align-items:center;margin-bottom:2px}
 @media (max-width:760px){
-  .admin-panel{right:6px;bottom:calc(var(--sheet-peek) + 100px);z-index:1400}
+  .admin-panel{right:6px;bottom:calc(var(--sheet-peek) + 100px)}
 }
 
 /* ================= Mobile Search Overlay ================= */
@@ -917,36 +917,6 @@ main{flex:1;position:relative;min-height:0}
       </ul>
     </div>
 
-    <div class="admin-panel collapsed" id="adminPanel">
-      <div class="wp-head" id="wpHead">
-        <h4>管理者パネル</h4>
-        <span class="wp-toggle" id="wpToggle">▲</span>
-      </div>
-      <div class="wp-body">
-        <div class="wp-section">ピン設置</div>
-        <div class="wp-pin-row">
-          <input type="text" id="adminLatLng" placeholder="35.681,139.767" style="width:120px;font:inherit;font-size:10px;border:1px solid var(--line);border-radius:3px;padding:2px 4px">
-          <button class="wp-apply" id="adminPinBtn" style="width:auto;margin:0;padding:2px 8px">設置</button>
-          <button class="wp-apply" id="adminPinClear" style="width:auto;margin:0;padding:2px 8px">消去</button>
-        </div>
-        <div class="wp-section" style="margin-top:6px">訪問確認</div>
-        <label><span>待機(秒)</span><input type="number" id="visitDelayInput" min="1" max="3600" value="60"></label>
-        <div class="wp-section" style="margin-top:6px">重み調整</div>
-        <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
-        <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
-        <label><span>道幅</span><input type="number" step="0.1" data-w="width"></label>
-        <label><span>距離</span><input type="number" step="0.1" data-w="length"></label>
-        <label><span>建物</span><input type="number" step="0.1" data-w="building"></label>
-        <label><span>トンネル外</span><input type="number" step="0.1" data-w="tunnel_outside"></label>
-        <label><span>コーナー弱</span><input type="number" step="0.1" data-w="corner_week"></label>
-        <label><span>コーナー中</span><input type="number" step="0.1" data-w="corner_medium"></label>
-        <label><span>コーナー強</span><input type="number" step="0.1" data-w="corner_strong"></label>
-        <label><span>直線</span><input type="number" step="0.1" data-w="corner_none"></label>
-        <label><span>C.バランス</span><input type="number" step="0.1" data-w="corner_balance"></label>
-        <label><span>中央線</span><input type="number" step="0.1" data-w="claude_center_line_section"></label>
-        <button class="wp-apply" id="weightApply">適用</button>
-      </div>
-    </div>
   </div>
 
   <section class="panel" id="panel">
@@ -986,6 +956,37 @@ main{flex:1;position:relative;min-height:0}
       <div id="cards"></div>
     </div>
   </section>
+
+  <div class="admin-panel collapsed" id="adminPanel">
+    <div class="wp-head" id="wpHead">
+      <h4>管理者パネル</h4>
+      <span class="wp-toggle" id="wpToggle">▲</span>
+    </div>
+    <div class="wp-body">
+      <div class="wp-section">ピン設置</div>
+      <div class="wp-pin-row">
+        <input type="text" id="adminLatLng" placeholder="35.681,139.767" style="width:120px;font:inherit;font-size:10px;border:1px solid var(--line);border-radius:3px;padding:2px 4px">
+        <button class="wp-apply" id="adminPinBtn" style="width:auto;margin:0;padding:2px 8px">設置</button>
+        <button class="wp-apply" id="adminPinClear" style="width:auto;margin:0;padding:2px 8px">消去</button>
+      </div>
+      <div class="wp-section" style="margin-top:6px">訪問確認</div>
+      <label><span>待機(秒)</span><input type="number" id="visitDelayInput" min="1" max="3600" value="60"></label>
+      <div class="wp-section" style="margin-top:6px">重み調整</div>
+      <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
+      <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
+      <label><span>道幅</span><input type="number" step="0.1" data-w="width"></label>
+      <label><span>距離</span><input type="number" step="0.1" data-w="length"></label>
+      <label><span>建物</span><input type="number" step="0.1" data-w="building"></label>
+      <label><span>トンネル外</span><input type="number" step="0.1" data-w="tunnel_outside"></label>
+      <label><span>コーナー弱</span><input type="number" step="0.1" data-w="corner_week"></label>
+      <label><span>コーナー中</span><input type="number" step="0.1" data-w="corner_medium"></label>
+      <label><span>コーナー強</span><input type="number" step="0.1" data-w="corner_strong"></label>
+      <label><span>直線</span><input type="number" step="0.1" data-w="corner_none"></label>
+      <label><span>C.バランス</span><input type="number" step="0.1" data-w="corner_balance"></label>
+      <label><span>中央線</span><input type="number" step="0.1" data-w="claude_center_line_section"></label>
+      <button class="wp-apply" id="weightApply">適用</button>
+    </div>
+  </div>
 
   <div class="settings-overlay" id="settingsOverlay">
     <div class="settings-panel">
