@@ -269,7 +269,16 @@ main{flex:1;position:relative;min-height:0}
 }
 .card-top h3:hover::after{display:block}
 .dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap}
-.visited-tag{font-size:10px;margin-left:6px;color:var(--accent);font-weight:600}.meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
+.visited-tag{font-size:10px;color:var(--accent);font-weight:600}
+.fav-tag{
+  display:inline;font:inherit;font-size:10px;font-weight:600;
+  color:var(--contour);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  border:none;background:transparent;padding:0;
+}
+.fav-tag:hover{color:var(--accent)}
+.fav-tag.fav-on{color:var(--accent)}
+.meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
 .meta b{color:var(--ink);font-weight:500}
 .bars{display:grid;grid-template-columns:58px 1fr 28px;gap:3px 8px;align-items:center}
 .bars .bl{font-size:10px;color:var(--ink-soft)}
@@ -921,6 +930,7 @@ main{flex:1;position:relative;min-height:0}
           <button class="chip" aria-pressed="false" data-preset="seclusion">秘境</button>
           <button class="chip" aria-pressed="false" data-preset="uphill">起伏</button>
           <button class="chip" aria-pressed="false" id="hideVisitedBtn">未走行</button>
+          <button class="chip" aria-pressed="false" id="showFavoritesBtn">★ お気に入り</button>
         </div>
         <p class="preset-hint" id="presetHint">コーナー・高低差・道幅をバランスよく評価します。</p>
       </section>
@@ -972,13 +982,21 @@ main{flex:1;position:relative;min-height:0}
 
   <div class="visit-confirm-overlay" id="visitConfirm">
     <div class="visit-confirm">
-      <h3>この峠に行きましたか？</h3>
+      <h3 id="vcTitle">この峠に行きましたか？</h3>
       <div class="vc-card" id="vcCard"></div>
-      <div class="visit-confirm-btns">
-        <button class="visit-confirm-btn primary" id="vcYes">🚗 走行した</button>
-        <button class="visit-confirm-btn secondary" id="vcDriving">🚗 走行中</button>
+      <div id="vcStep1">
+        <div class="visit-confirm-btns">
+          <button class="visit-confirm-btn primary" id="vcYes">🚗 走行した</button>
+          <button class="visit-confirm-btn secondary" id="vcDriving">🚗 走行中</button>
+        </div>
+        <button class="visit-confirm-cancel" id="vcNo">まだ行ってない</button>
       </div>
-      <button class="visit-confirm-cancel" id="vcNo">まだ行ってない</button>
+      <div id="vcStep2" style="display:none">
+        <div class="visit-confirm-btns">
+          <button class="visit-confirm-btn primary" id="vcFavYes">★ お気に入りに追加</button>
+        </div>
+        <button class="visit-confirm-cancel" id="vcFavSkip">閉じる</button>
+      </div>
     </div>
   </div>
 
@@ -1121,6 +1139,8 @@ let distanceFilter = null;
 let globalIdCounter = 0;
 const visitedKeys = new Set(JSON.parse(localStorage.getItem("touge.visited") || "[]"));
 function saveVisited(){ localStorage.setItem("touge.visited", JSON.stringify([...visitedKeys])); }
+const favoriteKeys = new Set(JSON.parse(localStorage.getItem("touge.favorites") || "[]"));
+function saveFavorites(){ localStorage.setItem("touge.favorites", JSON.stringify([...favoriteKeys])); }
 const visitedDates = JSON.parse(localStorage.getItem("touge.visitedDates") || "{}");
 const todayStr = new Date().toISOString().slice(0, 10);
 const VISIT_DELAY_KEY = "touge.visitDelay";
@@ -1187,9 +1207,14 @@ function visitConfirmCardHtml(t){
 function showVisitConfirm(){
   if(!pendingVisitKey || !pendingVisitTouge) return;
   $("vcCard").innerHTML = visitConfirmCardHtml(pendingVisitTouge);
+  $("vcTitle").textContent = "この峠に行きましたか？";
+  $("vcStep1").style.display = "";
+  $("vcStep2").style.display = "none";
   $("visitConfirm").classList.add("show");
 }
-function closeVisitConfirm(){ $("visitConfirm").classList.remove("show"); }
+function closeVisitConfirm(){
+  $("visitConfirm").classList.remove("show");
+}
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState === "hidden" && pendingVisitKey){
     pendingVisitTs = Date.now();
@@ -1206,6 +1231,7 @@ document.addEventListener("visibilitychange", ()=>{
 });
 let hideVisited = false;
 let showOnlyVisited = false;
+let showOnlyFavorites = false;
 let dataVersionChecked = false;
 let dataVersionChanged = false;
 async function checkDataVersion(){
@@ -1315,10 +1341,35 @@ function placeLocMarker(lng, lat){
   return locMarker;
 }
 const $ = id => document.getElementById(id);
-$("vcYes").addEventListener("click", ()=>{ closeVisitConfirm(); commitPendingVisit(); });
+let vcStep2Key = null;
+$("vcYes").addEventListener("click", ()=>{
+  const key = pendingVisitKey;
+  commitPendingVisit();
+  if(key && !favoriteKeys.has(key)){
+    vcStep2Key = key;
+    $("vcTitle").textContent = "記録しました！";
+    $("vcStep1").style.display = "none";
+    $("vcStep2").style.display = "";
+  }else{
+    closeVisitConfirm();
+  }
+});
+$("vcFavYes").addEventListener("click", ()=>{
+  if(vcStep2Key){
+    favoriteKeys.add(vcStep2Key);
+    saveFavorites();
+    toast("お気に入りに追加しました");
+  }
+  vcStep2Key = null;
+  closeVisitConfirm();
+});
+$("vcFavSkip").addEventListener("click", ()=>{
+  vcStep2Key = null;
+  closeVisitConfirm();
+});
 $("vcDriving").addEventListener("click", ()=>{ closeVisitConfirm(); commitDriving(); });
 $("vcNo").addEventListener("click", ()=>{ closeVisitConfirm(); clearPendingVisit(); });
-$("visitConfirm").addEventListener("click", e=>{ if(e.target === $("visitConfirm")){ closeVisitConfirm(); clearPendingVisit(); } });
+$("visitConfirm").addEventListener("click", e=>{ if(e.target === $("visitConfirm")){ vcStep2Key = null; closeVisitConfirm(); clearPendingVisit(); } });
 function showLoading(on, text){
   $("loading").classList.toggle("show", on);
   if(text) $("loadingText").textContent = text;
@@ -1911,7 +1962,7 @@ function cardHtml(t, rank, total){
       <div class="card-top">
         <div class="card-labels"><span class="rank-num">${rank+1}</span>${t.prefecture?`<span class="route-oval">${escapeHtml(t.prefecture)}</span>`:(t._pref?`<span class="route-oval">${escapeHtml(PREFECTURES[t._pref]||"")}</span>`:"")}${t.city?`<span class="route-oval">${escapeHtml(t.city)}</span>`:""}${t.distanceKm!=null?`<span class="dist-tag">📍${t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm)}km</span>`:""}</div><h3 data-full="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
       </div>
-      <p class="meta">全長 <b>${t.lengthKm}km</b> ・ 標高差 <b>${t.height}m</b>${t.stableKey&&visitedKeys.has(t.stableKey)?` <span class="visited-tag">🚗済</span>`:""}</p>
+      <p class="meta">距離: <b>${t.lengthKm}km</b> 高さ: <b>${t.height}m</b>${t.stableKey&&visitedKeys.has(t.stableKey)?` <span class="visited-tag">🚗済</span>`:""} <button class="fav-tag${t.stableKey&&favoriteKeys.has(t.stableKey)?' fav-on':''}" data-act="fav">${t.stableKey&&favoriteKeys.has(t.stableKey)?'★':'☆'}</button></p>
       <div class="bars">
         <span class="bl">コーナー</span><div class="stacked"><span style="width:${t.pctStrong}%;background:var(--corner-strong)"></span><span style="width:${t.pctMedium}%;background:var(--corner-medium)"></span><span style="width:${t.pctWeak}%;background:var(--corner-weak)"></span><span style="width:${t.pctStraight}%;background:var(--straight)"></span></div><span class="bv">${t.pctStrong+t.pctMedium+t.pctWeak}%</span>
         <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:${Math.round(t.updown*100)}%"></div></div><span class="bv">${Math.round(t.updown*100)}</span>
@@ -1956,6 +2007,21 @@ function renderCards(){
         e.stopPropagation();
         const t = ranked.find(x=>x.id === Number(navBtn.dataset.id));
         if(t) openNav(t);
+        return;
+      }
+      if(e.target.closest('[data-act="fav"]')){
+        e.stopPropagation();
+        const t = ranked.find(x=>x.id === Number(card.dataset.id));
+        if(t && t.stableKey){
+          if(favoriteKeys.has(t.stableKey)) favoriteKeys.delete(t.stableKey);
+          else favoriteKeys.add(t.stableKey);
+          saveFavorites();
+          if(showOnlyFavorites){ render(); return; }
+          const favBtn = e.target.closest('[data-act="fav"]');
+          const isFav = favoriteKeys.has(t.stableKey);
+          favBtn.textContent = isFav ? '★' : '☆';
+          favBtn.classList.toggle("fav-on", isFav);
+        }
         return;
       }
       if(e.target.closest('[data-act="3d"]')){
@@ -2188,6 +2254,9 @@ function render(){
   }
   if(showOnlyVisited){
     lastRanked = lastRanked.filter(t=>t.stableKey && visitedKeys.has(t.stableKey));
+  }
+  if(showOnlyFavorites){
+    lastRanked = lastRanked.filter(t=>t.stableKey && favoriteKeys.has(t.stableKey));
   }
   renderCards();
   const q = searchQuery.trim().toLowerCase();
@@ -2525,6 +2594,11 @@ $("searchInput").addEventListener("input",e=>{
 $("hideVisitedBtn").addEventListener("click",()=>{
   hideVisited = !hideVisited;
   $("hideVisitedBtn").setAttribute("aria-pressed", hideVisited ? "true" : "false");
+  render();
+});
+$("showFavoritesBtn").addEventListener("click",()=>{
+  showOnlyFavorites = !showOnlyFavorites;
+  $("showFavoritesBtn").setAttribute("aria-pressed", showOnlyFavorites ? "true" : "false");
   render();
 });
 
@@ -3750,10 +3824,23 @@ document.addEventListener("keydown", e => {
   });
   filterBar.appendChild(fVisited);
 
+  const fFavorite = document.createElement("button");
+  fFavorite.className = "m-fchip";
+  fFavorite.textContent = "★ お気に入り";
+  fFavorite.setAttribute("aria-pressed", showOnlyFavorites ? "true" : "false");
+  fFavorite.addEventListener("click", () => {
+    showOnlyFavorites = !showOnlyFavorites;
+    fFavorite.setAttribute("aria-pressed", showOnlyFavorites ? "true" : "false");
+    $("showFavoritesBtn").setAttribute("aria-pressed", showOnlyFavorites ? "true" : "false");
+    render();
+  });
+  filterBar.appendChild(fFavorite);
+
   function syncFilterChips(){
     fNearby.setAttribute("aria-pressed", nearbyChip.getAttribute("aria-pressed"));
     fUnvisited.setAttribute("aria-pressed", hideVisited ? "true" : "false");
     fVisited.setAttribute("aria-pressed", showOnlyVisited ? "true" : "false");
+    fFavorite.setAttribute("aria-pressed", showOnlyFavorites ? "true" : "false");
   }
 
   // === ボトムシート内ソートドロップダウン ===
