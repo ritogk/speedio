@@ -4014,7 +4014,7 @@ async function open3DView(t){
     const maxDim = Math.max(size.x, size.y, size.z);
     camera.position.set(maxDim * 0.6, maxDim * 0.8, maxDim * 0.6);
 
-    const floorGeo = new THREE.PlaneGeometry(size.x * 1.05, size.y * 1.05);
+    const floorGeo = new THREE.PlaneGeometry(size.x, size.y);
     const floorMat = new THREE.MeshStandardMaterial({color:0x888888, side: THREE.DoubleSide});
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.position.set(center.x, center.y, bbox.min.z);
