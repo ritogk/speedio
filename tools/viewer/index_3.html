@@ -3867,8 +3867,8 @@ async function open3DView(t){
 
     const cornerMeshes = buildRoadMeshes(ptLevels, LEVEL_HEX);
     const elevMeshes = buildRoadMeshes(ptElevDir, ELEV_HEX);
-    cornerMeshes.forEach(m => group.add(m));
-    elevMeshes.forEach(m => { m.visible = false; group.add(m); });
+    cornerMeshes.forEach(m => { m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
+    elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
 
     // 縁線
     const edgeMat = new THREE.LineBasicMaterial({color: 0x333333});
