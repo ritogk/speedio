@@ -3636,7 +3636,7 @@ async function open3DView(t){
     terrGeo.computeVertexNormals();
     const terrMat = new THREE.MeshStandardMaterial({
       color: 0x2d6b3a, roughness: .9, metalness: 0,
-      transparent: true, opacity: .6, side: THREE.DoubleSide
+      transparent: true, opacity: .5, side: THREE.DoubleSide
     });
     const terrMesh = new THREE.Mesh(terrGeo, terrMat);
     group.add(terrMesh);
