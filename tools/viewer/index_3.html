@@ -4393,8 +4393,8 @@ async function open3DView(t){
           ${rowC("score_corner_medium", t.scoreCornerMedium)}
           ${rowC("score_corner_week", t.scoreCornerWeek)}
           ${rowC("score_corner_none", t.scoreCornerNone)}
-          <dt>=</dt><dd>${(t.scoreCornerStrong + t.scoreCornerMedium + t.scoreCornerWeek + t.scoreCornerNone).toFixed(3)}</dd>
         </dl>
+        <dd style="text-align:right;margin:2px 0 0;color:rgba(255,255,255,.5);font-size:10px">= ${(t.scoreCornerStrong + t.scoreCornerMedium + t.scoreCornerWeek + t.scoreCornerNone).toFixed(3)}</dd>
         <h4>basic</h4>
         <dl>
           <dt>length</dt><dd>${t.lengthKm} km</dd>
