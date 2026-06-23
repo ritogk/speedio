@@ -619,30 +619,7 @@ main{flex:1;position:relative;min-height:0}
   body:has(.panel.half) .admin-panel{bottom:calc(44dvh + 14px)}
   body:has(.panel.card-peek) .admin-panel{bottom:calc(var(--card-peek-h,96)*1px + 14px)}
   body:has(.panel.full) .admin-panel{opacity:0;pointer-events:none}
-  .admin-panel label span{
-    -webkit-tap-highlight-color:transparent;
-    border-radius:3px;padding:2px 4px;cursor:pointer;
-  }
-  .admin-panel label span.wp-active{background:var(--accent);color:#fff}
 }
-.wp-stepper{
-  display:none;position:absolute;right:10px;z-index:1101;
-  align-items:center;justify-content:center;gap:12px;
-  background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:var(--radius);
-  backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(0,0,0,.15);
-  padding:6px 14px;
-}
-.wp-stepper.show{display:flex}
-.wp-stepper-name{font-size:11px;font-weight:700;color:var(--ink);min-width:56px;text-align:center}
-.wp-stepper-val{font-size:13px;font-weight:700;color:var(--ink);min-width:36px;text-align:center}
-.wp-stepper-btn{
-  width:44px;height:44px;border-radius:50%;border:1.5px solid var(--line);
-  background:var(--paper);color:var(--ink);font-size:22px;font-weight:700;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-  user-select:none;flex-shrink:0;
-}
-.wp-stepper-btn:active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
 /* ================= Mobile Search Overlay ================= */
 .m-search-pill{
@@ -952,11 +929,6 @@ main{flex:1;position:relative;min-height:0}
       <button id="rotR" aria-label="右に回転">⟳</button>
     </div>
 
-    <div class="wp-stepper" id="wpStepper">
-      <button class="wp-stepper-btn" id="wpMinus">&minus;</button>
-      <div><div class="wp-stepper-name" id="wpStepName"></div><div class="wp-stepper-val" id="wpStepVal"></div></div>
-      <button class="wp-stepper-btn" id="wpPlus">+</button>
-    </div>
     <div class="admin-panel collapsed" id="adminPanel">
       <button class="wp-close" id="wpClose">✕</button>
         <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
@@ -3477,13 +3449,9 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilt
     e.target.value = v;
     localStorage.setItem(VISIT_DELAY_KEY, v);
   });
-  function hideStepperUI(){
-    $("wpStepper").classList.remove("show");
-    wp.querySelectorAll("label span").forEach(s=>s.classList.remove("wp-active"));
-  }
-  const toggleAdmin = ()=>{ wp.classList.toggle("collapsed"); if(wp.classList.contains("collapsed")) hideStepperUI(); };
+  const toggleAdmin = ()=> wp.classList.toggle("collapsed");
   $("adminToggleBtn").addEventListener("click", toggleAdmin);
-  $("wpClose").addEventListener("click", ()=>{ wp.classList.add("collapsed"); hideStepperUI(); });
+  $("wpClose").addEventListener("click", ()=> wp.classList.add("collapsed"));
   wp.addEventListener("keydown",e=>{ if(e.key==="Enter") $("weightApply").click(); });
 
   let adminPin = null;
@@ -3517,64 +3485,6 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilt
     renderAndFit();
     toast("重みを適用しました");
   });
-
-  // ラベルタップで +/- ステッパー表示 & 即時反映
-  {
-    const stepper = $("wpStepper");
-    const stepName = $("wpStepName");
-    const stepVal = $("wpStepVal");
-    let activeInput = null;
-
-    function applyWeightsLive(){
-      wp.querySelectorAll("input[data-w]").forEach(inp=>{
-        const v = parseFloat(inp.value);
-        if(!isNaN(v)) BALANCE_WEIGHTS[inp.dataset.w] = v;
-      });
-      document.querySelectorAll(".presets .chip[data-preset]").forEach(c=>c.setAttribute("aria-pressed","false"));
-      document.querySelector('.chip[data-preset="balance"]').setAttribute("aria-pressed","true");
-      currentPreset = "balance";
-      distanceFilter = null;
-      $("presetHint").textContent = presetHints.balance;
-      visibleCount = PAGE_N;
-      renderAndFit();
-    }
-
-    function positionStepper(){
-      const r = wp.getBoundingClientRect();
-      stepper.style.bottom = (window.innerHeight - r.top + 6) + "px";
-    }
-
-    function selectWeight(label, inp){
-      wp.querySelectorAll("label span").forEach(s=>s.classList.remove("wp-active"));
-      label.classList.add("wp-active");
-      activeInput = inp;
-      stepName.textContent = label.textContent;
-      stepVal.textContent = inp.value;
-      stepper.classList.add("show");
-      positionStepper();
-    }
-
-    function stepBy(delta){
-      if(!activeInput) return;
-      const cur = parseFloat(activeInput.value) || 0;
-      const next = Math.round((cur + delta) * 10) / 10;
-      activeInput.value = next;
-      stepVal.textContent = next;
-      applyWeightsLive();
-    }
-
-    wp.querySelectorAll("label span").forEach(label=>{
-      const inp = label.parentElement.querySelector("input[data-w]");
-      if(!inp) return;
-      label.addEventListener("click", e=>{
-        e.preventDefault();
-        e.stopPropagation();
-        selectWeight(label, inp);
-      });
-    });
-    $("wpMinus").addEventListener("click", ()=> stepBy(-0.1));
-    $("wpPlus").addEventListener("click", ()=> stepBy(0.1));
-  }
 }
 
 // ================= 3Dオーバーレイ =================
