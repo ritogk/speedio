@@ -4252,9 +4252,17 @@ async function open3DView(t){
           <dt>length</dt><dd>${t.lengthKm} km</dd>
           <dt>elevation_height</dt><dd>${t.height} m</dd>
           <dt>building_nearby_cnt</dt><dd>${t.buildingCnt ?? "-"}</dd>
-          <dt>elevation_unevenness_count</dt><dd>${t.unevennessCount ?? "-"}</dd>
+          <dt title="building_density">building_density</dt><dd>${t.buildingDensity != null ? t.buildingDensity + "/km" : "-"}</dd>
+          <dt title="elevation_unevenness_count">elevation_unevenness_count</dt><dd>${t.unevennessCount ?? "-"}</dd>
           <dt>uphill_cnt</dt><dd>${t.uphillCnt ?? "-"}</dd>
           <dt>downhill_cnt</dt><dd>${t.downhillCnt ?? "-"}</dd>
+        </dl>
+        <h4>corner %</h4>
+        <dl>
+          <dt>strong</dt><dd>${t.pctStrong}%</dd>
+          <dt>medium</dt><dd>${t.pctMedium}%</dd>
+          <dt>weak</dt><dd>${t.pctWeak}%</dd>
+          <dt>straight</dt><dd>${t.pctStraight}%</dd>
         </dl></div>`;
       $("toggleParams3d").onclick = () => {
         const min = paramsEl.classList.toggle("minimized");
