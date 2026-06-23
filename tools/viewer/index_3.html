@@ -3674,7 +3674,7 @@ async function open3DView(t){
       sideGeo.computeVertexNormals();
       group.add(new THREE.Mesh(sideGeo, new THREE.MeshStandardMaterial({
         color: 0x2d6b3a, roughness: .9, metalness: 0,
-        transparent: true, opacity: .3, side: THREE.DoubleSide
+        transparent: true, opacity: .5, side: THREE.DoubleSide
       })));
       // 底面
       const c0 = 0, c1 = GRID-1, c2 = (GRID-1)*GRID+GRID-1, c3 = (GRID-1)*GRID;
@@ -3772,7 +3772,7 @@ async function open3DView(t){
     }
 
     // 道路メッシュ（geometry_list + elevation_smooth直結、3d.jsと同じリボン方式）
-    const ROAD_W = 1.5;
+    const ROAD_W = 2.2;
     const pts3 = geomList.map((p, i) => {
       const [x, y, z] = toXYZ(p[0], p[1], elevSmooth[i] ?? 0);
       return new THREE.Vector3(x, y, z + 0.3);
