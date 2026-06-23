@@ -4013,6 +4013,13 @@ async function open3DView(t){
     const size = bbox.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
     camera.position.set(maxDim * 0.6, maxDim * 0.8, maxDim * 0.6);
+
+    const sp = centerPts[0].clone().sub(center);
+    const ep = centerPts[centerPts.length - 1].clone().sub(center);
+    const routeAngle = Math.atan2(ep.y - sp.y, ep.x - sp.x);
+    const camForward = Math.atan2(-0.8, -0.6);
+    group.rotation.z = camForward - routeAngle;
+
     controls.update();
 
     scene.add(new THREE.HemisphereLight(0xc8d8e8, 0x1a2a1a, 0.6));
