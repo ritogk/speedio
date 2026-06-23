@@ -418,11 +418,9 @@ main{flex:1;position:relative;min-height:0}
 .overlay-3d-params.minimized .overlay-3d-params-body{display:none}
 .overlay-3d-params-body h4{margin:0 0 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:3px}
 .overlay-3d-params-body h4:not(:first-child){margin-top:8px}
-.overlay-3d-params-body dl{margin:0;display:grid;grid-template-columns:1fr 90px;gap:1px 6px}
+.overlay-3d-params-body dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:1px 10px}
 .overlay-3d-params-body dt{color:rgba(255,255,255,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.overlay-3d-params-body dd{margin:0;white-space:nowrap;font-variant-numeric:tabular-nums;display:flex;align-items:center;justify-content:flex-end;gap:4px}
-.overlay-3d-params-body .bar{display:inline-block;width:40px;height:3px;border-radius:2px;flex-shrink:0;background:rgba(255,255,255,.12);overflow:hidden}
-.overlay-3d-params-body .bar-inner{height:100%;border-radius:2px;background:currentColor}
+.overlay-3d-params-body dd{margin:0;white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
 .overlay-3d-params-body .hi{color:#30D158}
 .overlay-3d-params-body .mid{color:#FF9F0A}
 .overlay-3d-params-body .lo{color:#FF453A}
@@ -4228,8 +4226,7 @@ async function open3DView(t){
     if(isAdmin3d){
       const sc = v => { const n = (v ?? 0); return n >= 0.7 ? "hi" : n >= 0.4 ? "mid" : "lo"; };
       const sv = v => { const n = (v ?? 0); return `<span class="${sc(n)}">${n.toFixed(3)}</span>`; };
-      const bw = (v) => { const pct = Math.round((v ?? 0) * 100); return `<span class="bar ${sc(v)}"><span class="bar-inner" style="width:${pct}%"></span></span>`; };
-      const row = (label, v) => `<dt title="${label}">${label}</dt><dd>${bw(v)}${sv(v)}</dd>`;
+      const row = (label, v) => `<dt title="${label}">${label}</dt><dd>${sv(v)}</dd>`;
       paramsEl.innerHTML = `<div class="overlay-3d-params-titlebar">
           <span class="overlay-3d-params-title">📊 パラメーター</span>
           <button class="overlay-3d-params-minimize" id="toggleParams3d" title="最小化">─</button>
