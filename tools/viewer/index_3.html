@@ -626,15 +626,18 @@ main{flex:1;position:relative;min-height:0}
   .admin-panel label span.wp-active{background:var(--accent);color:#fff}
 }
 .wp-stepper{
-  display:none;align-items:center;justify-content:center;gap:12px;
-  margin-bottom:6px;padding:4px 0;border-bottom:1px solid var(--line);
+  display:none;position:absolute;right:10px;z-index:1101;
+  align-items:center;justify-content:center;gap:12px;
+  background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:var(--radius);
+  backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(0,0,0,.15);
+  padding:6px 14px;
 }
 .wp-stepper.show{display:flex}
 .wp-stepper-name{font-size:11px;font-weight:700;color:var(--ink);min-width:56px;text-align:center}
 .wp-stepper-val{font-size:13px;font-weight:700;color:var(--ink);min-width:36px;text-align:center}
 .wp-stepper-btn{
-  width:40px;height:40px;border-radius:50%;border:1.5px solid var(--line);
-  background:var(--paper);color:var(--ink);font-size:20px;font-weight:700;
+  width:44px;height:44px;border-radius:50%;border:1.5px solid var(--line);
+  background:var(--paper);color:var(--ink);font-size:22px;font-weight:700;
   display:flex;align-items:center;justify-content:center;cursor:pointer;
   -webkit-tap-highlight-color:transparent;touch-action:manipulation;
   user-select:none;flex-shrink:0;
@@ -949,13 +952,13 @@ main{flex:1;position:relative;min-height:0}
       <button id="rotR" aria-label="右に回転">⟳</button>
     </div>
 
+    <div class="wp-stepper" id="wpStepper">
+      <button class="wp-stepper-btn" id="wpMinus">&minus;</button>
+      <div><div class="wp-stepper-name" id="wpStepName"></div><div class="wp-stepper-val" id="wpStepVal"></div></div>
+      <button class="wp-stepper-btn" id="wpPlus">+</button>
+    </div>
     <div class="admin-panel collapsed" id="adminPanel">
       <button class="wp-close" id="wpClose">✕</button>
-      <div class="wp-stepper" id="wpStepper">
-        <button class="wp-stepper-btn" id="wpMinus">&minus;</button>
-        <div><div class="wp-stepper-name" id="wpStepName"></div><div class="wp-stepper-val" id="wpStepVal"></div></div>
-        <button class="wp-stepper-btn" id="wpPlus">+</button>
-      </div>
         <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
         <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
         <label><span>道幅</span><input type="number" step="0.1" data-w="width"></label>
@@ -3474,9 +3477,13 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilt
     e.target.value = v;
     localStorage.setItem(VISIT_DELAY_KEY, v);
   });
-  const toggleAdmin = ()=> wp.classList.toggle("collapsed");
+  function hideStepperUI(){
+    $("wpStepper").classList.remove("show");
+    wp.querySelectorAll("label span").forEach(s=>s.classList.remove("wp-active"));
+  }
+  const toggleAdmin = ()=>{ wp.classList.toggle("collapsed"); if(wp.classList.contains("collapsed")) hideStepperUI(); };
   $("adminToggleBtn").addEventListener("click", toggleAdmin);
-  $("wpClose").addEventListener("click", ()=> wp.classList.add("collapsed"));
+  $("wpClose").addEventListener("click", ()=>{ wp.classList.add("collapsed"); hideStepperUI(); });
   wp.addEventListener("keydown",e=>{ if(e.key==="Enter") $("weightApply").click(); });
 
   let adminPin = null;
@@ -3511,7 +3518,7 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilt
     toast("重みを適用しました");
   });
 
-  // モバイル: ラベルタップで +/- ステッパー表示 & 即時反映
+  // ラベルタップで +/- ステッパー表示 & 即時反映
   {
     const stepper = $("wpStepper");
     const stepName = $("wpStepName");
@@ -3532,6 +3539,11 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilt
       renderAndFit();
     }
 
+    function positionStepper(){
+      const r = wp.getBoundingClientRect();
+      stepper.style.bottom = (window.innerHeight - r.top + 6) + "px";
+    }
+
     function selectWeight(label, inp){
       wp.querySelectorAll("label span").forEach(s=>s.classList.remove("wp-active"));
       label.classList.add("wp-active");
@@ -3539,6 +3551,7 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilt
       stepName.textContent = label.textContent;
       stepVal.textContent = inp.value;
       stepper.classList.add("show");
+      positionStepper();
     }
 
     function stepBy(delta){
@@ -3550,18 +3563,17 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilt
       applyWeightsLive();
     }
 
-    if(isMobile()){
-      wp.querySelectorAll("label span").forEach(label=>{
-        const inp = label.parentElement.querySelector("input[data-w]");
-        if(!inp) return;
-        label.addEventListener("click", e=>{
-          e.preventDefault();
-          selectWeight(label, inp);
-        });
+    wp.querySelectorAll("label span").forEach(label=>{
+      const inp = label.parentElement.querySelector("input[data-w]");
+      if(!inp) return;
+      label.addEventListener("click", e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        selectWeight(label, inp);
       });
-      $("wpMinus").addEventListener("click", ()=> stepBy(-0.1));
-      $("wpPlus").addEventListener("click", ()=> stepBy(0.1));
-    }
+    });
+    $("wpMinus").addEventListener("click", ()=> stepBy(-0.1));
+    $("wpPlus").addEventListener("click", ()=> stepBy(0.1));
   }
 }
 
