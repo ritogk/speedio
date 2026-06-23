@@ -4222,8 +4222,12 @@ async function open3DView(t){
     const paramsEl = $("params3d");
     if(isAdmin3d){
       const sc = v => { const n = (v ?? 0); return n >= 0.7 ? "hi" : n >= 0.4 ? "mid" : "lo"; };
-      const sv = v => { const n = (v ?? 0); return `<span class="${sc(n)}">${n.toFixed(3)}</span>`; };
-      const row = (label, v) => `<dt title="${label}">${label}</dt><dd>${sv(v)}</dd>`;
+      const scCorner = v => { const n = (v ?? 0); return n >= 0.3 ? "hi" : n >= 0.15 ? "mid" : "lo"; };
+      const scNone = v => { const n = (v ?? 0); return n <= 0.15 ? "hi" : n <= 0.3 ? "mid" : "lo"; };
+      const sv = (v, fn) => { const n = (v ?? 0); return `<span class="${fn(n)}">${n.toFixed(3)}</span>`; };
+      const row = (label, v) => `<dt title="${label}">${label}</dt><dd>${sv(v, sc)}</dd>`;
+      const rowC = (label, v) => `<dt title="${label}">${label}</dt><dd>${sv(v, scCorner)}</dd>`;
+      const rowN = (label, v) => `<dt title="${label}">${label}</dt><dd>${sv(v, scNone)}</dd>`;
       paramsEl.innerHTML = `<div class="overlay-3d-params-titlebar">
           <span class="overlay-3d-params-title">📊 パラメーター</span>
           <button class="overlay-3d-params-minimize" id="toggleParams3d" title="最小化">─</button>
@@ -4235,10 +4239,10 @@ async function open3DView(t){
           ${row("score_claude_center_line_section", t.scoreClaudeCenterLineSection)}
           ${row("score_elevation", t.scoreElevation)}
           ${row("score_elevation_unevenness", t.scoreElevationUnevenness)}
-          ${row("score_corner_strong", t.scoreCornerStrong)}
-          ${row("score_corner_medium", t.scoreCornerMedium)}
-          ${row("score_corner_week", t.scoreCornerWeek)}
-          ${row("score_corner_none", t.scoreCornerNone)}
+          ${rowC("score_corner_strong", t.scoreCornerStrong)}
+          ${rowC("score_corner_medium", t.scoreCornerMedium)}
+          ${rowC("score_corner_week", t.scoreCornerWeek)}
+          ${rowN("score_corner_none", t.scoreCornerNone)}
           ${row("score_corner_balance", t.scoreCornerBalance)}
           ${row("score_length", t.scoreLength)}
           ${row("score_building", t.scoreBuilding)}
