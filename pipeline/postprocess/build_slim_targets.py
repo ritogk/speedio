@@ -202,7 +202,7 @@ def slim_touge(t, cur=None, pref_code=None):
     city = lookup_city(mid[0], mid[1]) if mid else None
     return {
         "prefecture": PREFECTURES.get(pref_code, ""),
-        "city": city,
+        "city": re.sub(r"^(.{2,})島\1[町村]$", r"\1島", city) if city else city,
         "length": t.get("length"),
         "highway": t.get("highway"),
         "name": t.get("name"),
