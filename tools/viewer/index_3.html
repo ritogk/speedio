@@ -4008,7 +4008,7 @@ async function open3DView(t){
 
     const floorW = rMaxX - rMinX, floorH = rMaxY - rMinY;
     const floorGeo = new THREE.PlaneGeometry(floorW, floorH);
-    const floorMat = new THREE.MeshStandardMaterial({color:0x666666, side: THREE.DoubleSide});
+    const floorMat = new THREE.MeshStandardMaterial({color:0x555555, side: THREE.DoubleSide});
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.position.set((rMinX+rMaxX)/2, (rMinY+rMaxY)/2, skirtZ);
     group.add(floor);
