@@ -122,6 +122,8 @@ main{flex:1;position:relative;min-height:0}
   touch-action:none;user-select:none;-webkit-user-select:none;
 }
 .view-ctrl button:active{background:var(--ink);border-color:var(--ink);color:#fff}
+#adminToggleBtn{background:rgba(99,102,241,.85);border-color:rgba(99,102,241,.6);color:#fff}
+#adminToggleBtn:active{background:rgba(67,56,202,.95);border-color:rgba(67,56,202,.8)}
 @media (min-width:761px){
   .view-ctrl{bottom:24px}
   .admin-panel{bottom:24px}
@@ -597,8 +599,9 @@ main{flex:1;position:relative;min-height:0}
   padding:6px 8px;font-size:10px;width:auto;
   box-shadow:0 2px 8px rgba(0,0,0,.15);display:none;
   touch-action:manipulation;
+  max-height:calc(100dvh - 120px);overflow-y:auto;
 }
-.admin-panel.show{display:block;position:relative}
+.admin-panel.show{display:block}
 .admin-panel.collapsed{display:none}
 .wp-close{position:absolute;top:2px;right:2px;background:none;border:none;font-size:14px;color:var(--ink-soft);cursor:pointer;padding:2px 5px;line-height:1}
 .wp-close:hover{color:var(--ink)}
@@ -1463,7 +1466,7 @@ function renderTouristMarkers(spots){
         "icon-size": ["interpolate",["linear"],["zoom"],5,0.25,10,0.4,14,0.55],
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
-        "visibility": "none",
+        "visibility": touristVisible ? "visible" : "none",
       },
     });
   }
@@ -1489,6 +1492,7 @@ function renderTollBanner(){
 }
 function renderTollRoadLines(features){
   if(!mapReady){ pendingTollRoads = features; return; }
+  const vis = tollVisible ? "visible" : "none";
   const src = map.getSource("toll-roads");
   const geojson = {type: "FeatureCollection", features: features||[]};
   if(src){ src.setData(geojson); }
@@ -1496,7 +1500,7 @@ function renderTollRoadLines(features){
     map.addSource("toll-roads", {type:"geojson", data: geojson});
     map.addLayer({
       id: "toll-roads-casing", type: "line", source: "toll-roads",
-      layout: {"line-cap":"round","line-join":"round","visibility":"none"},
+      layout: {"line-cap":"round","line-join":"round","visibility":vis},
       paint: {
         "line-color": "#F57F17",
         "line-width": ["interpolate",["linear"],["zoom"],6,4,10,7,14,10],
@@ -1505,7 +1509,7 @@ function renderTollRoadLines(features){
     });
     map.addLayer({
       id: "toll-roads-line", type: "line", source: "toll-roads",
-      layout: {"line-cap":"round","line-join":"round","visibility":"none"},
+      layout: {"line-cap":"round","line-join":"round","visibility":vis},
       paint: {
         "line-color": "#F57F17",
         "line-width": ["interpolate",["linear"],["zoom"],6,1.5,10,3,14,5],
