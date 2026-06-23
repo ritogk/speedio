@@ -598,13 +598,10 @@ main{flex:1;position:relative;min-height:0}
   box-shadow:0 2px 8px rgba(0,0,0,.15);display:none;
   touch-action:manipulation;
 }
-.admin-panel.show{display:block}
-.admin-panel .wp-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
-.admin-panel h4{font-size:10px;font-weight:700;margin:0}
-.admin-panel .wp-toggle{font-size:12px;color:var(--ink-soft);background:none;border:none;cursor:pointer;padding:0 2px;line-height:1}
-.admin-panel .wp-body{margin-top:4px}
-.admin-panel.collapsed .wp-body{display:none}
-.admin-panel.collapsed{padding:4px 8px}
+.admin-panel.show{display:block;position:relative}
+.admin-panel.collapsed{display:none}
+.wp-close{position:absolute;top:2px;right:2px;background:none;border:none;font-size:14px;color:var(--ink-soft);cursor:pointer;padding:2px 5px;line-height:1}
+.wp-close:hover{color:var(--ink)}
 .admin-panel label{display:flex;align-items:center;gap:3px;margin-bottom:2px}
 .admin-panel label span{width:62px;flex-shrink:0;text-align:right}
 .admin-panel input[type="number"]{width:42px;font:inherit;font-size:10px;border:1px solid var(--line);border-radius:3px;padding:1px 3px;text-align:right}
@@ -928,11 +925,7 @@ main{flex:1;position:relative;min-height:0}
     </div>
 
     <div class="admin-panel collapsed" id="adminPanel">
-      <div class="wp-head" id="wpHead">
-        <h4>管理者パネル</h4>
-        <span class="wp-toggle" id="wpToggle">▲</span>
-      </div>
-      <div class="wp-body">
+      <button class="wp-close" id="wpClose">✕</button>
         <div class="wp-section">ピン設置</div>
         <div class="wp-pin-row">
           <input type="text" id="adminLatLng" placeholder="35.681,139.767" style="width:120px;font:inherit;font-size:10px;border:1px solid var(--line);border-radius:3px;padding:2px 4px">
@@ -955,7 +948,6 @@ main{flex:1;position:relative;min-height:0}
         <label><span>C.バランス</span><input type="number" step="0.1" data-w="corner_balance"></label>
         <label><span>中央線</span><input type="number" step="0.1" data-w="claude_center_line_section"></label>
         <button class="wp-apply" id="weightApply">適用</button>
-      </div>
     </div>
 
     <div class="legend">
@@ -3355,7 +3347,6 @@ window.addEventListener("resize",()=>{
           } else {
             wp.classList.remove("show");
             wp.classList.add("collapsed");
-            $("wpToggle").textContent = "▲";
             btn.style.display = "none";
           }
           localStorage.setItem(ADMIN_KEY, on ? "1" : "0");
@@ -3407,13 +3398,9 @@ document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilt
     e.target.value = v;
     localStorage.setItem(VISIT_DELAY_KEY, v);
   });
-  const toggleAdmin = ()=>{
-    wp.classList.toggle("collapsed");
-    $("wpToggle").textContent = wp.classList.contains("collapsed") ? "▲" : "▼";
-  };
-  $("wpHead").addEventListener("click", toggleAdmin);
-  $("wpHead").addEventListener("touchend", e=>{ e.preventDefault(); toggleAdmin(); });
+  const toggleAdmin = ()=> wp.classList.toggle("collapsed");
   $("adminToggleBtn").addEventListener("click", toggleAdmin);
+  $("wpClose").addEventListener("click", ()=> wp.classList.add("collapsed"));
   wp.addEventListener("keydown",e=>{ if(e.key==="Enter") $("weightApply").click(); });
 
   let adminPin = null;
