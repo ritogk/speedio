@@ -418,10 +418,11 @@ main{flex:1;position:relative;min-height:0}
 .overlay-3d-params.minimized .overlay-3d-params-body{display:none}
 .overlay-3d-params-body h4{margin:0 0 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:3px}
 .overlay-3d-params-body h4:not(:first-child){margin-top:8px}
-.overlay-3d-params-body dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:1px 10px}
-.overlay-3d-params-body dt{color:rgba(255,255,255,.6);white-space:nowrap}
-.overlay-3d-params-body dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
-.overlay-3d-params-body .bar{display:inline-block;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
+.overlay-3d-params-body dl{margin:0;display:grid;grid-template-columns:1fr 90px;gap:1px 6px}
+.overlay-3d-params-body dt{color:rgba(255,255,255,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.overlay-3d-params-body dd{margin:0;white-space:nowrap;font-variant-numeric:tabular-nums;display:flex;align-items:center;justify-content:flex-end;gap:4px}
+.overlay-3d-params-body .bar{display:inline-block;width:40px;height:3px;border-radius:2px;flex-shrink:0;background:rgba(255,255,255,.12);overflow:hidden}
+.overlay-3d-params-body .bar-inner{height:100%;border-radius:2px;background:currentColor}
 .overlay-3d-params-body .hi{color:#30D158}
 .overlay-3d-params-body .mid{color:#FF9F0A}
 .overlay-3d-params-body .lo{color:#FF453A}
@@ -4139,24 +4140,26 @@ async function open3DView(t){
     const legend3d = $("legend3d");
     const cornerLegend = '<span><i style="background:#FF453A"></i>低速コーナー</span><span><i style="background:#FF9F0A"></i>中速</span><span><i style="background:#30D158"></i>高速</span><span><i style="background:#98989D"></i>ストレート</span>';
     const elevLegend = '<span><i style="background:#E8553D"></i>登り</span><span><i style="background:#4A90D9"></i>下り</span><span><i style="background:#98989D"></i>平坦</span>';
+    const infraLegend = '<span><i style="background:#5B7FCC"></i>トンネル</span><span><i style="background:#CC8844"></i>橋</span><span><i style="background:#98989D"></i>通常</span>';
 
-    // 道路表示の状態管理
-    let sectionVisible = true;
-    let elevMode = false;
+    // 道路表示の状態管理 — "corner" | "elev" | "infra" | "off"
+    let colorMode = "corner";
     legend3d.innerHTML = cornerLegend;
 
     function updateRoadVisibility(){
-      cornerMeshes.forEach(m => m.visible = sectionVisible && !elevMode);
-      elevMeshes.forEach(m => m.visible = sectionVisible && elevMode);
-      whiteMeshes.forEach(m => m.visible = !sectionVisible);
-      legend3d.innerHTML = sectionVisible ? (elevMode ? elevLegend : cornerLegend) : "";
+      cornerMeshes.forEach(m => m.visible = colorMode === "corner");
+      elevMeshes.forEach(m => m.visible = colorMode === "elev");
+      infraMeshes.forEach(m => m.visible = colorMode === "infra");
+      whiteMeshes.forEach(m => m.visible = colorMode === "off");
+      const legends = { corner: cornerLegend, elev: elevLegend, infra: infraLegend, off: "" };
+      legend3d.innerHTML = legends[colorMode] || "";
     }
 
     // セクション色トグル
     const secBtn = $("toggle3dSection");
     secBtn.onclick = ()=>{
-      sectionVisible = !sectionVisible;
-      secBtn.classList.toggle("active", sectionVisible);
+      colorMode = colorMode === "off" ? "corner" : "off";
+      secBtn.classList.toggle("active", colorMode !== "off");
       updateRoadVisibility();
     };
 
@@ -4165,14 +4168,36 @@ async function open3DView(t){
     if(eSecs){
       toggleBtn.style.display = "";
       toggleBtn.onclick = ()=>{
-        elevMode = !elevMode;
-        if(!sectionVisible){ sectionVisible = true; secBtn.classList.add("active"); }
-        toggleBtn.classList.toggle("active", elevMode);
-        toggleBtn.textContent = elevMode ? "コーナー" : "登り/下り";
+        if(colorMode === "elev"){
+          colorMode = "corner";
+        } else {
+          colorMode = "elev";
+        }
+        secBtn.classList.add("active");
+        toggleBtn.classList.toggle("active", colorMode === "elev");
+        toggleBtn.textContent = colorMode === "elev" ? "コーナー" : "登り/下り";
         updateRoadVisibility();
       };
     }else{
       toggleBtn.style.display = "none";
+    }
+
+    // トンネル/橋トグル
+    const infraBtn = $("toggle3dInfra");
+    if(hasInfra){
+      infraBtn.style.display = "";
+      infraBtn.onclick = ()=>{
+        if(colorMode === "infra"){
+          colorMode = "corner";
+        } else {
+          colorMode = "infra";
+        }
+        secBtn.classList.add("active");
+        infraBtn.classList.toggle("active", colorMode === "infra");
+        updateRoadVisibility();
+      };
+    }else{
+      infraBtn.style.display = "none";
     }
 
     // 建物トグル
@@ -4203,8 +4228,8 @@ async function open3DView(t){
     if(isAdmin3d){
       const sc = v => { const n = (v ?? 0); return n >= 0.7 ? "hi" : n >= 0.4 ? "mid" : "lo"; };
       const sv = v => { const n = (v ?? 0); return `<span class="${sc(n)}">${n.toFixed(3)}</span>`; };
-      const bw = (v) => { const pct = Math.round((v ?? 0) * 100); return `<span class="bar" style="width:${pct}px;background:currentColor"></span>`; };
-      const row = (label, v) => `<dt>${label}</dt><dd>${bw(v)}${sv(v)}</dd>`;
+      const bw = (v) => { const pct = Math.round((v ?? 0) * 100); return `<span class="bar ${sc(v)}"><span class="bar-inner" style="width:${pct}%"></span></span>`; };
+      const row = (label, v) => `<dt title="${label}">${label}</dt><dd>${bw(v)}${sv(v)}</dd>`;
       paramsEl.innerHTML = `<div class="overlay-3d-params-titlebar">
           <span class="overlay-3d-params-title">📊 パラメーター</span>
           <button class="overlay-3d-params-minimize" id="toggleParams3d" title="最小化">─</button>
