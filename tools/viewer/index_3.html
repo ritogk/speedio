@@ -955,13 +955,16 @@ main{flex:1;position:relative;min-height:0}
         </details>
     </div>
 
-    <div class="legend">
+    <div class="legend" id="mapLegend">
       <ul>
         <li><span class="swatch" style="background:var(--corner-strong)"></span>低速コーナー</li>
         <li><span class="swatch" style="background:var(--corner-medium)"></span>中速</li>
         <li><span class="swatch" style="background:var(--corner-weak)"></span>高速</li>
         <li><span class="swatch" style="background:var(--straight)"></span>ストレート</li>
         <li><span class="swatch" style="background:#9B30FF"></span>走行済</li>
+        <li class="legend-logistics" style="display:none"><span class="swatch" style="background:#FFD600"></span>物流道路 重複</li>
+        <li class="legend-toll-line" style="display:none"><span class="swatch" style="background:repeating-linear-gradient(90deg,#F57F17 0 6px,transparent 6px 9px)"></span>有料道路</li>
+        <li class="legend-toll-overlap" style="display:none"><span class="swatch" style="background:#FF1493"></span>有料道路 重複</li>
       </ul>
     </div>
 
@@ -1487,10 +1490,23 @@ async function fetchTollRoads(code){
     return tollRoadCache[code];
   }catch(e){ return []; }
 }
+let tollGrid = null;
 function renderTollBanner(){
   const codes = [...loadedPrefs];
   const all = codes.flatMap(c => tollRoadCache[c]||[]);
+  tollGrid = buildLogisticsGrid(all);
   renderTollRoadLines(all);
+  updateTollOverlapLayer();
+}
+function updateTollOverlapLayer(){
+  if(!mapReady) return;
+  if(!tollVisible || !tollGrid){
+    map.getSource("touge-toll").setData({type:"FeatureCollection",features:[]});
+    return;
+  }
+  const td = map.getSource("touge")?._data;
+  if(!td || !td.features) return;
+  map.getSource("touge-toll").setData({type:"FeatureCollection",features:findOverlapSegments(td.features, tollGrid)});
 }
 function renderTollRoadLines(features){
   if(!mapReady){ pendingTollRoads = features; return; }
@@ -1922,6 +1938,27 @@ map.on("load", () => {
       "line-opacity":["coalesce",["get","fade"],1]
     }
   });
+  // 峠×有料道路の重複強調レイヤー（ホットピンク）
+  map.addSource("touge-toll",{type:"geojson",data:{type:"FeatureCollection",features:[]}});
+  map.addLayer({
+    id:"touge-toll-glow", type:"line", source:"touge-toll",
+    layout:{"line-cap":"round","line-join":"round"},
+    paint:{
+      "line-color":"#FF1493",
+      "line-width":["interpolate",["linear"],["zoom"],8,12,14,20],
+      "line-blur":5,
+      "line-opacity":.6
+    }
+  });
+  map.addLayer({
+    id:"touge-toll-line", type:"line", source:"touge-toll",
+    layout:{"line-cap":"round","line-join":"round"},
+    paint:{
+      "line-color":"#FF1493",
+      "line-width":["interpolate",["linear"],["zoom"],8,3,14,5.5],
+      "line-opacity":.9
+    }
+  });
   // 峠×物流道路の重複強調レイヤー（本線=黄、補完路=緑）
   map.addSource("touge-logistics",{type:"geojson",data:{type:"FeatureCollection",features:[]}});
   map.addLayer({
@@ -1989,7 +2026,7 @@ function drawMap(list){
     }
   });
   const geojson = {type:"FeatureCollection", features};
-  if(mapReady){ map.getSource("touge").setData(geojson); updateOverlapLayer(); }
+  if(mapReady){ map.getSource("touge").setData(geojson); updateOverlapLayer(); updateTollOverlapLayer(); }
   else pendingGeojson = geojson;
 
   // ランクマーカー
@@ -3193,7 +3230,12 @@ function findOverlapSegments(tf,grid){if(!grid||!grid.size)return[];const out=[]
 function updateOverlapLayer(){if(!mapReady)return;if(!logisticsVisible||!logisticsGrid){map.getSource("touge-logistics").setData({type:"FeatureCollection",features:[]});return;}const td=map.getSource("touge")?._data;if(!td||!td.features)return;map.getSource("touge-logistics").setData({type:"FeatureCollection",features:findOverlapSegments(td.features,logisticsGrid)});}
 async function fetchLogistics(codes){const toFetch=codes.filter(c=>!logisticsCache[c]);if(toFetch.length)await Promise.all(toFetch.map(async c=>{try{const r=await fetch("./logistics/"+c+".geojson");if(!r.ok)return;const d=await r.json();logisticsCache[c]=d.features;}catch(e){}}));const all=codes.filter(c=>logisticsCache[c]).flatMap(c=>logisticsCache[c]);logisticsGrid=buildLogisticsGrid(all);if(mapReady)map.getSource("logistics").setData({type:"FeatureCollection",features:all});updateOverlapLayer();}
 function updateLogisticsLayer(){if(!logisticsVisible)return;fetchLogistics([...loadedPrefs]);}
-$("logisticsToggle").addEventListener("click",function(e){var btn=e.currentTarget;var on=btn.getAttribute("aria-pressed")!=="true";btn.setAttribute("aria-pressed",String(on));logisticsVisible=on;var vis=on?"visible":"none";["logistics-casing","logistics-main","logistics-alt"].forEach(function(id){if(map.getLayer(id))map.setLayoutProperty(id,"visibility",vis)});if(on)updateLogisticsLayer();else{map.getSource("logistics").setData({type:"FeatureCollection",features:[]});updateOverlapLayer();}});
+function syncLegend(){
+  document.querySelector(".legend-logistics").style.display = logisticsVisible ? "" : "none";
+  document.querySelector(".legend-toll-line").style.display = tollVisible ? "" : "none";
+  document.querySelector(".legend-toll-overlap").style.display = tollVisible ? "" : "none";
+}
+$("logisticsToggle").addEventListener("click",function(e){var btn=e.currentTarget;var on=btn.getAttribute("aria-pressed")!=="true";btn.setAttribute("aria-pressed",String(on));logisticsVisible=on;var vis=on?"visible":"none";["logistics-casing","logistics-main","logistics-alt"].forEach(function(id){if(map.getLayer(id))map.setLayoutProperty(id,"visibility",vis)});if(on)updateLogisticsLayer();else{map.getSource("logistics").setData({type:"FeatureCollection",features:[]});updateOverlapLayer();}syncLegend();});
 
 let closureVisible = true;
 function toggleClosure(on){
@@ -3230,13 +3272,16 @@ function toggleToll(on){
   tollVisible = on;
   $("tollToggle").setAttribute("aria-pressed", String(on));
   if(on) updateTollLayer();
-  else if(mapReady && map.getSource("toll-roads")){
-    map.getSource("toll-roads").setData({type:"FeatureCollection",features:[]});
+  else{
+    if(mapReady && map.getSource("toll-roads"))
+      map.getSource("toll-roads").setData({type:"FeatureCollection",features:[]});
+    updateTollOverlapLayer();
   }
   var vis = on ? "visible" : "none";
   ["toll-roads-casing","toll-roads-line"].forEach(function(id){
     if(mapReady && map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
   });
+  syncLegend();
 }
 function updateTollLayer(){
   if(!tollVisible) return;
