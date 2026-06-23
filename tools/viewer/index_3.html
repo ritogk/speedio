@@ -4287,7 +4287,7 @@ async function open3DView(t){
     if(isAdmin3d){
       const sc = v => { const n = (v ?? 0); return n >= 0.7 ? "hi" : n >= 0.4 ? "mid" : "lo"; };
       const scCorner = v => { const n = (v ?? 0); return n >= 0.2 ? "hi" : n >= 0.1 ? "mid" : n <= 0.05 ? "lo" : ""; };
-      const scNone = v => { const n = (v ?? 0); return n <= 0.1 ? "hi" : n <= 0.2 ? "mid" : "lo"; };
+      const scNone = v => { const n = (v ?? 0); return n <= 0.05 ? "hi" : n <= 0.1 ? "mid" : n >= 0.2 ? "lo" : ""; };
       const sv = (v, fn) => { const n = (v ?? 0); return `<span class="${fn(n)}">${n.toFixed(3)}</span>`; };
       const row = (label, v) => `<dt title="${label}">${label}</dt><dd>${sv(v, sc)}</dd>`;
       const rowC = (label, v) => `<dt title="${label}">${label}</dt><dd>${sv(v, scCorner)}</dd>`;
