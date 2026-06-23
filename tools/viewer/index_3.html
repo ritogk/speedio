@@ -3775,7 +3775,7 @@ async function open3DView(t){
     const ROAD_W = 2.0;
     const pts3 = geomList.map((p, i) => {
       const [x, y, z] = toXYZ(p[0], p[1], elevSmooth[i] ?? 0);
-      return new THREE.Vector3(x, y, z + 1.2);
+      return new THREE.Vector3(x, y, z + 1.8);
     });
 
     // 法線ベクトル（XY平面の垂線、道路を平坦に保つ）
