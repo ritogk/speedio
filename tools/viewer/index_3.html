@@ -3636,7 +3636,7 @@ async function open3DView(t){
     terrGeo.computeVertexNormals();
     const terrMat = new THREE.MeshStandardMaterial({
       color: 0x2d6b3a, roughness: .9, metalness: 0,
-      transparent: true, opacity: .5, side: THREE.DoubleSide
+      transparent: true, opacity: .5, side: THREE.DoubleSide, flatShading: true
     });
     const terrMesh = new THREE.Mesh(terrGeo, terrMat);
     group.add(terrMesh);
@@ -4025,8 +4025,8 @@ async function open3DView(t){
 
     controls.update();
 
-    scene.add(new THREE.HemisphereLight(0xc8d8e8, 0x1a2a1a, 0.6));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    scene.add(new THREE.HemisphereLight(0xdde8f0, 0x0a1a0a, 0.5));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
     dirLight.position.set(maxDim * 0.5, maxDim * 0.5, maxDim * 1.2);
     scene.add(dirLight);
 
