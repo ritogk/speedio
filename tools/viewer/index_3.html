@@ -4014,11 +4014,11 @@ async function open3DView(t){
     const maxDim = Math.max(size.x, size.y, size.z);
     camera.position.set(maxDim * 0.6, maxDim * 0.8, maxDim * 0.6);
 
-    const sp = centerPts[0].clone().sub(center);
-    const ep = centerPts[centerPts.length - 1].clone().sub(center);
-    const routeAngle = Math.atan2(ep.y - sp.y, ep.x - sp.x);
-    const camForward = Math.atan2(-0.8, -0.6);
-    group.rotation.z = camForward - routeAngle - Math.PI / 2;
+    const floorGeo = new THREE.PlaneGeometry(size.x * 1.05, size.y * 1.05);
+    const floorMat = new THREE.MeshStandardMaterial({color:0x888888, side: THREE.DoubleSide});
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.position.set(0, 0, -size.z / 2);
+    group.add(floor);
 
     controls.update();
 
@@ -4039,7 +4039,7 @@ async function open3DView(t){
     const animate = () => {
       animId = requestAnimationFrame(animate);
       controls.update();
-      group.rotation.z += 0.0008;
+      group.rotation.z += 0.002;
 
       progress += progressPerFrame;
       if(progress > 1) progress = 0;
