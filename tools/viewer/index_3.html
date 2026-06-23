@@ -389,6 +389,42 @@ main{flex:1;position:relative;min-height:0}
 }
 .overlay-3d-legend span{display:flex;align-items:center;gap:6px}
 .overlay-3d-legend i{width:14px;height:4px;border-radius:2px;display:inline-block;flex-shrink:0}
+.overlay-3d-params{
+  position:absolute;bottom:14px;right:14px;z-index:11;
+  pointer-events:auto;display:none;
+  width:300px;
+}
+.overlay-3d-params.show{display:flex;flex-direction:column}
+.overlay-3d-params-titlebar{
+  display:flex;align-items:center;height:28px;
+  background:rgba(40,40,40,.95);border:1px solid rgba(255,255,255,.2);
+  border-bottom:none;border-radius:4px 4px 0 0;
+  padding:0 2px 0 8px;cursor:default;user-select:none;
+}
+.overlay-3d-params.minimized .overlay-3d-params-titlebar{border-radius:4px;border-bottom:1px solid rgba(255,255,255,.2)}
+.overlay-3d-params-title{flex:1;font-size:11px;font-weight:600;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.overlay-3d-params-minimize{
+  width:24px;height:20px;display:flex;align-items:center;justify-content:center;
+  background:none;border:none;color:rgba(255,255,255,.6);font-size:16px;
+  cursor:pointer;border-radius:2px;line-height:1;
+}
+.overlay-3d-params-minimize:hover{background:rgba(255,255,255,.15);color:#fff}
+.overlay-3d-params-body{
+  background:rgba(20,20,20,.9);border:1px solid rgba(255,255,255,.2);
+  border-top:none;border-radius:0 0 4px 4px;
+  padding:10px 14px;color:#fff;font-size:11px;line-height:1.7;
+  max-height:calc(100dvh - 100px);overflow-y:auto;
+}
+.overlay-3d-params.minimized .overlay-3d-params-body{display:none}
+.overlay-3d-params-body h4{margin:0 0 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:3px}
+.overlay-3d-params-body h4:not(:first-child){margin-top:8px}
+.overlay-3d-params-body dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:1px 10px}
+.overlay-3d-params-body dt{color:rgba(255,255,255,.6);white-space:nowrap}
+.overlay-3d-params-body dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.overlay-3d-params-body .bar{display:inline-block;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
+.overlay-3d-params-body .hi{color:#30D158}
+.overlay-3d-params-body .mid{color:#FF9F0A}
+.overlay-3d-params-body .lo{color:#FF453A}
 
 @media (min-width:761px){
   .chip-row{flex-wrap:wrap;overflow-x:visible}
@@ -1096,6 +1132,7 @@ main{flex:1;position:relative;min-height:0}
       <button class="overlay-3d-toggle" id="toggle3dPrint" style="display:none">🖨 印刷</button>
     </div>
     <div class="overlay-3d-legend" id="legend3d"></div>
+    <div class="overlay-3d-params" id="params3d"></div>
     <div class="overlay-3d-hint">1本指で回転 ・ 2本指で移動/ズーム</div>
   </div>
 
@@ -4118,11 +4155,72 @@ async function open3DView(t){
     }
 
     const printBtn = $("toggle3dPrint");
-    if(localStorage.getItem("touge.admin") === "true"){
+    const isAdmin3d = localStorage.getItem("touge.admin") === "true" || localStorage.getItem("speedio_admin") === "1";
+    if(isAdmin3d){
       printBtn.style.display = "";
       printBtn.onclick = ()=> openPrintView(t);
     }else{
       printBtn.style.display = "none";
+    }
+
+    const paramsEl = $("params3d");
+    if(isAdmin3d){
+      const sc = v => { const n = (v ?? 0); return n >= 0.7 ? "hi" : n >= 0.4 ? "mid" : "lo"; };
+      const sv = v => { const n = (v ?? 0); return `<span class="${sc(n)}">${n.toFixed(3)}</span>`; };
+      const bw = (v) => { const pct = Math.round((v ?? 0) * 100); return `<span class="bar" style="width:${pct}px;background:currentColor"></span>`; };
+      const row = (label, v) => `<dt>${label}</dt><dd>${bw(v)}${sv(v)}</dd>`;
+      paramsEl.innerHTML = `<div class="overlay-3d-params-titlebar">
+          <span class="overlay-3d-params-title">📊 パラメーター</span>
+          <button class="overlay-3d-params-minimize" id="toggleParams3d" title="最小化">─</button>
+        </div>
+        <div class="overlay-3d-params-body" id="paramsBody3d">
+        <h4>道幅</h4>
+        <dl>
+          ${row("width (raw)", t.scoreWidth)}
+          ${row("center_line_section", t.scoreClaudeCenterLineSection)}
+          ${row("width (使用値)", t.width)}
+        </dl>
+        <h4>標高</h4>
+        <dl>
+          ${row("elevation", t.scoreElevation)}
+          ${row("elevation_unevenness", t.scoreElevationUnevenness)}
+        </dl>
+        <h4>コーナー</h4>
+        <dl>
+          ${row("corner_strong", t.scoreCornerStrong)}
+          ${row("corner_medium", t.scoreCornerMedium)}
+          ${row("corner_week", t.scoreCornerWeek)}
+          ${row("corner_none", t.scoreCornerNone)}
+          ${row("corner_balance", t.scoreCornerBalance)}
+        </dl>
+        <h4>その他</h4>
+        <dl>
+          ${row("length", t.scoreLength)}
+          ${row("building", t.scoreBuilding)}
+          ${row("tunnel_outside", t.scoreTunnelOutside)}
+        </dl>
+        <h4>基本</h4>
+        <dl>
+          <dt>全長</dt><dd>${t.lengthKm} km</dd>
+          <dt>標高差</dt><dd>${t.height} m</dd>
+          <dt>建物数</dt><dd>${t.buildingCnt ?? "-"}</dd>
+          <dt>建物密度</dt><dd>${t.buildingDensity != null ? t.buildingDensity + "/km" : "-"}</dd>
+          <dt>起伏回数</dt><dd>${t.unevennessCount ?? "-"}</dd>
+          <dt>急カーブ</dt><dd>${t.pctStrong}%</dd>
+          <dt>中カーブ</dt><dd>${t.pctMedium}%</dd>
+          <dt>緩カーブ</dt><dd>${t.pctWeak}%</dd>
+          <dt>直線</dt><dd>${t.pctStraight}%</dd>
+        </dl></div>`;
+      $("toggleParams3d").onclick = () => {
+        const min = paramsEl.classList.toggle("minimized");
+        $("toggleParams3d").textContent = min ? "□" : "─";
+        $("toggleParams3d").title = min ? "復元" : "最小化";
+      };
+      paramsEl.classList.remove("minimized");
+      paramsEl.classList.add("show");
+    }else{
+      paramsEl.classList.remove("show");
+      paramsEl.innerHTML = "";
     }
 
     active3D = {renderer, scene, animId, onResize};
@@ -4152,6 +4250,8 @@ function close3DView(){
   });
   active3D.renderer.dispose();
   active3D.renderer.domElement.remove();
+  $("params3d").classList.remove("show");
+  $("params3d").innerHTML = "";
   $("overlay3d").classList.remove("show");
   active3D = null;
 }
