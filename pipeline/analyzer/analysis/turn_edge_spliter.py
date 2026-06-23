@@ -11,6 +11,7 @@ def split(gdf: GeoDataFrame) -> GeoDataFrame:
             continue
         # geometryを曲がり角のポイント毎に分割する
         geometrys = []
+        slice_ranges = []
         coords = list(row.geometry.coords)
         cut_start = 0
         cut_end = 0
@@ -20,15 +21,20 @@ def split(gdf: GeoDataFrame) -> GeoDataFrame:
                 # 一致する点がある場合
                 if coord == turn_point:
                     geometrys.append(coords[cut_start:cut_end])
+                    slice_ranges.append((cut_start, cut_end))
                     # turn_pointsから削除
                     turn_points.remove(turn_point)
                     cut_start = cut_end - 1
                     break
         geometrys.append(coords[cut_start:cut_end])
+        slice_ranges.append((cut_start, cut_end))
 
         ## 1件だけなら何もしない。多分この判定は使われなさそうだけど念の為。
         if len(geometrys) == 1:
             continue
+
+        geo_list = row["geometry_list"]
+        geo_meter_list = row["geometry_meter_list"]
 
         # 分割したGeometryにあわせてGeoDataFrame更新する
         st_node = index[0]
@@ -40,6 +46,9 @@ def split(gdf: GeoDataFrame) -> GeoDataFrame:
             new_row = row.copy()
             new_row.geometry = sp.LineString(geometry)
             new_row.length = get_cartesian_length_from_coordinate(new_row.geometry)
+            s, e = slice_ranges[i]
+            new_row["geometry_list"] = geo_list[s:e]
+            new_row["geometry_meter_list"] = geo_meter_list[s:e]
             gdf.loc[new_index] = new_row
             st_node = ed_node
             ## iが最後のindexでない場合は新しいnode_idを割り振る
