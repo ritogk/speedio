@@ -1828,8 +1828,7 @@ map.on("load", () => {
   map.on("click","toll-roads-line",e=>{
     const f = e.features?.[0];
     if(!f) return;
-    const name = f.properties.name;
-    if(!name) return;
+    const name = f.properties.name || "有料道路";
     new maplibregl.Popup({offset:8,closeButton:false,maxWidth:"220px"})
       .setLngLat(e.lngLat)
       .setHTML(`<div style="font-size:12px;font-weight:600">💴 ${escapeHtml(name)}</div>`)
@@ -3348,10 +3347,17 @@ window.addEventListener("resize",()=>{
         if(progress >= SEQ.length){
           reset();
           const wp = $("adminPanel");
+          const btn = $("adminToggleBtn");
           const on = !wp.classList.contains("show");
-          wp.classList.toggle("show", on);
-          $("adminToggleBtn").style.display = on ? "" : "none";
-          if(!on) wp.classList.add("collapsed");
+          if(on){
+            wp.classList.add("show");
+            btn.style.display = "";
+          } else {
+            wp.classList.remove("show");
+            wp.classList.add("collapsed");
+            $("wpToggle").textContent = "▲";
+            btn.style.display = "none";
+          }
           localStorage.setItem(ADMIN_KEY, on ? "1" : "0");
           toast(on ? "管理者モード ON" : "管理者モード OFF");
         }
