@@ -2115,8 +2115,11 @@ function flyToTouge(t){
 
 function cleanCity(city){
   if(!city) return null;
-  const m = city.match(/^(.+市).+区$/);
-  return m ? m[1] : city;
+  const m1 = city.match(/^(.+市).+区$/);
+  if(m1) return m1[1];
+  const m2 = city.match(/^(.{2,})島\1[町村]$/);
+  if(m2) return m2[1]+'島';
+  return city;
 }
 
 // ================= ビューモデル =================
