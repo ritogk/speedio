@@ -1128,6 +1128,7 @@ main{flex:1;position:relative;min-height:0}
     <div class="overlay-3d-tools" id="tools3d">
       <button class="overlay-3d-toggle active" id="toggle3dSection">セクション</button>
       <button class="overlay-3d-toggle" id="toggle3dColor" style="display:none">登り/下り</button>
+      <button class="overlay-3d-toggle" id="toggle3dInfra" style="display:none">トンネル/橋</button>
       <button class="overlay-3d-toggle" id="toggle3dBuildings" style="display:none">🏠 建物</button>
       <button class="overlay-3d-toggle" id="toggle3dPrint" style="display:none">🖨 印刷</button>
     </div>
@@ -2219,7 +2220,9 @@ function toViewModel(raw, idx){
     elevationSmooth: raw.elevation_smooth || [],
     elevSections: raw.elevation_unevenness_sections || null,
     buildings: raw.buildings || [],
-    googleEarthUrl: raw.google_earth_url
+    googleEarthUrl: raw.google_earth_url,
+    tunnelSections: raw.tunnel_sections || [],
+    bridgeSections: raw.bridge_sections || []
   };
 }
 function isEndCloser(poly, lat, lng){
@@ -3908,6 +3911,39 @@ async function open3DView(t){
     cornerMeshes.forEach(m => { m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
     elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
 
+    // トンネル・橋区間のインフラオーバーレイ
+    const INFRA_HEX = { tunnel: 0x5B7FCC, bridge: 0xCC8844, none: 0x98989D };
+    const ptInfraType = new Array(geomList.length).fill("none");
+    const matchInfraSections = (sections, label) => {
+      (sections || []).forEach(sec => {
+        if(!sec || sec.length < 2) return;
+        const fLat = sec[0][0], fLng = sec[0][1];
+        const lLat = sec[sec.length-1][0], lLng = sec[sec.length-1][1];
+        let si = 0, ei = 0, bestDs = Infinity, bestDe = Infinity;
+        for(let i = 0; i < geomList.length; i++){
+          const ds = (geomList[i][0]-fLat)**2 + (geomList[i][1]-fLng)**2;
+          const de = (geomList[i][0]-lLat)**2 + (geomList[i][1]-lLng)**2;
+          if(ds < bestDs){ bestDs = ds; si = i; }
+          if(de < bestDe){ bestDe = de; ei = i; }
+        }
+        if(si > ei) [si, ei] = [ei, si];
+        for(let i = si; i <= ei; i++) ptInfraType[i] = label;
+      });
+    };
+    matchInfraSections(t.tunnelSections, "tunnel");
+    matchInfraSections(t.bridgeSections, "bridge");
+    const hasInfra = ptInfraType.some(v => v !== "none");
+    const infraMeshes = hasInfra ? buildRoadMeshes(ptInfraType, INFRA_HEX) : [];
+    infraMeshes.forEach(m => {
+      m.visible = false;
+      m.renderOrder = 1;
+      m.material.depthTest = false;
+      if(ptInfraType.includes("none")){
+        const lvl = m._infraLevel;
+      }
+      group.add(m);
+    });
+
     // 縁線
     const edgeMat = new THREE.LineBasicMaterial({color: 0x333333});
     group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftPts), edgeMat));
@@ -4174,42 +4210,29 @@ async function open3DView(t){
           <button class="overlay-3d-params-minimize" id="toggleParams3d" title="最小化">─</button>
         </div>
         <div class="overlay-3d-params-body" id="paramsBody3d">
-        <h4>道幅</h4>
+        <h4>score</h4>
         <dl>
-          ${row("width (raw)", t.scoreWidth)}
-          ${row("center_line_section", t.scoreClaudeCenterLineSection)}
-          ${row("width (使用値)", t.width)}
+          ${row("score_width", t.scoreWidth)}
+          ${row("score_claude_center_line_section", t.scoreClaudeCenterLineSection)}
+          ${row("score_elevation", t.scoreElevation)}
+          ${row("score_elevation_unevenness", t.scoreElevationUnevenness)}
+          ${row("score_corner_strong", t.scoreCornerStrong)}
+          ${row("score_corner_medium", t.scoreCornerMedium)}
+          ${row("score_corner_week", t.scoreCornerWeek)}
+          ${row("score_corner_none", t.scoreCornerNone)}
+          ${row("score_corner_balance", t.scoreCornerBalance)}
+          ${row("score_length", t.scoreLength)}
+          ${row("score_building", t.scoreBuilding)}
+          ${row("score_tunnel_outside", t.scoreTunnelOutside)}
         </dl>
-        <h4>標高</h4>
+        <h4>basic</h4>
         <dl>
-          ${row("elevation", t.scoreElevation)}
-          ${row("elevation_unevenness", t.scoreElevationUnevenness)}
-        </dl>
-        <h4>コーナー</h4>
-        <dl>
-          ${row("corner_strong", t.scoreCornerStrong)}
-          ${row("corner_medium", t.scoreCornerMedium)}
-          ${row("corner_week", t.scoreCornerWeek)}
-          ${row("corner_none", t.scoreCornerNone)}
-          ${row("corner_balance", t.scoreCornerBalance)}
-        </dl>
-        <h4>その他</h4>
-        <dl>
-          ${row("length", t.scoreLength)}
-          ${row("building", t.scoreBuilding)}
-          ${row("tunnel_outside", t.scoreTunnelOutside)}
-        </dl>
-        <h4>基本</h4>
-        <dl>
-          <dt>全長</dt><dd>${t.lengthKm} km</dd>
-          <dt>標高差</dt><dd>${t.height} m</dd>
-          <dt>建物数</dt><dd>${t.buildingCnt ?? "-"}</dd>
-          <dt>建物密度</dt><dd>${t.buildingDensity != null ? t.buildingDensity + "/km" : "-"}</dd>
-          <dt>起伏回数</dt><dd>${t.unevennessCount ?? "-"}</dd>
-          <dt>急カーブ</dt><dd>${t.pctStrong}%</dd>
-          <dt>中カーブ</dt><dd>${t.pctMedium}%</dd>
-          <dt>緩カーブ</dt><dd>${t.pctWeak}%</dd>
-          <dt>直線</dt><dd>${t.pctStraight}%</dd>
+          <dt>length</dt><dd>${t.lengthKm} km</dd>
+          <dt>elevation_height</dt><dd>${t.height} m</dd>
+          <dt>building_nearby_cnt</dt><dd>${t.buildingCnt ?? "-"}</dd>
+          <dt>elevation_unevenness_count</dt><dd>${t.unevennessCount ?? "-"}</dd>
+          <dt>uphill_cnt</dt><dd>${t.uphillCnt ?? "-"}</dd>
+          <dt>downhill_cnt</dt><dd>${t.downhillCnt ?? "-"}</dd>
         </dl></div>`;
       $("toggleParams3d").onclick = () => {
         const min = paramsEl.classList.toggle("minimized");
