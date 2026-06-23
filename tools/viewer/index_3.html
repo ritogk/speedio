@@ -3932,9 +3932,18 @@ async function open3DView(t){
     matchInfraSections(t.tunnelSections, ptIsTunnel);
     matchInfraSections(t.bridgeSections, ptIsBridge);
 
-    // トンネル: 道路を覆い隠すカバーメッシュ（背景色で上から被せて透明化）
+    // トンネル: アーチ状の半円筒を道路上に描画
     const tunnelObjs = [];
     {
+      const ARC_SEGS = 10;
+      const T_RADIUS = ROAD_W + 1.0;
+      const tunnelMat = new THREE.MeshStandardMaterial({
+        color: 0x6a6a6a, roughness: 0.6, metalness: 0.2,
+        side: THREE.DoubleSide, transparent: true, opacity: 0.7
+      });
+      const portalMat = new THREE.MeshStandardMaterial({
+        color: 0x555555, roughness: 0.5, side: THREE.DoubleSide
+      });
       let rs = 0;
       for(let i = 0; i <= pts3.length; i++){
         if(i < pts3.length && ptIsTunnel[i] === ptIsTunnel[rs]) continue;
@@ -3942,69 +3951,139 @@ async function open3DView(t){
           const end = Math.min(i, pts3.length - 1);
           const n = end - rs + 1;
           if(n >= 2){
-            const verts = new Float32Array(n * 2 * 3);
-            const W2 = ROAD_W + 0.3;
+            const vertsPerRing = ARC_SEGS + 1;
+            const verts = new Float32Array(n * vertsPerRing * 3);
             for(let j = 0; j < n; j++){
-              const li = pts3[rs+j].clone().addScaledVector(smoothNormals[rs+j], -W2);
-              const ri = pts3[rs+j].clone().addScaledVector(smoothNormals[rs+j], W2);
-              verts[j*6]=li.x; verts[j*6+1]=li.y; verts[j*6+2]=li.z+0.1;
-              verts[j*6+3]=ri.x; verts[j*6+4]=ri.y; verts[j*6+5]=ri.z+0.1;
+              const c = pts3[rs + j];
+              const norm = smoothNormals[rs + j];
+              for(let k = 0; k <= ARC_SEGS; k++){
+                const angle = Math.PI * k / ARC_SEGS;
+                const across = Math.cos(angle) * T_RADIUS;
+                const up = Math.sin(angle) * T_RADIUS;
+                const vi = (j * vertsPerRing + k) * 3;
+                verts[vi]   = c.x + norm.x * across;
+                verts[vi+1] = c.y + norm.y * across;
+                verts[vi+2] = c.z + up;
+              }
             }
             const idx = [];
-            for(let j = 0; j < n-1; j++){
-              const a=j*2, b=j*2+1, c=(j+1)*2, d=(j+1)*2+1;
-              idx.push(a,c,b, b,c,d);
+            for(let j = 0; j < n - 1; j++){
+              for(let k = 0; k < ARC_SEGS; k++){
+                const a = j * vertsPerRing + k;
+                const b = a + 1;
+                const c2 = a + vertsPerRing;
+                const d = c2 + 1;
+                idx.push(a, c2, b, b, c2, d);
+              }
             }
             const geo = new THREE.BufferGeometry();
             geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
             geo.setIndex(idx);
-            const mat = new THREE.MeshBasicMaterial({color: 0x101410, side: THREE.DoubleSide});
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.renderOrder = 2;
+            geo.computeVertexNormals();
+            const mesh = new THREE.Mesh(geo, tunnelMat);
             tunnelObjs.push(mesh);
             group.add(mesh);
+
+            // ポータル（入口・出口の半円面）
+            for(const pi of [rs, end]){
+              const pc = pts3[pi];
+              const pn = smoothNormals[pi];
+              const pv = new Float32Array((ARC_SEGS + 2) * 3);
+              pv[0] = pc.x; pv[1] = pc.y; pv[2] = pc.z;
+              for(let k = 0; k <= ARC_SEGS; k++){
+                const angle = Math.PI * k / ARC_SEGS;
+                const vi = (k + 1) * 3;
+                pv[vi]   = pc.x + pn.x * Math.cos(angle) * T_RADIUS;
+                pv[vi+1] = pc.y + pn.y * Math.cos(angle) * T_RADIUS;
+                pv[vi+2] = pc.z + Math.sin(angle) * T_RADIUS;
+              }
+              const pIdx = [];
+              for(let k = 0; k < ARC_SEGS; k++) pIdx.push(0, k + 1, k + 2);
+              const pGeo = new THREE.BufferGeometry();
+              pGeo.setAttribute('position', new THREE.BufferAttribute(pv, 3));
+              pGeo.setIndex(pIdx);
+              pGeo.computeVertexNormals();
+              const pMesh = new THREE.Mesh(pGeo, portalMat);
+              tunnelObjs.push(pMesh);
+              group.add(pMesh);
+            }
           }
         }
         rs = i;
       }
     }
 
-    // 橋: 橋脚ピラーを道路下に描画
+    // 橋: デッキ（床版）+ 橋脚ピラー + 欄干
     const bridgeObjs = [];
     {
+      const DECK_T = 0.6;
+      const deckMat = new THREE.MeshStandardMaterial({color: 0x7a7a70, roughness: 0.7, side: THREE.DoubleSide});
       const pillarGeo = new THREE.CylinderGeometry(0.3, 0.45, 1, 6);
       pillarGeo.rotateX(Math.PI / 2);
-      const pillarMat = new THREE.MeshStandardMaterial({color: 0x9a9a8a, roughness: 0.7});
-      const PILLAR_INTERVAL = 3;
+      const pillarMat = new THREE.MeshStandardMaterial({color: 0x8a8a80, roughness: 0.7});
+      const railMat = new THREE.LineBasicMaterial({color: 0xbbbbaa});
       let rs = 0;
       for(let i = 0; i <= pts3.length; i++){
         if(i < pts3.length && ptIsBridge[i] === ptIsBridge[rs]) continue;
         if(ptIsBridge[rs]){
           const end = Math.min(i, pts3.length - 1);
-          for(let j = rs; j <= end; j += PILLAR_INTERVAL){
-            const p = pts3[j];
-            const pillarH = Math.max(p.z - skirtZ, 2);
-            const pillar = new THREE.Mesh(pillarGeo, pillarMat);
-            pillar.scale.set(1, 1, pillarH);
-            pillar.position.set(p.x, p.y, skirtZ + pillarH / 2);
-            bridgeObjs.push(pillar);
-            group.add(pillar);
-          }
-          // 橋の欄干（サイドライン）
-          const railPts_l = [], railPts_r = [];
-          for(let j = rs; j <= end; j++){
-            const lp = leftPts[j].clone(); lp.z += 0.8;
-            const rp = rightPts[j].clone(); rp.z += 0.8;
-            railPts_l.push(lp);
-            railPts_r.push(rp);
-          }
-          if(railPts_l.length >= 2){
-            const railMat = new THREE.LineBasicMaterial({color: 0xbbbbaa, linewidth: 2});
-            const rl = new THREE.Line(new THREE.BufferGeometry().setFromPoints(railPts_l), railMat);
-            const rr = new THREE.Line(new THREE.BufferGeometry().setFromPoints(railPts_r), railMat.clone());
-            bridgeObjs.push(rl, rr);
-            group.add(rl);
-            group.add(rr);
+          const n = end - rs + 1;
+          if(n >= 2){
+            // デッキ: 底面 + 左右側面
+            const dv = new Float32Array(n * 4 * 3);
+            for(let j = 0; j < n; j++){
+              const li = leftPts[rs+j], ri = rightPts[rs+j];
+              const b = j * 12;
+              dv[b]  =li.x; dv[b+1] =li.y; dv[b+2] =li.z - DECK_T;
+              dv[b+3]=ri.x; dv[b+4] =ri.y; dv[b+5] =ri.z - DECK_T;
+              dv[b+6]=li.x; dv[b+7] =li.y; dv[b+8] =li.z;
+              dv[b+9]=ri.x; dv[b+10]=ri.y; dv[b+11]=ri.z;
+            }
+            const dIdx = [];
+            for(let j = 0; j < n - 1; j++){
+              const a=j*4, b2=a+1, c2=a+2, d=a+3;
+              const e=a+4, f=e+1, g=e+2, h=e+3;
+              dIdx.push(a,e,b2, b2,e,f);
+              dIdx.push(a,c2,e, e,c2,g);
+              dIdx.push(b2,f,d, d,f,h);
+            }
+            const dGeo = new THREE.BufferGeometry();
+            dGeo.setAttribute('position', new THREE.BufferAttribute(dv, 3));
+            dGeo.setIndex(dIdx);
+            dGeo.computeVertexNormals();
+            bridgeObjs.push(new THREE.Mesh(dGeo, deckMat));
+            group.add(bridgeObjs[bridgeObjs.length - 1]);
+
+            // 橋脚ピラー
+            for(let j = rs; j <= end; j += 4){
+              const p = pts3[j];
+              const pH = Math.max(p.z - DECK_T - skirtZ, 1);
+              const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+              pillar.scale.set(1, 1, pH);
+              pillar.position.set(p.x, p.y, skirtZ + pH / 2);
+              bridgeObjs.push(pillar);
+              group.add(pillar);
+            }
+
+            // 欄干（上部レール + 縦棒）
+            const RAIL_H = 1.0;
+            const rlPts = [], rrPts = [];
+            for(let j = rs; j <= end; j++){
+              rlPts.push(new THREE.Vector3(leftPts[j].x, leftPts[j].y, leftPts[j].z + RAIL_H));
+              rrPts.push(new THREE.Vector3(rightPts[j].x, rightPts[j].y, rightPts[j].z + RAIL_H));
+            }
+            if(rlPts.length >= 2){
+              bridgeObjs.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rlPts), railMat));
+              bridgeObjs.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rrPts), railMat.clone()));
+              group.add(bridgeObjs[bridgeObjs.length - 2]);
+              group.add(bridgeObjs[bridgeObjs.length - 1]);
+              for(let j = 0; j < rlPts.length; j += 2){
+                const pl = new THREE.Line(new THREE.BufferGeometry().setFromPoints([leftPts[rs+j], rlPts[j]]), railMat);
+                const pr = new THREE.Line(new THREE.BufferGeometry().setFromPoints([rightPts[rs+j], rrPts[j]]), railMat.clone());
+                bridgeObjs.push(pl, pr);
+                group.add(pl); group.add(pr);
+              }
+            }
           }
         }
         rs = i;
@@ -4308,12 +4387,13 @@ async function open3DView(t){
           ${row("score_building", t.scoreBuilding)}
           ${row("score_tunnel_outside", t.scoreTunnelOutside)}
         </dl>
-        <h4>score_corner (合計=1)</h4>
+        <h4>score_corner</h4>
         <dl>
           ${rowC("score_corner_strong", t.scoreCornerStrong)}
           ${rowC("score_corner_medium", t.scoreCornerMedium)}
           ${rowC("score_corner_week", t.scoreCornerWeek)}
           ${rowC("score_corner_none", t.scoreCornerNone)}
+          <dt>=</dt><dd>${(t.scoreCornerStrong + t.scoreCornerMedium + t.scoreCornerWeek + t.scoreCornerNone).toFixed(3)}</dd>
         </dl>
         <h4>basic</h4>
         <dl>
