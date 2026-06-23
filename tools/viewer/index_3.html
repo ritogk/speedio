@@ -4004,21 +4004,24 @@ async function open3DView(t){
     );
     group.add(sphere);
 
-    const bbox = new THREE.Box3().setFromObject(group);
-    const center = bbox.getCenter(new THREE.Vector3());
-    group.position.sub(center);
-    scene.add(group);
-
-    controls.target.set(0, 0, 0);
+    let bbox = new THREE.Box3().setFromObject(group);
+    let center = bbox.getCenter(new THREE.Vector3());
     const size = bbox.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
-    camera.position.set(maxDim * 0.6, maxDim * 0.8, maxDim * 0.6);
 
     const floorGeo = new THREE.PlaneGeometry(size.x, size.y);
     const floorMat = new THREE.MeshStandardMaterial({color:0x888888, side: THREE.DoubleSide});
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.position.set(center.x, center.y, bbox.min.z);
     group.add(floor);
+
+    bbox = new THREE.Box3().setFromObject(group);
+    center = bbox.getCenter(new THREE.Vector3());
+    group.position.sub(center);
+    scene.add(group);
+
+    controls.target.set(0, 0, 0);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    camera.position.set(maxDim * 0.6, maxDim * 0.8, maxDim * 0.6);
 
     controls.update();
 
