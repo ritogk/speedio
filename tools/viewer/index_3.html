@@ -3934,21 +3934,21 @@ async function open3DView(t){
         if(accumM - lastVertM >= intervalM){
           const p = pts3[i];
           if(vertUp) addDash([new THREE.Vector3(p.x, p.y, p.z), new THREE.Vector3(p.x, p.y, rMaxZ)]);
-          else addDash([new THREE.Vector3(p.x, p.y, p.z), new THREE.Vector3(p.x, p.y, rMinZ)]);
+          else addDash([new THREE.Vector3(p.x, p.y, p.z), new THREE.Vector3(p.x, p.y, skirtZ)]);
           vertUp = !vertUp;
           lastVertM = accumM;
         }
       }
       const last = pts3[pts3.length - 1];
       if(vertUp) addDash([new THREE.Vector3(last.x, last.y, last.z), new THREE.Vector3(last.x, last.y, rMaxZ)]);
-      else addDash([new THREE.Vector3(last.x, last.y, last.z), new THREE.Vector3(last.x, last.y, rMinZ)]);
+      else addDash([new THREE.Vector3(last.x, last.y, last.z), new THREE.Vector3(last.x, last.y, skirtZ)]);
 
       // 最低点→上、最高点→下
       let minZi = 0, maxZi = 0;
       pts3.forEach((p,i)=>{ if(p.z < pts3[minZi].z) minZi = i; if(p.z > pts3[maxZi].z) maxZi = i; });
       const pLow = pts3[minZi], pHigh = pts3[maxZi];
       addDash([new THREE.Vector3(pLow.x, pLow.y, pLow.z), new THREE.Vector3(pLow.x, pLow.y, rMaxZ)]);
-      addDash([new THREE.Vector3(pHigh.x, pHigh.y, pHigh.z), new THREE.Vector3(pHigh.x, pHigh.y, rMinZ)]);
+      addDash([new THREE.Vector3(pHigh.x, pHigh.y, pHigh.z), new THREE.Vector3(pHigh.x, pHigh.y, skirtZ)]);
 
       // 寸法ラベル（10m単位に丸め）
       const round10 = v => Math.round(v / 10) * 10;
@@ -3990,7 +3990,7 @@ async function open3DView(t){
       group.add(lblH);
 
       // 底面に道路の影（投影線）
-      const floorPts = pts3.map(p => new THREE.Vector3(p.x, p.y, rMinZ));
+      const floorPts = pts3.map(p => new THREE.Vector3(p.x, p.y, skirtZ));
       const floorLine = new THREE.Line(
         new THREE.BufferGeometry().setFromPoints(floorPts),
         new THREE.LineDashedMaterial({color:0x666666, dashSize:2, gapSize:1.5, transparent:true, opacity:.15, depthTest:false})
