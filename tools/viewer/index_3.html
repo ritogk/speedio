@@ -3646,9 +3646,10 @@ async function open3DView(t){
     ));
 
     // 地形スカート（bbox端の側面 + 底面）
+    var skirtZ;
     {
       const skirtDrop = 8;
-      const skirtZ = roadMinZ - skirtDrop;
+      skirtZ = roadMinZ - skirtDrop;
       const edges = [
         {start: 0, step: 1, count: GRID},
         {start: (GRID-1)*GRID, step: 1, count: GRID},
@@ -3772,7 +3773,7 @@ async function open3DView(t){
     }
 
     // 道路メッシュ（geometry_list + elevation_smooth直結、3d.jsと同じリボン方式）
-    const ROAD_W = 2.0;
+    const ROAD_W = 1.5;
     const pts3 = geomList.map((p, i) => {
       const [x, y, z] = toXYZ(p[0], p[1], elevSmooth[i] ?? 0);
       return new THREE.Vector3(x, y, z + 1.8);
@@ -3903,9 +3904,9 @@ async function open3DView(t){
 
       // bbox底面
       addDash([
-        new THREE.Vector3(rMinX,rMinY,rMinZ), new THREE.Vector3(rMaxX,rMinY,rMinZ),
-        new THREE.Vector3(rMaxX,rMaxY,rMinZ), new THREE.Vector3(rMinX,rMaxY,rMinZ),
-        new THREE.Vector3(rMinX,rMinY,rMinZ)
+        new THREE.Vector3(rMinX,rMinY,skirtZ), new THREE.Vector3(rMaxX,rMinY,skirtZ),
+        new THREE.Vector3(rMaxX,rMaxY,skirtZ), new THREE.Vector3(rMinX,rMaxY,skirtZ),
+        new THREE.Vector3(rMinX,rMinY,skirtZ)
       ]);
       // bbox上面
       addDash([
@@ -3915,7 +3916,7 @@ async function open3DView(t){
       ]);
       // bbox4隅の垂直線
       [[rMinX,rMinY],[rMaxX,rMinY],[rMaxX,rMaxY],[rMinX,rMaxY]].forEach(([x,y])=>{
-        addDash([new THREE.Vector3(x,y,rMinZ), new THREE.Vector3(x,y,rMaxZ)]);
+        addDash([new THREE.Vector3(x,y,skirtZ), new THREE.Vector3(x,y,rMaxZ)]);
       });
 
       // 道路ポイントから交互に上・下方向への垂直線（実距離kmベースの間隔）
@@ -4009,7 +4010,7 @@ async function open3DView(t){
     const floorGeo = new THREE.PlaneGeometry(floorW, floorH);
     const floorMat = new THREE.MeshStandardMaterial({color:0x666666, side: THREE.DoubleSide});
     const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.position.set((rMinX+rMaxX)/2, (rMinY+rMaxY)/2, rMinZ);
+    floor.position.set((rMinX+rMaxX)/2, (rMinY+rMaxY)/2, skirtZ);
     group.add(floor);
 
     const bbox = new THREE.Box3().setFromObject(group);
