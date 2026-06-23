@@ -124,6 +124,7 @@ main{flex:1;position:relative;min-height:0}
 .view-ctrl button:active{background:var(--ink);border-color:var(--ink);color:#fff}
 @media (min-width:761px){
   .view-ctrl{bottom:24px}
+  .admin-panel{bottom:24px}
 }
 /* ボトムシートの開き具合に追従して回転ボタン・凡例を持ち上げる */
 @media (max-width:760px){
@@ -591,13 +592,13 @@ main{flex:1;position:relative;min-height:0}
 .visit-confirm-cancel:hover{color:var(--ink)}
 
 .admin-panel{
-  position:fixed;right:10px;bottom:10px;z-index:2500;
+  position:absolute;right:58px;bottom:calc(var(--sheet-peek) + 14px);z-index:1100;
   background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(6px);
   padding:6px 8px;font-size:10px;width:auto;
   box-shadow:0 2px 8px rgba(0,0,0,.15);display:none;
-  touch-action:manipulation;-webkit-touch-callout:none;
+  touch-action:manipulation;
 }
-.admin-panel.show{display:block;pointer-events:auto}
+.admin-panel.show{display:block}
 .admin-panel .wp-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
 .admin-panel h4{font-size:10px;font-weight:700;margin:0}
 .admin-panel .wp-toggle{font-size:12px;color:var(--ink-soft);background:none;border:none;cursor:pointer;padding:0 2px;line-height:1}
@@ -612,7 +613,10 @@ main{flex:1;position:relative;min-height:0}
 .admin-panel .wp-section{font-size:9px;font-weight:700;color:var(--ink-soft);border-bottom:1px solid var(--line);padding-bottom:2px;margin-bottom:3px}
 .admin-panel .wp-pin-row{display:flex;gap:3px;align-items:center;margin-bottom:2px}
 @media (max-width:760px){
-  .admin-panel{right:6px;bottom:calc(var(--sheet-peek) + 100px)}
+  .admin-panel{right:48px;transition:bottom .28s cubic-bezier(.3,.9,.3,1)}
+  body:has(.panel.half) .admin-panel{bottom:calc(44dvh + 14px)}
+  body:has(.panel.card-peek) .admin-panel{bottom:calc(var(--card-peek-h,96)*1px + 14px)}
+  body:has(.panel.full) .admin-panel{opacity:0;pointer-events:none}
 }
 
 /* ================= Mobile Search Overlay ================= */
@@ -895,17 +899,62 @@ main{flex:1;position:relative;min-height:0}
         </div>
         <span class="m-layer-name">通行止め</span>
       </button>
+      <button class="m-layer-opt" id="mLayerTourist">
+        <div class="m-layer-thumb">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1976D2" stroke-width="1.5"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        </div>
+        <span class="m-layer-name">観光名所</span>
+      </button>
+      <button class="m-layer-opt" id="mLayerToll">
+        <div class="m-layer-thumb">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F57F17" stroke-width="2" stroke-linecap="round"><path d="M3 12h18"/><path d="M8 7l-3 5 3 5"/><path d="M16 7l3 5-3 5"/></svg>
+        </div>
+        <span class="m-layer-name">有料道路</span>
+      </button>
     </div>
     <div class="map-ctrl">
       <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">3D地形</button>
       <button class="ctrl-btn" id="logisticsToggle" aria-pressed="false">🚛 物流道路</button>
       <button class="ctrl-btn" id="closureToggle" aria-pressed="true">🚫 通行止め</button>
+      <button class="ctrl-btn" id="touristToggle" aria-pressed="false">📷 観光名所</button>
+      <button class="ctrl-btn" id="tollToggle" aria-pressed="false">💴 有料道路</button>
       <button class="ctrl-btn" id="kobanToggle" aria-pressed="false" style="display:none">👮</button>
     </div>
 
     <div class="view-ctrl" id="viewCtrl">
       <button id="rotL" aria-label="左に回転">⟲</button>
       <button id="rotR" aria-label="右に回転">⟳</button>
+    </div>
+
+    <div class="admin-panel collapsed" id="adminPanel">
+      <div class="wp-head" id="wpHead">
+        <h4>管理者パネル</h4>
+        <span class="wp-toggle" id="wpToggle">▲</span>
+      </div>
+      <div class="wp-body">
+        <div class="wp-section">ピン設置</div>
+        <div class="wp-pin-row">
+          <input type="text" id="adminLatLng" placeholder="35.681,139.767" style="width:120px;font:inherit;font-size:10px;border:1px solid var(--line);border-radius:3px;padding:2px 4px">
+          <button class="wp-apply" id="adminPinBtn" style="width:auto;margin:0;padding:2px 8px">設置</button>
+          <button class="wp-apply" id="adminPinClear" style="width:auto;margin:0;padding:2px 8px">消去</button>
+        </div>
+        <div class="wp-section" style="margin-top:6px">訪問確認</div>
+        <label><span>待機(秒)</span><input type="number" id="visitDelayInput" min="1" max="3600" value="60"></label>
+        <div class="wp-section" style="margin-top:6px">重み調整</div>
+        <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
+        <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
+        <label><span>道幅</span><input type="number" step="0.1" data-w="width"></label>
+        <label><span>距離</span><input type="number" step="0.1" data-w="length"></label>
+        <label><span>建物</span><input type="number" step="0.1" data-w="building"></label>
+        <label><span>トンネル外</span><input type="number" step="0.1" data-w="tunnel_outside"></label>
+        <label><span>コーナー弱</span><input type="number" step="0.1" data-w="corner_week"></label>
+        <label><span>コーナー中</span><input type="number" step="0.1" data-w="corner_medium"></label>
+        <label><span>コーナー強</span><input type="number" step="0.1" data-w="corner_strong"></label>
+        <label><span>直線</span><input type="number" step="0.1" data-w="corner_none"></label>
+        <label><span>C.バランス</span><input type="number" step="0.1" data-w="corner_balance"></label>
+        <label><span>中央線</span><input type="number" step="0.1" data-w="claude_center_line_section"></label>
+        <button class="wp-apply" id="weightApply">適用</button>
+      </div>
     </div>
 
     <div class="legend">
@@ -958,36 +1007,6 @@ main{flex:1;position:relative;min-height:0}
     </div>
   </section>
 
-  <div class="admin-panel collapsed" id="adminPanel">
-    <div class="wp-head" id="wpHead">
-      <h4>管理者パネル</h4>
-      <span class="wp-toggle" id="wpToggle">▲</span>
-    </div>
-    <div class="wp-body">
-      <div class="wp-section">ピン設置</div>
-      <div class="wp-pin-row">
-        <input type="text" id="adminLatLng" placeholder="35.681,139.767" style="width:120px;font:inherit;font-size:10px;border:1px solid var(--line);border-radius:3px;padding:2px 4px">
-        <button class="wp-apply" id="adminPinBtn" style="width:auto;margin:0;padding:2px 8px">設置</button>
-        <button class="wp-apply" id="adminPinClear" style="width:auto;margin:0;padding:2px 8px">消去</button>
-      </div>
-      <div class="wp-section" style="margin-top:6px">訪問確認</div>
-      <label><span>待機(秒)</span><input type="number" id="visitDelayInput" min="1" max="3600" value="60"></label>
-      <div class="wp-section" style="margin-top:6px">重み調整</div>
-      <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
-      <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
-      <label><span>道幅</span><input type="number" step="0.1" data-w="width"></label>
-      <label><span>距離</span><input type="number" step="0.1" data-w="length"></label>
-      <label><span>建物</span><input type="number" step="0.1" data-w="building"></label>
-      <label><span>トンネル外</span><input type="number" step="0.1" data-w="tunnel_outside"></label>
-      <label><span>コーナー弱</span><input type="number" step="0.1" data-w="corner_week"></label>
-      <label><span>コーナー中</span><input type="number" step="0.1" data-w="corner_medium"></label>
-      <label><span>コーナー強</span><input type="number" step="0.1" data-w="corner_strong"></label>
-      <label><span>直線</span><input type="number" step="0.1" data-w="corner_none"></label>
-      <label><span>C.バランス</span><input type="number" step="0.1" data-w="corner_balance"></label>
-      <label><span>中央線</span><input type="number" step="0.1" data-w="claude_center_line_section"></label>
-      <button class="wp-apply" id="weightApply">適用</button>
-    </div>
-  </div>
 
   <div class="settings-overlay" id="settingsOverlay">
     <div class="settings-panel">
@@ -1396,6 +1415,114 @@ function renderClosureMarkers(closures){
     });
   }
 }
+// 観光名所レイヤー
+const touristCache = {};
+let pendingTourists = null;
+async function fetchTouristSpots(code){
+  if(touristCache[code]) return touristCache[code];
+  try{
+    const res = await fetch(`./tourism_spots/${code}.json`);
+    if(!res.ok) return [];
+    const data = await res.json();
+    touristCache[code] = data.spots || [];
+    return touristCache[code];
+  }catch(e){ return []; }
+}
+function renderTouristBanner(){
+  const codes = [...loadedPrefs];
+  const all = codes.flatMap(c => (touristCache[c]||[]).map(s=>({...s, _pref:c})));
+  renderTouristMarkers(all);
+}
+function renderTouristMarkers(spots){
+  if(!mapReady){ pendingTourists = spots; return; }
+  const withCoords = spots.filter(s => s.lat != null && s.lng != null);
+  const src = map.getSource("tourists");
+  const geojson = {
+    type: "FeatureCollection",
+    features: withCoords.map(s => ({
+      type: "Feature",
+      geometry: {type: "Point", coordinates: [s.lng, s.lat]},
+      properties: {name: s.name||""},
+    })),
+  };
+  if(src){ src.setData(geojson); }
+  else{
+    if(!map.hasImage("tourist-icon")){
+      const sz = 40, cv = document.createElement("canvas");
+      cv.width = cv.height = sz;
+      const cx = cv.getContext("2d");
+      const r = sz/2;
+      cx.shadowColor = "rgba(0,0,0,.4)"; cx.shadowBlur = 2; cx.shadowOffsetY = 1;
+      cx.beginPath(); cx.arc(r, r, r-3, 0, Math.PI*2);
+      cx.fillStyle = "rgba(25,118,210,.75)"; cx.fill();
+      cx.shadowColor = "transparent";
+      cx.lineWidth = 2; cx.strokeStyle = "rgba(255,255,255,.5)"; cx.stroke();
+      cx.shadowColor = "rgba(0,0,0,.6)"; cx.shadowBlur = 1; cx.shadowOffsetX = 0; cx.shadowOffsetY = 0;
+      cx.fillStyle = "#fff"; cx.font = "bold 18px sans-serif"; cx.textAlign = "center"; cx.textBaseline = "middle";
+      cx.fillText("★", r, r+1);
+      map.addImage("tourist-icon", {width:sz, height:sz, data:new Uint8Array(cx.getImageData(0,0,sz,sz).data)});
+    }
+    map.addSource("tourists", {type:"geojson", data: geojson});
+    map.addLayer({
+      id: "tourist-icon", type: "symbol", source: "tourists",
+      layout: {
+        "icon-image": "tourist-icon",
+        "icon-size": ["interpolate",["linear"],["zoom"],5,0.25,10,0.4,14,0.55],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+        "visibility": "none",
+      },
+    });
+  }
+}
+
+// 有料道路レイヤー
+const tollRoadCache = {};
+let pendingTollRoads = null;
+async function fetchTollRoads(code){
+  if(tollRoadCache[code]) return tollRoadCache[code];
+  try{
+    const res = await fetch(`./toll_roads/${code}.geojson`);
+    if(!res.ok) return [];
+    const data = await res.json();
+    tollRoadCache[code] = data.features || [];
+    return tollRoadCache[code];
+  }catch(e){ return []; }
+}
+function renderTollBanner(){
+  const codes = [...loadedPrefs];
+  const all = codes.flatMap(c => tollRoadCache[c]||[]);
+  renderTollRoadLines(all);
+}
+function renderTollRoadLines(features){
+  if(!mapReady){ pendingTollRoads = features; return; }
+  const src = map.getSource("toll-roads");
+  const geojson = {type: "FeatureCollection", features: features||[]};
+  if(src){ src.setData(geojson); }
+  else{
+    map.addSource("toll-roads", {type:"geojson", data: geojson});
+    map.addLayer({
+      id: "toll-roads-casing", type: "line", source: "toll-roads",
+      layout: {"line-cap":"round","line-join":"round","visibility":"none"},
+      paint: {
+        "line-color": "#F57F17",
+        "line-width": ["interpolate",["linear"],["zoom"],6,4,10,7,14,10],
+        "line-opacity": .15,
+      },
+    });
+    map.addLayer({
+      id: "toll-roads-line", type: "line", source: "toll-roads",
+      layout: {"line-cap":"round","line-join":"round","visibility":"none"},
+      paint: {
+        "line-color": "#F57F17",
+        "line-width": ["interpolate",["linear"],["zoom"],6,1.5,10,3,14,5],
+        "line-opacity": .75,
+        "line-dasharray": [6,3],
+      },
+    });
+  }
+}
+
 let widthFilter = 0.85;
 let currentItems = [];
 const kobanCache = {};
@@ -1684,6 +1811,32 @@ map.on("load", () => {
   map.on("mouseenter","koban-sym",()=>{ map.getCanvas().style.cursor="pointer"; });
   map.on("mouseleave","koban-sym",()=>{ map.getCanvas().style.cursor=""; });
 
+  // 観光名所クリック → ポップアップ
+  map.on("click","tourist-icon",e=>{
+    const f = e.features?.[0];
+    if(!f) return;
+    new maplibregl.Popup({offset:8,closeButton:false,maxWidth:"220px"})
+      .setLngLat(e.lngLat)
+      .setHTML(`<div style="font-size:12px;font-weight:600">📷 ${escapeHtml(f.properties.name||"観光名所")}</div>`)
+      .addTo(map);
+  });
+  map.on("mouseenter","tourist-icon",()=>{ map.getCanvas().style.cursor="pointer"; });
+  map.on("mouseleave","tourist-icon",()=>{ map.getCanvas().style.cursor=""; });
+
+  // 有料道路クリック → ポップアップ
+  map.on("click","toll-roads-line",e=>{
+    const f = e.features?.[0];
+    if(!f) return;
+    const name = f.properties.name;
+    if(!name) return;
+    new maplibregl.Popup({offset:8,closeButton:false,maxWidth:"220px"})
+      .setLngLat(e.lngLat)
+      .setHTML(`<div style="font-size:12px;font-weight:600">💴 ${escapeHtml(name)}</div>`)
+      .addTo(map);
+  });
+  map.on("mouseenter","toll-roads-line",()=>{ map.getCanvas().style.cursor="pointer"; });
+  map.on("mouseleave","toll-roads-line",()=>{ map.getCanvas().style.cursor=""; });
+
   // 重要物流道路レイヤー（峠ラインより下に配置）
   map.addSource("logistics", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
   map.addLayer({
@@ -1811,6 +1964,8 @@ map.on("load", () => {
   mapReady = true;
   if(pendingGeojson){ map.getSource("touge").setData(pendingGeojson); pendingGeojson = null; }
   if(pendingClosures){ renderClosureMarkers(pendingClosures); pendingClosures = null; }
+  if(pendingTourists){ renderTouristMarkers(pendingTourists); pendingTourists = null; }
+  if(pendingTollRoads){ renderTollRoadLines(pendingTollRoads); pendingTollRoads = null; }
 });
 
 let markers = [];
@@ -2575,6 +2730,8 @@ function removePref(code){
   $("prefSelect").value = "";
   saveFilter();
   renderClosureBanner();
+  if(touristVisible) renderTouristBanner();
+  if(tollVisible) renderTollBanner();
   renderAndFit();
 }
 async function switchPref(code, replace=true){
@@ -2610,6 +2767,8 @@ async function switchPref(code, replace=true){
 }
 function afterLoad(focusItems){
   renderClosureBanner();
+  if(touristVisible) updateTouristLayer();
+  if(tollVisible) updateTollLayer();
   render();
   const list = focusItems || rankedList();
   if(list.length){
@@ -2707,6 +2866,8 @@ async function loadNearbyPrefs(){
     showLoading(false);
     toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県を読み込みました`);
     renderClosureBanner();
+    if(touristVisible) updateTouristLayer();
+    if(tollVisible) updateTollLayer();
     render();
     updateLogisticsLayer();
     setSheet("half");
@@ -3042,6 +3203,46 @@ function toggleClosure(on){
 }
 $("closureToggle").addEventListener("click", function(e){
   toggleClosure(e.currentTarget.getAttribute("aria-pressed") !== "true");
+});
+
+let touristVisible = false;
+function toggleTourist(on){
+  touristVisible = on;
+  $("touristToggle").setAttribute("aria-pressed", String(on));
+  if(on) updateTouristLayer();
+  if(mapReady && map.getLayer("tourist-icon")){
+    map.setLayoutProperty("tourist-icon", "visibility", on ? "visible" : "none");
+  }
+}
+function updateTouristLayer(){
+  if(!touristVisible) return;
+  const codes = [...loadedPrefs];
+  Promise.all(codes.map(c => fetchTouristSpots(c))).then(()=> renderTouristBanner());
+}
+$("touristToggle").addEventListener("click", function(e){
+  toggleTourist(e.currentTarget.getAttribute("aria-pressed") !== "true");
+});
+
+let tollVisible = false;
+function toggleToll(on){
+  tollVisible = on;
+  $("tollToggle").setAttribute("aria-pressed", String(on));
+  if(on) updateTollLayer();
+  else if(mapReady && map.getSource("toll-roads")){
+    map.getSource("toll-roads").setData({type:"FeatureCollection",features:[]});
+  }
+  var vis = on ? "visible" : "none";
+  ["toll-roads-casing","toll-roads-line"].forEach(function(id){
+    if(mapReady && map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
+  });
+}
+function updateTollLayer(){
+  if(!tollVisible) return;
+  const codes = [...loadedPrefs];
+  Promise.all(codes.map(c => fetchTollRoads(c))).then(()=> renderTollBanner());
+}
+$("tollToggle").addEventListener("click", function(e){
+  toggleToll(e.currentTarget.getAttribute("aria-pressed") !== "true");
 });
 
 // ボトムシート
@@ -4182,6 +4383,14 @@ document.addEventListener("keydown", e => {
   $("mLayerClosure").addEventListener("click", () => {
     toggleClosure(!closureVisible);
     $("mLayerClosure").classList.toggle("active", closureVisible);
+  });
+  $("mLayerTourist").addEventListener("click", () => {
+    toggleTourist(!touristVisible);
+    $("mLayerTourist").classList.toggle("active", touristVisible);
+  });
+  $("mLayerToll").addEventListener("click", () => {
+    toggleToll(!tollVisible);
+    $("mLayerToll").classList.toggle("active", tollVisible);
   });
 
   function syncMobilePrefState(){
