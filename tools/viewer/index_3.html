@@ -4012,8 +4012,23 @@ async function open3DView(t){
     controls.target.set(0, 0, 0);
     const size = bbox.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
-    camera.position.set(maxDim * 0.6, maxDim * 0.8, maxDim * 0.6);
+
+    // カメラ初期演出: 開始→終了方向を見下ろしてから回転位置へ移行
+    const startPt = centerPts[0].clone().sub(center);
+    const endPt = centerPts[centerPts.length - 1].clone().sub(center);
+    const dir = new THREE.Vector3().subVectors(endPt, startPt).normalize();
+    const initCamPos = startPt.clone().addScaledVector(dir, -maxDim * 0.7);
+    initCamPos.z = maxDim * 0.5;
+    camera.position.copy(initCamPos);
+    controls.target.copy(endPt);
     controls.update();
+
+    const finalCamPos = new THREE.Vector3(maxDim * 0.6, maxDim * 0.8, maxDim * 0.6);
+    const finalTarget = new THREE.Vector3(0, 0, 0);
+    const INTRO_DURATION = 1.2;
+    let introElapsed = 0;
+    let introDone = false;
+    renderer.domElement.addEventListener("pointerdown", ()=>{ introDone = true; }, {once:true});
 
     scene.add(new THREE.HemisphereLight(0xc8d8e8, 0x1a2a1a, 0.6));
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -4028,11 +4043,23 @@ async function open3DView(t){
     const SPEED = 2.2;
     const progressPerFrame = pathLen > 0 ? SPEED / pathLen : 0.005;
 
-    let animId;
-    const animate = () => {
+    let animId, prevTime = 0;
+    const animate = (time) => {
       animId = requestAnimationFrame(animate);
+      const dt = prevTime ? (time - prevTime) / 1000 : 0.016;
+      prevTime = time;
+
+      if(!introDone){
+        introElapsed += dt;
+        const t = Math.min(introElapsed / INTRO_DURATION, 1);
+        const ease = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+        camera.position.lerpVectors(initCamPos, finalCamPos, ease);
+        controls.target.lerpVectors(endPt, finalTarget, ease);
+        if(t >= 1) introDone = true;
+      } else {
+        group.rotation.z += 0.0008;
+      }
       controls.update();
-      group.rotation.z += 0.0008;
 
       progress += progressPerFrame;
       if(progress > 1) progress = 0;
@@ -4043,7 +4070,7 @@ async function open3DView(t){
 
       renderer.render(scene, camera);
     };
-    animate();
+    animate(0);
 
     const onResize = () => {
       const w = window.innerWidth, h = window.innerHeight;
