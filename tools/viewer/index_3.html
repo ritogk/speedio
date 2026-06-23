@@ -3910,10 +3910,10 @@ async function open3DView(t){
     cornerMeshes.forEach(m => { m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
     elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
 
-    // トンネル・橋区間のインフラオーバーレイ
-    const INFRA_HEX = { tunnel: 0x5B7FCC, bridge: 0xCC8844, none: 0x98989D };
-    const ptInfraType = new Array(geomList.length).fill("none");
-    const matchInfraSections = (sections, label) => {
+    // トンネル・橋区間のインデックスを特定
+    const ptIsTunnel = new Array(geomList.length).fill(false);
+    const ptIsBridge = new Array(geomList.length).fill(false);
+    const matchInfraSections = (sections, arr) => {
       (sections || []).forEach(sec => {
         if(!sec || sec.length < 2) return;
         const fLat = sec[0][0], fLng = sec[0][1];
@@ -3926,19 +3926,90 @@ async function open3DView(t){
           if(de < bestDe){ bestDe = de; ei = i; }
         }
         if(si > ei) [si, ei] = [ei, si];
-        for(let i = si; i <= ei; i++) ptInfraType[i] = label;
+        for(let i = si; i <= ei; i++) arr[i] = true;
       });
     };
-    matchInfraSections(t.tunnelSections, "tunnel");
-    matchInfraSections(t.bridgeSections, "bridge");
-    const hasInfra = ptInfraType.some(v => v !== "none");
-    const infraMeshes = hasInfra ? buildRoadMeshes(ptInfraType, INFRA_HEX) : [];
-    infraMeshes.forEach(m => {
-      m.visible = false;
-      m.renderOrder = 1;
-      m.material.depthTest = false;
-      group.add(m);
-    });
+    matchInfraSections(t.tunnelSections, ptIsTunnel);
+    matchInfraSections(t.bridgeSections, ptIsBridge);
+
+    // トンネル: 道路を覆い隠すカバーメッシュ（背景色で上から被せて透明化）
+    const tunnelObjs = [];
+    {
+      let rs = 0;
+      for(let i = 0; i <= pts3.length; i++){
+        if(i < pts3.length && ptIsTunnel[i] === ptIsTunnel[rs]) continue;
+        if(ptIsTunnel[rs]){
+          const end = Math.min(i, pts3.length - 1);
+          const n = end - rs + 1;
+          if(n >= 2){
+            const verts = new Float32Array(n * 2 * 3);
+            const W2 = ROAD_W + 0.3;
+            for(let j = 0; j < n; j++){
+              const li = pts3[rs+j].clone().addScaledVector(smoothNormals[rs+j], -W2);
+              const ri = pts3[rs+j].clone().addScaledVector(smoothNormals[rs+j], W2);
+              verts[j*6]=li.x; verts[j*6+1]=li.y; verts[j*6+2]=li.z+0.1;
+              verts[j*6+3]=ri.x; verts[j*6+4]=ri.y; verts[j*6+5]=ri.z+0.1;
+            }
+            const idx = [];
+            for(let j = 0; j < n-1; j++){
+              const a=j*2, b=j*2+1, c=(j+1)*2, d=(j+1)*2+1;
+              idx.push(a,c,b, b,c,d);
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+            geo.setIndex(idx);
+            const mat = new THREE.MeshBasicMaterial({color: 0x101410, side: THREE.DoubleSide});
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.renderOrder = 2;
+            tunnelObjs.push(mesh);
+            group.add(mesh);
+          }
+        }
+        rs = i;
+      }
+    }
+
+    // 橋: 橋脚ピラーを道路下に描画
+    const bridgeObjs = [];
+    {
+      const pillarGeo = new THREE.CylinderGeometry(0.25, 0.35, 1, 6);
+      pillarGeo.rotateX(Math.PI / 2);
+      const pillarMat = new THREE.MeshStandardMaterial({color: 0x8a8a7a, roughness: 0.8});
+      const PILLAR_INTERVAL = 5;
+      let rs = 0;
+      for(let i = 0; i <= pts3.length; i++){
+        if(i < pts3.length && ptIsBridge[i] === ptIsBridge[rs]) continue;
+        if(ptIsBridge[rs]){
+          const end = Math.min(i, pts3.length - 1);
+          for(let j = rs; j <= end; j += PILLAR_INTERVAL){
+            const p = pts3[j];
+            const pillarH = Math.max(p.z - skirtZ, 2);
+            const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+            pillar.scale.set(1, 1, pillarH);
+            pillar.position.set(p.x, p.y, skirtZ + pillarH / 2);
+            bridgeObjs.push(pillar);
+            group.add(pillar);
+          }
+          // 橋の欄干（サイドライン）
+          const railPts_l = [], railPts_r = [];
+          for(let j = rs; j <= end; j++){
+            const lp = leftPts[j].clone(); lp.z += 0.8;
+            const rp = rightPts[j].clone(); rp.z += 0.8;
+            railPts_l.push(lp);
+            railPts_r.push(rp);
+          }
+          if(railPts_l.length >= 2){
+            const railMat = new THREE.LineBasicMaterial({color: 0x9a9a8a});
+            const rl = new THREE.Line(new THREE.BufferGeometry().setFromPoints(railPts_l), railMat);
+            const rr = new THREE.Line(new THREE.BufferGeometry().setFromPoints(railPts_r), railMat.clone());
+            bridgeObjs.push(rl, rr);
+            group.add(rl);
+            group.add(rr);
+          }
+        }
+        rs = i;
+      }
+    }
 
     // 縁線
     const edgeMat = new THREE.LineBasicMaterial({color: 0x333333});
@@ -4239,14 +4310,17 @@ async function open3DView(t){
           ${row("score_claude_center_line_section", t.scoreClaudeCenterLineSection)}
           ${row("score_elevation", t.scoreElevation)}
           ${row("score_elevation_unevenness", t.scoreElevationUnevenness)}
-          ${rowC("score_corner_strong", t.scoreCornerStrong)}
-          ${rowC("score_corner_medium", t.scoreCornerMedium)}
-          ${rowC("score_corner_week", t.scoreCornerWeek)}
-          ${rowN("score_corner_none", t.scoreCornerNone)}
           ${row("score_corner_balance", t.scoreCornerBalance)}
           ${row("score_length", t.scoreLength)}
           ${row("score_building", t.scoreBuilding)}
           ${row("score_tunnel_outside", t.scoreTunnelOutside)}
+        </dl>
+        <h4>score_corner (合計=1)</h4>
+        <dl>
+          ${rowC("score_corner_strong", t.scoreCornerStrong)}
+          ${rowC("score_corner_medium", t.scoreCornerMedium)}
+          ${rowC("score_corner_week", t.scoreCornerWeek)}
+          ${rowN("score_corner_none", t.scoreCornerNone)}
         </dl>
         <h4>basic</h4>
         <dl>
