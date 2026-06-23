@@ -922,6 +922,7 @@ main{flex:1;position:relative;min-height:0}
     </div>
 
     <div class="view-ctrl" id="viewCtrl">
+      <button id="adminToggleBtn" aria-label="管理者パネル" style="display:none">⚙</button>
       <button id="rotL" aria-label="左に回転">⟲</button>
       <button id="rotR" aria-label="右に回転">⟳</button>
     </div>
@@ -3064,6 +3065,8 @@ async function restoreFilter(){
     currentItems = dedupeItems(results);
     showLoading(false);
     renderClosureBanner();
+    if(touristVisible) updateTouristLayer();
+    if(tollVisible) updateTollLayer();
     render();
     updateLogisticsLayer();
     if(window.innerWidth<=760) setSheet("half");
@@ -3108,6 +3111,8 @@ async function initialLoad(){
         showLoading(false);
         toast(`${PREFECTURES[code]}＋周辺${codes.length-1}県を読み込みました`);
         renderClosureBanner();
+        if(touristVisible) updateTouristLayer();
+        if(tollVisible) updateTollLayer();
         saveFilter();
         render();
         updateLogisticsLayer();
@@ -3345,6 +3350,8 @@ window.addEventListener("resize",()=>{
           const wp = $("adminPanel");
           const on = !wp.classList.contains("show");
           wp.classList.toggle("show", on);
+          $("adminToggleBtn").style.display = on ? "" : "none";
+          if(!on) wp.classList.add("collapsed");
           localStorage.setItem(ADMIN_KEY, on ? "1" : "0");
           toast(on ? "管理者モード ON" : "管理者モード OFF");
         }
@@ -3378,10 +3385,13 @@ window.addEventListener("beforeunload", ()=> saveFilter());
 document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveFilter(); });
 
 // ================= 管理者パネル =================
-if(localStorage.getItem("touge.admin") === "true"){
+{
   const wp = $("adminPanel");
   const ADMIN_KEY = "speedio_admin";
-  if(localStorage.getItem(ADMIN_KEY) === "1") wp.classList.add("show");
+  if(localStorage.getItem(ADMIN_KEY) === "1"){
+    wp.classList.add("show");
+    $("adminToggleBtn").style.display = "";
+  }
   wp.querySelectorAll("input[data-w]").forEach(inp=>{
     inp.value = BALANCE_WEIGHTS[inp.dataset.w];
   });
@@ -3397,6 +3407,7 @@ if(localStorage.getItem("touge.admin") === "true"){
   };
   $("wpHead").addEventListener("click", toggleAdmin);
   $("wpHead").addEventListener("touchend", e=>{ e.preventDefault(); toggleAdmin(); });
+  $("adminToggleBtn").addEventListener("click", toggleAdmin);
   wp.addEventListener("keydown",e=>{ if(e.key==="Enter") $("weightApply").click(); });
 
   let adminPin = null;
