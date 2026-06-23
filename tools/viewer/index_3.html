@@ -3638,7 +3638,8 @@ async function open3DView(t){
       color: 0x2d6b3a, roughness: .9, metalness: 0,
       transparent: true, opacity: .6, side: THREE.DoubleSide
     });
-    group.add(new THREE.Mesh(terrGeo, terrMat));
+    const terrMesh = new THREE.Mesh(terrGeo, terrMat);
+    group.add(terrMesh);
     group.add(new THREE.LineSegments(
       new THREE.WireframeGeometry(terrGeo),
       new THREE.LineBasicMaterial({color: 0x3a7a4d, transparent: true, opacity: .08})
@@ -3866,8 +3867,8 @@ async function open3DView(t){
 
     const cornerMeshes = buildRoadMeshes(ptLevels, LEVEL_HEX);
     const elevMeshes = buildRoadMeshes(ptElevDir, ELEV_HEX);
-    cornerMeshes.forEach(m => group.add(m));
-    elevMeshes.forEach(m => { m.visible = false; group.add(m); });
+    cornerMeshes.forEach(m => { m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
+    elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
 
     // 縁線
     const edgeMat = new THREE.LineBasicMaterial({color: 0x333333});
@@ -3881,7 +3882,7 @@ async function open3DView(t){
 
     // 補助線（bboxフレーム + 道路から上方向への垂直線）
     {
-      let rMinX=Infinity,rMaxX=-Infinity,rMinY=Infinity,rMaxY=-Infinity,rMinZ=Infinity,rMaxZ=-Infinity;
+      var rMinX=Infinity,rMaxX=-Infinity,rMinY=Infinity,rMaxY=-Infinity,rMinZ=Infinity,rMaxZ=-Infinity;
       pts3.forEach(p=>{
         rMinX=Math.min(rMinX,p.x);rMaxX=Math.max(rMaxX,p.x);
         rMinY=Math.min(rMinY,p.y);rMaxY=Math.max(rMaxY,p.y);
@@ -4004,22 +4005,20 @@ async function open3DView(t){
     );
     group.add(sphere);
 
-    let bbox = new THREE.Box3().setFromObject(group);
-    let center = bbox.getCenter(new THREE.Vector3());
-    const size = bbox.getSize(new THREE.Vector3());
-
-    const floorGeo = new THREE.PlaneGeometry(size.x, size.y);
+    const floorW = rMaxX - rMinX, floorH = rMaxY - rMinY;
+    const floorGeo = new THREE.PlaneGeometry(floorW, floorH);
     const floorMat = new THREE.MeshStandardMaterial({color:0x888888, side: THREE.DoubleSide});
     const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.position.set(center.x, center.y, bbox.min.z);
+    floor.position.set((rMinX+rMaxX)/2, (rMinY+rMaxY)/2, rMinZ);
     group.add(floor);
 
-    bbox = new THREE.Box3().setFromObject(group);
-    center = bbox.getCenter(new THREE.Vector3());
+    const bbox = new THREE.Box3().setFromObject(group);
+    const center = bbox.getCenter(new THREE.Vector3());
     group.position.sub(center);
     scene.add(group);
 
     controls.target.set(0, 0, 0);
+    const size = bbox.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
     camera.position.set(maxDim * 0.6, maxDim * 0.8, maxDim * 0.6);
 
