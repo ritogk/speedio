@@ -3567,7 +3567,7 @@ async function open3DView(t){
     const span = Math.max(spanX, spanY, 100);
     const SCALE = 300 / span;
     const elevSpan = validElevs.length ? Math.max(...validElevs) - Math.min(...validElevs) : 100;
-    const Z_EXG = Math.max(1.5, Math.min(5, span * 0.35 / Math.max(elevSpan, 1)));
+    const Z_EXG = Math.max(1.2, Math.min(2.5, span * 0.35 / Math.max(elevSpan, 1)));
     const Z_SCALE = SCALE * Z_EXG;
 
     const toXYZ = (lat, lng, elev) => [
