@@ -3615,7 +3615,7 @@ async function open3DView(t){
 
     let roadMinZ = Infinity;
     for(let i = 0; i < geomList.length; i++){
-      const z = ((elevSmooth[i] ?? 0) - baseElev) * Z_SCALE + 0.3;
+      const z = ((elevSmooth[i] ?? 0) - baseElev) * Z_SCALE + 1.8;
       if(z < roadMinZ) roadMinZ = z;
     }
 
