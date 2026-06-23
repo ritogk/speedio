@@ -4018,7 +4018,7 @@ async function open3DView(t){
     const ep = centerPts[centerPts.length - 1].clone().sub(center);
     const routeAngle = Math.atan2(ep.y - sp.y, ep.x - sp.x);
     const camForward = Math.atan2(-0.8, -0.6);
-    group.rotation.z = camForward - routeAngle;
+    group.rotation.z = camForward - routeAngle + Math.PI / 2;
 
     controls.update();
 
