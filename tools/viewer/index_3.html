@@ -4206,26 +4206,24 @@ async function open3DView(t){
     const legend3d = $("legend3d");
     const cornerLegend = '<span><i style="background:#FF453A"></i>低速コーナー</span><span><i style="background:#FF9F0A"></i>中速</span><span><i style="background:#30D158"></i>高速</span><span><i style="background:#98989D"></i>ストレート</span>';
     const elevLegend = '<span><i style="background:#E8553D"></i>登り</span><span><i style="background:#4A90D9"></i>下り</span><span><i style="background:#98989D"></i>平坦</span>';
-    const infraLegend = '<span><i style="background:#5B7FCC"></i>トンネル</span><span><i style="background:#CC8844"></i>橋</span><span><i style="background:#98989D"></i>通常</span>';
 
-    // 道路表示の状態管理 — "corner" | "elev" | "infra" | "off"
-    let colorMode = "corner";
+    // 道路表示の状態管理
+    let sectionVisible = true;
+    let elevMode = false;
     legend3d.innerHTML = cornerLegend;
 
     function updateRoadVisibility(){
-      cornerMeshes.forEach(m => m.visible = colorMode === "corner");
-      elevMeshes.forEach(m => m.visible = colorMode === "elev");
-      infraMeshes.forEach(m => m.visible = colorMode === "infra");
-      whiteMeshes.forEach(m => m.visible = colorMode === "off");
-      const legends = { corner: cornerLegend, elev: elevLegend, infra: infraLegend, off: "" };
-      legend3d.innerHTML = legends[colorMode] || "";
+      cornerMeshes.forEach(m => m.visible = sectionVisible && !elevMode);
+      elevMeshes.forEach(m => m.visible = sectionVisible && elevMode);
+      whiteMeshes.forEach(m => m.visible = !sectionVisible);
+      legend3d.innerHTML = sectionVisible ? (elevMode ? elevLegend : cornerLegend) : "";
     }
 
     // セクション色トグル
     const secBtn = $("toggle3dSection");
     secBtn.onclick = ()=>{
-      colorMode = colorMode === "off" ? "corner" : "off";
-      secBtn.classList.toggle("active", colorMode !== "off");
+      sectionVisible = !sectionVisible;
+      secBtn.classList.toggle("active", sectionVisible);
       updateRoadVisibility();
     };
 
@@ -4234,33 +4232,28 @@ async function open3DView(t){
     if(eSecs){
       toggleBtn.style.display = "";
       toggleBtn.onclick = ()=>{
-        if(colorMode === "elev"){
-          colorMode = "corner";
-        } else {
-          colorMode = "elev";
-        }
-        secBtn.classList.add("active");
-        toggleBtn.classList.toggle("active", colorMode === "elev");
-        toggleBtn.textContent = colorMode === "elev" ? "コーナー" : "登り/下り";
+        elevMode = !elevMode;
+        if(!sectionVisible){ sectionVisible = true; secBtn.classList.add("active"); }
+        toggleBtn.classList.toggle("active", elevMode);
+        toggleBtn.textContent = elevMode ? "コーナー" : "登り/下り";
         updateRoadVisibility();
       };
     }else{
       toggleBtn.style.display = "none";
     }
 
-    // トンネル/橋トグル
+    // トンネル/橋トグル（3Dオブジェクトの表示/非表示）
+    const hasInfra = tunnelObjs.length > 0 || bridgeObjs.length > 0;
     const infraBtn = $("toggle3dInfra");
     if(hasInfra){
       infraBtn.style.display = "";
+      let infraVisible = true;
+      infraBtn.classList.add("active");
       infraBtn.onclick = ()=>{
-        if(colorMode === "infra"){
-          colorMode = "corner";
-        } else {
-          colorMode = "infra";
-        }
-        secBtn.classList.add("active");
-        infraBtn.classList.toggle("active", colorMode === "infra");
-        updateRoadVisibility();
+        infraVisible = !infraVisible;
+        tunnelObjs.forEach(o => o.visible = infraVisible);
+        bridgeObjs.forEach(o => o.visible = infraVisible);
+        infraBtn.classList.toggle("active", infraVisible);
       };
     }else{
       infraBtn.style.display = "none";
@@ -4293,8 +4286,8 @@ async function open3DView(t){
     const paramsEl = $("params3d");
     if(isAdmin3d){
       const sc = v => { const n = (v ?? 0); return n >= 0.7 ? "hi" : n >= 0.4 ? "mid" : "lo"; };
-      const scCorner = v => { const n = (v ?? 0); return n >= 0.3 ? "hi" : n >= 0.15 ? "mid" : "lo"; };
-      const scNone = v => { const n = (v ?? 0); return n <= 0.15 ? "hi" : n <= 0.3 ? "mid" : "lo"; };
+      const scCorner = v => { const n = (v ?? 0); return n >= 0.2 ? "hi" : n >= 0.1 ? "mid" : n <= 0.05 ? "lo" : ""; };
+      const scNone = v => { const n = (v ?? 0); return n <= 0.1 ? "hi" : n <= 0.2 ? "mid" : "lo"; };
       const sv = (v, fn) => { const n = (v ?? 0); return `<span class="${fn(n)}">${n.toFixed(3)}</span>`; };
       const row = (label, v) => `<dt title="${label}">${label}</dt><dd>${sv(v, sc)}</dd>`;
       const rowC = (label, v) => `<dt title="${label}">${label}</dt><dd>${sv(v, scCorner)}</dd>`;
