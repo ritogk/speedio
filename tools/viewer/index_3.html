@@ -3937,9 +3937,6 @@ async function open3DView(t){
       m.visible = false;
       m.renderOrder = 1;
       m.material.depthTest = false;
-      if(ptInfraType.includes("none")){
-        const lvl = m._infraLevel;
-      }
       group.add(m);
     });
 
@@ -4251,11 +4248,11 @@ async function open3DView(t){
         <dl>
           <dt>length</dt><dd>${t.lengthKm} km</dd>
           <dt>elevation_height</dt><dd>${t.height} m</dd>
-          <dt>building_nearby_cnt</dt><dd>${t.buildingCnt ?? "-"}</dd>
-          <dt title="building_density">building_density</dt><dd>${t.buildingDensity != null ? t.buildingDensity + "/km" : "-"}</dd>
-          <dt title="elevation_unevenness_count">elevation_unevenness_count</dt><dd>${t.unevennessCount ?? "-"}</dd>
-          <dt>uphill_cnt</dt><dd>${t.uphillCnt ?? "-"}</dd>
-          <dt>downhill_cnt</dt><dd>${t.downhillCnt ?? "-"}</dd>
+          <dt>building_nearby_cnt</dt><dd>${t.buildingCnt ?? "-"} 個</dd>
+          <dt title="building_density">building_density</dt><dd>${t.buildingDensity != null ? t.buildingDensity + " 個/km" : "-"}</dd>
+          <dt title="elevation_unevenness_count">elevation_unevenness_count</dt><dd>${t.unevennessCount ?? "-"} 個</dd>
+          <dt>uphill_cnt</dt><dd>${t.uphillCnt ?? "-"} 個</dd>
+          <dt>downhill_cnt</dt><dd>${t.downhillCnt ?? "-"} 個</dd>
         </dl>
         <h4>corner %</h4>
         <dl>
