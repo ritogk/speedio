@@ -3972,10 +3972,10 @@ async function open3DView(t){
     // 橋: 橋脚ピラーを道路下に描画
     const bridgeObjs = [];
     {
-      const pillarGeo = new THREE.CylinderGeometry(0.25, 0.35, 1, 6);
+      const pillarGeo = new THREE.CylinderGeometry(0.3, 0.45, 1, 6);
       pillarGeo.rotateX(Math.PI / 2);
-      const pillarMat = new THREE.MeshStandardMaterial({color: 0x8a8a7a, roughness: 0.8});
-      const PILLAR_INTERVAL = 5;
+      const pillarMat = new THREE.MeshStandardMaterial({color: 0x9a9a8a, roughness: 0.7});
+      const PILLAR_INTERVAL = 3;
       let rs = 0;
       for(let i = 0; i <= pts3.length; i++){
         if(i < pts3.length && ptIsBridge[i] === ptIsBridge[rs]) continue;
@@ -3999,7 +3999,7 @@ async function open3DView(t){
             railPts_r.push(rp);
           }
           if(railPts_l.length >= 2){
-            const railMat = new THREE.LineBasicMaterial({color: 0x9a9a8a});
+            const railMat = new THREE.LineBasicMaterial({color: 0xbbbbaa, linewidth: 2});
             const rl = new THREE.Line(new THREE.BufferGeometry().setFromPoints(railPts_l), railMat);
             const rr = new THREE.Line(new THREE.BufferGeometry().setFromPoints(railPts_r), railMat.clone());
             bridgeObjs.push(rl, rr);
@@ -4324,13 +4324,6 @@ async function open3DView(t){
           <dt title="elevation_unevenness_count">elevation_unevenness_count</dt><dd>${t.unevennessCount ?? "-"} 回</dd>
           <dt>uphill_cnt</dt><dd>${t.uphillCnt ?? "-"} 回</dd>
           <dt>downhill_cnt</dt><dd>${t.downhillCnt ?? "-"} 回</dd>
-        </dl>
-        <h4>corner %</h4>
-        <dl>
-          <dt>strong</dt><dd>${t.pctStrong}%</dd>
-          <dt>medium</dt><dd>${t.pctMedium}%</dd>
-          <dt>weak</dt><dd>${t.pctWeak}%</dd>
-          <dt>straight</dt><dd>${t.pctStraight}%</dd>
         </dl></div>`;
       $("toggleParams3d").onclick = () => {
         const min = paramsEl.classList.toggle("minimized");
