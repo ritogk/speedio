@@ -4483,12 +4483,14 @@ async function open3DView(t){
         const p = camPresets[btn.dataset.preset];
         if(!p) return;
         autoRotate = false;
+        group.rotation.z = 0;
         tweenCamera(p.pos, p.target);
         setActivePreset(btn.dataset.preset);
       };
     });
     $("home3d").onclick = () => {
       autoRotate = false;
+      group.rotation.z = 0;
       tweenCamera(homePos, homeTarget);
       setActivePreset("overview");
     };
