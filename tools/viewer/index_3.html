@@ -4360,27 +4360,47 @@ async function open3DView(t){
     const homePos = camera.position.clone();
     const homeTarget = controls.target.clone();
 
-    // カメラプリセット（fitDistベースで画面に収まる距離を保証）
+    // ルート主軸をPCAで算出（XY平面）
+    const cx0 = pts3.reduce((s,p)=>s+p.x, 0) / pts3.length;
+    const cy0 = pts3.reduce((s,p)=>s+p.y, 0) / pts3.length;
+    let cxx=0, cxy=0, cyy=0;
+    pts3.forEach(p => {
+      const dx = p.x - cx0, dy = p.y - cy0;
+      cxx += dx*dx; cxy += dx*dy; cyy += dy*dy;
+    });
+    const trace = cxx + cyy;
+    const det = cxx * cyy - cxy * cxy;
+    const L1 = trace / 2 + Math.sqrt(Math.max(trace * trace / 4 - det, 0));
+    let ax = cxy, ay = L1 - cxx;
+    const alen = Math.sqrt(ax*ax + ay*ay) || 1;
+    ax /= alen; ay /= alen;
+    const isWide = aspect >= 1;
+    const longAxis = isWide ? new THREE.Vector2(ax, ay) : new THREE.Vector2(-ay, ax);
+    const sideDir = new THREE.Vector2(-longAxis.y, longAxis.x);
+
+    // カメラプリセット（fitDistベース + ルート主軸整列）
     const camPresets = {
       overview: { pos: homePos.clone(), target: homeTarget.clone() },
       profile: {
-        pos: new THREE.Vector3(fitDist * 0.85, 0, fitDist * 0.04),
+        pos: new THREE.Vector3(sideDir.x * fitDist * 0.85, sideDir.y * fitDist * 0.85, fitDist * 0.04),
         target: new THREE.Vector3(0, 0, 0)
       },
       top: {
-        pos: new THREE.Vector3(fitDist * 0.01, fitDist * 0.01, fitDist * 0.9),
-        target: new THREE.Vector3(0, 0, 0)
+        pos: new THREE.Vector3(0, 0, fitDist * 0.9),
+        target: new THREE.Vector3(0, 0, 0),
+        up: new THREE.Vector3(longAxis.y, -longAxis.x, 0)
       }
     };
 
     // スムーズカメラ遷移
     let camTween = null;
     const easeIO = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
-    function tweenCamera(toPos, toTarget, dur){
+    const defaultUp = new THREE.Vector3(0, 0, 1);
+    function tweenCamera(toPos, toTarget, dur, toUp){
       dur = dur || 0.4;
       camTween = {
-        fp: camera.position.clone(), ft: controls.target.clone(),
-        tp: toPos.clone(), tt: toTarget.clone(),
+        fp: camera.position.clone(), ft: controls.target.clone(), fu: camera.up.clone(),
+        tp: toPos.clone(), tt: toTarget.clone(), tu: (toUp || defaultUp).clone(),
         dur, elapsed: 0
       };
     }
@@ -4396,7 +4416,7 @@ async function open3DView(t){
     const DRAW_ON_DUR = 2.0;
     let drawOnT = 0;
     let drawOnDone = false;
-    const allRoadMeshes = [...cornerMeshes, ...elevMeshes, ...whiteMeshes];
+    const allRoadMeshes = [...cornerMeshes, ...whiteMeshes];
     allRoadMeshes.forEach(m => m.visible = false);
     leftEdge.geometry.setDrawRange(0, 0);
     rightEdge.geometry.setDrawRange(0, 0);
@@ -4425,6 +4445,7 @@ async function open3DView(t){
         const e = easeIO(t);
         camera.position.lerpVectors(camTween.fp, camTween.tp, e);
         controls.target.lerpVectors(camTween.ft, camTween.tt, e);
+        camera.up.lerpVectors(camTween.fu, camTween.tu, e).normalize();
         if(t >= 1) camTween = null;
       }
 
@@ -4484,7 +4505,7 @@ async function open3DView(t){
         if(!p) return;
         autoRotate = false;
         group.rotation.z = 0;
-        tweenCamera(p.pos, p.target);
+        tweenCamera(p.pos, p.target, 0.4, p.up);
         setActivePreset(btn.dataset.preset);
       };
     });
