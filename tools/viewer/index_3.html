@@ -3958,7 +3958,7 @@ async function open3DView(t){
     {
       const ARC_SEGS = 12;
       const T_RX = ROAD_W + 0.8;
-      const T_RZ = (ROAD_W + 0.8) * 2.0;
+      const T_RZ = (ROAD_W + 0.8) * 3.5;
       const tunnelMat = new THREE.MeshBasicMaterial({
         color: 0x505050,
         side: THREE.DoubleSide, transparent: true, opacity: 0.55,
@@ -3982,10 +3982,11 @@ async function open3DView(t){
               const norm = smoothNormals[rs + j];
               const ARC_START = Math.PI * 0.15;
               const ARC_END = Math.PI * 0.85;
+              const zOff = Math.sin(ARC_START) * T_RZ;
               for(let k = 0; k <= ARC_SEGS; k++){
                 const angle = ARC_START + (ARC_END - ARC_START) * k / ARC_SEGS;
                 const across = Math.cos(angle) * T_RX;
-                const up = Math.sin(angle) * T_RZ;
+                const up = Math.sin(angle) * T_RZ - zOff;
                 const vi = (j * vertsPerRing + k) * 3;
                 verts[vi]   = c.x + norm.x * across;
                 verts[vi+1] = c.y + norm.y * across;
@@ -4017,14 +4018,15 @@ async function open3DView(t){
               const pn = smoothNormals[pi];
               const P_ARC_START = Math.PI * 0.15;
               const P_ARC_END = Math.PI * 0.85;
+              const pZOff = Math.sin(P_ARC_START) * T_RZ;
               const pv = new Float32Array((ARC_SEGS + 2) * 3);
-              pv[0] = pc.x; pv[1] = pc.y; pv[2] = pc.z + T_RZ * 0.5;
+              pv[0] = pc.x; pv[1] = pc.y; pv[2] = pc.z + T_RZ * 0.5 - pZOff;
               for(let k = 0; k <= ARC_SEGS; k++){
                 const angle = P_ARC_START + (P_ARC_END - P_ARC_START) * k / ARC_SEGS;
                 const vi = (k + 1) * 3;
                 pv[vi]   = pc.x + pn.x * Math.cos(angle) * T_RX;
                 pv[vi+1] = pc.y + pn.y * Math.cos(angle) * T_RX;
-                pv[vi+2] = pc.z + Math.sin(angle) * T_RZ;
+                pv[vi+2] = pc.z + Math.sin(angle) * T_RZ - pZOff;
               }
               const pIdx = [];
               for(let k = 0; k < ARC_SEGS; k++) pIdx.push(0, k + 1, k + 2);
@@ -4350,9 +4352,9 @@ async function open3DView(t){
     const vFov = camera.fov * Math.PI / 180;
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
     const fitFov = Math.min(vFov, hFov);
-    const fitDist = (maxDim / 2) / Math.tan(fitFov / 2) * 1.15;
+    const fitDist = (maxDim / 2) / Math.tan(fitFov / 2) * 0.9;
 
-    camera.position.set(fitDist * 0.5, fitDist * 0.65, fitDist * 0.5);
+    camera.position.set(fitDist * 0.45, fitDist * 0.58, fitDist * 0.45);
 
     controls.update();
 
@@ -4364,11 +4366,11 @@ async function open3DView(t){
     const camPresets = {
       overview: { pos: homePos.clone(), target: homeTarget.clone() },
       profile: {
-        pos: new THREE.Vector3(fitDist * 1.0, 0, fitDist * 0.05),
+        pos: new THREE.Vector3(fitDist * 0.85, 0, fitDist * 0.04),
         target: new THREE.Vector3(0, 0, 0)
       },
       top: {
-        pos: new THREE.Vector3(fitDist * 0.01, fitDist * 0.01, fitDist * 1.1),
+        pos: new THREE.Vector3(fitDist * 0.01, fitDist * 0.01, fitDist * 0.9),
         target: new THREE.Vector3(0, 0, 0)
       }
     };
