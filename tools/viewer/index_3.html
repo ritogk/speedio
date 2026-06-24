@@ -3663,7 +3663,7 @@ async function open3DView(t){
     const camera = new THREE.PerspectiveCamera(50, W / H, 0.5, 5000);
     camera.up.set(0, 0, 1);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
+    let controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
 
@@ -4443,8 +4443,10 @@ async function open3DView(t){
     }
 
     // カメラプリセット（OBB軸ベース）
+    // tween完了時にOrbitControlsを再作成しcamera.upのquat更新に対応
+    const defaultUpVec = new THREE.Vector3(0, 0, 1);
     const camPresets = {
-      overview: { pos: homePos.clone(), target: homeTarget.clone() },
+      overview: { pos: homePos.clone(), target: homeTarget.clone(), up: defaultUpVec.clone() },
       profile: {
         // PC2方向から → PC1×PC3面（標高プロファイル）が正面
         pos: (()=>{
@@ -4452,7 +4454,7 @@ async function open3DView(t){
           return new THREE.Vector3(obbCtr.x+pc2[0]*d, obbCtr.y+pc2[1]*d, obbCtr.z+pc2[2]*d);
         })(),
         target: obbCtr.clone(),
-        up: new THREE.Vector3(0, 0, 1)
+        up: defaultUpVec.clone()
       },
       top: {
         // PC3方向から → PC1×PC2面（平面図）が正面
@@ -4520,7 +4522,16 @@ async function open3DView(t){
         controls.target.lerpVectors(camTween.ft, camTween.tt, e);
         camera.up.lerpVectors(camTween.fu, camTween.tu, e).normalize();
         camera.lookAt(controls.target);
-        if(t >= 1) camTween = null;
+        if(t >= 1){
+          camTween = null;
+          // OrbitControlsはcamera.upのquatを初期化時にキャッシュするため再作成
+          const savedTarget = controls.target.clone();
+          controls.dispose();
+          controls = new OrbitControls(camera, renderer.domElement);
+          controls.enableDamping = true;
+          controls.dampingFactor = 0.08;
+          controls.target.copy(savedTarget);
+        }
       } else {
         if(autoRotate) group.rotation.z += 0.002;
         controls.update();
