@@ -3980,8 +3980,10 @@ async function open3DView(t){
             for(let j = 0; j < n; j++){
               const c = pts3[rs + j];
               const norm = smoothNormals[rs + j];
+              const ARC_START = Math.PI * 0.15;
+              const ARC_END = Math.PI * 0.85;
               for(let k = 0; k <= ARC_SEGS; k++){
-                const angle = Math.PI * k / ARC_SEGS;
+                const angle = ARC_START + (ARC_END - ARC_START) * k / ARC_SEGS;
                 const across = Math.cos(angle) * T_RX;
                 const up = Math.sin(angle) * T_RZ;
                 const vi = (j * vertsPerRing + k) * 3;
@@ -4013,10 +4015,12 @@ async function open3DView(t){
             for(const pi of [rs, end]){
               const pc = pts3[pi];
               const pn = smoothNormals[pi];
+              const P_ARC_START = Math.PI * 0.15;
+              const P_ARC_END = Math.PI * 0.85;
               const pv = new Float32Array((ARC_SEGS + 2) * 3);
-              pv[0] = pc.x; pv[1] = pc.y; pv[2] = pc.z;
+              pv[0] = pc.x; pv[1] = pc.y; pv[2] = pc.z + T_RZ * 0.5;
               for(let k = 0; k <= ARC_SEGS; k++){
-                const angle = Math.PI * k / ARC_SEGS;
+                const angle = P_ARC_START + (P_ARC_END - P_ARC_START) * k / ARC_SEGS;
                 const vi = (k + 1) * 3;
                 pv[vi]   = pc.x + pn.x * Math.cos(angle) * T_RX;
                 pv[vi+1] = pc.y + pn.y * Math.cos(angle) * T_RX;
@@ -4094,29 +4098,10 @@ async function open3DView(t){
           const end = Math.min(i, pts3.length - 1);
           const n = end - rs + 1;
           if(n >= 2){
-            // 床版（底面＋左右側面）
-            const dv = new Float32Array(n * 4 * 3);
-            for(let j = 0; j < n; j++){
-              const li = leftPts[rs+j], ri = rightPts[rs+j];
-              const b = j * 12;
-              dv[b]  =li.x; dv[b+1] =li.y; dv[b+2] =li.z - DECK_T;
-              dv[b+3]=ri.x; dv[b+4] =ri.y; dv[b+5] =ri.z - DECK_T;
-              dv[b+6]=li.x; dv[b+7] =li.y; dv[b+8] =li.z;
-              dv[b+9]=ri.x; dv[b+10]=ri.y; dv[b+11]=ri.z;
+            // 左右側面のみ（底面なし、道路面が見える）
+            for(const sidePts of [leftPts, rightPts]){
+              buildSlab(sidePts, rs, n, -DECK_T, 0, concMat);
             }
-            const dIdx = [];
-            for(let j = 0; j < n - 1; j++){
-              const a=j*4, b2=a+1, c2=a+2, d=a+3;
-              const e=a+4, f=e+1, g=e+2, h=e+3;
-              dIdx.push(a,e,b2, b2,e,f);
-              dIdx.push(a,c2,e, e,c2,g);
-              dIdx.push(b2,f,d, d,f,h);
-            }
-            const dGeo = new THREE.BufferGeometry();
-            dGeo.setAttribute('position', new THREE.BufferAttribute(dv, 3));
-            dGeo.setIndex(dIdx);
-            dGeo.computeVertexNormals();
-            addObj(new THREE.Mesh(dGeo, concMat));
 
             // 左右ガードレール（柵: 横バー2段 + 縦ポスト、メッシュ板で太さを出す）
             const RAIL_T = 0.15;
@@ -4359,7 +4344,15 @@ async function open3DView(t){
     controls.target.set(0, 0, 0);
     const size = bbox.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
-    camera.position.set(maxDim * 0.6, maxDim * 0.8, maxDim * 0.6);
+
+    // FOV+アスペクト比からモデル全体が収まるカメラ距離を算出
+    const aspect = W / H;
+    const vFov = camera.fov * Math.PI / 180;
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
+    const fitFov = Math.min(vFov, hFov);
+    const fitDist = (maxDim / 2) / Math.tan(fitFov / 2) * 1.15;
+
+    camera.position.set(fitDist * 0.5, fitDist * 0.65, fitDist * 0.5);
 
     controls.update();
 
@@ -4367,15 +4360,15 @@ async function open3DView(t){
     const homePos = camera.position.clone();
     const homeTarget = controls.target.clone();
 
-    // カメラプリセット
+    // カメラプリセット（fitDistベースで画面に収まる距離を保証）
     const camPresets = {
       overview: { pos: homePos.clone(), target: homeTarget.clone() },
       profile: {
-        pos: new THREE.Vector3(maxDim * 1.3, 0, maxDim * 0.1),
+        pos: new THREE.Vector3(fitDist * 1.0, 0, fitDist * 0.05),
         target: new THREE.Vector3(0, 0, 0)
       },
       top: {
-        pos: new THREE.Vector3(maxDim * 0.01, maxDim * 0.01, maxDim * 1.5),
+        pos: new THREE.Vector3(fitDist * 0.01, fitDist * 0.01, fitDist * 1.1),
         target: new THREE.Vector3(0, 0, 0)
       }
     };
@@ -4394,7 +4387,7 @@ async function open3DView(t){
 
     scene.add(new THREE.HemisphereLight(0xdde8f0, 0x0a1a0a, 0.5));
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    dirLight.position.set(maxDim * 0.5, maxDim * 0.5, maxDim * 1.2);
+    dirLight.position.set(fitDist * 0.5, fitDist * 0.5, fitDist * 1.2);
     scene.add(dirLight);
 
     // ルート描画アニメーション初期状態
