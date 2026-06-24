@@ -3905,7 +3905,8 @@ async function open3DView(t){
           geo.computeVertexNormals();
           const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
             color: colorMap[levels[rs]] || 0x98989D,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            transparent: true, opacity: 1.0, depthTest: false, depthWrite: false
           }));
           mesh.userData.routeFrac = rs / Math.max(pts3.length - 1, 1);
           meshes.push(mesh);
@@ -3920,16 +3921,14 @@ async function open3DView(t){
     const whiteMeshes = buildRoadMeshes(whiteLevels, {white:0xB0B8C0});
     whiteMeshes.forEach(m => {
       m.visible = false;
-      m.material.polygonOffset = true;
-      m.material.polygonOffsetFactor = 1;
-      m.material.polygonOffsetUnits = 1;
+      m.renderOrder = 20;
       group.add(m);
     });
 
     const cornerMeshes = buildRoadMeshes(ptLevels, LEVEL_HEX);
     const elevMeshes = buildRoadMeshes(ptElevDir, ELEV_HEX);
-    cornerMeshes.forEach(m => { m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
-    elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
+    cornerMeshes.forEach(m => { m.renderOrder = 20; group.add(m); });
+    elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 20; group.add(m); });
 
     // トンネル・橋区間のインデックスを特定
     const ptIsTunnel = new Array(geomList.length).fill(false);
@@ -4191,16 +4190,16 @@ async function open3DView(t){
     }
 
     // 縁線
-    const edgeMat = new THREE.LineBasicMaterial({color: 0x333333, depthTest: false});
+    const edgeMat = new THREE.LineBasicMaterial({color: 0x333333, transparent: true, opacity: 1.0, depthTest: false, depthWrite: false});
     const leftEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftPts), edgeMat);
     const rightEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightPts), edgeMat.clone());
-    leftEdge.renderOrder = 11; rightEdge.renderOrder = 11;
+    leftEdge.renderOrder = 21; rightEdge.renderOrder = 21;
     group.add(leftEdge);
     group.add(rightEdge);
     // 中央線（破線）
-    const centerMat = new THREE.LineDashedMaterial({color: 0x666666, dashSize: 2, gapSize: 1.5, depthTest: false});
+    const centerMat = new THREE.LineDashedMaterial({color: 0x666666, dashSize: 2, gapSize: 1.5, transparent: true, opacity: 1.0, depthTest: false, depthWrite: false});
     const centerLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(centerPts), centerMat);
-    centerLine.renderOrder = 11;
+    centerLine.renderOrder = 21;
     centerLine.computeLineDistances();
     group.add(centerLine);
 
@@ -4325,8 +4324,9 @@ async function open3DView(t){
     // 赤丸（道路上を走るオブジェクト）
     const sphere = new THREE.Mesh(
       new THREE.SphereGeometry(4, 16, 16),
-      new THREE.MeshBasicMaterial({color: 0xff0000})
+      new THREE.MeshBasicMaterial({color: 0xff0000, transparent: true, opacity: 1.0, depthTest: false, depthWrite: false})
     );
+    sphere.renderOrder = 22;
     group.add(sphere);
 
     const floorW = rMaxX - rMinX, floorH = rMaxY - rMinY;
@@ -4360,44 +4360,76 @@ async function open3DView(t){
     const homePos = camera.position.clone();
     const homeTarget = controls.target.clone();
 
-    // ルート主軸をPCAで算出（XY平面の共分散行列 → 第1固有ベクトル）
+    // ルートOBB軸を3D PCAで算出（3×3共分散行列 → 固有ベクトル）
     const cx0 = pts3.reduce((s,p)=>s+p.x, 0) / pts3.length;
     const cy0 = pts3.reduce((s,p)=>s+p.y, 0) / pts3.length;
-    let cxx=0, cxy=0, cyy=0;
+    const cz0 = pts3.reduce((s,p)=>s+p.z, 0) / pts3.length;
+    let cxx=0, cxy=0, cxz=0, cyy=0, cyz=0, czz=0;
     pts3.forEach(p => {
-      const dx = p.x - cx0, dy = p.y - cy0;
-      cxx += dx*dx; cxy += dx*dy; cyy += dy*dy;
+      const dx=p.x-cx0, dy=p.y-cy0, dz=p.z-cz0;
+      cxx+=dx*dx; cxy+=dx*dy; cxz+=dx*dz;
+      cyy+=dy*dy; cyz+=dy*dz; czz+=dz*dz;
     });
-    let pcaX, pcaY;
-    if(Math.abs(cxy) > 1e-6 * (cxx + cyy + 1)){
-      const tr = cxx + cyy;
-      const disc = Math.sqrt(Math.max(tr * tr / 4 - (cxx * cyy - cxy * cxy), 0));
-      const L1 = tr / 2 + disc;
-      pcaX = L1 - cyy; pcaY = cxy;
-    } else {
-      pcaX = cxx >= cyy ? 1 : 0;
-      pcaY = cxx >= cyy ? 0 : 1;
+
+    const offDiag = cxy*cxy + cxz*cxz + cyz*cyz;
+    let pc1, pc2, pc3;
+
+    function eigvec3(lam){
+      const r0=[cxx-lam,cxy,cxz], r1=[cxy,cyy-lam,cyz], r2=[cxz,cyz,czz-lam];
+      const cx3=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+      const vl=v=>Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+      const c01=cx3(r0,r1), c02=cx3(r0,r2), c12=cx3(r1,r2);
+      const l01=vl(c01), l02=vl(c02), l12=vl(c12);
+      let best=null, bestL=0;
+      if(l01>bestL){bestL=l01;best=c01}
+      if(l02>bestL){bestL=l02;best=c02}
+      if(l12>bestL){bestL=l12;best=c12}
+      return bestL>1e-10 ? best.map(x=>x/bestL) : null;
     }
-    const pcaLen = Math.sqrt(pcaX*pcaX + pcaY*pcaY) || 1;
-    pcaX /= pcaLen; pcaY /= pcaLen;
 
-    // 画面の長辺にルート長辺を揃える
-    // perpはルート長辺に直交する方向
-    const perpX = -pcaY, perpY = pcaX;
+    if(offDiag < 1e-12 * (cxx*cxx + cyy*cyy + czz*czz + 1)){
+      const eigs=[{v:cxx,a:[1,0,0]},{v:cyy,a:[0,1,0]},{v:czz,a:[0,0,1]}];
+      eigs.sort((a,b)=>b.v-a.v);
+      pc1=eigs[0].a; pc2=eigs[1].a; pc3=eigs[2].a;
+    } else {
+      const q=(cxx+cyy+czz)/3;
+      const b00=cxx-q, b11=cyy-q, b22=czz-q;
+      const p2=b00*b00+b11*b11+b22*b22+2*offDiag;
+      const p=Math.sqrt(p2/6), ip=1/p;
+      const B00=b00*ip,B01=cxy*ip,B02=cxz*ip,B11=b11*ip,B12=cyz*ip,B22=b22*ip;
+      const detBh=(B00*(B11*B22-B12*B12)-B01*(B01*B22-B12*B02)+B02*(B01*B12-B11*B02))/2;
+      const phi=Math.acos(Math.max(-1,Math.min(1,detBh)))/3;
+      const e0=q+2*p*Math.cos(phi);
+      const e2=q+2*p*Math.cos(phi+2*Math.PI/3);
+      const v1=eigvec3(e0), v3=eigvec3(e2);
+      if(v1&&v3){
+        pc1=v1; pc3=v3;
+        pc2=[pc3[1]*pc1[2]-pc3[2]*pc1[1],pc3[2]*pc1[0]-pc3[0]*pc1[2],pc3[0]*pc1[1]-pc3[1]*pc1[0]];
+        const l2=Math.sqrt(pc2[0]*pc2[0]+pc2[1]*pc2[1]+pc2[2]*pc2[2]);
+        if(l2>1e-10) pc2=pc2.map(x=>x/l2); else pc2=[0,1,0];
+      } else {
+        pc1=[1,0,0]; pc2=[0,1,0]; pc3=[0,0,1];
+      }
+    }
 
-    // カメラプリセット（fitDistベース + ルート主軸整列）
+    // PC3が上向き(Z>0)になるよう符号補正
+    if(pc3[2]<0){ pc3=pc3.map(x=>-x); pc2=pc2.map(x=>-x); }
+
+    // カメラプリセット（OBB軸ベース）
+    // 真上→PC3方向、横断面→PC2方向（ルート側面=標高プロファイル）
     const camPresets = {
       overview: { pos: homePos.clone(), target: homeTarget.clone() },
       profile: {
-        pos: new THREE.Vector3(perpX * fitDist * 0.85, perpY * fitDist * 0.85, fitDist * 0.04),
-        target: new THREE.Vector3(0, 0, 0)
+        pos: new THREE.Vector3(pc2[0]*fitDist*0.85, pc2[1]*fitDist*0.85, pc2[2]*fitDist*0.85),
+        target: new THREE.Vector3(0, 0, 0),
+        up: new THREE.Vector3(pc3[0], pc3[1], pc3[2])
       },
       top: {
-        pos: new THREE.Vector3(0, 0, fitDist * 0.9),
+        pos: new THREE.Vector3(pc3[0]*fitDist*0.9, pc3[1]*fitDist*0.9, pc3[2]*fitDist*0.9),
         target: new THREE.Vector3(0, 0, 0),
         up: aspect >= 1
-          ? new THREE.Vector3(perpX, perpY, 0)
-          : new THREE.Vector3(pcaX, pcaY, 0)
+          ? new THREE.Vector3(pc2[0], pc2[1], pc2[2])
+          : new THREE.Vector3(pc1[0], pc1[1], pc1[2])
       }
     };
 
