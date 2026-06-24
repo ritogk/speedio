@@ -382,6 +382,18 @@ main{flex:1;position:relative;min-height:0}
   position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:10;
   color:rgba(255,255,255,.45);font-size:11px;pointer-events:none;white-space:nowrap;
 }
+.overlay-3d-presets{
+  position:absolute;bottom:54px;right:14px;z-index:10;
+  display:flex;gap:6px;
+}
+.overlay-3d-preset{
+  font:inherit;font-size:11px;font-weight:500;cursor:pointer;
+  border:1px solid rgba(255,255,255,.25);border-radius:999px;
+  background:rgba(0,0,0,.45);color:#fff;padding:5px 12px;
+  white-space:nowrap;transition:background .15s,border-color .15s;
+}
+.overlay-3d-preset:hover{background:rgba(255,255,255,.15)}
+.overlay-3d-preset.active{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.6)}
 .overlay-3d-legend{
   position:absolute;bottom:50px;left:14px;z-index:10;
   font-size:11px;color:#fff;pointer-events:none;
@@ -1130,6 +1142,12 @@ main{flex:1;position:relative;min-height:0}
       <button class="overlay-3d-toggle" id="toggle3dInfra" style="display:none">トンネル/橋</button>
       <button class="overlay-3d-toggle" id="toggle3dBuildings" style="display:none">🏠 建物</button>
       <button class="overlay-3d-toggle" id="toggle3dPrint" style="display:none">🖨 印刷</button>
+    </div>
+    <div class="overlay-3d-presets" id="presets3d">
+      <button class="overlay-3d-preset active" data-preset="overview">俯瞰</button>
+      <button class="overlay-3d-preset" data-preset="profile">横断面</button>
+      <button class="overlay-3d-preset" data-preset="top">真上</button>
+      <button class="overlay-3d-preset" id="home3d" title="初期位置に戻る">⌂</button>
     </div>
     <div class="overlay-3d-legend" id="legend3d"></div>
     <div class="overlay-3d-params" id="params3d"></div>
@@ -3675,7 +3693,8 @@ async function open3DView(t){
     terrGeo.computeVertexNormals();
     const terrMat = new THREE.MeshStandardMaterial({
       color: 0x1f5a2a, roughness: .9, metalness: 0,
-      transparent: true, opacity: .5, side: THREE.DoubleSide
+      transparent: true, opacity: .5, side: THREE.DoubleSide,
+      polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1
     });
     const terrMesh = new THREE.Mesh(terrGeo, terrMat);
     group.add(terrMesh);
@@ -3884,10 +3903,12 @@ async function open3DView(t){
           geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
           geo.setIndex(idx);
           geo.computeVertexNormals();
-          meshes.push(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+          const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
             color: colorMap[levels[rs]] || 0x98989D,
             side: THREE.DoubleSide
-          })));
+          }));
+          mesh.userData.routeFrac = rs / Math.max(pts3.length - 1, 1);
+          meshes.push(mesh);
         }
         rs = i;
       }
@@ -3935,14 +3956,17 @@ async function open3DView(t){
     // トンネル: アーチ状の半円筒を道路上に描画
     const tunnelObjs = [];
     {
-      const ARC_SEGS = 10;
-      const T_RADIUS = ROAD_W + 1.0;
-      const tunnelMat = new THREE.MeshStandardMaterial({
-        color: 0x6a6a6a, roughness: 0.6, metalness: 0.2,
-        side: THREE.DoubleSide, transparent: true, opacity: 0.7
+      const ARC_SEGS = 12;
+      const T_RX = ROAD_W + 0.8;
+      const T_RZ = (ROAD_W + 0.8) * 2.0;
+      const tunnelMat = new THREE.MeshBasicMaterial({
+        color: 0x505050,
+        side: THREE.DoubleSide, transparent: true, opacity: 0.55,
+        depthWrite: false, depthTest: false
       });
-      const portalMat = new THREE.MeshStandardMaterial({
-        color: 0x555555, roughness: 0.5, side: THREE.DoubleSide
+      const portalMat = new THREE.MeshBasicMaterial({
+        color: 0x404040, side: THREE.DoubleSide,
+        depthWrite: false, depthTest: false
       });
       let rs = 0;
       for(let i = 0; i <= pts3.length; i++){
@@ -3958,8 +3982,8 @@ async function open3DView(t){
               const norm = smoothNormals[rs + j];
               for(let k = 0; k <= ARC_SEGS; k++){
                 const angle = Math.PI * k / ARC_SEGS;
-                const across = Math.cos(angle) * T_RADIUS;
-                const up = Math.sin(angle) * T_RADIUS;
+                const across = Math.cos(angle) * T_RX;
+                const up = Math.sin(angle) * T_RZ;
                 const vi = (j * vertsPerRing + k) * 3;
                 verts[vi]   = c.x + norm.x * across;
                 verts[vi+1] = c.y + norm.y * across;
@@ -3981,6 +4005,7 @@ async function open3DView(t){
             geo.setIndex(idx);
             geo.computeVertexNormals();
             const mesh = new THREE.Mesh(geo, tunnelMat);
+            mesh.renderOrder = 10;
             tunnelObjs.push(mesh);
             group.add(mesh);
 
@@ -3993,9 +4018,9 @@ async function open3DView(t){
               for(let k = 0; k <= ARC_SEGS; k++){
                 const angle = Math.PI * k / ARC_SEGS;
                 const vi = (k + 1) * 3;
-                pv[vi]   = pc.x + pn.x * Math.cos(angle) * T_RADIUS;
-                pv[vi+1] = pc.y + pn.y * Math.cos(angle) * T_RADIUS;
-                pv[vi+2] = pc.z + Math.sin(angle) * T_RADIUS;
+                pv[vi]   = pc.x + pn.x * Math.cos(angle) * T_RX;
+                pv[vi+1] = pc.y + pn.y * Math.cos(angle) * T_RX;
+                pv[vi+2] = pc.z + Math.sin(angle) * T_RZ;
               }
               const pIdx = [];
               for(let k = 0; k < ARC_SEGS; k++) pIdx.push(0, k + 1, k + 2);
@@ -4004,6 +4029,7 @@ async function open3DView(t){
               pGeo.setIndex(pIdx);
               pGeo.computeVertexNormals();
               const pMesh = new THREE.Mesh(pGeo, portalMat);
+              pMesh.renderOrder = 10;
               tunnelObjs.push(pMesh);
               group.add(pMesh);
             }
@@ -4013,15 +4039,54 @@ async function open3DView(t){
       }
     }
 
-    // 橋: デッキ（床版）+ 橋脚ピラー + 欄干
+    // テレイン高さ補間（シーン座標 x,y → 地表Z）
+    const terrainZ = (sx, sy) => {
+      const gx0 = terrVerts[0], gy0 = terrVerts[1];
+      const gx1 = terrVerts[(GRID*GRID-1)*3], gy1 = terrVerts[(GRID*GRID-1)*3+1];
+      const spanX = gx1 - gx0, spanY = gy1 - gy0;
+      if(!spanX || !spanY) return skirtZ;
+      const fi = (sx - gx0) / spanX * (GRID - 1);
+      const fj = (sy - gy0) / spanY * (GRID - 1);
+      const i0 = Math.max(0, Math.min(GRID-2, Math.floor(fi)));
+      const j0 = Math.max(0, Math.min(GRID-2, Math.floor(fj)));
+      const fx = fi - i0, fy = fj - j0;
+      const idx = (r,c) => (r * GRID + c) * 3 + 2;
+      const z00 = terrVerts[idx(j0, i0)], z10 = terrVerts[idx(j0, i0+1)];
+      const z01 = terrVerts[idx(j0+1, i0)], z11 = terrVerts[idx(j0+1, i0+1)];
+      return z00*(1-fx)*(1-fy) + z10*fx*(1-fy) + z01*(1-fx)*fy + z11*fx*fy;
+    };
+
+    // 橋: コンクリート床版 + 低いガードレール + 橋脚（テレインまで）
     const bridgeObjs = [];
     {
-      const DECK_T = 0.6;
-      const deckMat = new THREE.MeshStandardMaterial({color: 0x7a7a70, roughness: 0.7, side: THREE.DoubleSide});
-      const pillarGeo = new THREE.CylinderGeometry(0.3, 0.45, 1, 6);
-      pillarGeo.rotateX(Math.PI / 2);
-      const pillarMat = new THREE.MeshStandardMaterial({color: 0x8a8a80, roughness: 0.7});
-      const railMat = new THREE.LineBasicMaterial({color: 0xbbbbaa});
+      const DECK_T = 0.8;
+      const GUARD_H = 1.5;
+      const PILLAR_INTERVAL = 4;
+      const concMat = new THREE.MeshBasicMaterial({color: 0x686460, side: THREE.DoubleSide});
+      const guardMat = new THREE.MeshBasicMaterial({color: 0x888278, side: THREE.DoubleSide});
+      const pillarMat = new THREE.MeshBasicMaterial({color: 0x686460});
+      const addObj = (o) => { bridgeObjs.push(o); group.add(o); };
+
+      // 道路端に沿った板メッシュ
+      const buildSlab = (sidePts, startIdx, count, zBot, zTop, mat) => {
+        const v = new Float32Array(count * 2 * 3);
+        for(let j = 0; j < count; j++){
+          const sp = sidePts[startIdx + j];
+          v[j*6]   = sp.x; v[j*6+1] = sp.y; v[j*6+2] = sp.z + zBot;
+          v[j*6+3] = sp.x; v[j*6+4] = sp.y; v[j*6+5] = sp.z + zTop;
+        }
+        const idx = [];
+        for(let j = 0; j < count - 1; j++){
+          const a=j*2, b=a+1, c=a+2, d=c+1;
+          idx.push(a,c,b, b,c,d);
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(v, 3));
+        geo.setIndex(idx);
+        geo.computeVertexNormals();
+        addObj(new THREE.Mesh(geo, mat));
+      };
+
       let rs = 0;
       for(let i = 0; i <= pts3.length; i++){
         if(i < pts3.length && ptIsBridge[i] === ptIsBridge[rs]) continue;
@@ -4029,7 +4094,7 @@ async function open3DView(t){
           const end = Math.min(i, pts3.length - 1);
           const n = end - rs + 1;
           if(n >= 2){
-            // デッキ: 底面 + 左右側面
+            // 床版（底面＋左右側面）
             const dv = new Float32Array(n * 4 * 3);
             for(let j = 0; j < n; j++){
               const li = leftPts[rs+j], ri = rightPts[rs+j];
@@ -4051,38 +4116,90 @@ async function open3DView(t){
             dGeo.setAttribute('position', new THREE.BufferAttribute(dv, 3));
             dGeo.setIndex(dIdx);
             dGeo.computeVertexNormals();
-            bridgeObjs.push(new THREE.Mesh(dGeo, deckMat));
-            group.add(bridgeObjs[bridgeObjs.length - 1]);
+            addObj(new THREE.Mesh(dGeo, concMat));
 
-            // 橋脚ピラー
-            for(let j = rs; j <= end; j += 4){
-              const p = pts3[j];
-              const pH = Math.max(p.z - DECK_T - skirtZ, 1);
-              const pillar = new THREE.Mesh(pillarGeo, pillarMat);
-              pillar.scale.set(1, 1, pH);
-              pillar.position.set(p.x, p.y, skirtZ + pH / 2);
-              bridgeObjs.push(pillar);
-              group.add(pillar);
-            }
-
-            // 欄干（上部レール + 縦棒）
-            const RAIL_H = 1.0;
-            const rlPts = [], rrPts = [];
-            for(let j = rs; j <= end; j++){
-              rlPts.push(new THREE.Vector3(leftPts[j].x, leftPts[j].y, leftPts[j].z + RAIL_H));
-              rrPts.push(new THREE.Vector3(rightPts[j].x, rightPts[j].y, rightPts[j].z + RAIL_H));
-            }
-            if(rlPts.length >= 2){
-              bridgeObjs.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rlPts), railMat));
-              bridgeObjs.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rrPts), railMat.clone()));
-              group.add(bridgeObjs[bridgeObjs.length - 2]);
-              group.add(bridgeObjs[bridgeObjs.length - 1]);
-              for(let j = 0; j < rlPts.length; j += 2){
-                const pl = new THREE.Line(new THREE.BufferGeometry().setFromPoints([leftPts[rs+j], rlPts[j]]), railMat);
-                const pr = new THREE.Line(new THREE.BufferGeometry().setFromPoints([rightPts[rs+j], rrPts[j]]), railMat.clone());
-                bridgeObjs.push(pl, pr);
-                group.add(pl); group.add(pr);
+            // 左右ガードレール（柵: 横バー2段 + 縦ポスト、メッシュ板で太さを出す）
+            const RAIL_T = 0.15;
+            const POST_INTERVAL = 2;
+            for(const side of [leftPts, rightPts]){
+              // 上段・中段の横バー（薄い板メッシュ）
+              for(const hRatio of [1.0, 0.5]){
+                const barH = GUARD_H * hRatio;
+                buildSlab(side, rs, n, barH - RAIL_T, barH + RAIL_T, guardMat);
               }
+              // 縦ポスト（薄い板メッシュ）
+              for(let j = 0; j < n; j += POST_INTERVAL){
+                const sp = side[rs + j];
+                const norm = smoothNormals[rs + j];
+                const pw = RAIL_T;
+                const pv = new Float32Array(4 * 3);
+                pv[0] = sp.x + norm.x*pw; pv[1] = sp.y + norm.y*pw; pv[2] = sp.z;
+                pv[3] = sp.x - norm.x*pw; pv[4] = sp.y - norm.y*pw; pv[5] = sp.z;
+                pv[6] = sp.x + norm.x*pw; pv[7] = sp.y + norm.y*pw; pv[8] = sp.z + GUARD_H + RAIL_T;
+                pv[9] = sp.x - norm.x*pw; pv[10]= sp.y - norm.y*pw; pv[11]= sp.z + GUARD_H + RAIL_T;
+                const pGeo = new THREE.BufferGeometry();
+                pGeo.setAttribute('position', new THREE.BufferAttribute(pv, 3));
+                pGeo.setIndex([0,2,1, 1,2,3]);
+                pGeo.computeVertexNormals();
+                addObj(new THREE.Mesh(pGeo, guardMat));
+              }
+            }
+
+            // 始点・終点の端面キャップ（デッキ底面〜路面）
+            for(const ci of [rs, end]){
+              const li = leftPts[ci], ri = rightPts[ci];
+              const cv = new Float32Array(4 * 3);
+              cv[0]=li.x; cv[1]=li.y; cv[2]=li.z - DECK_T;
+              cv[3]=ri.x; cv[4]=ri.y; cv[5]=ri.z - DECK_T;
+              cv[6]=li.x; cv[7]=li.y; cv[8]=li.z;
+              cv[9]=ri.x; cv[10]=ri.y; cv[11]=ri.z;
+              const cGeo = new THREE.BufferGeometry();
+              cGeo.setAttribute('position', new THREE.BufferAttribute(cv, 3));
+              cGeo.setIndex([0,1,2, 2,1,3]);
+              cGeo.computeVertexNormals();
+              addObj(new THREE.Mesh(cGeo, concMat));
+            }
+
+            // 橋脚（先頭・末尾に1本ずつ、長い方の高さに揃える）
+            const pA = pts3[rs], pB = pts3[end];
+            const gzA = terrainZ(pA.x, pA.y), gzB = terrainZ(pB.x, pB.y);
+            const hA = pA.z - DECK_T - gzA, hB = pB.z - DECK_T - gzB;
+            const pH = Math.max(hA, hB, 0.5);
+            const PIER_THICK = 0.6;
+            for(const ji of [rs, end]){
+              const li = leftPts[ji], ri = rightPts[ji];
+              const p = pts3[ji];
+              // 橋の中心方向を計算（rsなら→end方向、endなら→rs方向）
+              const other = (ji === rs) ? Math.min(rs + 1, end) : Math.max(end - 1, rs);
+              const op = pts3[other];
+              const tdx = op.x - p.x, tdy = op.y - p.y;
+              const tLen = Math.sqrt(tdx*tdx + tdy*tdy) || 1;
+              const tx = tdx/tLen, ty = tdy/tLen;
+              const topZ = p.z - DECK_T;
+              const botZ = topZ - pH;
+              // 橋脚は端面から内側にだけ伸ばす（外にはみ出さない）
+              const pv = new Float32Array(8 * 3);
+              pv[0] =li.x;              pv[1] =li.y;              pv[2] =topZ;
+              pv[3] =ri.x;              pv[4] =ri.y;              pv[5] =topZ;
+              pv[6] =li.x+tx*PIER_THICK; pv[7] =li.y+ty*PIER_THICK; pv[8] =topZ;
+              pv[9] =ri.x+tx*PIER_THICK; pv[10]=ri.y+ty*PIER_THICK; pv[11]=topZ;
+              pv[12]=li.x;              pv[13]=li.y;              pv[14]=botZ;
+              pv[15]=ri.x;              pv[16]=ri.y;              pv[17]=botZ;
+              pv[18]=li.x+tx*PIER_THICK; pv[19]=li.y+ty*PIER_THICK; pv[20]=botZ;
+              pv[21]=ri.x+tx*PIER_THICK; pv[22]=ri.y+ty*PIER_THICK; pv[23]=botZ;
+              const pIdx = [
+                0,2,1, 1,2,3,
+                4,5,6, 5,7,6,
+                0,1,4, 1,5,4,
+                2,6,3, 3,6,7,
+                0,4,2, 2,4,6,
+                1,3,5, 3,7,5
+              ];
+              const pGeo = new THREE.BufferGeometry();
+              pGeo.setAttribute('position', new THREE.BufferAttribute(pv, 3));
+              pGeo.setIndex(pIdx);
+              pGeo.computeVertexNormals();
+              addObj(new THREE.Mesh(pGeo, concMat));
             }
           }
         }
@@ -4092,8 +4209,10 @@ async function open3DView(t){
 
     // 縁線
     const edgeMat = new THREE.LineBasicMaterial({color: 0x333333});
-    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftPts), edgeMat));
-    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightPts), edgeMat.clone()));
+    const leftEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftPts), edgeMat);
+    const rightEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightPts), edgeMat.clone());
+    group.add(leftEdge);
+    group.add(rightEdge);
     // 中央線（破線）
     const centerMat = new THREE.LineDashedMaterial({color: 0x666666, dashSize: 2, gapSize: 1.5});
     const centerLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(centerPts), centerMat);
@@ -4244,10 +4363,50 @@ async function open3DView(t){
 
     controls.update();
 
+    // ホーム位置を保存
+    const homePos = camera.position.clone();
+    const homeTarget = controls.target.clone();
+
+    // カメラプリセット
+    const camPresets = {
+      overview: { pos: homePos.clone(), target: homeTarget.clone() },
+      profile: {
+        pos: new THREE.Vector3(maxDim * 1.3, 0, maxDim * 0.1),
+        target: new THREE.Vector3(0, 0, 0)
+      },
+      top: {
+        pos: new THREE.Vector3(maxDim * 0.01, maxDim * 0.01, maxDim * 1.5),
+        target: new THREE.Vector3(0, 0, 0)
+      }
+    };
+
+    // スムーズカメラ遷移
+    let camTween = null;
+    const easeIO = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+    function tweenCamera(toPos, toTarget, dur){
+      dur = dur || 0.4;
+      camTween = {
+        fp: camera.position.clone(), ft: controls.target.clone(),
+        tp: toPos.clone(), tt: toTarget.clone(),
+        dur, elapsed: 0
+      };
+    }
+
     scene.add(new THREE.HemisphereLight(0xdde8f0, 0x0a1a0a, 0.5));
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
     dirLight.position.set(maxDim * 0.5, maxDim * 0.5, maxDim * 1.2);
     scene.add(dirLight);
+
+    // ルート描画アニメーション初期状態
+    const DRAW_ON_DUR = 2.0;
+    let drawOnT = 0;
+    let drawOnDone = false;
+    const allRoadMeshes = [...cornerMeshes, ...elevMeshes, ...whiteMeshes];
+    allRoadMeshes.forEach(m => m.visible = false);
+    leftEdge.geometry.setDrawRange(0, 0);
+    rightEdge.geometry.setDrawRange(0, 0);
+    centerLine.geometry.setDrawRange(0, 0);
+    sphere.visible = false;
 
     // 赤丸アニメーション（実距離ベースの一定速度）
     let progress = 0;
@@ -4258,21 +4417,58 @@ async function open3DView(t){
     const progressPerFrame = pathLen > 0 ? SPEED / pathLen : 0.005;
 
     let animId;
-    const animate = () => {
+    let lastTime = performance.now();
+    const animate = (now) => {
       animId = requestAnimationFrame(animate);
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+
+      // カメラ遷移
+      if(camTween){
+        camTween.elapsed += dt;
+        const t = Math.min(camTween.elapsed / camTween.dur, 1);
+        const e = easeIO(t);
+        camera.position.lerpVectors(camTween.fp, camTween.tp, e);
+        controls.target.lerpVectors(camTween.ft, camTween.tt, e);
+        if(t >= 1) camTween = null;
+      }
+
       controls.update();
       group.rotation.z += 0.002;
 
-      progress += progressPerFrame;
-      if(progress > 1) progress = 0;
-      const idx = Math.floor(progress * (totalPts - 1));
-      const next = Math.min(idx + 1, totalPts - 1);
-      const frac = (progress * (totalPts - 1)) % 1;
-      sphere.position.lerpVectors(centerPts[idx], centerPts[next], frac);
+      // ルート描画アニメーション
+      if(!drawOnDone){
+        drawOnT += dt / DRAW_ON_DUR;
+        const revealT = Math.min(drawOnT, 1);
+        const eased = 1 - Math.pow(1 - revealT, 2);
+        const ptCount = pts3.length;
+        const revealN = Math.max(1, Math.floor(eased * ptCount));
+        leftEdge.geometry.setDrawRange(0, revealN);
+        rightEdge.geometry.setDrawRange(0, revealN);
+        centerLine.geometry.setDrawRange(0, revealN);
+        allRoadMeshes.forEach(m => {
+          if(m.userData.routeFrac <= eased && !m.visible) m.visible = true;
+        });
+        if(revealT >= 1){
+          drawOnDone = true;
+          sphere.visible = true;
+          updateRoadVisibility();
+        }
+      }
+
+      // 赤丸移動（描画完了後）
+      if(drawOnDone){
+        progress += progressPerFrame;
+        if(progress > 1) progress = 0;
+        const idx = Math.floor(progress * (totalPts - 1));
+        const next = Math.min(idx + 1, totalPts - 1);
+        const frac = (progress * (totalPts - 1)) % 1;
+        sphere.position.lerpVectors(centerPts[idx], centerPts[next], frac);
+      }
 
       renderer.render(scene, camera);
     };
-    animate();
+    animate(performance.now());
 
     const onResize = () => {
       const w = window.innerWidth, h = window.innerHeight;
@@ -4281,6 +4477,24 @@ async function open3DView(t){
       renderer.setSize(w, h);
     };
     window.addEventListener('resize', onResize);
+
+    // プリセットボタン
+    const presetBtns = document.querySelectorAll('.overlay-3d-preset[data-preset]');
+    function setActivePreset(name){
+      presetBtns.forEach(b => b.classList.toggle('active', b.dataset.preset === name));
+    }
+    presetBtns.forEach(btn => {
+      btn.onclick = () => {
+        const p = camPresets[btn.dataset.preset];
+        if(!p) return;
+        tweenCamera(p.pos, p.target);
+        setActivePreset(btn.dataset.preset);
+      };
+    });
+    $("home3d").onclick = () => {
+      tweenCamera(homePos, homeTarget);
+      setActivePreset("overview");
+    };
 
     const legend3d = $("legend3d");
     const cornerLegend = '<span><i style="background:#FF453A"></i>低速コーナー</span><span><i style="background:#FF9F0A"></i>中速</span><span><i style="background:#30D158"></i>高速</span><span><i style="background:#98989D"></i>ストレート</span>';
@@ -4292,6 +4506,7 @@ async function open3DView(t){
     legend3d.innerHTML = cornerLegend;
 
     function updateRoadVisibility(){
+      if(!drawOnDone) return;
       cornerMeshes.forEach(m => m.visible = sectionVisible && !elevMode);
       elevMeshes.forEach(m => m.visible = sectionVisible && elevMode);
       whiteMeshes.forEach(m => m.visible = !sectionVisible);
