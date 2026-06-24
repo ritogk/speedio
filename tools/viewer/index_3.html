@@ -4066,11 +4066,13 @@ async function open3DView(t){
     const bridgeObjs = [];
     {
       const DECK_T = 0.8;
+      const DECK_TOP = -0.15;
       const GUARD_H = 1.5;
-      const PILLAR_INTERVAL = 4;
+      const RAIL_T = 0.15;
+      const POST_INTERVAL = 2;
+      const PIER_THICK = 0.6;
       const concMat = new THREE.MeshBasicMaterial({color: 0x686460, side: THREE.DoubleSide});
       const guardMat = new THREE.MeshBasicMaterial({color: 0x888278, side: THREE.DoubleSide});
-      const pillarMat = new THREE.MeshBasicMaterial({color: 0x686460});
       const addObj = (o) => { bridgeObjs.push(o); group.add(o); };
 
       // 道路端に沿った板メッシュ
@@ -4100,30 +4102,25 @@ async function open3DView(t){
           const end = Math.min(i, pts3.length - 1);
           const n = end - rs + 1;
           if(n >= 2){
-            // 左右側面のみ（底面なし、道路面が見える。上端を少し下げてZ-fighting回避）
+            // 左右側面（DECK_TOPで道路面より少し下げてZ-fighting回避）
             for(const sidePts of [leftPts, rightPts]){
-              buildSlab(sidePts, rs, n, -DECK_T, -0.15, concMat);
+              buildSlab(sidePts, rs, n, -DECK_T, DECK_TOP, concMat);
             }
 
-            // 左右ガードレール（柵: 横バー2段 + 縦ポスト、メッシュ板で太さを出す）
-            const RAIL_T = 0.15;
-            const POST_INTERVAL = 2;
+            // 左右ガードレール（柵: 横バー2段 + 縦ポスト）
             for(const side of [leftPts, rightPts]){
-              // 上段・中段の横バー（薄い板メッシュ）
               for(const hRatio of [1.0, 0.5]){
                 const barH = GUARD_H * hRatio;
                 buildSlab(side, rs, n, barH - RAIL_T, barH + RAIL_T, guardMat);
               }
-              // 縦ポスト（薄い板メッシュ）
               for(let j = 0; j < n; j += POST_INTERVAL){
                 const sp = side[rs + j];
                 const norm = smoothNormals[rs + j];
-                const pw = RAIL_T;
                 const pv = new Float32Array(4 * 3);
-                pv[0] = sp.x + norm.x*pw; pv[1] = sp.y + norm.y*pw; pv[2] = sp.z;
-                pv[3] = sp.x - norm.x*pw; pv[4] = sp.y - norm.y*pw; pv[5] = sp.z;
-                pv[6] = sp.x + norm.x*pw; pv[7] = sp.y + norm.y*pw; pv[8] = sp.z + GUARD_H + RAIL_T;
-                pv[9] = sp.x - norm.x*pw; pv[10]= sp.y - norm.y*pw; pv[11]= sp.z + GUARD_H + RAIL_T;
+                pv[0] = sp.x + norm.x*RAIL_T; pv[1] = sp.y + norm.y*RAIL_T; pv[2] = sp.z;
+                pv[3] = sp.x - norm.x*RAIL_T; pv[4] = sp.y - norm.y*RAIL_T; pv[5] = sp.z;
+                pv[6] = sp.x + norm.x*RAIL_T; pv[7] = sp.y + norm.y*RAIL_T; pv[8] = sp.z + GUARD_H + RAIL_T;
+                pv[9] = sp.x - norm.x*RAIL_T; pv[10]= sp.y - norm.y*RAIL_T; pv[11]= sp.z + GUARD_H + RAIL_T;
                 const pGeo = new THREE.BufferGeometry();
                 pGeo.setAttribute('position', new THREE.BufferAttribute(pv, 3));
                 pGeo.setIndex([0,2,1, 1,2,3]);
@@ -4132,14 +4129,14 @@ async function open3DView(t){
               }
             }
 
-            // 始点・終点の端面キャップ（デッキ底面〜路面）
+            // 始点・終点の端面キャップ（DECK_TOPと揃える）
             for(const ci of [rs, end]){
               const li = leftPts[ci], ri = rightPts[ci];
               const cv = new Float32Array(4 * 3);
               cv[0]=li.x; cv[1]=li.y; cv[2]=li.z - DECK_T;
               cv[3]=ri.x; cv[4]=ri.y; cv[5]=ri.z - DECK_T;
-              cv[6]=li.x; cv[7]=li.y; cv[8]=li.z;
-              cv[9]=ri.x; cv[10]=ri.y; cv[11]=ri.z;
+              cv[6]=li.x; cv[7]=li.y; cv[8]=li.z + DECK_TOP;
+              cv[9]=ri.x; cv[10]=ri.y; cv[11]=ri.z + DECK_TOP;
               const cGeo = new THREE.BufferGeometry();
               cGeo.setAttribute('position', new THREE.BufferAttribute(cv, 3));
               cGeo.setIndex([0,1,2, 2,1,3]);
@@ -4152,7 +4149,6 @@ async function open3DView(t){
             const gzA = terrainZ(pA.x, pA.y), gzB = terrainZ(pB.x, pB.y);
             const hA = pA.z - DECK_T - gzA, hB = pB.z - DECK_T - gzB;
             const pH = Math.max(hA, hB, 0.5);
-            const PIER_THICK = 0.6;
             for(const ji of [rs, end]){
               const li = leftPts[ji], ri = rightPts[ji];
               const p = pts3[ji];
@@ -4626,8 +4622,10 @@ async function open3DView(t){
         $("toggleParams3d").textContent = min ? "□" : "─";
         $("toggleParams3d").title = min ? "復元" : "最小化";
       };
-      paramsEl.classList.remove("minimized");
+      paramsEl.classList.add("minimized");
       paramsEl.classList.add("show");
+      $("toggleParams3d").textContent = "□";
+      $("toggleParams3d").title = "復元";
     }else{
       paramsEl.classList.remove("show");
       paramsEl.innerHTML = "";
