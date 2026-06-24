@@ -3831,6 +3831,12 @@ async function open3DView(t){
     }
 
     // 道路メッシュ（geometry_list + elevation_smooth直結、3d.jsと同じリボン方式）
+    // エンティティグループ（renderOrder: 値が大きいほど手前に表示）
+    const Z = { ROAD: 20, EDGE: 21, INFRA: 22, SPHERE: 23 };
+    const routeGroup  = new THREE.Group();
+    const tunnelGroup = new THREE.Group();
+    const bridgeGroup = new THREE.Group();
+    group.add(routeGroup, tunnelGroup, bridgeGroup);
     const ROAD_W = 1.5;
     const pts3 = geomList.map((p, i) => {
       const [x, y, z] = toXYZ(p[0], p[1], elevSmooth[i] ?? 0);
@@ -3921,14 +3927,14 @@ async function open3DView(t){
     const whiteMeshes = buildRoadMeshes(whiteLevels, {white:0xB0B8C0});
     whiteMeshes.forEach(m => {
       m.visible = false;
-      m.renderOrder = 20;
-      group.add(m);
+      m.renderOrder = Z.ROAD;
+      routeGroup.add(m);
     });
 
     const cornerMeshes = buildRoadMeshes(ptLevels, LEVEL_HEX);
     const elevMeshes = buildRoadMeshes(ptElevDir, ELEV_HEX);
-    cornerMeshes.forEach(m => { m.renderOrder = 20; group.add(m); });
-    elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 20; group.add(m); });
+    cornerMeshes.forEach(m => { m.renderOrder = Z.ROAD; routeGroup.add(m); });
+    elevMeshes.forEach(m => { m.visible = false; m.renderOrder = Z.ROAD; routeGroup.add(m); });
 
     // トンネル・橋区間のインデックスを特定
     const ptIsTunnel = new Array(geomList.length).fill(false);
@@ -3953,7 +3959,6 @@ async function open3DView(t){
     matchInfraSections(t.bridgeSections, ptIsBridge);
 
     // トンネル: アーチ状の半円筒を道路上に描画
-    const tunnelObjs = [];
     {
       const ARC_SEGS = 12;
       const T_RX = ROAD_W + 0.8;
@@ -4007,9 +4012,8 @@ async function open3DView(t){
             geo.setIndex(idx);
             geo.computeVertexNormals();
             const mesh = new THREE.Mesh(geo, tunnelMat);
-            mesh.renderOrder = 10;
-            tunnelObjs.push(mesh);
-            group.add(mesh);
+            mesh.renderOrder = Z.INFRA;
+            tunnelGroup.add(mesh);
 
             // ポータル（入口・出口の半円面）
             for(const pi of [rs, end]){
@@ -4034,9 +4038,8 @@ async function open3DView(t){
               pGeo.setIndex(pIdx);
               pGeo.computeVertexNormals();
               const pMesh = new THREE.Mesh(pGeo, portalMat);
-              pMesh.renderOrder = 10;
-              tunnelObjs.push(pMesh);
-              group.add(pMesh);
+              pMesh.renderOrder = Z.INFRA;
+              tunnelGroup.add(pMesh);
             }
           }
         }
@@ -4062,7 +4065,6 @@ async function open3DView(t){
     };
 
     // 橋: コンクリート床版 + 低いガードレール + 橋脚（テレインまで）
-    const bridgeObjs = [];
     {
       const DECK_T = 0.8;
       const DECK_TOP = -0.15;
@@ -4072,7 +4074,7 @@ async function open3DView(t){
       const PIER_THICK = 0.6;
       const concMat = new THREE.MeshBasicMaterial({color: 0x686460, side: THREE.DoubleSide});
       const guardMat = new THREE.MeshBasicMaterial({color: 0x888278, side: THREE.DoubleSide});
-      const addObj = (o) => { bridgeObjs.push(o); group.add(o); };
+      const addObj = (o) => { o.renderOrder = Z.INFRA; bridgeGroup.add(o); };
 
       // 道路端に沿った板メッシュ
       const buildSlab = (sidePts, startIdx, count, zBot, zTop, mat) => {
@@ -4193,15 +4195,15 @@ async function open3DView(t){
     const edgeMat = new THREE.LineBasicMaterial({color: 0x333333, transparent: true, opacity: 1.0, depthTest: false, depthWrite: false});
     const leftEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftPts), edgeMat);
     const rightEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightPts), edgeMat.clone());
-    leftEdge.renderOrder = 21; rightEdge.renderOrder = 21;
-    group.add(leftEdge);
-    group.add(rightEdge);
+    leftEdge.renderOrder = Z.EDGE; rightEdge.renderOrder = Z.EDGE;
+    routeGroup.add(leftEdge);
+    routeGroup.add(rightEdge);
     // 中央線（破線）
     const centerMat = new THREE.LineDashedMaterial({color: 0x666666, dashSize: 2, gapSize: 1.5, transparent: true, opacity: 1.0, depthTest: false, depthWrite: false});
     const centerLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(centerPts), centerMat);
-    centerLine.renderOrder = 21;
+    centerLine.renderOrder = Z.EDGE;
     centerLine.computeLineDistances();
-    group.add(centerLine);
+    routeGroup.add(centerLine);
 
     // 補助線（bboxフレーム + 道路から上方向への垂直線）
     {
@@ -4326,8 +4328,8 @@ async function open3DView(t){
       new THREE.SphereGeometry(4, 16, 16),
       new THREE.MeshBasicMaterial({color: 0xff0000, transparent: true, opacity: 1.0, depthTest: false, depthWrite: false})
     );
-    sphere.renderOrder = 22;
-    group.add(sphere);
+    sphere.renderOrder = Z.SPHERE;
+    routeGroup.add(sphere);
 
     const floorW = rMaxX - rMinX, floorH = rMaxY - rMinY;
     const floorGeo = new THREE.PlaneGeometry(floorW, floorH);
@@ -4598,7 +4600,7 @@ async function open3DView(t){
     }
 
     // トンネル/橋トグル（3Dオブジェクトの表示/非表示）
-    const hasInfra = tunnelObjs.length > 0 || bridgeObjs.length > 0;
+    const hasInfra = tunnelGroup.children.length > 0 || bridgeGroup.children.length > 0;
     const infraBtn = $("toggle3dInfra");
     if(hasInfra){
       infraBtn.style.display = "";
@@ -4606,8 +4608,8 @@ async function open3DView(t){
       infraBtn.classList.add("active");
       infraBtn.onclick = ()=>{
         infraVisible = !infraVisible;
-        tunnelObjs.forEach(o => o.visible = infraVisible);
-        bridgeObjs.forEach(o => o.visible = infraVisible);
+        tunnelGroup.visible = infraVisible;
+        bridgeGroup.visible = infraVisible;
         infraBtn.classList.toggle("active", infraVisible);
       };
     }else{
