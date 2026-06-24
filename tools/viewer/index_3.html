@@ -376,6 +376,18 @@ main{flex:1;position:relative;min-height:0}
 }
 .overlay-3d-toggle:hover{background:rgba(255,255,255,.15)}
 .overlay-3d-toggle.active{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.6)}
+.overlay-3d-cam{
+  position:absolute;bottom:48px;right:14px;z-index:10;
+  display:flex;gap:1px;
+  background:rgba(0,0,0,.35);border-radius:8px;overflow:hidden;
+}
+.overlay-3d-cam-btn{
+  font:inherit;font-size:11px;font-weight:500;cursor:pointer;
+  border:none;background:rgba(255,255,255,.1);color:#fff;
+  padding:7px 14px;white-space:nowrap;
+}
+.overlay-3d-cam-btn:hover{background:rgba(255,255,255,.22)}
+.overlay-3d-cam-btn:active{background:rgba(255,255,255,.3)}
 .overlay-3d-info{color:#fff;font-size:13px;line-height:1.6}
 .overlay-3d-info b{font-weight:700}
 .overlay-3d-hint{
@@ -1133,6 +1145,11 @@ main{flex:1;position:relative;min-height:0}
     </div>
     <div class="overlay-3d-legend" id="legend3d"></div>
     <div class="overlay-3d-params" id="params3d"></div>
+    <div class="overlay-3d-cam">
+      <button class="overlay-3d-cam-btn" id="cam3dTop">真上</button>
+      <button class="overlay-3d-cam-btn" id="cam3dSide">側面</button>
+      <button class="overlay-3d-cam-btn" id="cam3dReset">リセット</button>
+    </div>
     <div class="overlay-3d-hint">1本指で回転 ・ 2本指で移動/ズーム</div>
   </div>
 
@@ -3649,6 +3666,8 @@ async function open3DView(t){
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.maxPolarAngle = Math.PI / 2.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 2.0;
 
     const group = new THREE.Group();
 
@@ -4343,8 +4362,6 @@ async function open3DView(t){
     dirLight.position.set(fitDist * 0.5, fitDist * 0.5, fitDist * 1.2);
     scene.add(dirLight);
 
-    let autoRotate = true;
-
     // ルート描画アニメーション初期状態
     const DRAW_ON_DUR = 2.0;
     let drawOnT = 0;
@@ -4371,7 +4388,6 @@ async function open3DView(t){
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
 
-      if(autoRotate) group.rotation.z += 0.002;
       controls.update();
 
       // ルート描画アニメーション
@@ -4555,6 +4571,41 @@ async function open3DView(t){
     }
 
     active3D = {renderer, scene, animId, onResize};
+
+    // BBox面カメラプリセット
+    {
+      const setCamFace = (posDir, upVec, faceW, faceH, depth) => {
+        controls.autoRotate = false;
+        controls.maxPolarAngle = Math.PI;
+        const dV = (faceH / 2) / Math.tan(vFov / 2);
+        const dH = (faceW / 2) / Math.tan(hFov / 2);
+        const d = (Math.max(dV, dH) + depth / 2) * 1.1;
+        camera.up.copy(upVec);
+        camera.position.copy(posDir).normalize().multiplyScalar(d);
+        controls.target.set(0, 0, 0);
+        controls.update();
+      };
+      $("cam3dTop").onclick = () => setCamFace(
+        new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0),
+        size.x, size.y, size.z
+      );
+      $("cam3dSide").onclick = () => setCamFace(
+        size.x >= size.y
+          ? new THREE.Vector3(0, 1, 0)
+          : new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(0, 0, 1),
+        Math.max(size.x, size.y), size.z,
+        Math.min(size.x, size.y)
+      );
+      $("cam3dReset").onclick = () => {
+        controls.autoRotate = true;
+        controls.maxPolarAngle = Math.PI / 2.05;
+        camera.up.set(0, 0, 1);
+        camera.position.set(fitDist * 0.45, fitDist * 0.58, fitDist * 0.45);
+        controls.target.set(0, 0, 0);
+        controls.update();
+      };
+    }
 
     const maxE = validElevs.length ? Math.round(Math.max(...validElevs)) : 0;
     const minE = validElevs.length ? Math.round(Math.min(...validElevs)) : 0;
