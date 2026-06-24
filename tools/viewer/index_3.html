@@ -3663,9 +3663,10 @@ async function open3DView(t){
     const camera = new THREE.PerspectiveCamera(50, W / H, 0.5, 5000);
     camera.up.set(0, 0, 1);
 
-    let controls = new OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
+    controls.maxPolarAngle = Math.PI / 2.05;
 
     const group = new THREE.Group();
 
@@ -3830,12 +3831,6 @@ async function open3DView(t){
     }
 
     // 道路メッシュ（geometry_list + elevation_smooth直結、3d.jsと同じリボン方式）
-    // エンティティグループ（renderOrder: 値が大きいほど手前に表示）
-    const Z = { ROAD: 20, EDGE: 21, INFRA: 22, SPHERE: 23 };
-    const routeGroup  = new THREE.Group();
-    const tunnelGroup = new THREE.Group();
-    const bridgeGroup = new THREE.Group();
-    group.add(routeGroup, tunnelGroup, bridgeGroup);
     const ROAD_W = 1.5;
     const pts3 = geomList.map((p, i) => {
       const [x, y, z] = toXYZ(p[0], p[1], elevSmooth[i] ?? 0);
@@ -3910,8 +3905,7 @@ async function open3DView(t){
           geo.computeVertexNormals();
           const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
             color: colorMap[levels[rs]] || 0x98989D,
-            side: THREE.DoubleSide,
-            transparent: true, opacity: 1.0, depthTest: false, depthWrite: false
+            side: THREE.DoubleSide
           }));
           mesh.userData.routeFrac = rs / Math.max(pts3.length - 1, 1);
           meshes.push(mesh);
@@ -3926,14 +3920,16 @@ async function open3DView(t){
     const whiteMeshes = buildRoadMeshes(whiteLevels, {white:0xB0B8C0});
     whiteMeshes.forEach(m => {
       m.visible = false;
-      m.renderOrder = Z.ROAD;
-      routeGroup.add(m);
+      m.material.polygonOffset = true;
+      m.material.polygonOffsetFactor = 1;
+      m.material.polygonOffsetUnits = 1;
+      group.add(m);
     });
 
     const cornerMeshes = buildRoadMeshes(ptLevels, LEVEL_HEX);
     const elevMeshes = buildRoadMeshes(ptElevDir, ELEV_HEX);
-    cornerMeshes.forEach(m => { m.renderOrder = Z.ROAD; routeGroup.add(m); });
-    elevMeshes.forEach(m => { m.visible = false; m.renderOrder = Z.ROAD; routeGroup.add(m); });
+    cornerMeshes.forEach(m => { m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
+    elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
 
     // トンネル・橋区間のインデックスを特定
     const ptIsTunnel = new Array(geomList.length).fill(false);
@@ -3958,6 +3954,7 @@ async function open3DView(t){
     matchInfraSections(t.bridgeSections, ptIsBridge);
 
     // トンネル: アーチ状の半円筒を道路上に描画
+    const tunnelObjs = [];
     {
       const ARC_SEGS = 12;
       const T_RX = ROAD_W + 0.8;
@@ -4011,8 +4008,9 @@ async function open3DView(t){
             geo.setIndex(idx);
             geo.computeVertexNormals();
             const mesh = new THREE.Mesh(geo, tunnelMat);
-            mesh.renderOrder = Z.INFRA;
-            tunnelGroup.add(mesh);
+            mesh.renderOrder = 10;
+            tunnelObjs.push(mesh);
+            group.add(mesh);
 
             // ポータル（入口・出口の半円面）
             for(const pi of [rs, end]){
@@ -4037,8 +4035,9 @@ async function open3DView(t){
               pGeo.setIndex(pIdx);
               pGeo.computeVertexNormals();
               const pMesh = new THREE.Mesh(pGeo, portalMat);
-              pMesh.renderOrder = Z.INFRA;
-              tunnelGroup.add(pMesh);
+              pMesh.renderOrder = 10;
+              tunnelObjs.push(pMesh);
+              group.add(pMesh);
             }
           }
         }
@@ -4064,6 +4063,7 @@ async function open3DView(t){
     };
 
     // 橋: コンクリート床版 + 低いガードレール + 橋脚（テレインまで）
+    const bridgeObjs = [];
     {
       const DECK_T = 0.8;
       const DECK_TOP = -0.15;
@@ -4073,7 +4073,7 @@ async function open3DView(t){
       const PIER_THICK = 0.6;
       const concMat = new THREE.MeshBasicMaterial({color: 0x686460, side: THREE.DoubleSide});
       const guardMat = new THREE.MeshBasicMaterial({color: 0x888278, side: THREE.DoubleSide});
-      const addObj = (o) => { o.renderOrder = Z.INFRA; bridgeGroup.add(o); };
+      const addObj = (o) => { bridgeObjs.push(o); group.add(o); };
 
       // 道路端に沿った板メッシュ
       const buildSlab = (sidePts, startIdx, count, zBot, zTop, mat) => {
@@ -4191,18 +4191,18 @@ async function open3DView(t){
     }
 
     // 縁線
-    const edgeMat = new THREE.LineBasicMaterial({color: 0x333333, transparent: true, opacity: 1.0, depthTest: false, depthWrite: false});
+    const edgeMat = new THREE.LineBasicMaterial({color: 0x333333, depthTest: false});
     const leftEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftPts), edgeMat);
     const rightEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightPts), edgeMat.clone());
-    leftEdge.renderOrder = Z.EDGE; rightEdge.renderOrder = Z.EDGE;
-    routeGroup.add(leftEdge);
-    routeGroup.add(rightEdge);
+    leftEdge.renderOrder = 11; rightEdge.renderOrder = 11;
+    group.add(leftEdge);
+    group.add(rightEdge);
     // 中央線（破線）
-    const centerMat = new THREE.LineDashedMaterial({color: 0x666666, dashSize: 2, gapSize: 1.5, transparent: true, opacity: 1.0, depthTest: false, depthWrite: false});
+    const centerMat = new THREE.LineDashedMaterial({color: 0x666666, dashSize: 2, gapSize: 1.5, depthTest: false});
     const centerLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(centerPts), centerMat);
-    centerLine.renderOrder = Z.EDGE;
+    centerLine.renderOrder = 11;
     centerLine.computeLineDistances();
-    routeGroup.add(centerLine);
+    group.add(centerLine);
 
     // 補助線（bboxフレーム + 道路から上方向への垂直線）
     {
@@ -4325,10 +4325,9 @@ async function open3DView(t){
     // 赤丸（道路上を走るオブジェクト）
     const sphere = new THREE.Mesh(
       new THREE.SphereGeometry(4, 16, 16),
-      new THREE.MeshBasicMaterial({color: 0xff0000, transparent: true, opacity: 1.0, depthTest: false, depthWrite: false})
+      new THREE.MeshBasicMaterial({color: 0xff0000})
     );
-    sphere.renderOrder = Z.SPHERE;
-    routeGroup.add(sphere);
+    group.add(sphere);
 
     const floorW = rMaxX - rMinX, floorH = rMaxY - rMinY;
     const floorGeo = new THREE.PlaneGeometry(floorW, floorH);
@@ -4361,109 +4360,44 @@ async function open3DView(t){
     const homePos = camera.position.clone();
     const homeTarget = controls.target.clone();
 
-    // ルートOBB軸を3D PCAで算出（3×3共分散行列 → 固有ベクトル）
+    // ルート主軸をPCAで算出（XY平面の共分散行列 → 第1固有ベクトル）
     const cx0 = pts3.reduce((s,p)=>s+p.x, 0) / pts3.length;
     const cy0 = pts3.reduce((s,p)=>s+p.y, 0) / pts3.length;
-    const cz0 = pts3.reduce((s,p)=>s+p.z, 0) / pts3.length;
-    let cxx=0, cxy=0, cxz=0, cyy=0, cyz=0, czz=0;
+    let cxx=0, cxy=0, cyy=0;
     pts3.forEach(p => {
-      const dx=p.x-cx0, dy=p.y-cy0, dz=p.z-cz0;
-      cxx+=dx*dx; cxy+=dx*dy; cxz+=dx*dz;
-      cyy+=dy*dy; cyz+=dy*dz; czz+=dz*dz;
+      const dx = p.x - cx0, dy = p.y - cy0;
+      cxx += dx*dx; cxy += dx*dy; cyy += dy*dy;
     });
-
-    const offDiag = cxy*cxy + cxz*cxz + cyz*cyz;
-    let pc1, pc2, pc3;
-
-    function eigvec3(lam){
-      const r0=[cxx-lam,cxy,cxz], r1=[cxy,cyy-lam,cyz], r2=[cxz,cyz,czz-lam];
-      const cx3=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
-      const vl=v=>Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
-      const c01=cx3(r0,r1), c02=cx3(r0,r2), c12=cx3(r1,r2);
-      const l01=vl(c01), l02=vl(c02), l12=vl(c12);
-      let best=null, bestL=0;
-      if(l01>bestL){bestL=l01;best=c01}
-      if(l02>bestL){bestL=l02;best=c02}
-      if(l12>bestL){bestL=l12;best=c12}
-      return bestL>1e-10 ? best.map(x=>x/bestL) : null;
-    }
-
-    if(offDiag < 1e-12 * (cxx*cxx + cyy*cyy + czz*czz + 1)){
-      const eigs=[{v:cxx,a:[1,0,0]},{v:cyy,a:[0,1,0]},{v:czz,a:[0,0,1]}];
-      eigs.sort((a,b)=>b.v-a.v);
-      pc1=eigs[0].a; pc2=eigs[1].a; pc3=eigs[2].a;
+    let pcaX, pcaY;
+    if(Math.abs(cxy) > 1e-6 * (cxx + cyy + 1)){
+      const tr = cxx + cyy;
+      const disc = Math.sqrt(Math.max(tr * tr / 4 - (cxx * cyy - cxy * cxy), 0));
+      const L1 = tr / 2 + disc;
+      pcaX = L1 - cyy; pcaY = cxy;
     } else {
-      const q=(cxx+cyy+czz)/3;
-      const b00=cxx-q, b11=cyy-q, b22=czz-q;
-      const p2=b00*b00+b11*b11+b22*b22+2*offDiag;
-      const p=Math.sqrt(p2/6), ip=1/p;
-      const B00=b00*ip,B01=cxy*ip,B02=cxz*ip,B11=b11*ip,B12=cyz*ip,B22=b22*ip;
-      const detBh=(B00*(B11*B22-B12*B12)-B01*(B01*B22-B12*B02)+B02*(B01*B12-B11*B02))/2;
-      const phi=Math.acos(Math.max(-1,Math.min(1,detBh)))/3;
-      const e0=q+2*p*Math.cos(phi);
-      const e2=q+2*p*Math.cos(phi+2*Math.PI/3);
-      const v1=eigvec3(e0), v3=eigvec3(e2);
-      if(v1&&v3){
-        pc1=v1; pc3=v3;
-        pc2=[pc3[1]*pc1[2]-pc3[2]*pc1[1],pc3[2]*pc1[0]-pc3[0]*pc1[2],pc3[0]*pc1[1]-pc3[1]*pc1[0]];
-        const l2=Math.sqrt(pc2[0]*pc2[0]+pc2[1]*pc2[1]+pc2[2]*pc2[2]);
-        if(l2>1e-10) pc2=pc2.map(x=>x/l2); else pc2=[0,1,0];
-      } else {
-        pc1=[1,0,0]; pc2=[0,1,0]; pc3=[0,0,1];
-      }
+      pcaX = cxx >= cyy ? 1 : 0;
+      pcaY = cxx >= cyy ? 0 : 1;
     }
+    const pcaLen = Math.sqrt(pcaX*pcaX + pcaY*pcaY) || 1;
+    pcaX /= pcaLen; pcaY /= pcaLen;
 
-    // PC3が上向き(Z>0)になるよう符号補正
-    if(pc3[2]<0){ pc3=pc3.map(x=>-x); pc2=pc2.map(x=>-x); }
+    // 画面の長辺にルート長辺を揃える
+    // perpはルート長辺に直交する方向
+    const perpX = -pcaY, perpY = pcaX;
 
-    // OBB範囲を算出（ワールド空間: pts3 - AABBcenter）
-    let oMin1=Infinity,oMax1=-Infinity,oMin2=Infinity,oMax2=-Infinity,oMin3=Infinity,oMax3=-Infinity;
-    pts3.forEach(p => {
-      const wx=p.x-center.x, wy=p.y-center.y, wz=p.z-center.z;
-      const d1=wx*pc1[0]+wy*pc1[1]+wz*pc1[2];
-      const d2=wx*pc2[0]+wy*pc2[1]+wz*pc2[2];
-      const d3=wx*pc3[0]+wy*pc3[1]+wz*pc3[2];
-      if(d1<oMin1)oMin1=d1;if(d1>oMax1)oMax1=d1;
-      if(d2<oMin2)oMin2=d2;if(d2>oMax2)oMax2=d2;
-      if(d3<oMin3)oMin3=d3;if(d3>oMax3)oMax3=d3;
-    });
-    const obbE1=(oMax1-oMin1)/2, obbE2=(oMax2-oMin2)/2, obbE3=(oMax3-oMin3)/2;
-    const oC1=(oMax1+oMin1)/2, oC2=(oMax2+oMin2)/2, oC3=(oMax3+oMin3)/2;
-    const obbCtr = new THREE.Vector3(
-      oC1*pc1[0]+oC2*pc2[0]+oC3*pc3[0],
-      oC1*pc1[1]+oC2*pc2[1]+oC3*pc3[1],
-      oC1*pc1[2]+oC2*pc2[2]+oC3*pc3[2]
-    );
-
-    // 面フィット距離: 面の半径がFOV内に収まるカメラ距離
-    function faceFitDist(halfW, halfH){
-      const vR=camera.fov*Math.PI/180;
-      const hR=2*Math.atan(Math.tan(vR/2)*aspect);
-      return Math.max(halfW/Math.tan(hR/2), halfH/Math.tan(vR/2))*1.15;
-    }
-
-    // カメラプリセット（OBB軸ベース）
-    // tween完了時にOrbitControlsを再作成しcamera.upのquat更新に対応
-    const defaultUpVec = new THREE.Vector3(0, 0, 1);
+    // カメラプリセット（fitDistベース + ルート主軸整列）
     const camPresets = {
-      overview: { pos: homePos.clone(), target: homeTarget.clone(), up: defaultUpVec.clone() },
+      overview: { pos: homePos.clone(), target: homeTarget.clone() },
       profile: {
-        // PC2方向から → PC1×PC3面（標高プロファイル）が正面
-        pos: (()=>{
-          const d=faceFitDist(obbE1, obbE3);
-          return new THREE.Vector3(obbCtr.x+pc2[0]*d, obbCtr.y+pc2[1]*d, obbCtr.z+pc2[2]*d);
-        })(),
-        target: obbCtr.clone(),
-        up: defaultUpVec.clone()
+        pos: new THREE.Vector3(perpX * fitDist * 0.85, perpY * fitDist * 0.85, fitDist * 0.04),
+        target: new THREE.Vector3(0, 0, 0)
       },
       top: {
-        // PC3方向から → PC1×PC2面（平面図）が正面
-        pos: (()=>{
-          const d=faceFitDist(obbE1, obbE2);
-          return new THREE.Vector3(obbCtr.x+pc3[0]*d, obbCtr.y+pc3[1]*d, obbCtr.z+pc3[2]*d);
-        })(),
-        target: obbCtr.clone(),
-        up: new THREE.Vector3(pc1[0], pc1[1], pc1[2])
+        pos: new THREE.Vector3(0, 0, fitDist * 0.9),
+        target: new THREE.Vector3(0, 0, 0),
+        up: aspect >= 1
+          ? new THREE.Vector3(perpX, perpY, 0)
+          : new THREE.Vector3(pcaX, pcaY, 0)
       }
     };
 
@@ -4513,7 +4447,7 @@ async function open3DView(t){
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
 
-      // カメラ遷移（tween中はcontrols.updateをスキップ）
+      // カメラ遷移
       if(camTween){
         camTween.elapsed += dt;
         const t = Math.min(camTween.elapsed / camTween.dur, 1);
@@ -4521,21 +4455,11 @@ async function open3DView(t){
         camera.position.lerpVectors(camTween.fp, camTween.tp, e);
         controls.target.lerpVectors(camTween.ft, camTween.tt, e);
         camera.up.lerpVectors(camTween.fu, camTween.tu, e).normalize();
-        camera.lookAt(controls.target);
-        if(t >= 1){
-          camTween = null;
-          // OrbitControlsはcamera.upのquatを初期化時にキャッシュするため再作成
-          const savedTarget = controls.target.clone();
-          controls.dispose();
-          controls = new OrbitControls(camera, renderer.domElement);
-          controls.enableDamping = true;
-          controls.dampingFactor = 0.08;
-          controls.target.copy(savedTarget);
-        }
-      } else {
-        if(autoRotate) group.rotation.z += 0.002;
-        controls.update();
+        if(t >= 1) camTween = null;
       }
+
+      if(autoRotate) group.rotation.z += 0.002;
+      controls.update();
 
       // ルート描画アニメーション
       if(!drawOnDone){
@@ -4642,7 +4566,7 @@ async function open3DView(t){
     }
 
     // トンネル/橋トグル（3Dオブジェクトの表示/非表示）
-    const hasInfra = tunnelGroup.children.length > 0 || bridgeGroup.children.length > 0;
+    const hasInfra = tunnelObjs.length > 0 || bridgeObjs.length > 0;
     const infraBtn = $("toggle3dInfra");
     if(hasInfra){
       infraBtn.style.display = "";
@@ -4650,8 +4574,8 @@ async function open3DView(t){
       infraBtn.classList.add("active");
       infraBtn.onclick = ()=>{
         infraVisible = !infraVisible;
-        tunnelGroup.visible = infraVisible;
-        bridgeGroup.visible = infraVisible;
+        tunnelObjs.forEach(o => o.visible = infraVisible);
+        bridgeObjs.forEach(o => o.visible = infraVisible);
         infraBtn.classList.toggle("active", infraVisible);
       };
     }else{
