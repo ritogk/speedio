@@ -4100,9 +4100,9 @@ async function open3DView(t){
           const end = Math.min(i, pts3.length - 1);
           const n = end - rs + 1;
           if(n >= 2){
-            // 左右側面のみ（底面なし、道路面が見える）
+            // 左右側面のみ（底面なし、道路面が見える。上端を少し下げてZ-fighting回避）
             for(const sidePts of [leftPts, rightPts]){
-              buildSlab(sidePts, rs, n, -DECK_T, 0, concMat);
+              buildSlab(sidePts, rs, n, -DECK_T, -0.15, concMat);
             }
 
             // 左右ガードレール（柵: 横バー2段 + 縦ポスト、メッシュ板で太さを出す）
@@ -4394,6 +4394,8 @@ async function open3DView(t){
     dirLight.position.set(fitDist * 0.5, fitDist * 0.5, fitDist * 1.2);
     scene.add(dirLight);
 
+    let autoRotate = true;
+
     // ルート描画アニメーション初期状態
     const DRAW_ON_DUR = 2.0;
     let drawOnT = 0;
@@ -4430,6 +4432,7 @@ async function open3DView(t){
         if(t >= 1) camTween = null;
       }
 
+      if(autoRotate) group.rotation.z += 0.002;
       controls.update();
 
       // ルート描画アニメーション
@@ -4483,11 +4486,13 @@ async function open3DView(t){
       btn.onclick = () => {
         const p = camPresets[btn.dataset.preset];
         if(!p) return;
+        autoRotate = false;
         tweenCamera(p.pos, p.target);
         setActivePreset(btn.dataset.preset);
       };
     });
     $("home3d").onclick = () => {
+      autoRotate = false;
       tweenCamera(homePos, homeTarget);
       setActivePreset("overview");
     };
