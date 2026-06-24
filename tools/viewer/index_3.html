@@ -4360,7 +4360,7 @@ async function open3DView(t){
     const homePos = camera.position.clone();
     const homeTarget = controls.target.clone();
 
-    // ルート主軸をPCAで算出（XY平面）
+    // ルート主軸をPCAで算出（XY平面の共分散行列 → 第1固有ベクトル）
     const cx0 = pts3.reduce((s,p)=>s+p.x, 0) / pts3.length;
     const cy0 = pts3.reduce((s,p)=>s+p.y, 0) / pts3.length;
     let cxx=0, cxy=0, cyy=0;
@@ -4368,27 +4368,36 @@ async function open3DView(t){
       const dx = p.x - cx0, dy = p.y - cy0;
       cxx += dx*dx; cxy += dx*dy; cyy += dy*dy;
     });
-    const trace = cxx + cyy;
-    const det = cxx * cyy - cxy * cxy;
-    const L1 = trace / 2 + Math.sqrt(Math.max(trace * trace / 4 - det, 0));
-    let ax = cxy, ay = L1 - cxx;
-    const alen = Math.sqrt(ax*ax + ay*ay) || 1;
-    ax /= alen; ay /= alen;
-    const isWide = aspect >= 1;
-    const longAxis = isWide ? new THREE.Vector2(ax, ay) : new THREE.Vector2(-ay, ax);
-    const sideDir = new THREE.Vector2(-longAxis.y, longAxis.x);
+    let pcaX, pcaY;
+    if(Math.abs(cxy) > 1e-6 * (cxx + cyy + 1)){
+      const tr = cxx + cyy;
+      const disc = Math.sqrt(Math.max(tr * tr / 4 - (cxx * cyy - cxy * cxy), 0));
+      const L1 = tr / 2 + disc;
+      pcaX = L1 - cyy; pcaY = cxy;
+    } else {
+      pcaX = cxx >= cyy ? 1 : 0;
+      pcaY = cxx >= cyy ? 0 : 1;
+    }
+    const pcaLen = Math.sqrt(pcaX*pcaX + pcaY*pcaY) || 1;
+    pcaX /= pcaLen; pcaY /= pcaLen;
+
+    // 画面の長辺にルート長辺を揃える
+    // perpはルート長辺に直交する方向
+    const perpX = -pcaY, perpY = pcaX;
 
     // カメラプリセット（fitDistベース + ルート主軸整列）
     const camPresets = {
       overview: { pos: homePos.clone(), target: homeTarget.clone() },
       profile: {
-        pos: new THREE.Vector3(sideDir.x * fitDist * 0.85, sideDir.y * fitDist * 0.85, fitDist * 0.04),
+        pos: new THREE.Vector3(perpX * fitDist * 0.85, perpY * fitDist * 0.85, fitDist * 0.04),
         target: new THREE.Vector3(0, 0, 0)
       },
       top: {
         pos: new THREE.Vector3(0, 0, fitDist * 0.9),
         target: new THREE.Vector3(0, 0, 0),
-        up: new THREE.Vector3(longAxis.y, -longAxis.x, 0)
+        up: aspect >= 1
+          ? new THREE.Vector3(perpX, perpY, 0)
+          : new THREE.Vector3(pcaX, pcaY, 0)
       }
     };
 
