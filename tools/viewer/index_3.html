@@ -382,18 +382,6 @@ main{flex:1;position:relative;min-height:0}
   position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:10;
   color:rgba(255,255,255,.45);font-size:11px;pointer-events:none;white-space:nowrap;
 }
-.overlay-3d-presets{
-  position:absolute;bottom:54px;right:14px;z-index:10;
-  display:flex;gap:6px;
-}
-.overlay-3d-preset{
-  font:inherit;font-size:11px;font-weight:500;cursor:pointer;
-  border:1px solid rgba(255,255,255,.25);border-radius:999px;
-  background:rgba(0,0,0,.45);color:#fff;padding:5px 12px;
-  white-space:nowrap;transition:background .15s,border-color .15s;
-}
-.overlay-3d-preset:hover{background:rgba(255,255,255,.15)}
-.overlay-3d-preset.active{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.6)}
 .overlay-3d-legend{
   position:absolute;bottom:50px;left:14px;z-index:10;
   font-size:11px;color:#fff;pointer-events:none;
@@ -1142,12 +1130,6 @@ main{flex:1;position:relative;min-height:0}
       <button class="overlay-3d-toggle" id="toggle3dInfra" style="display:none">トンネル/橋</button>
       <button class="overlay-3d-toggle" id="toggle3dBuildings" style="display:none">🏠 建物</button>
       <button class="overlay-3d-toggle" id="toggle3dPrint" style="display:none">🖨 印刷</button>
-    </div>
-    <div class="overlay-3d-presets" id="presets3d">
-      <button class="overlay-3d-preset active" data-preset="overview">俯瞰</button>
-      <button class="overlay-3d-preset" data-preset="profile">横断面</button>
-      <button class="overlay-3d-preset" data-preset="top">真上</button>
-      <button class="overlay-3d-preset" id="home3d" title="初期位置に戻る">⌂</button>
     </div>
     <div class="overlay-3d-legend" id="legend3d"></div>
     <div class="overlay-3d-params" id="params3d"></div>
@@ -4356,64 +4338,6 @@ async function open3DView(t){
 
     controls.update();
 
-    // ホーム位置を保存
-    const homePos = camera.position.clone();
-    const homeTarget = controls.target.clone();
-
-    // ルート主軸をPCAで算出（XY平面の共分散行列 → 第1固有ベクトル）
-    const cx0 = pts3.reduce((s,p)=>s+p.x, 0) / pts3.length;
-    const cy0 = pts3.reduce((s,p)=>s+p.y, 0) / pts3.length;
-    let cxx=0, cxy=0, cyy=0;
-    pts3.forEach(p => {
-      const dx = p.x - cx0, dy = p.y - cy0;
-      cxx += dx*dx; cxy += dx*dy; cyy += dy*dy;
-    });
-    let pcaX, pcaY;
-    if(Math.abs(cxy) > 1e-6 * (cxx + cyy + 1)){
-      const tr = cxx + cyy;
-      const disc = Math.sqrt(Math.max(tr * tr / 4 - (cxx * cyy - cxy * cxy), 0));
-      const L1 = tr / 2 + disc;
-      pcaX = L1 - cyy; pcaY = cxy;
-    } else {
-      pcaX = cxx >= cyy ? 1 : 0;
-      pcaY = cxx >= cyy ? 0 : 1;
-    }
-    const pcaLen = Math.sqrt(pcaX*pcaX + pcaY*pcaY) || 1;
-    pcaX /= pcaLen; pcaY /= pcaLen;
-
-    // 画面の長辺にルート長辺を揃える
-    // perpはルート長辺に直交する方向
-    const perpX = -pcaY, perpY = pcaX;
-
-    // カメラプリセット（fitDistベース + ルート主軸整列）
-    const camPresets = {
-      overview: { pos: homePos.clone(), target: homeTarget.clone() },
-      profile: {
-        pos: new THREE.Vector3(perpX * fitDist * 0.85, perpY * fitDist * 0.85, fitDist * 0.04),
-        target: new THREE.Vector3(0, 0, 0)
-      },
-      top: {
-        pos: new THREE.Vector3(0, 0, fitDist * 0.9),
-        target: new THREE.Vector3(0, 0, 0),
-        up: aspect >= 1
-          ? new THREE.Vector3(perpX, perpY, 0)
-          : new THREE.Vector3(pcaX, pcaY, 0)
-      }
-    };
-
-    // スムーズカメラ遷移
-    let camTween = null;
-    const easeIO = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
-    const defaultUp = new THREE.Vector3(0, 0, 1);
-    function tweenCamera(toPos, toTarget, dur, toUp){
-      dur = dur || 0.4;
-      camTween = {
-        fp: camera.position.clone(), ft: controls.target.clone(), fu: camera.up.clone(),
-        tp: toPos.clone(), tt: toTarget.clone(), tu: (toUp || defaultUp).clone(),
-        dur, elapsed: 0
-      };
-    }
-
     scene.add(new THREE.HemisphereLight(0xdde8f0, 0x0a1a0a, 0.5));
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
     dirLight.position.set(fitDist * 0.5, fitDist * 0.5, fitDist * 1.2);
@@ -4446,17 +4370,6 @@ async function open3DView(t){
       animId = requestAnimationFrame(animate);
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
-
-      // カメラ遷移
-      if(camTween){
-        camTween.elapsed += dt;
-        const t = Math.min(camTween.elapsed / camTween.dur, 1);
-        const e = easeIO(t);
-        camera.position.lerpVectors(camTween.fp, camTween.tp, e);
-        controls.target.lerpVectors(camTween.ft, camTween.tt, e);
-        camera.up.lerpVectors(camTween.fu, camTween.tu, e).normalize();
-        if(t >= 1) camTween = null;
-      }
 
       if(autoRotate) group.rotation.z += 0.002;
       controls.update();
@@ -4502,28 +4415,6 @@ async function open3DView(t){
       renderer.setSize(w, h);
     };
     window.addEventListener('resize', onResize);
-
-    // プリセットボタン
-    const presetBtns = document.querySelectorAll('.overlay-3d-preset[data-preset]');
-    function setActivePreset(name){
-      presetBtns.forEach(b => b.classList.toggle('active', b.dataset.preset === name));
-    }
-    presetBtns.forEach(btn => {
-      btn.onclick = () => {
-        const p = camPresets[btn.dataset.preset];
-        if(!p) return;
-        autoRotate = false;
-        group.rotation.z = 0;
-        tweenCamera(p.pos, p.target, 0.4, p.up);
-        setActivePreset(btn.dataset.preset);
-      };
-    });
-    $("home3d").onclick = () => {
-      autoRotate = false;
-      group.rotation.z = 0;
-      tweenCamera(homePos, homeTarget);
-      setActivePreset("overview");
-    };
 
     const legend3d = $("legend3d");
     const cornerLegend = '<span><i style="background:#FF453A"></i>低速コーナー</span><span><i style="background:#FF9F0A"></i>中速</span><span><i style="background:#30D158"></i>高速</span><span><i style="background:#98989D"></i>ストレート</span>';
