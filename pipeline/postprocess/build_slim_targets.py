@@ -244,6 +244,14 @@ def slim_touge(t, cur=None, pref_code=None):
             for k, v in (t.get("elevation_unevenness_sections") or {}).items()
         } if t.get("elevation_unevenness_sections") else None,
         "buildings": buildings,
+        "tunnel_sections": [
+            [[r5(p[0]), r5(p[1])] for p in sec]
+            for sec in t.get("tunnel_sections") or []
+        ],
+        "bridge_sections": [
+            [[r5(p[0]), r5(p[1])] for p in sec]
+            for sec in t.get("bridge_sections") or []
+        ],
     }
 
 

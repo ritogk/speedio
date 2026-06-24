@@ -177,7 +177,17 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
             gdf_edges, gdf_tunnel_edges
         )
         execution_timer_ins.stop()
-    
+
+        # トンネル区間の座標リストを生成する
+        execution_timer_ins.start("🚇 calc tunnel_sections")
+        gdf_edges["tunnel_sections"] = column_generater.infra_sections.generate(
+            gdf_edges, gdf_tunnel_edges
+        )
+        execution_timer_ins.stop()
+
+    if "tunnel_sections" not in gdf_edges.columns:
+        gdf_edges["tunnel_sections"] = [[] for _ in range(len(gdf_edges))]
+
     # 橋のデータを取得する
     execution_timer_ins.start("🌉 load osm bridge data", ExecutionType.FETCH)
     graph_bridge = graph_bridge_feather.fetch_graph(search_area_polygon, refresh_cache=refresh_cache)
@@ -199,6 +209,16 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
             gdf_edges, gdf_bridge_edges, column_generater.elevation_infra_regulator.InfraType.BRIDGE
         )
         execution_timer_ins.stop()
+
+        # 橋区間の座標リストを生成する
+        execution_timer_ins.start("🌉 calc bridge_sections")
+        gdf_edges["bridge_sections"] = column_generater.infra_sections.generate(
+            gdf_edges, gdf_bridge_edges
+        )
+        execution_timer_ins.stop()
+
+    if "bridge_sections" not in gdf_edges.columns:
+        gdf_edges["bridge_sections"] = [[] for _ in range(len(gdf_edges))]
 
     # 国の基準に合わせて傾斜を調整する
     execution_timer_ins.start("🏔️ calc elevation_adjuster")
@@ -522,6 +542,8 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "building_nearby_cnt",
         "road_section_cnt",
         "tunnel_length",
+        "tunnel_sections",
+        "bridge_sections",
         "terrain_elevation_file_path",
         "min_elevation",
         "geometry_check_list"
