@@ -3666,7 +3666,6 @@ async function open3DView(t){
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    controls.maxPolarAngle = Math.PI / 2.05;
 
     const group = new THREE.Group();
 
@@ -4512,7 +4511,7 @@ async function open3DView(t){
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
 
-      // カメラ遷移
+      // カメラ遷移（tween中はcontrols.updateをスキップ）
       if(camTween){
         camTween.elapsed += dt;
         const t = Math.min(camTween.elapsed / camTween.dur, 1);
@@ -4520,11 +4519,12 @@ async function open3DView(t){
         camera.position.lerpVectors(camTween.fp, camTween.tp, e);
         controls.target.lerpVectors(camTween.ft, camTween.tt, e);
         camera.up.lerpVectors(camTween.fu, camTween.tu, e).normalize();
+        camera.lookAt(controls.target);
         if(t >= 1) camTween = null;
+      } else {
+        if(autoRotate) group.rotation.z += 0.002;
+        controls.update();
       }
-
-      if(autoRotate) group.rotation.z += 0.002;
-      controls.update();
 
       // ルート描画アニメーション
       if(!drawOnDone){
