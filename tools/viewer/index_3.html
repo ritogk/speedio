@@ -4195,14 +4195,16 @@ async function open3DView(t){
     }
 
     // 縁線
-    const edgeMat = new THREE.LineBasicMaterial({color: 0x333333});
+    const edgeMat = new THREE.LineBasicMaterial({color: 0x333333, depthTest: false});
     const leftEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftPts), edgeMat);
     const rightEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightPts), edgeMat.clone());
+    leftEdge.renderOrder = 11; rightEdge.renderOrder = 11;
     group.add(leftEdge);
     group.add(rightEdge);
     // 中央線（破線）
-    const centerMat = new THREE.LineDashedMaterial({color: 0x666666, dashSize: 2, gapSize: 1.5});
+    const centerMat = new THREE.LineDashedMaterial({color: 0x666666, dashSize: 2, gapSize: 1.5, depthTest: false});
     const centerLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(centerPts), centerMat);
+    centerLine.renderOrder = 11;
     centerLine.computeLineDistances();
     group.add(centerLine);
 
@@ -4429,7 +4431,6 @@ async function open3DView(t){
       }
 
       controls.update();
-      group.rotation.z += 0.002;
 
       // ルート描画アニメーション
       if(!drawOnDone){
