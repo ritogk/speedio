@@ -4417,21 +4417,52 @@ async function open3DView(t){
     // PC3が上向き(Z>0)になるよう符号補正
     if(pc3[2]<0){ pc3=pc3.map(x=>-x); pc2=pc2.map(x=>-x); }
 
+    // OBB範囲を算出（ワールド空間: pts3 - AABBcenter）
+    let oMin1=Infinity,oMax1=-Infinity,oMin2=Infinity,oMax2=-Infinity,oMin3=Infinity,oMax3=-Infinity;
+    pts3.forEach(p => {
+      const wx=p.x-center.x, wy=p.y-center.y, wz=p.z-center.z;
+      const d1=wx*pc1[0]+wy*pc1[1]+wz*pc1[2];
+      const d2=wx*pc2[0]+wy*pc2[1]+wz*pc2[2];
+      const d3=wx*pc3[0]+wy*pc3[1]+wz*pc3[2];
+      if(d1<oMin1)oMin1=d1;if(d1>oMax1)oMax1=d1;
+      if(d2<oMin2)oMin2=d2;if(d2>oMax2)oMax2=d2;
+      if(d3<oMin3)oMin3=d3;if(d3>oMax3)oMax3=d3;
+    });
+    const obbE1=(oMax1-oMin1)/2, obbE2=(oMax2-oMin2)/2, obbE3=(oMax3-oMin3)/2;
+    const oC1=(oMax1+oMin1)/2, oC2=(oMax2+oMin2)/2, oC3=(oMax3+oMin3)/2;
+    const obbCtr = new THREE.Vector3(
+      oC1*pc1[0]+oC2*pc2[0]+oC3*pc3[0],
+      oC1*pc1[1]+oC2*pc2[1]+oC3*pc3[1],
+      oC1*pc1[2]+oC2*pc2[2]+oC3*pc3[2]
+    );
+
+    // 面フィット距離: 面の半径がFOV内に収まるカメラ距離
+    function faceFitDist(halfW, halfH){
+      const vR=camera.fov*Math.PI/180;
+      const hR=2*Math.atan(Math.tan(vR/2)*aspect);
+      return Math.max(halfW/Math.tan(hR/2), halfH/Math.tan(vR/2))*1.15;
+    }
+
     // カメラプリセット（OBB軸ベース）
-    // 真上→PC3方向、横断面→PC2方向（ルート側面=標高プロファイル）
     const camPresets = {
       overview: { pos: homePos.clone(), target: homeTarget.clone() },
       profile: {
-        pos: new THREE.Vector3(pc2[0]*fitDist*0.85, pc2[1]*fitDist*0.85, pc2[2]*fitDist*0.85),
-        target: new THREE.Vector3(0, 0, 0),
-        up: new THREE.Vector3(pc3[0], pc3[1], pc3[2])
+        // PC2方向から → PC1×PC3面（標高プロファイル）が正面
+        pos: (()=>{
+          const d=faceFitDist(obbE1, obbE3);
+          return new THREE.Vector3(obbCtr.x+pc2[0]*d, obbCtr.y+pc2[1]*d, obbCtr.z+pc2[2]*d);
+        })(),
+        target: obbCtr.clone(),
+        up: new THREE.Vector3(0, 0, 1)
       },
       top: {
-        pos: new THREE.Vector3(pc3[0]*fitDist*0.9, pc3[1]*fitDist*0.9, pc3[2]*fitDist*0.9),
-        target: new THREE.Vector3(0, 0, 0),
-        up: aspect >= 1
-          ? new THREE.Vector3(pc2[0], pc2[1], pc2[2])
-          : new THREE.Vector3(pc1[0], pc1[1], pc1[2])
+        // PC3方向から → PC1×PC2面（平面図）が正面
+        pos: (()=>{
+          const d=faceFitDist(obbE1, obbE2);
+          return new THREE.Vector3(obbCtr.x+pc3[0]*d, obbCtr.y+pc3[1]*d, obbCtr.z+pc3[2]*d);
+        })(),
+        target: obbCtr.clone(),
+        up: new THREE.Vector3(pc1[0], pc1[1], pc1[2])
       }
     };
 
