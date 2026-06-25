@@ -66,7 +66,7 @@ function cardHtml(t, rank, total){
 // バーチャルスクロール: 画面に見えるカードだけDOMに生成する
 var CARD_H = 0;
 var CARD_GAP = 8;
-var OVERSCAN = 3;
+var OVERSCAN_RATIO = 1;
 var vsData = [];
 var vsScrollBody = null;
 var vsSpacer = null;
@@ -87,8 +87,10 @@ function vsRender(){
   var scrollTop = vsScrollBody.scrollTop;
   var viewH = vsScrollBody.clientHeight;
   var relTop = scrollTop - offset;
-  var startIdx = Math.max(0, Math.floor(relTop / CARD_H) - OVERSCAN);
-  var endIdx = Math.min(vsData.length, Math.ceil((relTop + viewH) / CARD_H) + OVERSCAN);
+  var visibleN = Math.ceil(viewH / CARD_H);
+  var overscan = Math.max(3, Math.round(visibleN * OVERSCAN_RATIO));
+  var startIdx = Math.max(0, Math.floor(relTop / CARD_H) - overscan);
+  var endIdx = Math.min(vsData.length, Math.ceil((relTop + viewH) / CARD_H) + overscan);
 
   var newRendered = {};
   var frag = document.createDocumentFragment();
