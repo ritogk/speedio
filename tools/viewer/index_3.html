@@ -1142,6 +1142,7 @@ main{flex:1;position:relative;min-height:0}
     <div class="overlay-3d-tools" id="tools3d">
       <button class="overlay-3d-toggle active" id="toggle3dSection">セクション</button>
       <button class="overlay-3d-toggle" id="toggle3dColor" style="display:none">登り/下り</button>
+      <button class="overlay-3d-toggle" id="toggle3dGradient">勾配</button>
       <button class="overlay-3d-toggle" id="toggle3dInfra">トンネル/橋</button>
       <button class="overlay-3d-toggle" id="toggle3dBuildings" style="display:none">🏠 建物</button>
       <button class="overlay-3d-toggle" id="toggle3dPrint" style="display:none">🖨 印刷</button>
@@ -2226,6 +2227,7 @@ function toViewModel(raw, idx){
     scoreElevationGentle: raw.score_elevation_gentle ?? 0,
     scoreElevationModerate: raw.score_elevation_moderate ?? 0,
     scoreElevationSteep: raw.score_elevation_steep ?? 0,
+    elevationSection: raw.elevation_section || [],
     scoreElevationUnevenness: raw.score_elevation_unevenness ?? 0,
     scoreWidth: raw.score_width ?? 0,
     scoreLength: raw.score_length ?? 0,
@@ -3934,6 +3936,21 @@ async function open3DView(t){
       return meshes;
     }
 
+    // 勾配レベル判定（elevation_sectionのlevelを均等割り当て）
+    const GRAD_HEX = { flat:0xB0B8C0, gentle:0x30D158, moderate:0xFF9F0A, steep:0xFF453A };
+    const ptGradLevel = new Array(geomList.length).fill("flat");
+    const elevSecsRaw = t.elevationSection || [];
+    if(elevSecsRaw.length){
+      const N = elevSecsRaw.length;
+      const M = geomList.length;
+      for(let k = 0; k < N; k++){
+        const si = Math.round(k * M / N);
+        const ei = Math.round((k + 1) * M / N);
+        const level = elevSecsRaw[k].level;
+        for(let i = si; i < ei && i < M; i++) ptGradLevel[i] = level;
+      }
+    }
+
     // 白ベース道路（セクション色OFF時に表示）
     const whiteLevels = new Array(geomList.length).fill("white");
     const whiteMeshes = buildRoadMeshes(whiteLevels, {white:0xB0B8C0});
@@ -3947,8 +3964,10 @@ async function open3DView(t){
 
     const cornerMeshes = buildRoadMeshes(ptLevels, LEVEL_HEX);
     const elevMeshes = buildRoadMeshes(ptElevDir, ELEV_HEX);
+    const gradMeshes = buildRoadMeshes(ptGradLevel, GRAD_HEX);
     cornerMeshes.forEach(m => { m.renderOrder = 1; m.material.depthTest = false; m.material.transparent = true; group.add(m); });
     elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; m.material.transparent = true; group.add(m); });
+    gradMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; m.material.transparent = true; group.add(m); });
 
     // トンネル・橋区間のインデックスを特定
     const ptIsTunnel = new Array(geomList.length).fill(false);
@@ -4453,42 +4472,54 @@ async function open3DView(t){
     const legend3d = $("legend3d");
     const cornerLegend = '<span><i style="background:#FF453A"></i>低速コーナー</span><span><i style="background:#FF9F0A"></i>中速</span><span><i style="background:#30D158"></i>高速</span><span><i style="background:#98989D"></i>ストレート</span>';
     const elevLegend = '<span><i style="background:#E8553D"></i>登り</span><span><i style="background:#4A90D9"></i>下り</span><span><i style="background:#98989D"></i>平坦</span>';
+    const gradLegend = '<span><i style="background:#FF453A"></i>急(7%+)</span><span><i style="background:#FF9F0A"></i>中(3-7%)</span><span><i style="background:#30D158"></i>緩(1-3%)</span><span><i style="background:#B0B8C0"></i>平(0-1%)</span>';
 
-    // 道路表示の状態管理
-    let sectionVisible = true;
-    let elevMode = false;
+    // 道路表示の状態管理: "corner" | "elev" | "gradient" | "off"
+    let roadColorMode = "corner";
     legend3d.innerHTML = cornerLegend;
 
     function updateRoadVisibility(){
       if(!drawOnDone) return;
-      cornerMeshes.forEach(m => m.visible = sectionVisible && !elevMode);
-      elevMeshes.forEach(m => m.visible = sectionVisible && elevMode);
-      whiteMeshes.forEach(m => m.visible = !sectionVisible);
-      legend3d.innerHTML = sectionVisible ? (elevMode ? elevLegend : cornerLegend) : "";
+      cornerMeshes.forEach(m => m.visible = roadColorMode === "corner");
+      elevMeshes.forEach(m => m.visible = roadColorMode === "elev");
+      gradMeshes.forEach(m => m.visible = roadColorMode === "gradient");
+      whiteMeshes.forEach(m => m.visible = roadColorMode === "off");
+      legend3d.innerHTML = roadColorMode === "corner" ? cornerLegend : roadColorMode === "elev" ? elevLegend : roadColorMode === "gradient" ? gradLegend : "";
     }
 
     // セクション色トグル
     const secBtn = $("toggle3dSection");
+    const toggleBtn = $("toggle3dColor");
+    const gradBtn = $("toggle3dGradient");
+
+    function updateToggleBtnStates(){
+      secBtn.classList.toggle("active", roadColorMode === "corner");
+      toggleBtn.classList.toggle("active", roadColorMode === "elev");
+      gradBtn.classList.toggle("active", roadColorMode === "gradient");
+    }
+
     secBtn.onclick = ()=>{
-      sectionVisible = !sectionVisible;
-      secBtn.classList.toggle("active", sectionVisible);
+      roadColorMode = roadColorMode === "corner" ? "off" : "corner";
+      updateToggleBtnStates();
       updateRoadVisibility();
     };
 
-    // 登り/下りトグル
-    const toggleBtn = $("toggle3dColor");
     if(eSecs){
       toggleBtn.style.display = "";
       toggleBtn.onclick = ()=>{
-        elevMode = !elevMode;
-        if(!sectionVisible){ sectionVisible = true; secBtn.classList.add("active"); }
-        toggleBtn.classList.toggle("active", elevMode);
-        toggleBtn.textContent = elevMode ? "コーナー" : "登り/下り";
+        roadColorMode = roadColorMode === "elev" ? "corner" : "elev";
+        updateToggleBtnStates();
         updateRoadVisibility();
       };
     }else{
       toggleBtn.style.display = "none";
     }
+
+    gradBtn.onclick = ()=>{
+      roadColorMode = roadColorMode === "gradient" ? "corner" : "gradient";
+      updateToggleBtnStates();
+      updateRoadVisibility();
+    };
 
     // トンネル/橋トグル（3Dオブジェクトの表示/非表示）
     const hasInfra = tunnelObjs.length > 0 || bridgeObjs.length > 0;

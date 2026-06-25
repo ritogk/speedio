@@ -403,6 +403,12 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         column_generater.score_elevation_unevenness.generate(gdf_edges)
     )
     gdf_edges["score_elevation"] = column_generater.score_elevation.generate(gdf_edges)
+    gdf_edges["elevation_section"] = column_generater.elevation_section.generate(gdf_edges)
+    score_elevation_flat, score_elevation_gentle, score_elevation_moderate, score_elevation_steep = column_generater.score_elevation_level.generate(gdf_edges)
+    gdf_edges["score_elevation_flat"] = score_elevation_flat
+    gdf_edges["score_elevation_gentle"] = score_elevation_gentle
+    gdf_edges["score_elevation_moderate"] = score_elevation_moderate
+    gdf_edges["score_elevation_steep"] = score_elevation_steep
     gdf_edges["score_length"] = column_generater.score_length.generate(gdf_edges)
     gdf_edges["score_width"] = column_generater.score_width.generate(gdf_edges)
     gdf_edges["score_center_line_section"] = column_generater.score_center_line_section.generate(gdf_edges)
@@ -516,6 +522,11 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
         "video_elevation_segment_list",
         "angle_deltas",
         "score_elevation",
+        "score_elevation_flat",
+        "score_elevation_gentle",
+        "score_elevation_moderate",
+        "score_elevation_steep",
+        "elevation_section",
         "score_elevation_unevenness",
         "score_width",
         "score_length",
