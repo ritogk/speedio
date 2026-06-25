@@ -95,6 +95,22 @@ description = "CDK deploy 旧ビューワー環境"
 dir = "tools/viewer/infra"
 run = "pnpm cdk deploy --require-approval never"
 
+[tasks."upload:old"]
+description = "旧ビューワーの HTML/JS/CSS を S3 にアップロード + CloudFront invalidation"
+run = """
+set -e
+aws s3 sync tools/viewer/ s3://speedio-old-viewer-788594208758/ \
+  --exclude "targets/*" --exclude "terrain_elevations/*" \
+  --exclude "logistics/*" --exclude "toll_roads/*" \
+  --exclude "tourism_spots/*" --exclude "road_closures/*" \
+  --exclude "infra/*" \
+  --exclude "*.py" --exclude "*.sh" --exclude ".gitignore" \
+  --exclude "*.geojson" \
+  --exclude "elevation_grid.json" --exclude "geometry_data.json" \
+  --exclude "elevation.json" --exclude "jartic.json"
+aws cloudfront create-invalidation --distribution-id EBM4FK68PMJX0 --paths "/*"
+"""
+
 [tasks."deploy:data"]
 description = "峠データを S3 にアップロード (引数: <prod|dev> [pref_code])"
 dir = "pipeline/postprocess"
