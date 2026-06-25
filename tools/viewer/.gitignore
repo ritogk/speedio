@@ -4,3 +4,4 @@ elevation.json
 geometry_data.json
 *.json
 !infra/**/*.json
+dist/

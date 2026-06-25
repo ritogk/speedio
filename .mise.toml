@@ -56,12 +56,17 @@ dir = "pipeline/centerline/python"
 run = "uv run python server.py"
 
 [tasks."pipeline:viewer"]
-description = "結果確認 viewer (静的HTML, port 7001)"
+description = "結果確認 viewer (live-reload dev server, port 7001)"
 dir = "tools/viewer"
 run = """
 explorer.exe 'http://localhost:7001/index_3.html' &
-python3 -m http.server 7001
+live-server . --port=7001 --no-browser --wait=200 \
+  --ignore='dist,infra,*.py,*.sh'
 """
+
+[tasks."pipeline:viewer:build"]
+description = "viewer をビルド (dist/ に JS結合+minify)"
+run = "node tools/viewer/build.mjs"
 
 [tasks."pipeline:viewer:closure"]
 description = "通行止め情報を取得 → tools/viewer/road_closures/"
@@ -99,15 +104,10 @@ run = "pnpm cdk deploy --require-approval never"
 description = "旧ビューワーの HTML/JS/CSS を S3 にアップロード + CloudFront invalidation"
 run = """
 set -e
-aws s3 sync tools/viewer/ s3://speedio-old-viewer-788594208758/ \
+node tools/viewer/build.mjs
+aws s3 sync tools/viewer/dist/ s3://speedio-old-viewer-788594208758/ \
   --exclude "targets/*" --exclude "terrain_elevations/*" \
-  --exclude "logistics/*" --exclude "toll_roads/*" \
-  --exclude "tourism_spots/*" --exclude "road_closures/*" \
-  --exclude "infra/*" \
-  --exclude "*.py" --exclude "*.sh" --exclude ".gitignore" \
-  --exclude "*.geojson" \
-  --exclude "elevation_grid.json" --exclude "geometry_data.json" \
-  --exclude "elevation.json" --exclude "jartic.json"
+  --exclude "_bundle.tmp.js"
 aws cloudfront create-invalidation --distribution-id EBM4FK68PMJX0 --paths "/*"
 """
 
