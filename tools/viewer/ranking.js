@@ -63,6 +63,55 @@ function cardHtml(t, rank, total){
     </article>';
 }
 
+// バーチャルスクロール: 画面に見えるカードだけDOMに生成する
+var CARD_H = 0;
+var CARD_GAP = 10;
+var OVERSCAN = 3;
+var vsData = [];
+var vsScrollBody = null;
+var vsSpacer = null;
+var vsContainer = null;
+var vsRaf = null;
+
+function vsRender(){
+  if(!vsScrollBody || !vsContainer || !vsData.length || !CARD_H) return;
+  var scrollTop = vsScrollBody.scrollTop;
+  var viewH = vsScrollBody.clientHeight;
+  var startIdx = Math.max(0, Math.floor(scrollTop / CARD_H) - OVERSCAN);
+  var endIdx = Math.min(vsData.length, Math.ceil((scrollTop + viewH) / CARD_H) + OVERSCAN);
+
+  var frag = document.createDocumentFragment();
+  for(var i = startIdx; i < endIdx; i++){
+    var o = vsData[i];
+    var existing = vsContainer.querySelector('.card[data-id="'+o.t.id+'"]');
+    if(existing){
+      existing.style.top = (i * CARD_H) + "px";
+      frag.appendChild(existing);
+    } else {
+      var div = document.createElement("div");
+      div.innerHTML = cardHtml(o.t, o.rank, App.lastRanked.length);
+      var card = div.firstElementChild;
+      card.style.position = "absolute";
+      card.style.left = "0";
+      card.style.right = "0";
+      card.style.top = (i * CARD_H) + "px";
+      frag.appendChild(card);
+      if(thumbObserver){
+        var thumb = card.querySelector(".thumb");
+        if(thumb) thumbObserver.observe(thumb);
+      }
+    }
+  }
+  var old = vsContainer.querySelectorAll(".card");
+  old.forEach(function(c){ if(!frag.contains(c)) c.remove(); });
+  vsContainer.appendChild(frag);
+}
+
+function vsOnScroll(){
+  if(vsRaf) return;
+  vsRaf = requestAnimationFrame(function(){ vsRaf = null; vsRender(); });
+}
+
 App.renderCards = function(){
   var ranked = App.lastRanked;
   var q = App.searchQuery.trim().toLowerCase();
@@ -70,35 +119,38 @@ App.renderCards = function(){
   if(q) view = view.filter(function(o){
     return o.t.name.toLowerCase().includes(q) || o.t.routeLabel.toLowerCase().includes(q);
   });
-  var shown = q ? view : view.slice(0, App.visibleCount);
 
   App.$("resultCount").textContent = q
     ? "検索ヒット "+view.length+"件"
-    : "全"+ranked.length+"件中 "+shown.length+"件表示";
+    : "全"+view.length+"件";
 
-  var html = shown.map(function(o){ return cardHtml(o.t, o.rank, ranked.length); }).join("");
-  if(q && !view.length){
-    html = '<p class="no-hit">「'+App.escapeHtml(App.searchQuery)+'」に一致する峠はありません</p>';
-  }
-  if(!q && App.visibleCount < ranked.length){
-    var rest = ranked.length - App.visibleCount;
-    html += '<button class="more-btn" id="moreBtn">さらに'+Math.min(App.PAGE_N, rest)+'件表示（残り'+rest+'件）</button>';
-  }
-  App.$("cards").innerHTML = html;
+  vsData = view;
+  var container = App.$("cards");
+  container.classList.add("thumbs");
 
-  document.querySelectorAll(".card").forEach(function(card){
-    card.addEventListener("click",function(e){
+  if(!vsSpacer){
+    container.style.position = "relative";
+    vsSpacer = document.createElement("div");
+    vsSpacer.style.cssText = "width:1px;pointer-events:none";
+    container.appendChild(vsSpacer);
+    vsContainer = container;
+    vsScrollBody = document.querySelector(".panel-body");
+    vsScrollBody.addEventListener("scroll", vsOnScroll, {passive:true});
+    container.addEventListener("click", function(e){
       if(e.target.closest('[data-act="link"]')) return;
+      var card = e.target.closest(".card");
+      if(!card) return;
+      var id = Number(card.dataset.id);
       var navBtn = e.target.closest('[data-act="nav"]');
       if(navBtn){
         e.stopPropagation();
-        var t = ranked.find(function(x){ return x.id === Number(navBtn.dataset.id); });
+        var t = ranked.find(function(x){ return x.id === id; });
         if(t) App.openNav(t);
         return;
       }
       if(e.target.closest('[data-act="fav"]')){
         e.stopPropagation();
-        var t = ranked.find(function(x){ return x.id === Number(card.dataset.id); });
+        var t = ranked.find(function(x){ return x.id === id; });
         if(t && t.stableKey){
           if(App.favoriteKeys.has(t.stableKey)) App.favoriteKeys.delete(t.stableKey);
           else App.favoriteKeys.add(t.stableKey);
@@ -112,24 +164,42 @@ App.renderCards = function(){
         return;
       }
       if(e.target.closest('[data-act="3d"]')){
-        var t = ranked.find(function(x){ return x.id === Number(card.dataset.id); });
+        var t = ranked.find(function(x){ return x.id === id; });
         if(t) App.open3DView(t);
         return;
       }
-      var t = ranked.find(function(x){ return x.id === Number(card.dataset.id); });
+      var t = ranked.find(function(x){ return x.id === id; });
       if(!t) return;
       App.selectCard(t.id,true);
       App.setSheet("card-peek");
       App.flyToTouge(t);
     });
-  });
-  var mb = document.getElementById("moreBtn");
-  if(mb) mb.addEventListener("click",function(){ App.visibleCount += App.PAGE_N; App.renderCards(); });
-
-  App.$("cards").classList.add("thumbs");
-  if(thumbObserver){
-    document.querySelectorAll("#cards .thumb").forEach(function(el){ thumbObserver.observe(el); });
   }
+
+  if(q && !view.length){
+    container.innerHTML = '<p class="no-hit">「'+App.escapeHtml(App.searchQuery)+'」に一致する峠はありません</p>';
+    vsSpacer.style.height = "0";
+    return;
+  }
+
+  container.querySelectorAll(".card,.no-hit,.more-btn").forEach(function(el){ el.remove(); });
+  if(!container.contains(vsSpacer)) container.appendChild(vsSpacer);
+
+  if(!CARD_H && view.length){
+    var probe = document.createElement("div");
+    probe.innerHTML = cardHtml(view[0].t, 0, view.length);
+    var probeCard = probe.firstElementChild;
+    probeCard.style.position = "absolute";
+    probeCard.style.left = "0";
+    probeCard.style.right = "0";
+    probeCard.style.visibility = "hidden";
+    container.appendChild(probeCard);
+    CARD_H = probeCard.offsetHeight + CARD_GAP;
+    probeCard.remove();
+  }
+
+  vsSpacer.style.height = (view.length * CARD_H) + "px";
+  vsRender();
 };
 
 // ===== ルートサムネ =====
@@ -301,23 +371,39 @@ App.sampleElevations = function(pts, n){
   });
 };
 
+var THUMB_MAX_CONCURRENT = 3;
+var thumbActive = 0;
+var thumbQueue = [];
+
+function processThumbQueue(){
+  while(thumbActive < THUMB_MAX_CONCURRENT && thumbQueue.length){
+    var job = thumbQueue.shift();
+    thumbActive++;
+    job().then(function(){ thumbActive--; processThumbQueue(); });
+  }
+}
+
 function fillThumb(el){
   var tid = Number(el.dataset.tid);
   var t = App.lastRanked.find(function(x){ return x.id === tid; });
   if(!t) return;
-  if(thumbCache[tid] === undefined){
-    // 表示枠の実寸×2の解像度で描く（縦横比を一致させ、object-fit:coverでの見切れを防ぐ）
-    var w = (el.clientWidth || 84) * 2;
-    var h = (el.clientHeight || 116) * 2;
-    thumbCache[tid] = renderRouteThumb(t, w, h).catch(function(){ return null; });
+
+  function doWork(){
+    if(thumbCache[tid] === undefined){
+      var w = (el.clientWidth || 84) * 2;
+      var h = (el.clientHeight || 116) * 2;
+      thumbCache[tid] = renderRouteThumb(t, w, h).catch(function(){ return null; });
+    }
+    return Promise.resolve(thumbCache[tid]).then(function(url){
+      var live = document.querySelector('#cards .thumb[data-tid="'+tid+'"]');
+      if(!live) return;
+      if(url) live.innerHTML = '<img src="'+url+'" alt="コース形状">';
+      else live.textContent = "—";
+    });
   }
-  Promise.resolve(thumbCache[tid]).then(function(url){
-    // 再レンダリングでelが差し替わっている可能性があるため現物を引き直す
-    var live = document.querySelector('#cards .thumb[data-tid="'+tid+'"]');
-    if(!live) return;
-    if(url) live.innerHTML = '<img src="'+url+'" alt="コース形状">';
-    else live.textContent = "—"; // 生成失敗時はスピナーを止めてダッシュ表示
-  });
+
+  thumbQueue.push(doWork);
+  processThumbQueue();
 }
 
 App.render = function(){
@@ -414,17 +500,27 @@ App.highlightOnMap = function(id){
 // ===== ゴーストライン =====
 // 地形に貼り付くラインは山の陰に隠れるため、選択中の峠だけ
 // SVGオーバーレイで全経路を破線でうっすら重ね、完全に隠れないようにする
+var ghostListenerActive = false;
+
 App.setGhost = function(poly){
   if(poly && poly.length > 1){
-    // 点数を間引いて毎フレームの投影コストを抑える
     var MAX = 240;
     if(poly.length <= MAX){ ghostPoly = poly; }
     else{
       var step = (poly.length-1)/(MAX-1);
       ghostPoly = Array.from({length:MAX}, function(_,i){ return poly[Math.round(i*step)]; });
     }
+    if(!ghostListenerActive){
+      App.map.on("render", App.drawGhost);
+      ghostListenerActive = true;
+    }
   }else{
     ghostPoly = null;
+    ghostPath.setAttribute("d","");
+    if(ghostListenerActive){
+      App.map.off("render", App.drawGhost);
+      ghostListenerActive = false;
+    }
   }
   App.drawGhost();
 };
@@ -463,6 +559,14 @@ App.initRanking = function(){
   ghostSvg.appendChild(ghostPath);
   ghostPoly = null;
 
-  // Set up map.on("render", App.drawGhost)
-  App.map.on("render", App.drawGhost); // カメラ移動・地形読み込みに毎フレーム追従させる
+  // drawGhostリスナーはsetGhost()で必要時のみ登録される
+
+  var resizeTimer = null;
+  window.addEventListener("resize", function(){
+    if(resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function(){
+      CARD_H = 0;
+      if(vsData.length) App.renderCards();
+    }, 200);
+  });
 };
