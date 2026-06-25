@@ -978,7 +978,10 @@ main{flex:1;position:relative;min-height:0}
 
     <div class="admin-panel collapsed" id="adminPanel">
       <button class="wp-close" id="wpClose">✕</button>
-        <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
+        <label><span>勾配平</span><input type="number" step="0.1" data-w="elevation_flat"></label>
+        <label><span>勾配緩</span><input type="number" step="0.1" data-w="elevation_gentle"></label>
+        <label><span>勾配中</span><input type="number" step="0.1" data-w="elevation_moderate"></label>
+        <label><span>勾配急</span><input type="number" step="0.1" data-w="elevation_steep"></label>
         <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
         <label><span>道幅</span><input type="number" step="0.1" data-w="width"></label>
         <label><span>距離</span><input type="number" step="0.1" data-w="length"></label>
@@ -1139,7 +1142,7 @@ main{flex:1;position:relative;min-height:0}
     <div class="overlay-3d-tools" id="tools3d">
       <button class="overlay-3d-toggle active" id="toggle3dSection">セクション</button>
       <button class="overlay-3d-toggle" id="toggle3dColor" style="display:none">登り/下り</button>
-      <button class="overlay-3d-toggle" id="toggle3dInfra" style="display:none">トンネル/橋</button>
+      <button class="overlay-3d-toggle" id="toggle3dInfra">トンネル/橋</button>
       <button class="overlay-3d-toggle" id="toggle3dBuildings" style="display:none">🏠 建物</button>
       <button class="overlay-3d-toggle" id="toggle3dPrint" style="display:none">🖨 印刷</button>
     </div>
@@ -1231,7 +1234,8 @@ const presetHints = {
   uphill:"アップダウンの回数が多い道を上位にします。"
 };
 const BALANCE_WEIGHTS = {
-  elevation:0.7, elevation_unevenness:1, width:1.3, length:0.7,
+  elevation_flat:1, elevation_gentle:1, elevation_moderate:1.3, elevation_steep:1,
+  elevation_unevenness:1, width:1.3, length:0.7,
   building:1, tunnel_outside:1,
   corner_week:1, corner_medium:1.3, corner_strong:1, corner_none:1,
   corner_balance:1, claude_center_line_section:1.3
@@ -1239,7 +1243,10 @@ const BALANCE_WEIGHTS = {
 const BALANCE_DIVISOR = Object.keys(BALANCE_WEIGHTS).length;
 function calcBalanceScore(t, w){
   return (
-    t.scoreElevation * w.elevation +
+    (t.scoreElevationFlat * w.elevation_flat +
+     t.scoreElevationGentle * w.elevation_gentle +
+     t.scoreElevationModerate * w.elevation_moderate +
+     t.scoreElevationSteep * w.elevation_steep) +
     t.scoreElevationUnevenness * w.elevation_unevenness +
     t.scoreWidth * w.width +
     t.scoreLength * w.length +
@@ -2215,6 +2222,10 @@ function toViewModel(raw, idx){
     pctStraight: Math.round(segStraight/segTotal*100),
     corner, updown, width,
     scoreElevation: raw.score_elevation ?? 0,
+    scoreElevationFlat: raw.score_elevation_flat ?? 0,
+    scoreElevationGentle: raw.score_elevation_gentle ?? 0,
+    scoreElevationModerate: raw.score_elevation_moderate ?? 0,
+    scoreElevationSteep: raw.score_elevation_steep ?? 0,
     scoreElevationUnevenness: raw.score_elevation_unevenness ?? 0,
     scoreWidth: raw.score_width ?? 0,
     scoreLength: raw.score_length ?? 0,
@@ -3698,11 +3709,14 @@ async function open3DView(t){
       polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1
     });
     const terrMesh = new THREE.Mesh(terrGeo, terrMat);
+    terrMesh.renderOrder = -1;
     group.add(terrMesh);
-    group.add(new THREE.LineSegments(
+    const terrWire = new THREE.LineSegments(
       new THREE.WireframeGeometry(terrGeo),
       new THREE.LineBasicMaterial({color: 0x3a7a4d, transparent: true, opacity: .08})
-    ));
+    );
+    terrWire.renderOrder = -1;
+    group.add(terrWire);
 
     // 地形スカート（bbox端の側面 + 底面）
     var skirtZ;
@@ -3732,10 +3746,12 @@ async function open3DView(t){
       sideGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(skirtVerts), 3));
       sideGeo.setIndex(skirtIdx);
       sideGeo.computeVertexNormals();
-      group.add(new THREE.Mesh(sideGeo, new THREE.MeshStandardMaterial({
+      const sideMesh = new THREE.Mesh(sideGeo, new THREE.MeshStandardMaterial({
         color: 0x2d6b3a, roughness: .9, metalness: 0,
         transparent: true, opacity: .5, side: THREE.DoubleSide
-      })));
+      }));
+      sideMesh.renderOrder = -1;
+      group.add(sideMesh);
       // 底面
       const c0 = 0, c1 = GRID-1, c2 = (GRID-1)*GRID+GRID-1, c3 = (GRID-1)*GRID;
       const floorVerts = new Float32Array([
@@ -3748,10 +3764,12 @@ async function open3DView(t){
       floorGeo.setAttribute('position', new THREE.BufferAttribute(floorVerts, 3));
       floorGeo.setIndex([0,2,1, 0,3,2]);
       floorGeo.computeVertexNormals();
-      group.add(new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({
+      const floorMesh = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({
         color: 0x2d6b3a, roughness: .9, metalness: 0,
         transparent: true, opacity: .1, side: THREE.DoubleSide
-      })));
+      }));
+      floorMesh.renderOrder = -1;
+      group.add(floorMesh);
     }
 
     // 道路中心線のXY座標（建物オフセット計算用）
@@ -3921,16 +3939,16 @@ async function open3DView(t){
     const whiteMeshes = buildRoadMeshes(whiteLevels, {white:0xB0B8C0});
     whiteMeshes.forEach(m => {
       m.visible = false;
-      m.material.polygonOffset = true;
-      m.material.polygonOffsetFactor = 1;
-      m.material.polygonOffsetUnits = 1;
+      m.renderOrder = 1;
+      m.material.depthTest = false;
+      m.material.transparent = true;
       group.add(m);
     });
 
     const cornerMeshes = buildRoadMeshes(ptLevels, LEVEL_HEX);
     const elevMeshes = buildRoadMeshes(ptElevDir, ELEV_HEX);
-    cornerMeshes.forEach(m => { m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
-    elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; group.add(m); });
+    cornerMeshes.forEach(m => { m.renderOrder = 1; m.material.depthTest = false; m.material.transparent = true; group.add(m); });
+    elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; m.material.transparent = true; group.add(m); });
 
     // トンネル・橋区間のインデックスを特定
     const ptIsTunnel = new Array(geomList.length).fill(false);
@@ -4192,14 +4210,14 @@ async function open3DView(t){
     }
 
     // 縁線
-    const edgeMat = new THREE.LineBasicMaterial({color: 0x333333, depthTest: false});
+    const edgeMat = new THREE.LineBasicMaterial({color: 0x333333, depthTest: false, transparent: true});
     const leftEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftPts), edgeMat);
     const rightEdge = new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightPts), edgeMat.clone());
     leftEdge.renderOrder = 11; rightEdge.renderOrder = 11;
     group.add(leftEdge);
     group.add(rightEdge);
     // 中央線（破線）
-    const centerMat = new THREE.LineDashedMaterial({color: 0x666666, dashSize: 2, gapSize: 1.5, depthTest: false});
+    const centerMat = new THREE.LineDashedMaterial({color: 0x666666, dashSize: 2, gapSize: 1.5, depthTest: false, transparent: true});
     const centerLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(centerPts), centerMat);
     centerLine.renderOrder = 11;
     centerLine.computeLineDistances();
@@ -4475,19 +4493,15 @@ async function open3DView(t){
     // トンネル/橋トグル（3Dオブジェクトの表示/非表示）
     const hasInfra = tunnelObjs.length > 0 || bridgeObjs.length > 0;
     const infraBtn = $("toggle3dInfra");
-    if(hasInfra){
-      infraBtn.style.display = "";
-      let infraVisible = true;
-      infraBtn.classList.add("active");
-      infraBtn.onclick = ()=>{
-        infraVisible = !infraVisible;
-        tunnelObjs.forEach(o => o.visible = infraVisible);
-        bridgeObjs.forEach(o => o.visible = infraVisible);
-        infraBtn.classList.toggle("active", infraVisible);
-      };
-    }else{
-      infraBtn.style.display = "none";
-    }
+    infraBtn.style.display = "";
+    let infraVisible = hasInfra;
+    infraBtn.classList.toggle("active", infraVisible);
+    infraBtn.onclick = ()=>{
+      infraVisible = !infraVisible;
+      tunnelObjs.forEach(o => o.visible = infraVisible);
+      bridgeObjs.forEach(o => o.visible = infraVisible);
+      infraBtn.classList.toggle("active", infraVisible);
+    };
 
     // 建物トグル
     const bldgBtn = $("toggle3dBuildings");
@@ -4531,13 +4545,20 @@ async function open3DView(t){
         <dl>
           ${row("score_width", t.scoreWidth)}
           ${row("score_claude_center_line_section", t.scoreClaudeCenterLineSection)}
-          ${row("score_elevation", t.scoreElevation)}
           ${row("score_elevation_unevenness", t.scoreElevationUnevenness)}
           ${row("score_corner_balance", t.scoreCornerBalance)}
           ${row("score_length", t.scoreLength)}
           ${row("score_building", t.scoreBuilding)}
           ${row("score_tunnel_outside", t.scoreTunnelOutside)}
         </dl>
+        <h4>score_elevation</h4>
+        <dl>
+          ${rowC("score_elevation_steep", t.scoreElevationSteep)}
+          ${rowC("score_elevation_moderate", t.scoreElevationModerate)}
+          ${rowC("score_elevation_gentle", t.scoreElevationGentle)}
+          ${rowC("score_elevation_flat", t.scoreElevationFlat)}
+        </dl>
+        <dd style="text-align:right;margin:2px 0 0;color:rgba(255,255,255,.5);font-size:10px">= ${(t.scoreElevationSteep + t.scoreElevationModerate + t.scoreElevationGentle + t.scoreElevationFlat).toFixed(3)}</dd>
         <h4>score_corner</h4>
         <dl>
           ${rowC("score_corner_strong", t.scoreCornerStrong)}
