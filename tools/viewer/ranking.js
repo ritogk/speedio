@@ -72,18 +72,30 @@ var vsScrollBody = null;
 var vsSpacer = null;
 var vsContainer = null;
 var vsRaf = null;
+var vsActiveId = null;
+var vsRenderedCards = {};
+
+function vsCardsOffset(){
+  return vsContainer.getBoundingClientRect().top
+       - vsScrollBody.getBoundingClientRect().top
+       + vsScrollBody.scrollTop;
+}
 
 function vsRender(){
   if(!vsScrollBody || !vsContainer || !vsData.length || !CARD_H) return;
+  var offset = vsCardsOffset();
   var scrollTop = vsScrollBody.scrollTop;
   var viewH = vsScrollBody.clientHeight;
-  var startIdx = Math.max(0, Math.floor(scrollTop / CARD_H) - OVERSCAN);
-  var endIdx = Math.min(vsData.length, Math.ceil((scrollTop + viewH) / CARD_H) + OVERSCAN);
+  var relTop = scrollTop - offset;
+  var startIdx = Math.max(0, Math.floor(relTop / CARD_H) - OVERSCAN);
+  var endIdx = Math.min(vsData.length, Math.ceil((relTop + viewH) / CARD_H) + OVERSCAN);
 
+  var newRendered = {};
   var frag = document.createDocumentFragment();
   for(var i = startIdx; i < endIdx; i++){
     var o = vsData[i];
-    var existing = vsContainer.querySelector('.card[data-id="'+o.t.id+'"]');
+    var id = o.t.id;
+    var existing = vsRenderedCards[id];
     if(existing){
       existing.style.top = (i * CARD_H) + "px";
       frag.appendChild(existing);
@@ -95,15 +107,20 @@ function vsRender(){
       card.style.left = "0";
       card.style.right = "0";
       card.style.top = (i * CARD_H) + "px";
+      if(vsActiveId != null && id === vsActiveId) card.classList.add("active");
       frag.appendChild(card);
       if(thumbObserver){
         var thumb = card.querySelector(".thumb");
         if(thumb) thumbObserver.observe(thumb);
       }
+      existing = card;
     }
+    newRendered[id] = existing;
   }
-  var old = vsContainer.querySelectorAll(".card");
-  old.forEach(function(c){ if(!frag.contains(c)) c.remove(); });
+  for(var key in vsRenderedCards){
+    if(!newRendered[key]) vsRenderedCards[key].remove();
+  }
+  vsRenderedCards = newRendered;
   vsContainer.appendChild(frag);
 }
 
@@ -178,12 +195,17 @@ App.renderCards = function(){
   }
 
   if(q && !view.length){
-    container.innerHTML = '<p class="no-hit">「'+App.escapeHtml(App.searchQuery)+'」に一致する峠はありません</p>';
+    for(var k in vsRenderedCards){ vsRenderedCards[k].remove(); }
+    vsRenderedCards = {};
+    container.querySelectorAll(".no-hit").forEach(function(el){ el.remove(); });
+    container.insertAdjacentHTML("beforeend", '<p class="no-hit">「'+App.escapeHtml(App.searchQuery)+'」に一致する峠はありません</p>');
     vsSpacer.style.height = "0";
     return;
   }
 
-  container.querySelectorAll(".card,.no-hit,.more-btn").forEach(function(el){ el.remove(); });
+  for(var k in vsRenderedCards){ vsRenderedCards[k].remove(); }
+  vsRenderedCards = {};
+  container.querySelectorAll(".no-hit").forEach(function(el){ el.remove(); });
   if(!container.contains(vsSpacer)) container.appendChild(vsSpacer);
 
   if(!CARD_H && view.length){
@@ -445,12 +467,18 @@ App.renderAndFit = function(){
   if(!b.isEmpty()) App.fitBoundsZoomed(b, {padding:App.viewPadding(65), pitch:55, bearing:-10, duration:1200});
 };
 
-// vsDataのインデックスからスクロール先を算出するヘルパー
-function vsTargetScroll(vsIdx){
-  var containerTop = vsContainer.getBoundingClientRect().top
-                   - vsScrollBody.getBoundingClientRect().top
-                   + vsScrollBody.scrollTop;
-  return containerTop + vsIdx * CARD_H;
+// カードをリスト先頭にスクロールする共通処理
+function vsScrollToCard(id, smooth){
+  if(!vsScrollBody || !vsContainer || !CARD_H) return;
+  var vsIdx = vsData.findIndex(function(o){ return o.t.id === id; });
+  if(vsIdx < 0) return;
+  var target = vsCardsOffset() + vsIdx * CARD_H;
+  if(smooth){
+    vsScrollBody.scrollTo({top: target, behavior:"smooth"});
+  } else {
+    vsScrollBody.scrollTop = target;
+    vsRender();
+  }
 }
 
 // 地図上のライン/マーカーから選んだとき、リスト側でそのカードまで開いて選択する
@@ -459,13 +487,8 @@ App.revealAndSelect = function(t){
   if(rank < 0) return;
   if(App.searchQuery){ App.searchQuery = ""; App.$("searchInput").value = ""; }
   App.renderCards();
-  var vsIdx = vsData.findIndex(function(o){ return o.t.id === t.id; });
-  if(vsIdx >= 0 && vsScrollBody && CARD_H){
-    var target = vsTargetScroll(vsIdx);
-    vsScrollBody.scrollTop = target;
-    vsRender();
-  }
-  document.querySelectorAll(".card").forEach(function(c){ c.classList.toggle("active", Number(c.dataset.id)===t.id); });
+  vsActiveId = t.id;
+  vsScrollToCard(t.id, false);
   var card = document.querySelector('.card[data-id="'+t.id+'"]');
   if(card && App.isMobile()){
     var panel = App.$("panel");
@@ -479,21 +502,17 @@ App.revealAndSelect = function(t){
 };
 
 App.selectCard = function(id, scroll){
-  document.querySelectorAll(".card").forEach(function(c){ c.classList.toggle("active", Number(c.dataset.id)===id); });
+  vsActiveId = id;
+  document.querySelectorAll(".card.active").forEach(function(c){ c.classList.remove("active"); });
   var card = document.querySelector('.card[data-id="'+id+'"]');
+  if(card) card.classList.add("active");
   if(card && App.isMobile()){
     var panel = App.$("panel");
     var h = App.$("sheetHandle").offsetHeight + card.offsetHeight + 14;
     panel.style.transform = "translateY(calc(100% - "+h+"px))";
     document.documentElement.style.setProperty("--card-peek-h", h);
   }
-  if(scroll && vsScrollBody && CARD_H){
-    var vsIdx = vsData.findIndex(function(o){ return o.t.id === id; });
-    if(vsIdx >= 0){
-      var target = vsTargetScroll(vsIdx);
-      vsScrollBody.scrollTo({top: target, behavior:"smooth"});
-    }
-  }
+  if(scroll) vsScrollToCard(id, true);
   App.highlightOnMap(id);
 };
 
