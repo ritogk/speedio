@@ -451,14 +451,13 @@ App.revealAndSelect = function(t){
   if(rank < 0) return;
   if(App.searchQuery){ App.searchQuery = ""; App.$("searchInput").value = ""; }
   App.renderCards();
-  // vsDataでのインデックスを探す（検索フィルタ後の位置）
+  // カードがDOM外ならジャンプスクロールで近くへ移動しvsRenderで生成
   var vsIdx = vsData.findIndex(function(o){ return o.t.id === t.id; });
-  if(vsIdx >= 0 && vsScrollBody && CARD_H){
-    // 先にスクロール位置を合わせてからvsRenderでカードをDOM生成する
-    vsScrollBody.scrollTop = Math.max(0, vsIdx * CARD_H - vsScrollBody.clientHeight / 3);
+  if(vsIdx >= 0 && vsScrollBody && CARD_H && !document.querySelector('.card[data-id="'+t.id+'"]')){
+    vsScrollBody.scrollTop = vsIdx * CARD_H;
     vsRender();
   }
-  App.selectCard(t.id, false);
+  App.selectCard(t.id, true);
   App.setSheet("card-peek");
   App.flyToTouge(t);
 };
@@ -469,7 +468,7 @@ App.selectCard = function(id, scroll){
   if(!card && vsScrollBody && CARD_H){
     var vsIdx = vsData.findIndex(function(o){ return o.t.id === id; });
     if(vsIdx >= 0){
-      vsScrollBody.scrollTop = Math.max(0, vsIdx * CARD_H - vsScrollBody.clientHeight / 3);
+      vsScrollBody.scrollTop = vsIdx * CARD_H;
       vsRender();
       card = document.querySelector('.card[data-id="'+id+'"]');
     }
@@ -483,12 +482,11 @@ App.selectCard = function(id, scroll){
   }
   if(scroll && card){
     requestAnimationFrame(function(){
-      var body = document.querySelector(".panel-body");
-      if(body){
-        var bodyRect = body.getBoundingClientRect();
-        var cardRect = card.getBoundingClientRect();
-        body.scrollTo({top: body.scrollTop + cardRect.top - bodyRect.top, behavior:"smooth"});
-      }
+      if(!vsScrollBody) return;
+      var containerRect = vsContainer.getBoundingClientRect();
+      var cardRect = card.getBoundingClientRect();
+      var targetTop = vsScrollBody.scrollTop + cardRect.top - containerRect.top;
+      vsScrollBody.scrollTo({top: targetTop, behavior:"smooth"});
     });
   }
   App.highlightOnMap(id);
