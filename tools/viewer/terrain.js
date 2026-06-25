@@ -18,48 +18,62 @@ App.initTerrain = function(){
     };
   })();
   var demCache = new Map();
+  var inflight = new Map();
   var DEM_CACHE_MAX = 4096;
 
-  function createHandler(){
+  function convertTile(url){
+    var cached = demCache.get(url);
+    if(cached) return Promise.resolve(cached);
+    var pending = inflight.get(url);
+    if(pending) return pending;
     var canvas = new OffscreenCanvas(256, 256);
     var ctx = canvas.getContext("2d", {willReadFrequently:true});
-    return async function(params){
-    try {
-      var url = params.url.replace(/^gsidem2?:\/\//, "");
-      var cached = demCache.get(url);
-      if(cached) return {data: cached};
-      var res = await fetch(url);
-      if(!res.ok) return {data: await FLAT_TILE()};
-      var blob = await res.blob();
-      var bmp = await createImageBitmap(blob);
-      canvas.width = bmp.width; canvas.height = bmp.height;
-      ctx.drawImage(bmp, 0, 0);
-      bmp.close();
-      var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      var d = img.data;
-      for(var i = 0; i < d.length; i += 4){
-        var x = d[i]*65536 + d[i+1]*256 + d[i+2];
-        var h = 0;
-        if(x !== 8388608){
-          h = x < 8388608 ? x*0.01 : (x-16777216)*0.01;
+    var p = (async function(){
+      try {
+        var res = await fetch(url);
+        if(!res.ok) return await FLAT_TILE();
+        var blob = await res.blob();
+        var bmp = await createImageBitmap(blob);
+        canvas.width = bmp.width; canvas.height = bmp.height;
+        ctx.drawImage(bmp, 0, 0);
+        bmp.close();
+        var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var d = img.data;
+        for(var i = 0; i < d.length; i += 4){
+          var x = d[i]*65536 + d[i+1]*256 + d[i+2];
+          var h = 0;
+          if(x !== 8388608){
+            h = x < 8388608 ? x*0.01 : (x-16777216)*0.01;
+          }
+          var v = Math.round((h + 10000) * 10);
+          d[i]   = Math.floor(v / 65536) % 256;
+          d[i+1] = Math.floor(v / 256) % 256;
+          d[i+2] = v % 256;
+          d[i+3] = 255;
         }
-        var v = Math.round((h + 10000) * 10);
-        d[i]   = Math.floor(v / 65536) % 256;
-        d[i+1] = Math.floor(v / 256) % 256;
-        d[i+2] = v % 256;
-        d[i+3] = 255;
+        ctx.putImageData(img, 0, 0);
+        var outBlob = await canvas.convertToBlob({type:"image/png"});
+        var buf = await outBlob.arrayBuffer();
+        if(demCache.size >= DEM_CACHE_MAX) demCache.delete(demCache.keys().next().value);
+        demCache.set(url, buf);
+        return buf;
+      } catch(err) {
+        console.warn("[gsidem] tile convert failed:", err.message);
+        return await FLAT_TILE();
+      } finally {
+        inflight.delete(url);
       }
-      ctx.putImageData(img, 0, 0);
-      var outBlob = await canvas.convertToBlob({type:"image/png"});
-      var buf = await outBlob.arrayBuffer();
-      if(demCache.size >= DEM_CACHE_MAX) demCache.delete(demCache.keys().next().value);
-      demCache.set(url, buf);
+    })();
+    inflight.set(url, p);
+    return p;
+  }
+
+  function createHandler(){
+    return async function(params){
+      var url = params.url.replace(/^gsidem2?:\/\//, "");
+      var buf = await convertTile(url);
       return {data: buf};
-    } catch(err) {
-      console.warn("[gsidem] tile convert failed:", err.message);
-      return {data: await FLAT_TILE()};
-    }
-  };
+    };
   }
 
   maplibregl.addProtocol("gsidem", createHandler());
