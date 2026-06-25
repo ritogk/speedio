@@ -16,6 +16,10 @@
   --corner-medium:#FF9F0A;
   --corner-weak:#30D158;
   --straight:#98989D;
+  --elev-steep:#FF453A;
+  --elev-moderate:#FF9F0A;
+  --elev-gentle:#30D158;
+  --elev-flat:#B0B8C0;
   --radius:8px;
   --header-h:52px;
   --sheet-peek:96px;
@@ -209,7 +213,7 @@ main{flex:1;position:relative;min-height:0}
 
 .card{
   position:relative;background:var(--card);border:1px solid var(--line);
-  border-radius:var(--radius);padding:11px 12px;margin-bottom:10px;
+  border-radius:var(--radius);padding:11px 12px;margin-bottom:8px;
   cursor:pointer;
   transition:border-color .15s;
 }

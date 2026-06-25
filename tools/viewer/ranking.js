@@ -65,7 +65,7 @@ function cardHtml(t, rank, total){
 
 // バーチャルスクロール: 画面に見えるカードだけDOMに生成する
 var CARD_H = 0;
-var CARD_GAP = 10;
+var CARD_GAP = 8;
 var OVERSCAN = 3;
 var vsData = [];
 var vsScrollBody = null;
