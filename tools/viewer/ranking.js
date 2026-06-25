@@ -51,7 +51,7 @@ function cardHtml(t, rank, total){
       <p class="meta">距離: <b>'+t.lengthKm+'km</b> 高さ: <b>'+t.height+'m</b>'+(t.stableKey&&App.visitedKeys.has(t.stableKey)?' <span class="visited-tag">\u{1F697}済</span>':"")+' <button class="fav-tag'+(t.stableKey&&App.favoriteKeys.has(t.stableKey)?' fav-on':'')+'" data-act="fav">'+(t.stableKey&&App.favoriteKeys.has(t.stableKey)?'★':'☆')+'</button></p>\
       <div class="bars">\
         <span class="bl">コーナー</span><div class="stacked"><span style="width:'+t.pctStrong+'%;background:var(--corner-strong)"></span><span style="width:'+t.pctMedium+'%;background:var(--corner-medium)"></span><span style="width:'+t.pctWeak+'%;background:var(--corner-weak)"></span><span style="width:'+t.pctStraight+'%;background:var(--straight)"></span></div><span class="bv">'+(t.pctStrong+t.pctMedium+t.pctWeak)+'%</span>\
-        <span class="bl">高低差</span><div class="track"><div class="fill u" style="width:'+Math.round(t.updown*100)+'%"></div></div><span class="bv">'+Math.round(t.updown*100)+'</span>\
+        <span class="bl">標高</span><div class="stacked"><span style="width:'+t.pctSteep+'%;background:var(--elev-steep)"></span><span style="width:'+t.pctModerate+'%;background:var(--elev-moderate)"></span><span style="width:'+t.pctGentle+'%;background:var(--elev-gentle)"></span><span style="width:'+t.pctFlat+'%;background:var(--elev-flat)"></span></div><span class="bv">'+(t.pctSteep+t.pctModerate+t.pctGentle)+'%</span>\
       </div>\
       <div class="card-tags">'+(t.unevennessCount!=null?(t.unevennessCount>0?'<span class="card-tag">'+App.bumpIcons(t.unevennessCount)+'</span>':'<span class="card-tag">'+App.BUMP_SVG+' なし</span>'):"")+(t.buildingCnt!=null?(t.buildingCnt>0?'<span class="card-tag">\u{1F3E0} ×'+t.buildingCnt+'</span>':'<span class="card-tag">\u{1F3E0} なし</span>'):"")+'</div>\
       <div class="card-actions">\
@@ -141,16 +141,17 @@ App.renderCards = function(){
       var card = e.target.closest(".card");
       if(!card) return;
       var id = Number(card.dataset.id);
+      var list = App.lastRanked;
       var navBtn = e.target.closest('[data-act="nav"]');
       if(navBtn){
         e.stopPropagation();
-        var t = ranked.find(function(x){ return x.id === id; });
+        var t = list.find(function(x){ return x.id === id; });
         if(t) App.openNav(t);
         return;
       }
       if(e.target.closest('[data-act="fav"]')){
         e.stopPropagation();
-        var t = ranked.find(function(x){ return x.id === id; });
+        var t = list.find(function(x){ return x.id === id; });
         if(t && t.stableKey){
           if(App.favoriteKeys.has(t.stableKey)) App.favoriteKeys.delete(t.stableKey);
           else App.favoriteKeys.add(t.stableKey);
@@ -164,11 +165,11 @@ App.renderCards = function(){
         return;
       }
       if(e.target.closest('[data-act="3d"]')){
-        var t = ranked.find(function(x){ return x.id === id; });
+        var t = list.find(function(x){ return x.id === id; });
         if(t) App.open3DView(t);
         return;
       }
-      var t = ranked.find(function(x){ return x.id === id; });
+      var t = list.find(function(x){ return x.id === id; });
       if(!t) return;
       App.selectCard(t.id,true);
       App.setSheet("card-peek");
@@ -449,16 +450,31 @@ App.revealAndSelect = function(t){
   var rank = App.lastRanked.findIndex(function(x){ return x.id === t.id; });
   if(rank < 0) return;
   if(App.searchQuery){ App.searchQuery = ""; App.$("searchInput").value = ""; }
-  if(rank + 1 > App.visibleCount) App.visibleCount = Math.ceil((rank + 1) / App.PAGE_N) * App.PAGE_N;
   App.renderCards();
-  App.selectCard(t.id, true);
+  // vsDataでのインデックスを探す（検索フィルタ後の位置）
+  var vsIdx = vsData.findIndex(function(o){ return o.t.id === t.id; });
+  if(vsIdx >= 0 && vsScrollBody && CARD_H){
+    // 先にスクロール位置を合わせてからvsRenderでカードをDOM生成する
+    vsScrollBody.scrollTop = Math.max(0, vsIdx * CARD_H - vsScrollBody.clientHeight / 3);
+    vsRender();
+  }
+  App.selectCard(t.id, false);
   App.setSheet("card-peek");
-  App.flyToTouge(t);    // viewPaddingがhalf分の高さを考慮してフォーカスする
+  App.flyToTouge(t);
 };
 
 App.selectCard = function(id, scroll){
-  document.querySelectorAll(".card").forEach(function(c){ c.classList.toggle("active", Number(c.dataset.id)===id); });
+  // カードがDOM外なら先にスクロール位置を合わせてvsRenderで生成する
   var card = document.querySelector('.card[data-id="'+id+'"]');
+  if(!card && vsScrollBody && CARD_H){
+    var vsIdx = vsData.findIndex(function(o){ return o.t.id === id; });
+    if(vsIdx >= 0){
+      vsScrollBody.scrollTop = Math.max(0, vsIdx * CARD_H - vsScrollBody.clientHeight / 3);
+      vsRender();
+      card = document.querySelector('.card[data-id="'+id+'"]');
+    }
+  }
+  document.querySelectorAll(".card").forEach(function(c){ c.classList.toggle("active", Number(c.dataset.id)===id); });
   if(card && App.isMobile()){
     var panel = App.$("panel");
     var h = App.$("sheetHandle").offsetHeight + card.offsetHeight + 14;
@@ -469,13 +485,6 @@ App.selectCard = function(id, scroll){
     requestAnimationFrame(function(){
       var body = document.querySelector(".panel-body");
       if(body){
-        var cards = App.$("cards");
-        var bodyH = body.clientHeight;
-        var lastCard = cards.querySelector(".card:last-child");
-        if(lastCard){
-          var needed = bodyH - lastCard.offsetHeight;
-          cards.style.paddingBottom = Math.max(0, needed) + "px";
-        }
         var bodyRect = body.getBoundingClientRect();
         var cardRect = card.getBoundingClientRect();
         body.scrollTo({top: body.scrollTop + cardRect.top - bodyRect.top, behavior:"smooth"});
