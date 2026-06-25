@@ -809,8 +809,9 @@ App.open3DView = async function(t){
     // 赤丸（道路上を走るオブジェクト）
     var sphere = new THREE.Mesh(
       new THREE.SphereGeometry(4, 16, 16),
-      new THREE.MeshBasicMaterial({color: 0xff0000})
+      new THREE.MeshBasicMaterial({color: 0xff0000, depthTest: false, transparent: true})
     );
+    sphere.renderOrder = 20;
     group.add(sphere);
 
     var floorW = rMaxX - rMinX, floorH = rMaxY - rMinY;
@@ -901,6 +902,7 @@ App.open3DView = async function(t){
         var next = Math.min(idx + 1, totalPts - 1);
         var frac = (progress * (totalPts - 1)) % 1;
         sphere.position.lerpVectors(centerPts[idx], centerPts[next], frac);
+        sphere.position.z += 4;
       }
 
       renderer.render(scene, camera);
