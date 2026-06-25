@@ -18,64 +18,41 @@ App.initTerrain = function(){
     };
   })();
   var demCache = new Map();
-  var inflight = new Map();
   var DEM_CACHE_MAX = 4096;
+  var canvas = new OffscreenCanvas(256, 256);
+  var ctx = canvas.getContext("2d", {willReadFrequently:true});
 
-  function convertTile(url){
-    var cached = demCache.get(url);
-    if(cached) return Promise.resolve(cached);
-    var pending = inflight.get(url);
-    if(pending) return pending;
-    var canvas = new OffscreenCanvas(256, 256);
-    var ctx = canvas.getContext("2d", {willReadFrequently:true});
-    var p = (async function(){
-      try {
-        var res = await fetch(url);
-        if(!res.ok) return await FLAT_TILE();
-        var blob = await res.blob();
-        var bmp = await createImageBitmap(blob);
-        canvas.width = bmp.width; canvas.height = bmp.height;
-        ctx.drawImage(bmp, 0, 0);
-        bmp.close();
-        var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        var d = img.data;
-        for(var i = 0; i < d.length; i += 4){
-          var x = d[i]*65536 + d[i+1]*256 + d[i+2];
-          var h = 0;
-          if(x !== 8388608){
-            h = x < 8388608 ? x*0.01 : (x-16777216)*0.01;
-          }
-          var v = Math.round((h + 10000) * 10);
-          d[i]   = Math.floor(v / 65536) % 256;
-          d[i+1] = Math.floor(v / 256) % 256;
-          d[i+2] = v % 256;
-          d[i+3] = 255;
-        }
-        ctx.putImageData(img, 0, 0);
-        var outBlob = await canvas.convertToBlob({type:"image/png"});
-        var buf = await outBlob.arrayBuffer();
-        if(demCache.size >= DEM_CACHE_MAX) demCache.delete(demCache.keys().next().value);
-        demCache.set(url, buf);
-        return buf;
-      } catch(err) {
-        console.warn("[gsidem] tile convert failed:", err.message);
-        return await FLAT_TILE();
-      } finally {
-        inflight.delete(url);
+  maplibregl.addProtocol("gsidem", async function(params){
+    try {
+      var url = params.url.replace("gsidem://", "");
+      var cached = demCache.get(url);
+      if(cached) return {data: cached};
+      var res = await fetch(url);
+      if(!res.ok) return {data: await FLAT_TILE()};
+      var blob = await res.blob();
+      var bmp = await createImageBitmap(blob);
+      canvas.width = bmp.width; canvas.height = bmp.height;
+      ctx.drawImage(bmp, 0, 0);
+      bmp.close();
+      var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var buf32 = new Uint32Array(img.data.buffer);
+      for(var i = 0, len = buf32.length; i < len; i++){
+        var px = buf32[i];
+        var r = px & 0xFF, g = (px >> 8) & 0xFF, b = (px >> 16) & 0xFF;
+        var x = r*65536 + g*256 + b;
+        var h = x === 8388608 ? 0 : (x < 8388608 ? x*0.01 : (x-16777216)*0.01);
+        var v = (h + 10000) * 10 + 0.5 | 0;
+        buf32[i] = ((v / 65536 | 0) % 256) | (((v >> 8) & 0xFF) << 8) | ((v & 0xFF) << 16) | 0xFF000000;
       }
-    })();
-    inflight.set(url, p);
-    return p;
-  }
-
-  function createHandler(){
-    return async function(params){
-      var url = params.url.replace(/^gsidem2?:\/\//, "");
-      var buf = await convertTile(url);
+      ctx.putImageData(img, 0, 0);
+      var outBlob = await canvas.convertToBlob({type:"image/png"});
+      var buf = await outBlob.arrayBuffer();
+      if(demCache.size >= DEM_CACHE_MAX) demCache.delete(demCache.keys().next().value);
+      demCache.set(url, buf);
       return {data: buf};
-    };
-  }
-
-  maplibregl.addProtocol("gsidem", createHandler());
-  maplibregl.addProtocol("gsidem2", createHandler());
+    } catch(err) {
+      console.warn("[gsidem] tile convert failed:", err.message);
+      return {data: await FLAT_TILE()};
+    }
+  });
 };

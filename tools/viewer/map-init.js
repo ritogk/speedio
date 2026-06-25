@@ -30,11 +30,6 @@ App.map = new maplibregl.Map({
         type:"raster-dem",
         tiles:["gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png"],
         tileSize:256, maxzoom:12
-      },
-      gsiHillshade: {
-        type:"raster-dem",
-        tiles:["gsidem2://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png"],
-        tileSize:256, maxzoom:12
       }
     },
     layers: [
@@ -42,7 +37,7 @@ App.map = new maplibregl.Map({
        paint:{"raster-brightness-max":.9, "raster-saturation":-.1, "raster-contrast":.03}}, // スモーク（明るさを抑えて彩度も少し落とす）
       {id:"greenTint", type:"background",
        paint:{"background-color":"#1E4D33", "background-opacity":.18}}, // 地表に重ねる濃い緑の薄いベール
-      {id:"hillshade", type:"hillshade", source:"gsiHillshade", // DEMから陰影を生成して尾根・谷を彫り込む
+      {id:"hillshade", type:"hillshade", source:"gsiTerrain", // DEMから陰影を生成して尾根・谷を彫り込む
        paint:{
          "hillshade-exaggeration":.25,
          "hillshade-shadow-color":"#101510",
