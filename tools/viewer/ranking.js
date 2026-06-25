@@ -445,49 +445,54 @@ App.renderAndFit = function(){
   if(!b.isEmpty()) App.fitBoundsZoomed(b, {padding:App.viewPadding(65), pitch:55, bearing:-10, duration:1200});
 };
 
+// vsDataのインデックスからスクロール先を算出するヘルパー
+function vsTargetScroll(vsIdx){
+  var containerTop = vsContainer.getBoundingClientRect().top
+                   - vsScrollBody.getBoundingClientRect().top
+                   + vsScrollBody.scrollTop;
+  return containerTop + vsIdx * CARD_H;
+}
+
 // 地図上のライン/マーカーから選んだとき、リスト側でそのカードまで開いて選択する
 App.revealAndSelect = function(t){
   var rank = App.lastRanked.findIndex(function(x){ return x.id === t.id; });
   if(rank < 0) return;
   if(App.searchQuery){ App.searchQuery = ""; App.$("searchInput").value = ""; }
   App.renderCards();
-  // カードがDOM外ならジャンプスクロールで近くへ移動しvsRenderで生成
   var vsIdx = vsData.findIndex(function(o){ return o.t.id === t.id; });
-  if(vsIdx >= 0 && vsScrollBody && CARD_H && !document.querySelector('.card[data-id="'+t.id+'"]')){
-    vsScrollBody.scrollTop = vsIdx * CARD_H;
+  if(vsIdx >= 0 && vsScrollBody && CARD_H){
+    var target = vsTargetScroll(vsIdx);
+    vsScrollBody.scrollTop = target;
     vsRender();
   }
-  App.selectCard(t.id, true);
-  App.setSheet("card-peek");
-  App.flyToTouge(t);
-};
-
-App.selectCard = function(id, scroll){
-  // カードがDOM外なら先にスクロール位置を合わせてvsRenderで生成する
-  var card = document.querySelector('.card[data-id="'+id+'"]');
-  if(!card && vsScrollBody && CARD_H){
-    var vsIdx = vsData.findIndex(function(o){ return o.t.id === id; });
-    if(vsIdx >= 0){
-      vsScrollBody.scrollTop = vsIdx * CARD_H;
-      vsRender();
-      card = document.querySelector('.card[data-id="'+id+'"]');
-    }
-  }
-  document.querySelectorAll(".card").forEach(function(c){ c.classList.toggle("active", Number(c.dataset.id)===id); });
+  document.querySelectorAll(".card").forEach(function(c){ c.classList.toggle("active", Number(c.dataset.id)===t.id); });
+  var card = document.querySelector('.card[data-id="'+t.id+'"]');
   if(card && App.isMobile()){
     var panel = App.$("panel");
     var h = App.$("sheetHandle").offsetHeight + card.offsetHeight + 14;
     panel.style.transform = "translateY(calc(100% - "+h+"px))";
     document.documentElement.style.setProperty("--card-peek-h", h);
   }
-  if(scroll && card){
-    requestAnimationFrame(function(){
-      if(!vsScrollBody) return;
-      var containerRect = vsContainer.getBoundingClientRect();
-      var cardRect = card.getBoundingClientRect();
-      var targetTop = vsScrollBody.scrollTop + cardRect.top - containerRect.top;
-      vsScrollBody.scrollTo({top: targetTop, behavior:"smooth"});
-    });
+  App.highlightOnMap(t.id);
+  App.setSheet("card-peek");
+  App.flyToTouge(t);
+};
+
+App.selectCard = function(id, scroll){
+  document.querySelectorAll(".card").forEach(function(c){ c.classList.toggle("active", Number(c.dataset.id)===id); });
+  var card = document.querySelector('.card[data-id="'+id+'"]');
+  if(card && App.isMobile()){
+    var panel = App.$("panel");
+    var h = App.$("sheetHandle").offsetHeight + card.offsetHeight + 14;
+    panel.style.transform = "translateY(calc(100% - "+h+"px))";
+    document.documentElement.style.setProperty("--card-peek-h", h);
+  }
+  if(scroll && vsScrollBody && CARD_H){
+    var vsIdx = vsData.findIndex(function(o){ return o.t.id === id; });
+    if(vsIdx >= 0){
+      var target = vsTargetScroll(vsIdx);
+      vsScrollBody.scrollTo({top: target, behavior:"smooth"});
+    }
   }
   App.highlightOnMap(id);
 };
