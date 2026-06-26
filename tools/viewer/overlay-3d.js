@@ -902,7 +902,7 @@ App.open3DView = async function(t){
         var next = Math.min(idx + 1, totalPts - 1);
         var frac = (progress * (totalPts - 1)) % 1;
         sphere.position.lerpVectors(centerPts[idx], centerPts[next], frac);
-        sphere.position.z += 4;
+        sphere.position.z += 2;
       }
 
       renderer.render(scene, camera);
