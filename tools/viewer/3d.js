@@ -329,7 +329,7 @@ export const draw3D = async (
    * // 道路の上を移動するオブジェクトを作成
    */
   const generateRoadOnObject = () => {
-    const sphereGeometry = new THREE.SphereGeometry(3, 32, 32); // 半径1、詳細度32の球体
+    const sphereGeometry = new THREE.SphereGeometry(1.5, 32, 32);
     const sphereMaterial = new THREE.MeshBasicMaterial({
       color: 0xff0000,
     }); // 赤色の球体
