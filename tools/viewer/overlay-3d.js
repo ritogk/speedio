@@ -808,7 +808,7 @@ App.open3DView = async function(t){
 
     // 赤丸（道路上を走るオブジェクト）
     var sphere = new THREE.Mesh(
-      new THREE.SphereGeometry(4, 16, 16),
+      new THREE.SphereGeometry(2, 16, 16),
       new THREE.MeshBasicMaterial({color: 0xff0000, depthTest: false, transparent: true})
     );
     sphere.renderOrder = 20;
@@ -1032,12 +1032,8 @@ App.open3DView = async function(t){
         </dl>
         <h4>score_elevation</h4>
         <dl>
-          ${rowC("score_elevation_steep", t.scoreElevationSteep)}
-          ${rowC("score_elevation_moderate", t.scoreElevationModerate)}
-          ${rowC("score_elevation_gentle", t.scoreElevationGentle)}
-          ${rowC("score_elevation_flat", t.scoreElevationFlat)}
+          ${rowC("score_elevation", t.scoreElevation)}
         </dl>
-        <dd style="text-align:right;margin:2px 0 0;color:rgba(255,255,255,.5);font-size:10px">= ${(t.scoreElevationSteep + t.scoreElevationModerate + t.scoreElevationGentle + t.scoreElevationFlat).toFixed(3)}</dd>
         <h4>score_corner</h4>
         <dl>
           ${rowC("score_corner_strong", t.scoreCornerStrong)}
