@@ -35,7 +35,7 @@ window.App = {
     "45":["43","44","46"],"46":["40","43","45"],"47":[]
   }),
   presetHints: Object.freeze({
-    balance:"コーナー・高低差・道幅をバランスよく評価します。",
+    balance:"コーナー・標高・道幅をバランスよく評価します。",
     corner:"ヘアピンや中速コーナーが連続する道を上位にします。",
     updown:"アップダウンと標高差の大きい道を上位にします。",
     nearby:"現在地から50km以内の峠を近い順に表示します（隣接県含む）。",
@@ -43,8 +43,7 @@ window.App = {
     uphill:"アップダウンの回数が多い道を上位にします。"
   }),
   BALANCE_WEIGHTS: {
-    elevation_flat:1, elevation_gentle:1, elevation_moderate:1.3, elevation_steep:1,
-    elevation_unevenness:1, width:1.3, length:0.7,
+    elevation:1, elevation_unevenness:1, width:1.3, length:0.7,
     building:1, tunnel_outside:1,
     corner_week:1, corner_medium:1.3, corner_strong:1, corner_none:1,
     corner_balance:1, claude_center_line_section:1.3
@@ -102,10 +101,7 @@ window.App = {
   calcBalanceScore: function(t, w){
     var BALANCE_DIVISOR = Object.keys(App.BALANCE_WEIGHTS).length;
     return (
-      (t.scoreElevationFlat * w.elevation_flat +
-       t.scoreElevationGentle * w.elevation_gentle +
-       t.scoreElevationModerate * w.elevation_moderate +
-       t.scoreElevationSteep * w.elevation_steep) +
+      t.scoreElevation * w.elevation +
       t.scoreElevationUnevenness * w.elevation_unevenness +
       t.scoreWidth * w.width +
       t.scoreLength * w.length +

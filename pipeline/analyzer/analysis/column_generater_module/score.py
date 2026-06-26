@@ -1,14 +1,8 @@
 from geopandas import GeoDataFrame
 from pandas import Series
 
-# 定数（DOMから取得する値の代わり）
 WEIGHTS = {
-    "elevation_level": {
-        "elevation_flat": 1,
-        "elevation_gentle": 1,
-        "elevation_moderate": 1.3,
-        "elevation_steep": 1,
-    },
+    "elevation": 1,
     "elevation_unevenness": 1,
     "width": 1.3,
     "length": 0.7,
@@ -28,12 +22,7 @@ WEIGHTS = {
 def generate(gdf: GeoDataFrame) -> Series:
     def func(x):
         return (
-            (
-                x["score_elevation_flat"] * WEIGHTS["elevation_level"]["elevation_flat"]
-                + x["score_elevation_gentle"] * WEIGHTS["elevation_level"]["elevation_gentle"]
-                + x["score_elevation_moderate"] * WEIGHTS["elevation_level"]["elevation_moderate"]
-                + x["score_elevation_steep"] * WEIGHTS["elevation_level"]["elevation_steep"]
-            )
+            x["score_elevation"] * WEIGHTS["elevation"]
             + x["score_elevation_unevenness"] * WEIGHTS["elevation_unevenness"]
             + x["score_width"] * WEIGHTS["width"]
             + x["score_length"] * WEIGHTS["length"]

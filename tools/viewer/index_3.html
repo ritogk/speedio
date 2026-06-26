@@ -100,10 +100,7 @@
 
     <div class="admin-panel collapsed" id="adminPanel">
       <button class="wp-close" id="wpClose">✕</button>
-        <label><span>勾配平</span><input type="number" step="0.1" data-w="elevation_flat"></label>
-        <label><span>勾配緩</span><input type="number" step="0.1" data-w="elevation_gentle"></label>
-        <label><span>勾配中</span><input type="number" step="0.1" data-w="elevation_moderate"></label>
-        <label><span>勾配急</span><input type="number" step="0.1" data-w="elevation_steep"></label>
+        <label><span>標高</span><input type="number" step="0.1" data-w="elevation"></label>
         <label><span>起伏</span><input type="number" step="0.1" data-w="elevation_unevenness"></label>
         <label><span>道幅</span><input type="number" step="0.1" data-w="width"></label>
         <label><span>距離</span><input type="number" step="0.1" data-w="length"></label>
@@ -163,13 +160,13 @@
           <button class="chip" aria-pressed="false" data-preset="nearby">📍 周辺50km</button>
           <button class="chip" aria-pressed="true" data-preset="balance">バランス</button>
           <button class="chip" aria-pressed="false" data-preset="corner">コーナー</button>
-          <button class="chip" aria-pressed="false" data-preset="updown">高低差</button>
+          <button class="chip" aria-pressed="false" data-preset="updown">標高</button>
           <button class="chip" aria-pressed="false" data-preset="seclusion">秘境</button>
           <button class="chip" aria-pressed="false" data-preset="uphill">起伏</button>
           <button class="chip" aria-pressed="false" id="hideVisitedBtn">未走行</button>
           <button class="chip" aria-pressed="false" id="showFavoritesBtn">お気に入り</button>
         </div>
-        <p class="preset-hint" id="presetHint">コーナー・高低差・道幅をバランスよく評価します。</p>
+        <p class="preset-hint" id="presetHint">コーナー・標高・道幅をバランスよく評価します。</p>
       </section>
       <div class="m-sort-select" id="mSortSelect">
         <span class="m-sort-label">並べ替え</span>

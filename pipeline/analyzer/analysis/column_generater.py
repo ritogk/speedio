@@ -48,4 +48,3 @@ from .column_generater_module import score_claude_center_line_section
 from .column_generater_module import score_claude_center_line_section_detail
 from .column_generater_module import infra_sections
 from .column_generater_module import elevation_section
-from .column_generater_module import score_elevation_level

@@ -18,7 +18,7 @@ App.rankedList = function(){
   }
   if(App.currentPreset === "updown"){
     return [...App.currentItems]
-      .map(t=>({...t,_s:t.updown ?? 0}))
+      .map(t=>({...t,_s:t.scoreElevation ?? 0}))
       .sort((a,b)=>b._s-a._s);
   }
   if(App.currentPreset === "seclusion"){

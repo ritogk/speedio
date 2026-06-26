@@ -120,7 +120,7 @@ App.initMobileUI = function() {
   var SORT_PRESETS = [
     {key:"balance", label:"バランス"},
     {key:"corner", label:"コーナー重視"},
-    {key:"updown", label:"高低差重視"},
+    {key:"updown", label:"標高重視"},
     {key:"seclusion", label:"秘境度重視"},
     {key:"uphill", label:"起伏重視"}
   ];

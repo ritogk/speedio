@@ -70,7 +70,7 @@ App.visitConfirmCardHtml = function(t){
     '<p class="meta">全長 <b>' + t.lengthKm + 'km</b> ・ 標高差 <b>' + t.height + 'm</b></p>' +
     '<div class="bars">' +
       '<span class="bl">コーナー</span><div class="stacked"><span style="width:' + t.pctStrong + '%;background:var(--corner-strong)"></span><span style="width:' + t.pctMedium + '%;background:var(--corner-medium)"></span><span style="width:' + t.pctWeak + '%;background:var(--corner-weak)"></span><span style="width:' + t.pctStraight + '%;background:var(--straight)"></span></div><span class="bv">' + (t.pctStrong + t.pctMedium + t.pctWeak) + '%</span>' +
-      '<span class="bl">高低差</span><div class="track"><div class="fill u" style="width:' + Math.round(t.updown * 100) + '%"></div></div><span class="bv">' + Math.round(t.updown * 100) + '</span>' +
+      '<span class="bl">標高</span><div class="track"><div class="fill u" style="width:' + Math.round(t.updown * 100) + '%"></div></div><span class="bv">' + Math.round(t.updown * 100) + '</span>' +
     '</div>' +
     '<div class="card-tags">' + (t.unevennessCount != null ? (t.unevennessCount > 0 ? '<span class="card-tag">' + App.bumpIcons(t.unevennessCount) + '</span>' : '<span class="card-tag">' + App.BUMP_SVG + ' なし</span>') : "") + (t.buildingCnt != null ? (t.buildingCnt > 0 ? '<span class="card-tag">🏠 ×' + t.buildingCnt + '</span>' : '<span class="card-tag">🏠 なし</span>') : "") + '</div>' +
   '</article>';

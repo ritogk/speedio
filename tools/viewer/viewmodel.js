@@ -16,7 +16,7 @@ App.toViewModel = function(raw, idx){
   if(Array.isArray(name)) name = name.filter(Boolean).join(" / ");
   if(!name) name = "（名称未登録の道）";
   var corner = Math.max(0, Math.min(1, 1 - (raw.score_corner_none != null ? raw.score_corner_none : 1)));
-  var updown = Math.max(0, Math.min(1, raw.score_elevation_unevenness != null ? raw.score_elevation_unevenness : 0));
+  var updown = Math.max(0, Math.min(1, raw.score_elevation != null ? raw.score_elevation : 0));
   var width = Math.max(0, Math.min(1, raw.score_claude_center_line_section != null ? raw.score_claude_center_line_section : (raw.score_width != null ? raw.score_width : 0)));
   var secs = raw.road_section || [];
   var segStrong=0, segMedium=0, segWeak=0, segStraight=0;
@@ -37,6 +37,21 @@ App.toViewModel = function(raw, idx){
     var _sorted = _p1 < _p2 ? _p1+"-"+_p2 : _p2+"-"+_p1;
     stableKey = name+"|"+_sorted;
   }
+  var eSecs = raw.elevation_section || [];
+  var eCntFlat=0, eCntGentle=0, eCntModerate=0, eCntSteep=0;
+  eSecs.forEach(function(s){
+    var lv = s.level || "flat";
+    if(lv==="steep") eCntSteep++;
+    else if(lv==="moderate") eCntModerate++;
+    else if(lv==="gentle") eCntGentle++;
+    else eCntFlat++;
+  });
+  var eTotal = eCntFlat+eCntGentle+eCntModerate+eCntSteep || 1;
+  var eFlat = Math.round(eCntFlat/eTotal*100);
+  var eGentle = Math.round(eCntGentle/eTotal*100);
+  var eModerate = Math.round(eCntModerate/eTotal*100);
+  var eSteep = Math.round(eCntSteep/eTotal*100);
+
   return {
     id: idx, name: name, stableKey: stableKey,
     routeLabel: App.HIGHWAY_LABEL[Array.isArray(raw.highway) ? raw.highway[0] : raw.highway] || "一般道",
@@ -50,11 +65,8 @@ App.toViewModel = function(raw, idx){
     pctStraight: Math.round(segStraight/segTotal*100),
     corner: corner, updown: updown, width: width,
     scoreElevation: raw.score_elevation != null ? raw.score_elevation : 0,
-    scoreElevationFlat: raw.score_elevation_flat != null ? raw.score_elevation_flat : 0,
-    scoreElevationGentle: raw.score_elevation_gentle != null ? raw.score_elevation_gentle : 0,
-    scoreElevationModerate: raw.score_elevation_moderate != null ? raw.score_elevation_moderate : 0,
-    scoreElevationSteep: raw.score_elevation_steep != null ? raw.score_elevation_steep : 0,
     elevationSection: raw.elevation_section || [],
+    pctFlat: eFlat, pctGentle: eGentle, pctModerate: eModerate, pctSteep: eSteep,
     scoreElevationUnevenness: raw.score_elevation_unevenness != null ? raw.score_elevation_unevenness : 0,
     scoreWidth: raw.score_width != null ? raw.score_width : 0,
     scoreLength: raw.score_length != null ? raw.score_length : 0,
