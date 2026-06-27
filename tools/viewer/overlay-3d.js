@@ -691,6 +691,7 @@ App.open3DView = async function(t){
       var pad = BBOX_PAD;
       rMinX-=pad;rMaxX+=pad;rMinY-=pad;rMaxY+=pad;
 
+
       var dashMat = new THREE.LineDashedMaterial({
         color:0xaaaaaa, dashSize:3, gapSize:2, transparent:true, opacity:.45,
         depthTest:false
@@ -1059,9 +1060,14 @@ App.open3DView = async function(t){
         controls.target.copy(target);
         controls.update();
       };
+      var topCandidates = [[0,1],[0,-1],[1,0],[-1,0]];
+      var topBest = topCandidates[0], topBestDot = -Infinity;
+      topCandidates.forEach(function(c){ var dot = cdx*c[0] + cdy*c[1]; if(dot > topBestDot){ topBestDot = dot; topBest = c; } });
+      var topUpX = topBest[0] === 0;
       App.$("cam3dTop").onclick = () => setCamFace(
-        new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0),
-        frameSize.x, frameSize.y, frameSize.z, frameCenter
+        new THREE.Vector3(0, 0, 1), new THREE.Vector3(topBest[0], topBest[1], 0),
+        topUpX ? frameSize.x : frameSize.y, topUpX ? frameSize.y : frameSize.x,
+        frameSize.z, frameCenter
       );
       App.$("cam3dSide").onclick = () => setCamFace(
         frameSize.x >= frameSize.y
