@@ -63,7 +63,16 @@ App.clearPendingVisit = function(){
 
 App.commitDriving = function(){
   if(!App.pendingVisitKey || !App.pendingVisitTouge) return;
-  App.saveDriving(App.pendingVisitKey, App.pendingVisitTouge);
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(pos){
+      App.pendingVisitStartLatLng = [pos.coords.latitude, pos.coords.longitude];
+      App.saveDriving(App.pendingVisitKey, App.pendingVisitTouge, App.pendingVisitStartLatLng);
+    }, function(){
+      App.saveDriving(App.pendingVisitKey, App.pendingVisitTouge);
+    }, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
+  } else {
+    App.saveDriving(App.pendingVisitKey, App.pendingVisitTouge);
+  }
   App.pendingVisitTs = Date.now();
 };
 
@@ -85,6 +94,8 @@ App.visitConfirmCardHtml = function(t){
 
 App.showVisitConfirm = function(){
   if(!App.pendingVisitKey || !App.pendingVisitTouge) return;
+  if(Date.now() - lastDialogShownAt < DIALOG_COOLDOWN_MS) return;
+  lastDialogShownAt = Date.now();
   App.$("vcCard").innerHTML = App.visitConfirmCardHtml(App.pendingVisitTouge);
   App.$("vcTitle").textContent = "この峠に行きましたか？";
   App.$("vcStep1").style.display = "";
@@ -99,6 +110,8 @@ App.closeVisitConfirm = function(){
 /* ── location-based visit check ── */
 var MOVE_THRESHOLD_KM = 0.5;
 var ROUND_TRIP_MS = 7200000; // 2h
+var DIALOG_COOLDOWN_MS = 15000;
+var lastDialogShownAt = 0;
 
 App._checkVisitByLocation = function(){
   if(!App.pendingVisitKey || !App.pendingVisitTs) return;
