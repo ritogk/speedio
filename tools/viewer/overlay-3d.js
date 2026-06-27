@@ -556,8 +556,8 @@ App.open3DView = async function(t){
       var POST_INTERVAL = 2;
       var PIER_THICK = 0.6;
       var concMat = new THREE.MeshBasicMaterial({color: 0x686460, side: THREE.DoubleSide});
-      var guardMat = new THREE.MeshBasicMaterial({color: 0x888278, side: THREE.DoubleSide});
-      var addObj = (o) => { bridgeObjs.push(o); group.add(o); };
+      var guardMat = new THREE.MeshBasicMaterial({color: 0x888278, side: THREE.DoubleSide, transparent: true, opacity: 0.9, depthWrite: false, depthTest: false});
+      var addObj = (o) => { if(o.material === guardMat) o.renderOrder = 10; bridgeObjs.push(o); group.add(o); };
 
       // 道路端に沿った板メッシュ
       var buildSlab = (sidePts, startIdx, count, zBot, zTop, mat) => {
