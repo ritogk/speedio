@@ -89,6 +89,32 @@ App.closeVisitConfirm = function(){
   App.$("visitConfirm").classList.remove("show");
 };
 
+/* ── nav state restore (card selection, 3D view) ── */
+App.restoreNavState = function(){
+  var raw = localStorage.getItem("touge.navState");
+  if(!raw) return;
+  localStorage.removeItem("touge.navState");
+  try{
+    var state = JSON.parse(raw);
+    if(state.stableKey && App.lastRanked.length){
+      var t = App.lastRanked.find(function(x){ return x.stableKey === state.stableKey; });
+      if(t){
+        App.revealAndSelect(t);
+        if(state.was3D) App.open3DView(t);
+      }
+    }
+  }catch(e){}
+};
+
+/* ── pending visit check on fresh page load ── */
+App.checkPendingVisitOnLoad = function(){
+  if(App.pendingVisitKey && App.pendingVisitTs){
+    if(Date.now() - App.pendingVisitTs >= App.getVisitDelayMs()){
+      App.showVisitConfirm();
+    }
+  }
+};
+
 /* ── init: DOM listeners + restore ── */
 App.initVisit = function(){
   var vcStep2Key = null;

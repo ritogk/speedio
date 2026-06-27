@@ -28,6 +28,13 @@ App.openNav = function(t){
 };
 
 function launchNav(app, t){
+  try{
+    localStorage.setItem("touge.navState", JSON.stringify({
+      stableKey: t.stableKey || null,
+      was3D: App.has3DActive(),
+      sheet: App.sheetState
+    }));
+  }catch(e){}
   if(app === "yahoo"){
     var now = Date.now();
     window.location.href = App.yahooCarNaviUrl(t.poly, App.userLatLng?.[0], App.userLatLng?.[1]);

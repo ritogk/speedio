@@ -343,6 +343,8 @@
         App.initAdmin();
         App.restoreFilter().then(function(restored){
           if(!restored) App.initialLoad();
+          App.restoreNavState();
+          App.checkPendingVisitOnLoad();
         });
         App.updateVisitedUi();
       }catch(err){
