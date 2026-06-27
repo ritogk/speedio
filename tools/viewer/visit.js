@@ -7,6 +7,7 @@
 App.pendingVisitKey = null;
 App.pendingVisitTouge = null;
 App.pendingVisitTs = 0;
+App.pendingVisitStartLatLng = null;
 
 /* ── persistence ── */
 App.saveVisited = function(){ localStorage.setItem("touge.visited", JSON.stringify([...App.visitedKeys])); };
@@ -14,8 +15,11 @@ App.saveFavorites = function(){ localStorage.setItem("touge.favorites", JSON.str
 App.updateVisitedUi = function(){};
 
 /* ── driving state ── */
-App.saveDriving = function(key, t){
-  localStorage.setItem("touge.driving", JSON.stringify({stableKey:key, touge:t, ts:Date.now()}));
+App.saveDriving = function(key, t, startLatLng){
+  localStorage.setItem("touge.driving", JSON.stringify({
+    stableKey:key, touge:t, ts:Date.now(),
+    startLatLng: startLatLng || App.pendingVisitStartLatLng || null
+  }));
 };
 App.clearDriving = function(){ localStorage.removeItem("touge.driving"); };
 App.restoreDriving = function(){
@@ -27,6 +31,7 @@ App.restoreDriving = function(){
       App.pendingVisitKey = d.stableKey;
       App.pendingVisitTouge = d.touge;
       App.pendingVisitTs = d.ts || Date.now();
+      App.pendingVisitStartLatLng = d.startLatLng || null;
     }
   }catch(e){}
 };
@@ -44,6 +49,7 @@ App.commitPendingVisit = function(){
   App.pendingVisitKey = null;
   App.pendingVisitTouge = null;
   App.pendingVisitTs = 0;
+  App.pendingVisitStartLatLng = null;
   App.render();
 };
 
@@ -52,6 +58,7 @@ App.clearPendingVisit = function(){
   App.pendingVisitKey = null;
   App.pendingVisitTouge = null;
   App.pendingVisitTs = 0;
+  App.pendingVisitStartLatLng = null;
 };
 
 App.commitDriving = function(){
@@ -87,6 +94,31 @@ App.showVisitConfirm = function(){
 
 App.closeVisitConfirm = function(){
   App.$("visitConfirm").classList.remove("show");
+};
+
+/* ── location-based visit check ── */
+var MOVE_THRESHOLD_KM = 0.5;
+var ROUND_TRIP_MS = 7200000; // 2h
+
+App._checkVisitByLocation = function(){
+  if(!App.pendingVisitKey || !App.pendingVisitTs) return;
+  var start = App.pendingVisitStartLatLng;
+  var elapsed = Date.now() - App.pendingVisitTs;
+  if(!start || !navigator.geolocation){
+    if(elapsed >= ROUND_TRIP_MS) App.showVisitConfirm();
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var dist = App.haversineKm(start[0], start[1], pos.coords.latitude, pos.coords.longitude);
+    if(dist >= MOVE_THRESHOLD_KM || elapsed >= ROUND_TRIP_MS) App.showVisitConfirm();
+  }, function(){
+    if(elapsed >= ROUND_TRIP_MS) App.showVisitConfirm();
+  }, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
+};
+
+App.checkPendingVisitOnLoad = function(){
+  if(!App.pendingVisitKey) return;
+  App._checkVisitByLocation();
 };
 
 /* ── init: DOM listeners + restore ── */
@@ -125,7 +157,7 @@ App.initVisit = function(){
   App.$("vcNo").addEventListener("click", function(){ App.closeVisitConfirm(); App.clearPendingVisit(); });
   App.$("visitConfirm").addEventListener("click", function(e){ if(e.target === App.$("visitConfirm")){ vcStep2Key = null; App.closeVisitConfirm(); App.clearPendingVisit(); } });
 
-  /* visibilitychange — save driving on hide, check delay on return */
+  /* visibilitychange — save driving on hide, check location on return */
   document.addEventListener("visibilitychange", function(){
     if(document.visibilityState === "hidden" && App.pendingVisitKey){
       App.pendingVisitTs = Date.now();
@@ -133,11 +165,7 @@ App.initVisit = function(){
     }
     if(document.visibilityState === "visible"){
       if(!App.pendingVisitKey) App.restoreDriving();
-      if(App.pendingVisitKey && App.pendingVisitTs){
-        if(Date.now() - App.pendingVisitTs >= App.getVisitDelayMs()){
-          App.showVisitConfirm();
-        }
-      }
+      App._checkVisitByLocation();
     }
   });
 
