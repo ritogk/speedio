@@ -834,7 +834,21 @@ App.open3DView = async function(t){
     var fitFov = Math.min(vFov, hFov);
     var fitDist = (maxDim / 2) / Math.tan(fitFov / 2) * 0.9;
 
-    camera.position.set(fitDist * 0.45, fitDist * 0.58, fitDist * 0.45);
+    // 進行方向の背後にあるbbox隅にカメラを配置
+    var cdx = centerPts[centerPts.length - 1].x - centerPts[0].x;
+    var cdy = centerPts[centerPts.length - 1].y - centerPts[0].y;
+    var fCorners = [
+      [frameCenter.x - frameSize.x/2, frameCenter.y - frameSize.y/2],
+      [frameCenter.x + frameSize.x/2, frameCenter.y - frameSize.y/2],
+      [frameCenter.x - frameSize.x/2, frameCenter.y + frameSize.y/2],
+      [frameCenter.x + frameSize.x/2, frameCenter.y + frameSize.y/2]
+    ];
+    var bestCorner = fCorners[0], bestDot = -Infinity;
+    fCorners.forEach(function(c){ var dot = -cdx*c[0] + -cdy*c[1]; if(dot > bestDot){ bestDot = dot; bestCorner = c; } });
+    var bcl = Math.sqrt(bestCorner[0]*bestCorner[0] + bestCorner[1]*bestCorner[1]) || 1;
+    var camH = fitDist * 0.95;
+    var initCamX = bestCorner[0]/bcl * camH, initCamY = bestCorner[1]/bcl * camH, initCamZ = fitDist * 0.35;
+    camera.position.set(initCamX, initCamY, initCamZ);
 
     controls.update();
 
@@ -1061,7 +1075,7 @@ App.open3DView = async function(t){
         controls.autoRotate = true;
         controls.maxPolarAngle = Math.PI / 2.05;
         camera.up.set(0, 0, 1);
-        camera.position.set(fitDist * 0.45, fitDist * 0.58, fitDist * 0.45);
+        camera.position.set(initCamX, initCamY, initCamZ);
         controls.target.set(0, 0, 0);
         controls.update();
       };
