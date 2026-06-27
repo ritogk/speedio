@@ -298,7 +298,7 @@ App.open3DView = async function(t){
     }
 
     // 道路メッシュ（geometry_list + elevation_smooth直結、3d.jsと同じリボン方式）
-    var ROAD_W = 1.5;
+    var ROAD_W = 1.0;
     var pts3 = geomList.map((p, i) => {
       var [x, y, z] = toXYZ(p[0], p[1], elevSmooth[i] ?? 0);
       return new THREE.Vector3(x, y, z + 1.8);
@@ -346,74 +346,66 @@ App.open3DView = async function(t){
       assignDir(eSecs.downhill || [], "down");
     }
 
-    // リボンメッシュ生成ヘルパー
-    function buildRoadMeshes(levels, colorMap){
-      var meshes = [];
-      var rs = 0;
-      for(var i = 0; i <= pts3.length; i++){
-        if(i < pts3.length && levels[i] === levels[rs]) continue;
-        var end = Math.min(i, pts3.length - 1);
-        var n = end - rs + 1;
-        if(n >= 2){
-          var verts = new Float32Array(n * 2 * 3);
-          for(var j = 0; j < n; j++){
-            var li = leftPts[rs + j], ri = rightPts[rs + j];
-            verts[j*6]   = li.x; verts[j*6+1] = li.y; verts[j*6+2] = li.z;
-            verts[j*6+3] = ri.x; verts[j*6+4] = ri.y; verts[j*6+5] = ri.z;
-          }
-          var idx = [];
-          for(var j = 0; j < n - 1; j++){
-            var a=j*2, b=j*2+1, c=(j+1)*2, d=(j+1)*2+1;
-            idx.push(a, c, b, b, c, d);
-          }
-          var geo = new THREE.BufferGeometry();
-          geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-          geo.setIndex(idx);
-          geo.computeVertexNormals();
-          var mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-            color: colorMap[levels[rs]] || 0x98989D,
-            side: THREE.DoubleSide
-          }));
-          mesh.userData.routeFrac = rs / Math.max(pts3.length - 1, 1);
-          meshes.push(mesh);
-        }
-        rs = i;
+    // 道路スラブジオメトリ（1メッシュ + 頂点カラー切替で高速化）
+    var ROAD_T = 0.5;
+    var N_PTS = pts3.length;
+    var roadVerts = new Float32Array(N_PTS * 4 * 3);
+    for(var j = 0; j < N_PTS; j++){
+      var li = leftPts[j], ri = rightPts[j], o = j * 12;
+      roadVerts[o]   = li.x; roadVerts[o+1] = li.y; roadVerts[o+2] = li.z;
+      roadVerts[o+3] = ri.x; roadVerts[o+4] = ri.y; roadVerts[o+5] = ri.z;
+      roadVerts[o+6] = li.x; roadVerts[o+7] = li.y; roadVerts[o+8] = li.z - ROAD_T;
+      roadVerts[o+9] = ri.x; roadVerts[o+10]= ri.y; roadVerts[o+11]= ri.z - ROAD_T;
+    }
+    var roadIdx = [];
+    var IDXS_PER_SEG = 24;
+    for(var j = 0; j < N_PTS - 1; j++){
+      var tl=j*4, tr=tl+1, bl=tl+2, br=tl+3;
+      var ntl=(j+1)*4, ntr=ntl+1, nbl=ntl+2, nbr=ntl+3;
+      roadIdx.push(tl,ntl,tr, tr,ntl,ntr, bl,br,nbl, br,nbr,nbl, tl,bl,ntl, ntl,bl,nbl, tr,ntr,br, br,ntr,nbr);
+    }
+    var roadGeo = new THREE.BufferGeometry();
+    roadGeo.setAttribute('position', new THREE.BufferAttribute(roadVerts, 3));
+    roadGeo.setIndex(roadIdx);
+
+    // 頂点カラー配列を生成（THREE.Colorでsrgb→linear変換）
+    var tmpColor = new THREE.Color();
+    function buildColorArray(levels, colorMap){
+      var c = new Float32Array(N_PTS * 4 * 3);
+      for(var j = 0; j < N_PTS; j++){
+        tmpColor.set(colorMap[levels[j]] || 0x98989D);
+        for(var k = 0; k < 4; k++){ var o = (j*4+k)*3; c[o]=tmpColor.r; c[o+1]=tmpColor.g; c[o+2]=tmpColor.b; }
       }
-      return meshes;
+      return new THREE.BufferAttribute(c, 3);
     }
 
-    // 勾配レベル判定（elevation_sectionのlevelを均等割り当て）
+    // 勾配レベル判定
     var GRAD_HEX = { flat:0xB0B8C0, gentle:0x30D158, moderate:0xFF9F0A, steep:0xFF453A };
-    var ptGradLevel = new Array(geomList.length).fill("flat");
+    var ptGradLevel = new Array(N_PTS).fill("flat");
     var elevSecsRaw = t.elevationSection || [];
     if(elevSecsRaw.length){
-      var N = elevSecsRaw.length;
-      var M = geomList.length;
-      for(var k = 0; k < N; k++){
-        var si = Math.round(k * M / N);
-        var ei = Math.round((k + 1) * M / N);
+      var eN = elevSecsRaw.length;
+      for(var k = 0; k < eN; k++){
+        var si = Math.round(k * N_PTS / eN), ei = Math.round((k + 1) * N_PTS / eN);
         var level = elevSecsRaw[k].level;
-        for(var i = si; i < ei && i < M; i++) ptGradLevel[i] = level;
+        for(var i = si; i < ei && i < N_PTS; i++) ptGradLevel[i] = level;
       }
     }
 
-    // 白ベース道路（セクション色OFF時に表示）
-    var whiteLevels = new Array(geomList.length).fill("white");
-    var whiteMeshes = buildRoadMeshes(whiteLevels, {white:0xB0B8C0});
-    whiteMeshes.forEach(m => {
-      m.visible = false;
-      m.renderOrder = 1;
-      m.material.depthTest = false;
-      m.material.transparent = true;
-      group.add(m);
-    });
+    var roadColors = {
+      corner: buildColorArray(ptLevels, LEVEL_HEX),
+      elev: buildColorArray(ptElevDir, ELEV_HEX),
+      gradient: buildColorArray(ptGradLevel, GRAD_HEX),
+      off: buildColorArray(new Array(N_PTS).fill("white"), {white:0xB0B8C0})
+    };
+    roadGeo.setAttribute('color', roadColors.corner);
+    roadGeo.computeVertexNormals();
 
-    var cornerMeshes = buildRoadMeshes(ptLevels, LEVEL_HEX);
-    var elevMeshes = buildRoadMeshes(ptElevDir, ELEV_HEX);
-    var gradMeshes = buildRoadMeshes(ptGradLevel, GRAD_HEX);
-    cornerMeshes.forEach(m => { m.renderOrder = 1; m.material.depthTest = false; m.material.transparent = true; group.add(m); });
-    elevMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; m.material.transparent = true; group.add(m); });
-    gradMeshes.forEach(m => { m.visible = false; m.renderOrder = 1; m.material.depthTest = false; m.material.transparent = true; group.add(m); });
+    var roadMesh = new THREE.Mesh(roadGeo, new THREE.MeshBasicMaterial({
+      vertexColors: true, side: THREE.DoubleSide, depthTest: false, transparent: true
+    }));
+    roadMesh.renderOrder = 1;
+    group.add(roadMesh);
 
     // トンネル・橋区間のインデックスを特定
     var ptIsTunnel = new Array(geomList.length).fill(false);
@@ -821,9 +813,14 @@ App.open3DView = async function(t){
     floor.position.set((rMinX+rMaxX)/2, (rMinY+rMaxY)/2, skirtZ);
     group.add(floor);
 
+    // bboxフレームの実寸（ラベル等を含まない）
+    var frameCenter = new THREE.Vector3((rMinX+rMaxX)/2, (rMinY+rMaxY)/2, (skirtZ+rMaxZ)/2);
+    var frameSize = new THREE.Vector3(rMaxX-rMinX, rMaxY-rMinY, rMaxZ-skirtZ);
+
     var bbox = new THREE.Box3().setFromObject(group);
     var center = bbox.getCenter(new THREE.Vector3());
     group.position.sub(center);
+    frameCenter.sub(center);
     scene.add(group);
 
     controls.target.set(0, 0, 0);
@@ -846,16 +843,8 @@ App.open3DView = async function(t){
     dirLight.position.set(fitDist * 0.5, fitDist * 0.5, fitDist * 1.2);
     scene.add(dirLight);
 
-    // ルート描画アニメーション初期状態
-    var DRAW_ON_DUR = 2.0;
-    var drawOnT = 0;
-    var drawOnDone = false;
-    var allRoadMeshes = [...cornerMeshes, ...whiteMeshes];
-    allRoadMeshes.forEach(m => m.visible = false);
-    leftEdge.geometry.setDrawRange(0, 0);
-    rightEdge.geometry.setDrawRange(0, 0);
-    centerLine.geometry.setDrawRange(0, 0);
-    sphere.visible = false;
+    // 道路・縁線を即表示
+    sphere.visible = true;
 
     // 赤丸アニメーション（実距離ベースの一定速度）
     var progress = 0;
@@ -874,36 +863,14 @@ App.open3DView = async function(t){
 
       controls.update();
 
-      // ルート描画アニメーション
-      if(!drawOnDone){
-        drawOnT += dt / DRAW_ON_DUR;
-        var revealT = Math.min(drawOnT, 1);
-        var eased = 1 - Math.pow(1 - revealT, 2);
-        var ptCount = pts3.length;
-        var revealN = Math.max(1, Math.floor(eased * ptCount));
-        leftEdge.geometry.setDrawRange(0, revealN);
-        rightEdge.geometry.setDrawRange(0, revealN);
-        centerLine.geometry.setDrawRange(0, revealN);
-        allRoadMeshes.forEach(m => {
-          if(m.userData.routeFrac <= eased && !m.visible) m.visible = true;
-        });
-        if(revealT >= 1){
-          drawOnDone = true;
-          sphere.visible = true;
-          updateRoadVisibility();
-        }
-      }
-
-      // 赤丸移動（描画完了後）
-      if(drawOnDone){
-        progress += progressPerFrame;
-        if(progress > 1) progress = 0;
-        var idx = Math.floor(progress * (totalPts - 1));
-        var next = Math.min(idx + 1, totalPts - 1);
-        var frac = (progress * (totalPts - 1)) % 1;
-        sphere.position.lerpVectors(centerPts[idx], centerPts[next], frac);
-        sphere.position.z += 3;
-      }
+      // 赤丸移動
+      progress += progressPerFrame;
+      if(progress > 1) progress = 0;
+      var idx = Math.floor(progress * (totalPts - 1));
+      var next = Math.min(idx + 1, totalPts - 1);
+      var frac = (progress * (totalPts - 1)) % 1;
+      sphere.position.lerpVectors(centerPts[idx], centerPts[next], frac);
+      sphere.position.z += 3;
 
       renderer.render(scene, camera);
     };
@@ -927,11 +894,8 @@ App.open3DView = async function(t){
     legend3d.innerHTML = cornerLegend;
 
     function updateRoadVisibility(){
-      if(!drawOnDone) return;
-      cornerMeshes.forEach(m => m.visible = roadColorMode === "corner");
-      elevMeshes.forEach(m => m.visible = roadColorMode === "elev");
-      gradMeshes.forEach(m => m.visible = roadColorMode === "gradient");
-      whiteMeshes.forEach(m => m.visible = roadColorMode === "off");
+      roadGeo.setAttribute('color', roadColors[roadColorMode] || roadColors.corner);
+      roadGeo.attributes.color.needsUpdate = true;
       legend3d.innerHTML = roadColorMode === "corner" ? cornerLegend : roadColorMode === "elev" ? elevLegend : roadColorMode === "gradient" ? gradLegend : "";
     }
 
@@ -1070,28 +1034,28 @@ App.open3DView = async function(t){
 
     // BBox面カメラプリセット
     {
-      var setCamFace = (posDir, upVec, faceW, faceH, depth) => {
+      var setCamFace = (posDir, upVec, faceW, faceH, depth, target) => {
         controls.autoRotate = false;
         controls.maxPolarAngle = Math.PI;
         var dV = (faceH / 2) / Math.tan(vFov / 2);
         var dH = (faceW / 2) / Math.tan(hFov / 2);
-        var d = (Math.max(dV, dH) + depth / 2) * 1.1;
+        var d = Math.max(dV, dH) + depth / 2;
         camera.up.copy(upVec);
-        camera.position.copy(posDir).normalize().multiplyScalar(d);
-        controls.target.set(0, 0, 0);
+        camera.position.copy(posDir).normalize().multiplyScalar(d).add(target);
+        controls.target.copy(target);
         controls.update();
       };
       App.$("cam3dTop").onclick = () => setCamFace(
         new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0),
-        size.x, size.y, size.z
+        frameSize.x, frameSize.y, frameSize.z, frameCenter
       );
       App.$("cam3dSide").onclick = () => setCamFace(
-        size.x >= size.y
+        frameSize.x >= frameSize.y
           ? new THREE.Vector3(0, 1, 0)
           : new THREE.Vector3(1, 0, 0),
         new THREE.Vector3(0, 0, 1),
-        Math.max(size.x, size.y), size.z,
-        Math.min(size.x, size.y)
+        Math.max(frameSize.x, frameSize.y), frameSize.z,
+        Math.min(frameSize.x, frameSize.y), frameCenter
       );
       App.$("cam3dReset").onclick = () => {
         controls.autoRotate = true;
