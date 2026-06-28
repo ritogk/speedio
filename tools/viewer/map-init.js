@@ -1,7 +1,13 @@
 // map-init.js — 地図初期化・レイヤー管理・描画
 // Uses: App.$, App.escapeHtml, App.cssVar, App.tierOf, App.fadeOf, App.lastRanked, App.MARKER_N, App.visitedKeys
-// Provides: App.initMap(), App.drawMap(), App.flyToTouge(), App.fitBoundsZoomed(), App.viewPadding(), App.highlightOnMap(), App.cancelOrbit(), App.drawRangeRings()
+// Provides: App.initMap(), App.drawMap(), App.flyToTouge(), App.initialCamera(), App.fitBoundsZoomed(), App.viewPadding(), App.highlightOnMap(), App.cancelOrbit(), App.drawRangeRings()
 "use strict";
+
+const INITIAL_CAM = Object.freeze({
+  FRESH:      "fresh",      // 初回訪問: 現在地周辺の峠bboxにフィット
+  RESTORED:   "restored",   // セッション復元: フィルタ適用後の峠bboxにフィット
+  NAV_RETURN: "nav-return"  // ナビから戻った: 対象峠にズーム
+});
 
 var markers = [];
 var pendingGeojson = null;
@@ -405,6 +411,34 @@ App.flyToTouge = function(t){
     duration:1800,
     essential:true
   });
+};
+
+App.initialCamera = function(state){
+  var action;
+  switch(state){
+    case INITIAL_CAM.NAV_RETURN:
+      var matched = App.lastRanked.find(function(t){ return t.stableKey === App.pendingVisitKey; });
+      action = function(){
+        if(matched){
+          App.pendingVisitTouge = matched;
+          App.revealAndSelect(matched);
+        }else{
+          App.flyToTouge(App.pendingVisitTouge);
+        }
+      };
+      break;
+    case INITIAL_CAM.RESTORED:
+    case INITIAL_CAM.FRESH:
+      action = function(){
+        var b = new maplibregl.LngLatBounds();
+        App.lastRanked.forEach(function(t){ t.poly.forEach(function(p){ b.extend([p[1], p[0]]); }); });
+        if(!b.isEmpty()) App.fitBoundsZoomed(b, {padding:App.viewPadding(65), pitch:55, bearing:-10, duration:1200});
+      };
+      break;
+  }
+  if(!action) return;
+  if(App.mapReady) action();
+  else App.map.once("load", action);
 };
 
 App.highlightOnMap = function(id){

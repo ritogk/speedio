@@ -92,21 +92,21 @@ App.visitConfirmCardHtml = function(t){
   '</article>';
 };
 
-App.showVisitConfirm = function(){
+App.showVisitConfirm = function(skipCamera){
   if(!App.pendingVisitKey || !App.pendingVisitTouge) return;
   if(Date.now() - lastDialogShownAt < DIALOG_COOLDOWN_MS) return;
   lastDialogShownAt = Date.now();
   var matched = App.lastRanked.find(function(t){ return t.stableKey === App.pendingVisitKey; });
   if(matched){
     App.pendingVisitTouge = matched;
-    App.revealAndSelect(matched);
+    if(!skipCamera) App.revealAndSelect(matched);
   }
   App.$("vcCard").innerHTML = App.visitConfirmCardHtml(App.pendingVisitTouge);
   App.$("vcTitle").textContent = "この峠に行きましたか？";
   App.$("vcStep1").style.display = "";
   App.$("vcStep2").style.display = "none";
   App.$("visitConfirm").classList.add("show");
-  if(!matched && App.mapReady) App.flyToTouge(App.pendingVisitTouge);
+  if(!matched && !skipCamera && App.mapReady) App.flyToTouge(App.pendingVisitTouge);
 };
 
 App.closeVisitConfirm = function(){
@@ -137,7 +137,7 @@ App._checkVisitByLocation = function(){
 
 App.checkPendingVisitOnLoad = function(){
   if(!App.pendingVisitKey) return;
-  App.showVisitConfirm();
+  App.showVisitConfirm(true);
 };
 
 /* ── init: DOM listeners + restore ── */

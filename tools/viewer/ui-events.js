@@ -243,12 +243,7 @@ App.restoreFilter = async function(){
     App.render();
     App.updateLogisticsLayer();
     if(window.innerWidth <= 760) App.setSheet("half");
-    var b = new maplibregl.LngLatBounds();
-    App.lastRanked.forEach(function(t){ t.poly.forEach(function(p){ b.extend([p[1], p[0]]); }); });
-    if(!b.isEmpty()){
-      var doFit = function(){ App.fitBoundsZoomed(b, {padding:App.viewPadding(65), pitch:55, bearing:-10, duration:1200}); };
-      if(App.mapReady) doFit(); else App.map.once("load", doFit);
-    }
+    App.initialCamera(App.pendingVisitKey ? INITIAL_CAM.NAV_RETURN : INITIAL_CAM.RESTORED);
     return true;
   }catch(e){ return false; }
 };
@@ -292,12 +287,7 @@ App.initialLoad = async function(){
         App.render();
         App.updateLogisticsLayer();
         if(window.innerWidth <= 760) App.setSheet("half");
-        var b = new maplibregl.LngLatBounds();
-        App.lastRanked.forEach(function(t){ t.poly.forEach(function(p){ b.extend([p[1], p[0]]); }); });
-        if(!b.isEmpty()){
-          var doFit = function(){ App.fitBoundsZoomed(b, {padding:App.viewPadding(65), pitch:55, bearing:-10, duration:1200}); };
-          if(App.mapReady) doFit(); else App.map.once("load", doFit);
-        }
+        App.initialCamera(App.pendingVisitKey ? INITIAL_CAM.NAV_RETURN : INITIAL_CAM.FRESH);
       }else{
         App.showLoading(false);
         App.toast("現在地の都道府県を判定できませんでした");
