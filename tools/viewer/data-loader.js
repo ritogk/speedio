@@ -141,6 +141,7 @@
           "icon-size": ["interpolate",["linear"],["zoom"],5,0.3,10,0.45,14,0.6],
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
+          "visibility": App.closureVisible ? "visible" : "none",
         },
       });
     }
@@ -301,14 +302,14 @@
     if(src){ src.setData(geojson); }
     else{
       App.map.addSource("route-numbers", {type:"geojson", data: geojson});
-      var beforeLayer = "logistics-casing";
+      var beforeLayer = App.map.getLayer("logistics-casing") ? "logistics-casing" : undefined;
       App.map.addLayer({
         id: "route-numbers-casing", type: "line", source: "route-numbers",
         layout: {"line-cap":"round","line-join":"round","visibility":vis},
         paint: {
-          "line-color": "#90CAF9",
-          "line-width": ["interpolate",["linear"],["zoom"],6,2,10,4,14,5],
-          "line-opacity": .12,
+          "line-color": "#81D4FA",
+          "line-width": ["interpolate",["linear"],["zoom"],6,3,10,6,14,8],
+          "line-opacity": .15,
           "line-blur": ["interpolate",["linear"],["zoom"],6,2,10,3,14,4],
         },
       }, beforeLayer);
@@ -317,7 +318,7 @@
         layout: {"line-cap":"round","line-join":"round","visibility":vis},
         paint: {
           "line-color": "#FFFFFF",
-          "line-width": ["interpolate",["linear"],["zoom"],6,0.3,10,0.7,14,1.0],
+          "line-width": ["interpolate",["linear"],["zoom"],6,0.2,10,0.5,14,0.8],
           "line-opacity": .5,
         },
       }, beforeLayer);
@@ -327,17 +328,17 @@
           "symbol-placement": "line",
           "text-field": ["get","label"],
           "text-size": ["interpolate",["linear"],["zoom"],8,8,14,11],
-          "text-font": ["Open Sans Bold"],
+          "text-font": ["Noto Sans Bold"],
           "text-max-angle": 30,
           "text-allow-overlap": false,
           "text-ignore-placement": false,
           "visibility": vis,
         },
         paint: {
-          "text-color": "#64B5F6",
-          "text-halo-color": "rgba(255,255,255,0.7)",
-          "text-halo-width": 1,
-          "text-opacity": .5,
+          "text-color": "#0288D1",
+          "text-halo-color": "rgba(255,255,255,0.9)",
+          "text-halo-width": 1.5,
+          "text-opacity": .6,
         },
       }, beforeLayer);
     }
