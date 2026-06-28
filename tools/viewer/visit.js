@@ -96,12 +96,17 @@ App.showVisitConfirm = function(){
   if(!App.pendingVisitKey || !App.pendingVisitTouge) return;
   if(Date.now() - lastDialogShownAt < DIALOG_COOLDOWN_MS) return;
   lastDialogShownAt = Date.now();
+  var matched = App.lastRanked.find(function(t){ return t.stableKey === App.pendingVisitKey; });
+  if(matched){
+    App.pendingVisitTouge = matched;
+    App.revealAndSelect(matched);
+  }
   App.$("vcCard").innerHTML = App.visitConfirmCardHtml(App.pendingVisitTouge);
   App.$("vcTitle").textContent = "この峠に行きましたか？";
   App.$("vcStep1").style.display = "";
   App.$("vcStep2").style.display = "none";
   App.$("visitConfirm").classList.add("show");
-  if(App.mapReady) App.flyToTouge(App.pendingVisitTouge);
+  if(!matched && App.mapReady) App.flyToTouge(App.pendingVisitTouge);
 };
 
 App.closeVisitConfirm = function(){

@@ -347,7 +347,7 @@ App.open3DView = async function(t){
     }
 
     // 道路スラブジオメトリ（1メッシュ + 頂点カラー切替で高速化）
-    var ROAD_T = 0.5;
+    var ROAD_T = 0.65;
     var N_PTS = pts3.length;
     var roadVerts = new Float32Array(N_PTS * 4 * 3);
     for(var j = 0; j < N_PTS; j++){
