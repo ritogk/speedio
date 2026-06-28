@@ -306,18 +306,18 @@
         id: "route-numbers-casing", type: "line", source: "route-numbers",
         layout: {"line-cap":"round","line-join":"round","visibility":vis},
         paint: {
-          "line-color": "#9E9E9E",
+          "line-color": "#7E57C2",
           "line-width": ["interpolate",["linear"],["zoom"],6,2,10,4,14,6],
-          "line-opacity": .08,
+          "line-opacity": .06,
         },
       }, beforeLayer);
       App.map.addLayer({
         id: "route-numbers-line", type: "line", source: "route-numbers",
         layout: {"line-cap":"round","line-join":"round","visibility":vis},
         paint: {
-          "line-color": "#9E9E9E",
+          "line-color": "#7E57C2",
           "line-width": ["interpolate",["linear"],["zoom"],6,0.5,10,1.5,14,2.5],
-          "line-opacity": .35,
+          "line-opacity": .3,
         },
       }, beforeLayer);
       App.map.addLayer({
@@ -333,7 +333,7 @@
           "visibility": vis,
         },
         paint: {
-          "text-color": "#757575",
+          "text-color": "#7E57C2",
           "text-halo-color": "rgba(255,255,255,0.85)",
           "text-halo-width": 1.5,
         },
