@@ -60,7 +60,7 @@ for (const f of ["data-version.json", "icon.png"]) {
   }
 }
 
-for (const d of ["targets", "terrain_elevations", "road_closures", "tourism_spots", "toll_roads", "logistics"]) {
+for (const d of ["targets", "terrain_elevations", "road_closures", "tourism_spots", "toll_roads", "logistics", "route_numbers"]) {
   const srcDir = resolve(src, d);
   if (existsSync(srcDir)) {
     const destDir = resolve(dist, d);
