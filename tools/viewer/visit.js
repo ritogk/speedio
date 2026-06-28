@@ -101,6 +101,7 @@ App.showVisitConfirm = function(){
   App.$("vcStep1").style.display = "";
   App.$("vcStep2").style.display = "none";
   App.$("visitConfirm").classList.add("show");
+  if(App.mapReady) App.flyToTouge(App.pendingVisitTouge);
 };
 
 App.closeVisitConfirm = function(){
