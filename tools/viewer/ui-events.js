@@ -22,6 +22,7 @@ App.isMobile = function(){ return window.innerWidth <= 760; };
 App.sheetState = "peek";
 App.touristVisible = false;
 App.tollVisible = false;
+App.routeNumVisible = false;
 
 /* ---- drawRangeRings ---- */
 App.drawRangeRings = function(lat, lng){
@@ -196,6 +197,20 @@ App.toggleToll = function(on){
   App.syncLegend();
 };
 
+App.toggleRouteNum = function(on){
+  App.routeNumVisible = on;
+  $("routeNumToggle").setAttribute("aria-pressed", String(on));
+  if(on) App.updateRouteNumLayer();
+  else{
+    if(App.mapReady && App.map.getSource("route-numbers"))
+      App.map.getSource("route-numbers").setData({type:"FeatureCollection",features:[]});
+  }
+  var vis = on ? "visible" : "none";
+  ["route-numbers-casing","route-numbers-line","route-numbers-label"].forEach(function(id){
+    if(App.mapReady && App.map.getLayer(id)) App.map.setLayoutProperty(id, "visibility", vis);
+  });
+};
+
 /* ---- setSheet ---- */
 App.setSheet = function(state){
   if(!App.isMobile()) return;
@@ -240,6 +255,7 @@ App.restoreFilter = async function(){
     App.renderClosureBanner();
     if(App.touristVisible) App.updateTouristLayer();
     if(App.tollVisible) App.updateTollLayer();
+    if(App.routeNumVisible) App.updateRouteNumLayer();
     App.render();
     App.updateLogisticsLayer();
     if(window.innerWidth <= 760) App.setSheet("half");
@@ -608,6 +624,11 @@ App.initUI = function(){
   /* ---- toll toggle ---- */
   $("tollToggle").addEventListener("click", function(e){
     App.toggleToll(e.currentTarget.getAttribute("aria-pressed") !== "true");
+  });
+
+  /* ---- route number toggle ---- */
+  $("routeNumToggle").addEventListener("click", function(e){
+    App.toggleRouteNum(e.currentTarget.getAttribute("aria-pressed") !== "true");
   });
 
   /* ---- bottom sheet ---- */

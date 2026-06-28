@@ -1,4 +1,4 @@
-// data-loader.js — 県データ・通行止め・観光・有料道路の取得とキャッシュ
+// data-loader.js — 県データ・通行止め・観光・有料道路・号線の取得とキャッシュ
 // Uses: App.map, App.mapReady, App.toViewModel, App.$, App.toast, App.showLoading, App.PREFECTURES
 // Owns: App.currentItems, App.loadedPrefs
 // Provides: App.switchPref(), App.fetchPrefItems(), App.fetchClosures(), App.renderClosureBanner(), etc.
@@ -13,6 +13,8 @@
   var pendingTourists = null;
   var pendingTollRoads = null;
   var kobanCache = {};
+  var routeNumCache = {};
+  var pendingRouteNums = null;
 
   App.dataVersionChecked = false;
   App.dataVersionChanged = false;
@@ -266,6 +268,85 @@
     }
   };
 
+  // --- 号線レイヤー ---
+
+  App.fetchRouteNumbers = async function(code){
+    if(routeNumCache[code]) return routeNumCache[code];
+    try{
+      var res = await fetch("./route_numbers/" + code + ".geojson");
+      if(!res.ok) return [];
+      var data = await res.json();
+      routeNumCache[code] = data.features || [];
+      return routeNumCache[code];
+    }catch(e){ return []; }
+  };
+
+  App.renderRouteNumBanner = function(){
+    var codes = [...App.loadedPrefs];
+    var all = codes.flatMap(function(c){ return routeNumCache[c] || []; });
+    App.renderRouteNumLines(all);
+  };
+
+  App.updateRouteNumLayer = function(){
+    if(!App.routeNumVisible) return;
+    var codes = [...App.loadedPrefs];
+    Promise.all(codes.map(function(c){ return App.fetchRouteNumbers(c); })).then(function(){ App.renderRouteNumBanner(); });
+  };
+
+  App.renderRouteNumLines = function(features){
+    if(!App.mapReady){ pendingRouteNums = features; return; }
+    var vis = App.routeNumVisible ? "visible" : "none";
+    var src = App.map.getSource("route-numbers");
+    var geojson = {type: "FeatureCollection", features: features || []};
+    if(src){ src.setData(geojson); }
+    else{
+      App.map.addSource("route-numbers", {type:"geojson", data: geojson});
+      var beforeLayer = "logistics-casing";
+      App.map.addLayer({
+        id: "route-numbers-casing", type: "line", source: "route-numbers",
+        layout: {"line-cap":"round","line-join":"round","visibility":vis},
+        paint: {
+          "line-color": ["match", ["get","highway"],
+            "trunk", "#1565C0", "primary", "#1976D2",
+            "secondary", "#2E7D32", "#388E3C"],
+          "line-width": ["interpolate",["linear"],["zoom"],6,3,10,6,14,9],
+          "line-opacity": .15,
+        },
+      }, beforeLayer);
+      App.map.addLayer({
+        id: "route-numbers-line", type: "line", source: "route-numbers",
+        layout: {"line-cap":"round","line-join":"round","visibility":vis},
+        paint: {
+          "line-color": ["match", ["get","highway"],
+            "trunk", "#1565C0", "primary", "#1976D2",
+            "secondary", "#2E7D32", "#388E3C"],
+          "line-width": ["interpolate",["linear"],["zoom"],6,1,10,2.5,14,4],
+          "line-opacity": .7,
+        },
+      }, beforeLayer);
+      App.map.addLayer({
+        id: "route-numbers-label", type: "symbol", source: "route-numbers",
+        layout: {
+          "symbol-placement": "line",
+          "text-field": ["get","label"],
+          "text-size": ["interpolate",["linear"],["zoom"],8,9,14,13],
+          "text-font": ["Open Sans Bold"],
+          "text-max-angle": 30,
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+          "visibility": vis,
+        },
+        paint: {
+          "text-color": ["match", ["get","highway"],
+            "trunk", "#0D47A1", "primary", "#1565C0",
+            "secondary", "#1B5E20", "#2E7D32"],
+          "text-halo-color": "rgba(255,255,255,0.9)",
+          "text-halo-width": 2,
+        },
+      }, beforeLayer);
+    }
+  };
+
   App.kobanSpin = function(on){ return; // DISABLED
     const btn = document.getElementById("kobanToggle");
     if(!btn) return;
@@ -353,6 +434,7 @@
     App.renderClosureBanner();
     if(App.touristVisible) App.renderTouristBanner();
     if(App.tollVisible) App.renderTollBanner();
+    if(App.routeNumVisible) App.renderRouteNumBanner();
     App.renderAndFit();
   };
 
@@ -393,6 +475,7 @@
     App.renderClosureBanner();
     if(App.touristVisible) App.updateTouristLayer();
     if(App.tollVisible) App.updateTollLayer();
+    if(App.routeNumVisible) App.updateRouteNumLayer();
     App.render();
     const list = focusItems || App.rankedList();
     if(list.length){
@@ -417,5 +500,6 @@
     if(pendingClosures){ renderClosureMarkers(pendingClosures); pendingClosures = null; }
     if(pendingTourists){ App.renderTouristMarkers(pendingTourists); pendingTourists = null; }
     if(pendingTollRoads){ App.renderTollRoadLines(pendingTollRoads); pendingTollRoads = null; }
+    if(pendingRouteNums){ App.renderRouteNumLines(pendingRouteNums); pendingRouteNums = null; }
   };
 })();

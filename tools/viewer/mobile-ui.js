@@ -196,6 +196,10 @@ App.initMobileUI = function() {
     App.toggleToll(!App.tollVisible);
     App.$("mLayerToll").classList.toggle("active", App.tollVisible);
   });
+  App.$("mLayerRouteNum").addEventListener("click", function() {
+    App.toggleRouteNum(!App.routeNumVisible);
+    App.$("mLayerRouteNum").classList.toggle("active", App.routeNumVisible);
+  });
 
   function syncMobilePrefState(){
     prefGrid.querySelectorAll(".m-pref-chip").forEach(function(btn) {
