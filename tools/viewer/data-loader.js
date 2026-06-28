@@ -306,9 +306,9 @@
         id: "route-numbers-casing", type: "line", source: "route-numbers",
         layout: {"line-cap":"round","line-join":"round","visibility":vis},
         paint: {
-          "line-color": "#81D4FA",
-          "line-width": ["interpolate",["linear"],["zoom"],6,3,10,6,14,8],
-          "line-opacity": .2,
+          "line-color": "#90CAF9",
+          "line-width": ["interpolate",["linear"],["zoom"],6,2,10,4,14,5],
+          "line-opacity": .12,
           "line-blur": ["interpolate",["linear"],["zoom"],6,2,10,3,14,4],
         },
       }, beforeLayer);
@@ -316,9 +316,9 @@
         id: "route-numbers-line", type: "line", source: "route-numbers",
         layout: {"line-cap":"round","line-join":"round","visibility":vis},
         paint: {
-          "line-color": "#FFFFFF",
-          "line-width": ["interpolate",["linear"],["zoom"],6,0.3,10,0.8,14,1.2],
-          "line-opacity": .7,
+          "line-color": "#B3E5FC",
+          "line-width": ["interpolate",["linear"],["zoom"],6,0.2,10,0.5,14,0.8],
+          "line-opacity": .45,
         },
       }, beforeLayer);
       App.map.addLayer({
@@ -334,10 +334,10 @@
           "visibility": vis,
         },
         paint: {
-          "text-color": "#0288D1",
-          "text-halo-color": "rgba(255,255,255,0.9)",
-          "text-halo-width": 1.5,
-          "text-opacity": .6,
+          "text-color": "#64B5F6",
+          "text-halo-color": "rgba(255,255,255,0.7)",
+          "text-halo-width": 1,
+          "text-opacity": .5,
         },
       }, beforeLayer);
     }
