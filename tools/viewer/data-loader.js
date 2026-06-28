@@ -317,8 +317,8 @@
         layout: {"line-cap":"round","line-join":"round","visibility":vis},
         paint: {
           "line-color": "#FFFFFF",
-          "line-width": ["interpolate",["linear"],["zoom"],6,0.2,10,0.5,14,0.8],
-          "line-opacity": .45,
+          "line-width": ["interpolate",["linear"],["zoom"],6,0.3,10,0.7,14,1.0],
+          "line-opacity": .5,
         },
       }, beforeLayer);
       App.map.addLayer({
