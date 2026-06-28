@@ -34,6 +34,26 @@ App.initAdmin = function() {
     App.map.flyTo({center:[lng, lat], zoom:14, duration:800});
   });
 
+  const geminiKeyInput = App.$("adminGeminiKey");
+  const savedKey = localStorage.getItem("touge.geminiApiKey");
+  if(savedKey) geminiKeyInput.value = savedKey;
+  App.$("adminGeminiSave").addEventListener("click", ()=>{
+    const key = geminiKeyInput.value.trim();
+    if(key){
+      localStorage.setItem("touge.geminiApiKey", key);
+      App.toast("APIキーを保存しました");
+    } else {
+      localStorage.removeItem("touge.geminiApiKey");
+      App.toast("APIキーを削除しました");
+    }
+  });
+
+  wp.querySelectorAll("input").forEach(inp=>{
+    inp.addEventListener("focus", ()=>{
+      setTimeout(()=> inp.scrollIntoView({behavior:"smooth", block:"center"}), 300);
+    });
+  });
+
   App.map.on("contextmenu", e=>{
     const {lat, lng} = e.lngLat;
     const text = `${lat.toFixed(6)},${lng.toFixed(6)}`;
