@@ -316,7 +316,7 @@
         id: "route-numbers-line", type: "line", source: "route-numbers",
         layout: {"line-cap":"round","line-join":"round","visibility":vis},
         paint: {
-          "line-color": "#B3E5FC",
+          "line-color": "#FFFFFF",
           "line-width": ["interpolate",["linear"],["zoom"],6,0.2,10,0.5,14,0.8],
           "line-opacity": .45,
         },
