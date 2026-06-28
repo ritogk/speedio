@@ -132,7 +132,7 @@ App._checkVisitByLocation = function(){
 
 App.checkPendingVisitOnLoad = function(){
   if(!App.pendingVisitKey) return;
-  App._checkVisitByLocation();
+  App.showVisitConfirm();
 };
 
 /* ── init: DOM listeners + restore ── */
