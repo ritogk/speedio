@@ -306,22 +306,18 @@
         id: "route-numbers-casing", type: "line", source: "route-numbers",
         layout: {"line-cap":"round","line-join":"round","visibility":vis},
         paint: {
-          "line-color": ["match", ["get","highway"],
-            "trunk", "#1565C0", "primary", "#1976D2",
-            "secondary", "#2E7D32", "#388E3C"],
-          "line-width": ["interpolate",["linear"],["zoom"],6,3,10,6,14,9],
-          "line-opacity": .15,
+          "line-color": "#9E9E9E",
+          "line-width": ["interpolate",["linear"],["zoom"],6,2,10,4,14,6],
+          "line-opacity": .08,
         },
       }, beforeLayer);
       App.map.addLayer({
         id: "route-numbers-line", type: "line", source: "route-numbers",
         layout: {"line-cap":"round","line-join":"round","visibility":vis},
         paint: {
-          "line-color": ["match", ["get","highway"],
-            "trunk", "#1565C0", "primary", "#1976D2",
-            "secondary", "#2E7D32", "#388E3C"],
-          "line-width": ["interpolate",["linear"],["zoom"],6,1,10,2.5,14,4],
-          "line-opacity": .7,
+          "line-color": "#9E9E9E",
+          "line-width": ["interpolate",["linear"],["zoom"],6,0.5,10,1.5,14,2.5],
+          "line-opacity": .35,
         },
       }, beforeLayer);
       App.map.addLayer({
@@ -329,7 +325,7 @@
         layout: {
           "symbol-placement": "line",
           "text-field": ["get","label"],
-          "text-size": ["interpolate",["linear"],["zoom"],8,9,14,13],
+          "text-size": ["interpolate",["linear"],["zoom"],8,8,14,11],
           "text-font": ["Open Sans Bold"],
           "text-max-angle": 30,
           "text-allow-overlap": false,
@@ -337,11 +333,9 @@
           "visibility": vis,
         },
         paint: {
-          "text-color": ["match", ["get","highway"],
-            "trunk", "#0D47A1", "primary", "#1565C0",
-            "secondary", "#1B5E20", "#2E7D32"],
-          "text-halo-color": "rgba(255,255,255,0.9)",
-          "text-halo-width": 2,
+          "text-color": "#757575",
+          "text-halo-color": "rgba(255,255,255,0.85)",
+          "text-halo-width": 1.5,
         },
       }, beforeLayer);
     }
