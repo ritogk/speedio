@@ -48,7 +48,7 @@ function cardHtml(t, rank, total){
       <div class="card-top">\
         <div class="card-labels"><span class="rank-num">'+(rank+1)+'</span>'+(t.prefecture?'<span class="route-oval">'+App.escapeHtml(t.prefecture)+'</span>':(t._pref?'<span class="route-oval">'+App.escapeHtml(App.PREFECTURES[t._pref]||"")+'</span>':""))+(t.city?'<span class="route-oval">'+App.escapeHtml(t.city)+'</span>':"")+(t.distanceKm!=null?'<span class="dist-tag">\u{1F4CD}'+(t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm))+'km</span>':"")+'</div><h3 data-full="'+App.escapeHtml(t.name)+'">'+App.escapeHtml(t.name)+'</h3>\
       </div>\
-      <p class="meta">距離: <b>'+t.lengthKm+'km</b> 高さ: <b>'+t.height+'m</b>'+(t.stableKey&&App.visitedKeys.has(t.stableKey)?' <span class="visited-tag">\u{1F697}済</span>':"")+' <button class="fav-tag'+(t.stableKey&&App.favoriteKeys.has(t.stableKey)?' fav-on':'')+'" data-act="fav">'+(t.stableKey&&App.favoriteKeys.has(t.stableKey)?'★':'☆')+'</button></p>\
+      <p class="meta">距離: <b>'+t.lengthKm+'km</b> 高さ: <b>'+t.height+'m</b> <button class="visited-tag'+(t.stableKey&&App.visitedKeys.has(t.stableKey)?' visited-on':'')+'" data-act="visit">'+(t.stableKey&&App.visitedKeys.has(t.stableKey)?'\u{1F697}済':'\u{1F697}')+'</button> <button class="fav-tag'+(t.stableKey&&App.favoriteKeys.has(t.stableKey)?' fav-on':'')+'" data-act="fav">'+(t.stableKey&&App.favoriteKeys.has(t.stableKey)?'★':'☆')+'</button></p>\
       <div class="bars">\
         <span class="bl">コーナー</span><div class="stacked"><span style="width:'+t.pctStrong+'%;background:var(--corner-strong)"></span><span style="width:'+t.pctMedium+'%;background:var(--corner-medium)"></span><span style="width:'+t.pctWeak+'%;background:var(--corner-weak)"></span><span style="width:'+t.pctStraight+'%;background:var(--straight)"></span></div><span class="bv">'+(t.pctStrong+t.pctMedium+t.pctWeak)+'%</span>\
         <span class="bl">標高</span><div class="stacked"><span style="width:'+t.pctSteep+'%;background:var(--elev-steep)"></span><span style="width:'+t.pctModerate+'%;background:var(--elev-moderate)"></span><span style="width:'+t.pctGentle+'%;background:var(--elev-gentle)"></span><span style="width:'+t.pctFlat+'%;background:var(--elev-flat)"></span></div><span class="bv">'+(t.pctSteep+t.pctModerate+t.pctGentle)+'%</span>\
@@ -166,6 +166,20 @@ App.renderCards = function(){
         e.stopPropagation();
         var t = list.find(function(x){ return x.id === id; });
         if(t) App.openNav(t);
+        return;
+      }
+      if(e.target.closest('[data-act="visit"]')){
+        e.stopPropagation();
+        var t = list.find(function(x){ return x.id === id; });
+        if(t && t.stableKey){
+          if(App.visitedKeys.has(t.stableKey)) App.removeVisit(t.stableKey);
+          else App.addVisit(t.stableKey);
+          if(App.hideVisited || App.showOnlyVisited){ App.renderAndFit(); return; }
+          var vBtn = e.target.closest('[data-act="visit"]');
+          var isV = App.visitedKeys.has(t.stableKey);
+          vBtn.textContent = isV ? '\u{1F697}済' : '\u{1F697}';
+          vBtn.classList.toggle("visited-on", isV);
+        }
         return;
       }
       if(e.target.closest('[data-act="fav"]')){

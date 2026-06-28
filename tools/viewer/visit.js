@@ -36,6 +36,20 @@ App.restoreDriving = function(){
   }catch(e){}
 };
 
+/* ── manual toggle ── */
+App.addVisit = function(stableKey){
+  App.visitedKeys.add(stableKey);
+  App.saveVisited();
+  App.visitedDates[stableKey] = App.todayStr;
+  localStorage.setItem("touge.visitedDates", JSON.stringify(App.visitedDates));
+};
+App.removeVisit = function(stableKey){
+  App.visitedKeys.delete(stableKey);
+  App.saveVisited();
+  delete App.visitedDates[stableKey];
+  localStorage.setItem("touge.visitedDates", JSON.stringify(App.visitedDates));
+};
+
 /* ── visit commit / clear ── */
 App.commitPendingVisit = function(){
   if(!App.pendingVisitKey) return;
