@@ -309,7 +309,7 @@
         paint: {
           "line-color": "#81D4FA",
           "line-width": ["interpolate",["linear"],["zoom"],6,3,10,6,14,8],
-          "line-opacity": .15,
+          "line-opacity": .1,
           "line-blur": ["interpolate",["linear"],["zoom"],6,2,10,3,14,4],
         },
       }, beforeLayer);
@@ -319,7 +319,7 @@
         paint: {
           "line-color": "#FFFFFF",
           "line-width": ["interpolate",["linear"],["zoom"],6,0.2,10,0.5,14,0.8],
-          "line-opacity": .5,
+          "line-opacity": .35,
         },
       }, beforeLayer);
       App.map.addLayer({
@@ -338,7 +338,7 @@
           "text-color": "#0288D1",
           "text-halo-color": "rgba(255,255,255,0.9)",
           "text-halo-width": 1.5,
-          "text-opacity": .6,
+          "text-opacity": .45,
         },
       }, beforeLayer);
     }
