@@ -39,6 +39,9 @@
     <div class="m-filter-wrap" id="mFilterWrap"><div class="m-filter-bar" id="mFilterBar"></div></div>
 
     <div class="map-float" id="mapFloat">
+      <button type="button" class="pc-layer-btn" id="pcLayerBtn" aria-label="地図レイヤー">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
+      </button>
       <button class="pc-locate-btn" id="pcLocateBtn" aria-label="現在地">📍</button>
       <button type="button" class="pc-voice-btn" id="voiceBtn" aria-label="音声操作">🎤</button>
       <button type="button" class="pc-voice-help" id="pcVoiceHelp" aria-label="音声コマンド一覧">?</button>
@@ -94,15 +97,6 @@
         </div>
         <span class="m-layer-name">路線番号</span>
       </button>
-    </div>
-    <div class="map-ctrl">
-      <button class="ctrl-btn" id="terrainToggle" aria-pressed="true">3D地形</button>
-      <button class="ctrl-btn" id="logisticsToggle" aria-pressed="false">🚛 物流道路</button>
-      <button class="ctrl-btn" id="closureToggle" aria-pressed="true">🚫 通行止め</button>
-      <button class="ctrl-btn" id="touristToggle" aria-pressed="false">📷 観光名所</button>
-      <button class="ctrl-btn" id="tollToggle" aria-pressed="false">💴 有料道路</button>
-      <button class="ctrl-btn" id="routeNumToggle" aria-pressed="false">🔢 路線番号</button>
-      <button class="ctrl-btn" id="kobanToggle" aria-pressed="false" style="display:none">👮</button>
     </div>
 
     <div class="view-ctrl" id="viewCtrl">
@@ -396,6 +390,9 @@
         App.initPrint();
         App.initAdmin();
         App.initVoice();
+        App.restoreLayerFlags();
+        if(App.mapReady) App.restoreLayerMap();
+        else App.map.once("load", App.restoreLayerMap);
         App.restoreFilter().then(function(restored){
           if(!restored) App.initialLoad();
           App.checkPendingVisitOnLoad();

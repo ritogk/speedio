@@ -85,18 +85,14 @@ main{flex:1;position:relative;min-height:0}
 
 .side-handle{display:none}
 
-/* 地図上コントロール（左上） */
-.map-ctrl{
-  position:absolute;top:10px;left:10px;z-index:1250;
-  display:flex;gap:6px;flex-wrap:wrap;
+.pc-layer-btn{
+  display:flex;width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--line);background:rgba(255,255,255,.92);color:var(--ink);
+  box-shadow:0 1px 4px rgba(0,0,0,.18);cursor:pointer;
+  align-items:center;justify-content:center;
 }
-.ctrl-btn{
-  font:inherit;font-size:12px;font-weight:500;cursor:pointer;
-  border:1px solid var(--line);border-radius:999px;
-  background:rgba(255,255,255,.92);color:var(--ink);padding:6px 13px;
-}
-.ctrl-btn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
-.ctrl-spin{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:spin .8s linear infinite;margin-left:4px;vertical-align:-1px}
+.pc-layer-btn:hover{border-color:var(--accent);color:var(--accent)}
+.pc-layer-btn svg{display:block}
 
 /* ビュー操作（長押しで回転 / タップで北向きリセット） */
 .view-ctrl{
@@ -892,7 +888,6 @@ main{flex:1;position:relative;min-height:0}
   .panel .searchbox{display:none}
   .panel .pref-tags-wrap{display:none}
   .panel .presets{display:none}
-  .map-ctrl{display:none}
   .map-float{display:none}
 }
 

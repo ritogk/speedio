@@ -156,50 +156,29 @@ App.initMobileUI = function() {
     });
   }
 
-  // === モバイルレイヤーポップアップ ===
-  var mTerrain = App.$("mTerrainBtn");
+  // === レイヤーポップアップ（PC/モバイル共通） ===
   var layerPopup = App.$("mLayerPopup");
-  var origTerrain = App.$("terrainToggle");
 
-  mTerrain.addEventListener("click", function(e) {
+  function toggleLayerPopup(e){
     e.stopPropagation();
     layerPopup.classList.toggle("show");
-  });
+  }
+  App.$("mTerrainBtn").addEventListener("click", toggleLayerPopup);
+  App.$("pcLayerBtn").addEventListener("click", toggleLayerPopup);
+
   document.addEventListener("click", function(e) {
-    if(!e.target.closest("#mLayerPopup") && !e.target.closest("#mTerrainBtn")){
+    if(!e.target.closest("#mLayerPopup") && !e.target.closest("#mTerrainBtn") && !e.target.closest("#pcLayerBtn")){
       layerPopup.classList.remove("show");
     }
   });
 
-  function setLayer3d(on){
-    var current = origTerrain.getAttribute("aria-pressed") === "true";
-    if(current !== on) origTerrain.click();
-    App.$("mLayer2d").classList.toggle("active", !on);
-    App.$("mLayer3d").classList.toggle("active", on);
-    layerPopup.classList.remove("show");
-  }
-  App.$("mLayer2d").addEventListener("click", function(){ setLayer3d(false); });
-  App.$("mLayer3d").addEventListener("click", function(){ setLayer3d(true); });
-  App.$("mLayerLogistics").addEventListener("click", function() {
-    App.$("logisticsToggle").click();
-    App.$("mLayerLogistics").classList.toggle("active", App.logisticsVisible);
-  });
-  App.$("mLayerClosure").addEventListener("click", function() {
-    App.toggleClosure(!App.closureVisible);
-    App.$("mLayerClosure").classList.toggle("active", App.closureVisible);
-  });
-  App.$("mLayerTourist").addEventListener("click", function() {
-    App.toggleTourist(!App.touristVisible);
-    App.$("mLayerTourist").classList.toggle("active", App.touristVisible);
-  });
-  App.$("mLayerToll").addEventListener("click", function() {
-    App.toggleToll(!App.tollVisible);
-    App.$("mLayerToll").classList.toggle("active", App.tollVisible);
-  });
-  App.$("mLayerRouteNum").addEventListener("click", function() {
-    App.toggleRouteNum(!App.routeNumVisible);
-    App.$("mLayerRouteNum").classList.toggle("active", App.routeNumVisible);
-  });
+  App.$("mLayer2d").addEventListener("click", function(){ App.toggleTerrain(false); layerPopup.classList.remove("show"); });
+  App.$("mLayer3d").addEventListener("click", function(){ App.toggleTerrain(true); layerPopup.classList.remove("show"); });
+  App.$("mLayerLogistics").addEventListener("click", function(){ App.toggleLogistics(!App.logisticsVisible); });
+  App.$("mLayerClosure").addEventListener("click", function(){ App.toggleClosure(!App.closureVisible); App.saveLayers(); });
+  App.$("mLayerTourist").addEventListener("click", function(){ App.toggleTourist(!App.touristVisible); App.saveLayers(); });
+  App.$("mLayerToll").addEventListener("click", function(){ App.toggleToll(!App.tollVisible); App.saveLayers(); });
+  App.$("mLayerRouteNum").addEventListener("click", function(){ App.toggleRouteNum(!App.routeNumVisible); App.saveLayers(); });
 
   function syncMobilePrefState(){
     prefGrid.querySelectorAll(".m-pref-chip").forEach(function(btn) {

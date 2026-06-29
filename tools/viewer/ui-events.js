@@ -13,6 +13,7 @@ var logisticsGrid = null;
 var GRID_RES = 0.0002;
 var ENDPOINT_RADIUS = 3;
 App.closureVisible = true;
+App.terrainEnabled = true;
 var panel;
 
 /* ---- isMobile ---- */
@@ -166,10 +167,10 @@ App.updateTollLayer = function(){
 /* ---- layer persistence ---- */
 App.saveLayers = function(){
   var state = {
-    terrain: $("terrainToggle").getAttribute("aria-pressed") === "true",
+    terrain: App.terrainEnabled,
     koban: App.kobanVisible || false,
     logistics: App.logisticsVisible || false,
-    closure: App.closureVisible || false,
+    closure: App.closureVisible !== false,
     tourist: App.touristVisible || false,
     toll: App.tollVisible || false,
     routeNum: App.routeNumVisible || false
@@ -180,24 +181,23 @@ App.saveLayers = function(){
 /* ---- toggle helpers ---- */
 App.toggleClosure = function(on){
   App.closureVisible = on;
-  $("closureToggle").setAttribute("aria-pressed", String(on));
   if(App.mapReady && App.map.getLayer("closures-icon")){
     App.map.setLayoutProperty("closures-icon", "visibility", on ? "visible" : "none");
   }
+  App.syncLayerPopup();
 };
 
 App.toggleTourist = function(on){
   App.touristVisible = on;
-  $("touristToggle").setAttribute("aria-pressed", String(on));
   if(on) App.updateTouristLayer();
   if(App.mapReady && App.map.getLayer("tourist-icon")){
     App.map.setLayoutProperty("tourist-icon", "visibility", on ? "visible" : "none");
   }
+  App.syncLayerPopup();
 };
 
 App.toggleToll = function(on){
   App.tollVisible = on;
-  $("tollToggle").setAttribute("aria-pressed", String(on));
   if(on) App.updateTollLayer();
   else{
     if(App.mapReady && App.map.getSource("toll-roads"))
@@ -209,11 +209,11 @@ App.toggleToll = function(on){
     if(App.mapReady && App.map.getLayer(id)) App.map.setLayoutProperty(id, "visibility", vis);
   });
   App.syncLegend();
+  App.syncLayerPopup();
 };
 
 App.toggleRouteNum = function(on){
   App.routeNumVisible = on;
-  $("routeNumToggle").setAttribute("aria-pressed", String(on));
   if(on) App.updateRouteNumLayer();
   else{
     if(App.mapReady && App.map.getSource("route-numbers"))
@@ -223,6 +223,59 @@ App.toggleRouteNum = function(on){
   ["route-numbers-casing","route-numbers-line","route-numbers-label"].forEach(function(id){
     if(App.mapReady && App.map.getLayer(id)) App.map.setLayoutProperty(id, "visibility", vis);
   });
+  App.syncLayerPopup();
+};
+
+/* ---- terrain toggle ---- */
+App.toggleTerrain = function(on){
+  App.terrainEnabled = on;
+  if(App.mapReady){
+    App.map.setTerrain(on ? {source:"gsiTerrain", exaggeration:1.2} : null);
+    if(on && App.map.getPitch() < 10) App.map.easeTo({pitch:55, duration:600});
+  }
+  App.syncLayerPopup();
+  App.saveLayers();
+};
+
+/* ---- logistics toggle ---- */
+App.toggleLogistics = function(on){
+  App.logisticsVisible = on;
+  var vis = on ? "visible" : "none";
+  ["logistics-casing","logistics-main","logistics-alt"].forEach(function(id){
+    if(App.mapReady && App.map.getLayer(id)) App.map.setLayoutProperty(id, "visibility", vis);
+  });
+  if(on) App.updateLogisticsLayer();
+  else if(App.mapReady && App.map.getSource("logistics")){
+    App.map.getSource("logistics").setData({type:"FeatureCollection",features:[]});
+    App.updateOverlapLayer();
+  }
+  App.syncLegend();
+  App.syncLayerPopup();
+  App.saveLayers();
+};
+
+/* ---- koban toggle ---- */
+App.toggleKoban = function(on){
+  App.kobanVisible = on;
+  if(App.mapReady && App.map.getLayer("koban-sym")){
+    App.map.setLayoutProperty("koban-sym", "visibility", on ? "visible" : "none");
+  }
+  if(on){
+    var code = document.getElementById("prefSelect").value;
+    if(code) App.fetchKoban(code);
+  }
+  App.saveLayers();
+};
+
+/* ---- sync layer popup ---- */
+App.syncLayerPopup = function(){
+  document.getElementById("mLayer2d").classList.toggle("active", !App.terrainEnabled);
+  document.getElementById("mLayer3d").classList.toggle("active", App.terrainEnabled);
+  document.getElementById("mLayerLogistics").classList.toggle("active", App.logisticsVisible);
+  document.getElementById("mLayerClosure").classList.toggle("active", App.closureVisible);
+  document.getElementById("mLayerTourist").classList.toggle("active", App.touristVisible);
+  document.getElementById("mLayerToll").classList.toggle("active", App.tollVisible);
+  document.getElementById("mLayerRouteNum").classList.toggle("active", App.routeNumVisible);
 };
 
 /* ---- setSheet ---- */
@@ -233,6 +286,42 @@ App.setSheet = function(state){
   panel.classList.toggle("card-peek", state === "card-peek");
   panel.classList.toggle("full", state === "full");
   if(state !== "card-peek") panel.style.transform = "";
+};
+
+/* ---- layer restore ---- */
+// フラグ+ボタン状態の復元（map load不要、同期的に即実行）
+App.restoreLayerFlags = function(){
+  var savedLayers = null;
+  try{ savedLayers = JSON.parse(localStorage.getItem("touge.layers")); }catch(e){}
+  if(!savedLayers) return;
+  if(savedLayers.terrain === false) App.terrainEnabled = false;
+  if(savedLayers.logistics) App.logisticsVisible = true;
+  if(savedLayers.closure === false) App.closureVisible = false;
+  if(savedLayers.tourist) App.touristVisible = true;
+  if(savedLayers.toll) App.tollVisible = true;
+  if(savedLayers.routeNum) App.routeNumVisible = true;
+  if(savedLayers.koban) App.kobanVisible = true;
+  App.syncLayerPopup();
+};
+// マップレイヤーの実適用（map load後に実行）
+App.restoreLayerMap = function(){
+  var savedLayers = null;
+  try{ savedLayers = JSON.parse(localStorage.getItem("touge.layers")); }catch(e){}
+  if(!savedLayers) return;
+  if(savedLayers.terrain){
+    App.map.setTerrain({source:"gsiTerrain", exaggeration:1.2});
+  }
+  if(savedLayers.koban){
+    if(App.map.getLayer("koban-sym")) App.map.setLayoutProperty("koban-sym", "visibility", "visible");
+    var code = $("prefSelect").value;
+    if(code) App.fetchKoban(code);
+  }
+  if(savedLayers.logistics){
+    ["logistics-casing","logistics-main","logistics-alt"].forEach(function(id){
+      if(App.map.getLayer(id)) App.map.setLayoutProperty(id, "visibility", "visible");
+    });
+    App.syncLegend();
+  }
 };
 
 /* ---- restoreFilter ---- */
@@ -267,32 +356,12 @@ App.restoreFilter = async function(){
     App.currentItems = App.dedupeItems(results);
     App.showLoading(false);
     App.renderClosureBanner();
-    var savedLayers = null;
-    try{ savedLayers = JSON.parse(localStorage.getItem("touge.layers")); }catch(e){}
-    if(savedLayers){
-      if(savedLayers.terrain){
-        $("terrainToggle").setAttribute("aria-pressed", "true");
-        App.map.setTerrain({source:"gsiTerrain", exaggeration:1.2});
-      }
-      if(savedLayers.koban){
-        $("kobanToggle").setAttribute("aria-pressed", "true");
-        App.kobanVisible = true;
-        App.map.setLayoutProperty("koban-sym", "visibility", "visible");
-        var code = $("prefSelect").value;
-        if(code) App.fetchKoban(code);
-      }
-      if(savedLayers.logistics) App.logisticsVisible = true;
-      if(savedLayers.closure === false) App.toggleClosure(false);
-      if(savedLayers.tourist) App.toggleTourist(true);
-      if(savedLayers.toll) App.toggleToll(true);
-      if(savedLayers.routeNum) App.toggleRouteNum(true);
-    } else {
-      if(App.touristVisible) App.updateTouristLayer();
-      if(App.tollVisible) App.updateTollLayer();
-      if(App.routeNumVisible) App.updateRouteNumLayer();
-    }
+    if(App.touristVisible) App.updateTouristLayer();
+    if(App.tollVisible) App.updateTollLayer();
+    if(App.routeNumVisible) App.updateRouteNumLayer();
     App.render();
     App.updateLogisticsLayer();
+    App.syncLegend();
     if(window.innerWidth <= 760) App.setSheet("half");
     App.initialCamera(App.pendingVisitKey ? INITIAL_CAM.NAV_RETURN : INITIAL_CAM.RESTORED);
     return true;
@@ -334,9 +403,11 @@ App.initialLoad = async function(){
         App.renderClosureBanner();
         if(App.touristVisible) App.updateTouristLayer();
         if(App.tollVisible) App.updateTollLayer();
+        if(App.routeNumVisible) App.updateRouteNumLayer();
         App.saveFilter();
         App.render();
         App.updateLogisticsLayer();
+        App.syncLegend();
         if(window.innerWidth <= 760) App.setSheet("half");
         App.initialCamera(App.pendingVisitKey ? INITIAL_CAM.NAV_RETURN : INITIAL_CAM.FRESH);
       }else{
@@ -604,74 +675,6 @@ App.initUI = function(){
   }
   holdRotate($("rotL"), 1);
   holdRotate($("rotR"), -1);
-
-  /* ---- terrain toggle ---- */
-  $("terrainToggle").addEventListener("click", function(e){
-    var btn = e.currentTarget;
-    var on = btn.getAttribute("aria-pressed") !== "true";
-    btn.setAttribute("aria-pressed", on);
-    map.setTerrain(on ? {source:"gsiTerrain", exaggeration:1.2} : null);
-    if(on && map.getPitch() < 10) map.easeTo({pitch:55, duration:600});
-    App.saveLayers();
-  });
-
-  /* ---- koban toggle ---- */
-  $("kobanToggle").addEventListener("click", function(e){
-    var btn = e.currentTarget;
-    var on = btn.getAttribute("aria-pressed") !== "true";
-    btn.setAttribute("aria-pressed", String(on));
-    App.kobanVisible = on;
-    var vis = on ? "visible" : "none";
-    map.setLayoutProperty("koban-sym", "visibility", vis);
-    if(on){
-      var code = $("prefSelect").value;
-      if(code) App.fetchKoban(code);
-    }
-    App.saveLayers();
-  });
-
-  /* ---- logistics toggle ---- */
-  $("logisticsToggle").addEventListener("click", function(e){
-    var btn = e.currentTarget;
-    var on = btn.getAttribute("aria-pressed") !== "true";
-    btn.setAttribute("aria-pressed", String(on));
-    App.logisticsVisible = on;
-    var vis = on ? "visible" : "none";
-    ["logistics-casing","logistics-main","logistics-alt"].forEach(function(id){
-      if(map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
-    });
-    if(on) App.updateLogisticsLayer();
-    else{
-      map.getSource("logistics").setData({type:"FeatureCollection",features:[]});
-      App.updateOverlapLayer();
-    }
-    App.syncLegend();
-    App.saveLayers();
-  });
-
-  /* ---- closure toggle ---- */
-  $("closureToggle").addEventListener("click", function(e){
-    App.toggleClosure(e.currentTarget.getAttribute("aria-pressed") !== "true");
-    App.saveLayers();
-  });
-
-  /* ---- tourist toggle ---- */
-  $("touristToggle").addEventListener("click", function(e){
-    App.toggleTourist(e.currentTarget.getAttribute("aria-pressed") !== "true");
-    App.saveLayers();
-  });
-
-  /* ---- toll toggle ---- */
-  $("tollToggle").addEventListener("click", function(e){
-    App.toggleToll(e.currentTarget.getAttribute("aria-pressed") !== "true");
-    App.saveLayers();
-  });
-
-  /* ---- route number toggle ---- */
-  $("routeNumToggle").addEventListener("click", function(e){
-    App.toggleRouteNum(e.currentTarget.getAttribute("aria-pressed") !== "true");
-    App.saveLayers();
-  });
 
   /* ---- bottom sheet ---- */
   handle.addEventListener("click", function(){
