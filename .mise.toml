@@ -107,7 +107,8 @@ set -e
 node tools/viewer/build.mjs
 aws s3 sync tools/viewer/dist/ s3://speedio-old-viewer-788594208758/ \
   --exclude "targets/*" --exclude "terrain_elevations/*" \
-  --exclude "_bundle.tmp.js"
+  --exclude "_bundle.tmp.js" \
+  --cache-control "no-cache"
 aws cloudfront create-invalidation --distribution-id EBM4FK68PMJX0 --paths "/*"
 """
 
