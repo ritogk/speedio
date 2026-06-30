@@ -1064,20 +1064,21 @@ App.open3DView = async function(t){
       var topBest = topCandidates[0], topBestDot = -Infinity;
       topCandidates.forEach(function(c){ var dot = cdx*c[0] + cdy*c[1]; if(dot > topBestDot){ topBestDot = dot; topBest = c; } });
       var topUpX = topBest[0] === 0;
-      App.$("cam3dTop").onclick = () => setCamFace(
+      App.$("cam3dTop").onclick = () => { progress = 0; setCamFace(
         new THREE.Vector3(0, 0, 1), new THREE.Vector3(topBest[0], topBest[1], 0),
         topUpX ? frameSize.x : frameSize.y, topUpX ? frameSize.y : frameSize.x,
         frameSize.z, frameCenter
-      );
-      App.$("cam3dSide").onclick = () => setCamFace(
+      ); };
+      App.$("cam3dSide").onclick = () => { progress = 0; setCamFace(
         frameSize.x >= frameSize.y
           ? new THREE.Vector3(0, 1, 0)
           : new THREE.Vector3(1, 0, 0),
         new THREE.Vector3(0, 0, 1),
         Math.max(frameSize.x, frameSize.y), frameSize.z,
         Math.min(frameSize.x, frameSize.y), frameCenter
-      );
+      ); };
       App.$("cam3dReset").onclick = () => {
+        progress = 0;
         controls.autoRotate = true;
         controls.maxPolarAngle = Math.PI / 2.05;
         camera.up.set(0, 0, 1);
