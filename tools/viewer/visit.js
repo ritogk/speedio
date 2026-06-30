@@ -149,21 +149,7 @@ App._checkVisitByLocation = function(){
 App.checkPendingVisitOnLoad = function(){
   if(!App.pendingVisitKey) return;
   App.showVisitConfirm();
-  var t = App.pendingVisitTouge;
-  var savedLatLng = App.pendingVisitStartLatLng;
-  if(!t) return;
-  var doCamera = function(){
-    if(savedLatLng) App.showVisitLine(savedLatLng, t);
-    else App.flyToTouge(t);
-    navigator.geolocation.getCurrentPosition(function(pos){
-      var fresh = [pos.coords.latitude, pos.coords.longitude];
-      App.pendingVisitStartLatLng = fresh;
-      App.saveDriving(App.pendingVisitKey, t, fresh);
-      App.showVisitLine(fresh, t);
-    }, function(){}, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
-  };
-  if(App.mapReady) doCamera();
-  else App.map.once("load", doCamera);
+  App.initialCamera(INITIAL_CAM.NAV_RETURN);
 };
 
 /* ── init: DOM listeners + restore ── */

@@ -521,11 +521,28 @@ App.clearVisitLine = function(){
   if(App._visitDistMarker){ App._visitDistMarker.remove(); App._visitDistMarker = null; }
 };
 
+App._navCameraFired = false;
+
 App.initialCamera = function(state){
   var action;
   switch(state){
     case INITIAL_CAM.NAV_RETURN:
-      action = function(){};
+      if(App._navCameraFired){ action = function(){}; break; }
+      App._navCameraFired = true;
+      var matched = App.lastRanked.find(function(t){ return t.stableKey === App.pendingVisitKey; });
+      if(matched) App.pendingVisitTouge = matched;
+      var navT = App.pendingVisitTouge;
+      var savedLatLng = App.pendingVisitStartLatLng;
+      action = function(){
+        if(savedLatLng) App.showVisitLine(savedLatLng, navT);
+        else App.flyToTouge(navT);
+        navigator.geolocation.getCurrentPosition(function(pos){
+          var fresh = [pos.coords.latitude, pos.coords.longitude];
+          App.pendingVisitStartLatLng = fresh;
+          App.saveDriving(App.pendingVisitKey, navT, fresh);
+          App.showVisitLine(fresh, navT);
+        }, function(){}, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
+      };
       break;
     case INITIAL_CAM.RESTORED:
     case INITIAL_CAM.FRESH:
