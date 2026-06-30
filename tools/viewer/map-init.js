@@ -475,6 +475,13 @@ App.showVisitLine = function(userLatLng, t){
   el.textContent = distLabel;
   App._visitDistMarker = new maplibregl.Marker({element:el, anchor:"center"})
     .setLngLat([midLng, midLat]).addTo(App.map);
+  if(App._visitNameMarker) App._visitNameMarker.remove();
+  var nameEl = document.createElement("div");
+  nameEl.className = "ring-label";
+  nameEl.style.cssText = "font:500 12px 'Noto Sans JP',sans-serif;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 8px rgba(0,0,0,.9),0 0 16px rgba(0,0,0,.6)";
+  nameEl.textContent = t.name || "";
+  App._visitNameMarker = new maplibregl.Marker({element:nameEl, anchor:"bottom", offset:[0,-8]})
+    .setLngLat([st[1], st[0]]).addTo(App.map);
   var dlat = st[0] - userLatLng[0];
   var dlng = (st[1] - userLatLng[1]) * Math.cos(userLatLng[0] * Math.PI / 180);
   var bearing = Math.atan2(dlng, dlat) * 180 / Math.PI;
@@ -519,6 +526,7 @@ App.clearVisitLine = function(){
     App.map.getSource("visit-arrow").setData({type:"FeatureCollection",features:[]});
   }
   if(App._visitDistMarker){ App._visitDistMarker.remove(); App._visitDistMarker = null; }
+  if(App._visitNameMarker){ App._visitNameMarker.remove(); App._visitNameMarker = null; }
 };
 
 App._navCameraFired = false;
