@@ -478,7 +478,7 @@ App.showVisitLine = function(userLatLng, t){
   if(App._visitNameMarker) App._visitNameMarker.remove();
   var nameEl = document.createElement("div");
   nameEl.className = "ring-label";
-  nameEl.style.cssText = "font:500 12px 'Noto Sans JP',sans-serif;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 8px rgba(0,0,0,.9),0 0 16px rgba(0,0,0,.6)";
+  nameEl.style.cssText = "font:500 11px 'Noto Sans JP',sans-serif;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 8px rgba(0,0,0,.9),0 0 16px rgba(0,0,0,.6)";
   nameEl.textContent = t.name || "";
   App._visitNameMarker = new maplibregl.Marker({element:nameEl, anchor:"bottom", offset:[0,-8]})
     .setLngLat([st[1], st[0]]).addTo(App.map);
