@@ -290,6 +290,45 @@ App.map.on("load", function(){
     }
   });
 
+  // 訪問確認ライン（現在地→峠ST）
+  App.map.addSource("visit-line", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
+  App.map.addLayer({
+    id:"visit-line-layer", type:"line", source:"visit-line",
+    layout:{"line-cap":"round","line-join":"round"},
+    paint:{
+      "line-color":"#E53935",
+      "line-width":6,
+      "line-opacity":0.85,
+      "line-dasharray":[3,2]
+    }
+  });
+  // 訪問確認ライン矢印
+  {
+    var sz = 48, cv = document.createElement("canvas");
+    cv.width = cv.height = sz;
+    var cx = cv.getContext("2d");
+    cx.fillStyle = "#E53935";
+    cx.beginPath();
+    cx.moveTo(sz/2, 4);
+    cx.lineTo(sz-4, sz-4);
+    cx.lineTo(sz/2, sz-10);
+    cx.lineTo(4, sz-4);
+    cx.closePath();
+    cx.fill();
+    App.map.addImage("visit-arrow-ico", {width:sz, height:sz, data:new Uint8Array(cx.getImageData(0,0,sz,sz).data)});
+  }
+  App.map.addSource("visit-arrow", {type:"geojson", data:{type:"FeatureCollection",features:[]}});
+  App.map.addLayer({
+    id:"visit-arrow-layer", type:"symbol", source:"visit-arrow",
+    layout:{
+      "icon-image":"visit-arrow-ico",
+      "icon-size":0.5,
+      "icon-rotate":["get","bearing"],
+      "icon-rotation-alignment":"map",
+      "icon-allow-overlap":true
+    }
+  });
+
   // 道路ラインを直接クリック/タップで選択（casingの方が太いのでタップ判定に含める）
   // 3レイヤーが同じクリックで全て発火するので、最初の1つだけ処理する
   // lineClickHandled already declared above = false;
@@ -414,19 +453,79 @@ App.flyToTouge = function(t){
   });
 };
 
+App.showVisitLine = function(userLatLng, t){
+  App.placeLocMarker(userLatLng[1], userLatLng[0]);
+  var st = t.poly[0];
+  App.map.getSource("visit-line").setData({
+    type:"Feature",
+    geometry:{
+      type:"LineString",
+      coordinates:[[userLatLng[1],userLatLng[0]], [st[1],st[0]]]
+    }
+  });
+  var distKm = App.haversineKm(userLatLng[0], userLatLng[1], st[0], st[1]);
+  var distLabel = distKm < 1 ? Math.round(distKm * 1000) + "m" : distKm.toFixed(1) + "km";
+  var midLng = (userLatLng[1] + st[1]) / 2;
+  var midLat = (userLatLng[0] + st[0]) / 2;
+  if(App._visitDistMarker) App._visitDistMarker.remove();
+  var el = document.createElement("div");
+  el.className = "ring-label";
+  el.style.fontSize = "12px";
+  el.style.textShadow = "0 1px 3px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,.9), 0 0 16px rgba(0,0,0,.6)";
+  el.textContent = distLabel;
+  App._visitDistMarker = new maplibregl.Marker({element:el, anchor:"center"})
+    .setLngLat([midLng, midLat]).addTo(App.map);
+  var dlat = st[0] - userLatLng[0];
+  var dlng = (st[1] - userLatLng[1]) * Math.cos(userLatLng[0] * Math.PI / 180);
+  var bearing = Math.atan2(dlng, dlat) * 180 / Math.PI;
+  if(App.map.getSource("visit-arrow")){
+    App.map.getSource("visit-arrow").setData({
+      type:"Feature",
+      properties:{bearing: bearing},
+      geometry:{type:"Point", coordinates:[st[1], st[0]]}
+    });
+  }
+  var mobile = window.innerWidth <= 760;
+  var pullback = 0.03;
+  var behindLat = userLatLng[0] - pullback * (st[0] - userLatLng[0]);
+  var behindLng = userLatLng[1] - pullback * (st[1] - userLatLng[1]);
+  var b = new maplibregl.LngLatBounds();
+  b.extend([behindLng, behindLat]);
+  b.extend([userLatLng[1], userLatLng[0]]);
+  b.extend([st[1], st[0]]);
+  App.cancelOrbit();
+  var cam = App.map.cameraForBounds(b, {
+    padding: Object.assign(App.viewPadding(20), {bottom: App.viewPadding(20).bottom + 120}),
+    bearing: bearing,
+    pitch: 65
+  });
+  setTimeout(function(){
+    App.map.flyTo({
+      center: cam ? cam.center : [userLatLng[1], userLatLng[0]],
+      zoom: cam ? cam.zoom + 1.6 : 13.5,
+      pitch: 65,
+      bearing: bearing,
+      duration: 1400,
+      essential: true
+    });
+  }, 100);
+};
+
+App.clearVisitLine = function(){
+  if(App.map.getSource("visit-line")){
+    App.map.getSource("visit-line").setData({type:"FeatureCollection",features:[]});
+  }
+  if(App.map.getSource("visit-arrow")){
+    App.map.getSource("visit-arrow").setData({type:"FeatureCollection",features:[]});
+  }
+  if(App._visitDistMarker){ App._visitDistMarker.remove(); App._visitDistMarker = null; }
+};
+
 App.initialCamera = function(state){
   var action;
   switch(state){
     case INITIAL_CAM.NAV_RETURN:
-      var matched = App.lastRanked.find(function(t){ return t.stableKey === App.pendingVisitKey; });
-      action = function(){
-        if(matched){
-          App.pendingVisitTouge = matched;
-          App.revealAndSelect(matched);
-        }else{
-          App.flyToTouge(App.pendingVisitTouge);
-        }
-      };
+      action = function(){};
       break;
     case INITIAL_CAM.RESTORED:
     case INITIAL_CAM.FRESH:

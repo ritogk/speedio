@@ -106,25 +106,22 @@ App.visitConfirmCardHtml = function(t){
   '</article>';
 };
 
-App.showVisitConfirm = function(skipCamera){
+App.showVisitConfirm = function(){
   if(!App.pendingVisitKey || !App.pendingVisitTouge) return;
   if(Date.now() - lastDialogShownAt < DIALOG_COOLDOWN_MS) return;
   lastDialogShownAt = Date.now();
   var matched = App.lastRanked.find(function(t){ return t.stableKey === App.pendingVisitKey; });
-  if(matched){
-    App.pendingVisitTouge = matched;
-    if(!skipCamera) App.revealAndSelect(matched);
-  }
+  if(matched) App.pendingVisitTouge = matched;
   App.$("vcCard").innerHTML = App.visitConfirmCardHtml(App.pendingVisitTouge);
   App.$("vcTitle").textContent = "この峠に行きましたか？";
   App.$("vcStep1").style.display = "";
   App.$("vcStep2").style.display = "none";
   App.$("visitConfirm").classList.add("show");
-  if(!matched && !skipCamera && App.mapReady) App.flyToTouge(App.pendingVisitTouge);
 };
 
 App.closeVisitConfirm = function(){
   App.$("visitConfirm").classList.remove("show");
+  App.clearVisitLine();
 };
 
 /* ── location-based visit check ── */
@@ -151,7 +148,22 @@ App._checkVisitByLocation = function(){
 
 App.checkPendingVisitOnLoad = function(){
   if(!App.pendingVisitKey) return;
-  App.showVisitConfirm(true);
+  App.showVisitConfirm();
+  var t = App.pendingVisitTouge;
+  var savedLatLng = App.pendingVisitStartLatLng;
+  if(!t) return;
+  var doCamera = function(){
+    if(savedLatLng) App.showVisitLine(savedLatLng, t);
+    else App.flyToTouge(t);
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var fresh = [pos.coords.latitude, pos.coords.longitude];
+      App.pendingVisitStartLatLng = fresh;
+      App.saveDriving(App.pendingVisitKey, t, fresh);
+      App.showVisitLine(fresh, t);
+    }, function(){}, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
+  };
+  if(App.mapReady) doCamera();
+  else App.map.once("load", doCamera);
 };
 
 /* ── init: DOM listeners + restore ── */
@@ -186,7 +198,11 @@ App.initVisit = function(){
     App.closeVisitConfirm();
   });
 
-  App.$("vcDriving").addEventListener("click", function(){ App.closeVisitConfirm(); App.commitDriving(); });
+  App.$("vcDriving").addEventListener("click", function(e){
+    e.stopPropagation();
+    App.$("visitConfirm").classList.remove("show");
+    App.commitDriving();
+  });
   App.$("vcNo").addEventListener("click", function(){ App.closeVisitConfirm(); App.clearPendingVisit(); });
   App.$("visitConfirm").addEventListener("click", function(e){ if(e.target === App.$("visitConfirm")){ vcStep2Key = null; App.closeVisitConfirm(); App.clearPendingVisit(); } });
 
@@ -198,7 +214,7 @@ App.initVisit = function(){
     }
     if(document.visibilityState === "visible"){
       if(!App.pendingVisitKey) App.restoreDriving();
-      App._checkVisitByLocation();
+      if(App.pendingVisitKey) App.showVisitConfirm();
     }
   });
 
