@@ -128,8 +128,6 @@ App.showVisitConfirm = function(){
   if(matched) App.pendingVisitTouge = matched;
   App.$("vcCard").innerHTML = App.visitConfirmCardHtml(App.pendingVisitTouge);
   App.$("vcTitle").textContent = "この峠に行きましたか？";
-  App.$("vcStep1").style.display = "";
-  App.$("vcStep2").style.display = "none";
   App.$("visitConfirm").classList.add("show");
 };
 
@@ -168,34 +166,19 @@ App.checkPendingVisitOnLoad = function(){
 
 /* ── init: DOM listeners + restore ── */
 App.initVisit = function(){
-  var vcStep2Key = null;
-
   App.$("vcYes").addEventListener("click", function(){
     var key = App.pendingVisitKey;
     App.commitPendingVisit();
+    App.closeVisitConfirm();
+    // お気に入りは2枚目のモーダルではなく、アクション付きトーストでワンタップ追加に
     if(key && !App.favoriteKeys.has(key)){
-      vcStep2Key = key;
-      App.$("vcTitle").textContent = "記録しました！";
-      App.$("vcStep1").style.display = "none";
-      App.$("vcStep2").style.display = "";
-    }else{
-      App.closeVisitConfirm();
+      App.toastAction("走行済みに記録しました", "★ お気に入りに追加", function(){
+        App.favoriteKeys.add(key);
+        App.saveFavorites();
+        App.toast("お気に入りに追加しました");
+        App.render();
+      });
     }
-  });
-
-  App.$("vcFavYes").addEventListener("click", function(){
-    if(vcStep2Key){
-      App.favoriteKeys.add(vcStep2Key);
-      App.saveFavorites();
-      App.toast("お気に入りに追加しました");
-    }
-    vcStep2Key = null;
-    App.closeVisitConfirm();
-  });
-
-  App.$("vcFavSkip").addEventListener("click", function(){
-    vcStep2Key = null;
-    App.closeVisitConfirm();
   });
 
   App.$("vcDriving").addEventListener("click", function(e){
@@ -204,6 +187,8 @@ App.initVisit = function(){
     App.commitDriving();
   });
   App.$("vcNo").addEventListener("click", function(){ App.closeVisitConfirm(); App.clearPendingVisit(); });
+  // 背景タップは「閉じるだけ」（走行中状態は維持。解除は明示的に「行ってない」でのみ）
+  App.$("visitConfirm").addEventListener("click", function(e){ if(e.target === App.$("visitConfirm")) App.closeVisitConfirm(); });
 
   /* 走行中チップ: タップで対象峠へ移動、✕で確認ダイアログ（走行した/走行中/行ってない を任意のタイミングで選べる） */
   App.$("drivingChip").addEventListener("click", function(e){
@@ -223,7 +208,6 @@ App.initVisit = function(){
     if(App.pendingVisitStartLatLng) App.showVisitLine(App.pendingVisitStartLatLng, t);
     else App.flyToTouge(t);
   });
-  App.$("visitConfirm").addEventListener("click", function(e){ if(e.target === App.$("visitConfirm")){ vcStep2Key = null; App.closeVisitConfirm(); App.clearPendingVisit(); } });
 
   /* visibilitychange — save driving on hide, check location on return */
   document.addEventListener("visibilitychange", function(){

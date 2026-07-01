@@ -133,11 +133,29 @@ window.App = {
   toast: function(msg, type){
     var el = App.$("toast");
     el.textContent = msg;
-    el.classList.remove("error");
+    el.classList.remove("error","has-act");
     if(type === "error") el.classList.add("error");
     el.classList.add("show");
     clearTimeout(App._toastTimer);
-    App._toastTimer = setTimeout(function(){ el.classList.remove("show","error"); }, 3500);
+    App._toastTimer = setTimeout(function(){ el.classList.remove("show","error","has-act"); }, 3500);
+  },
+  // アクションボタン付きトースト（お気に入り追加など、後追いのワンタップ操作用）
+  toastAction: function(msg, label, fn){
+    var el = App.$("toast");
+    el.textContent = msg;
+    el.classList.remove("error");
+    var btn = document.createElement("button");
+    btn.className = "toast-act";
+    btn.textContent = label;
+    btn.addEventListener("click", function(ev){
+      ev.stopPropagation();
+      el.classList.remove("show","has-act");
+      fn();
+    });
+    el.appendChild(btn);
+    el.classList.add("show","has-act");
+    clearTimeout(App._toastTimer);
+    App._toastTimer = setTimeout(function(){ el.classList.remove("show","has-act"); }, 6000);
   },
   showLoading: function(on, text){
     App.$("loading").classList.toggle("show", on);

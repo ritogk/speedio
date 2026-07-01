@@ -338,6 +338,12 @@ main{flex:1;position:relative;min-height:0}
 }
 .toast.show{opacity:.95}
 .toast.error{background:var(--accent);border-color:var(--accent);color:#fff}
+.toast.has-act{pointer-events:auto;display:inline-flex;align-items:center;gap:12px}
+.toast .toast-act{
+  font:inherit;font-size:12px;font-weight:700;white-space:nowrap;
+  border:none;background:none;padding:0;cursor:pointer;color:var(--accent);
+  -webkit-tap-highlight-color:transparent;
+}
 
 .overlay-3d{
   position:fixed;inset:0;z-index:2000;
