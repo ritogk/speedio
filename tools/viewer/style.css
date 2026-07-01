@@ -257,10 +257,11 @@ main{flex:1;position:relative;min-height:0}
   display:flex;align-items:center;justify-content:center;
 }
 .card-top{display:flex;flex-direction:column;gap:5px;margin-bottom:5px}
-.card-labels{display:flex;align-items:center;gap:7px}
+.card-labels{display:flex;align-items:center;gap:7px;min-width:0}
 .route-oval{
   font-size:10px;font-weight:500;color:var(--ink-soft);
   border:1px solid var(--contour);border-radius:999px;padding:1px 8px;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;min-width:0;flex-shrink:1; /* 収まらない時は省略して記録トグル/サムネの下に潜らせない */
 }
 .card-top h3{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative}
 .card-top h3::after{
@@ -272,7 +273,7 @@ main{flex:1;position:relative;min-height:0}
   box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none;
 }
 .card-top h3:hover::after{display:block}
-.dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap}
+.dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap;flex-shrink:0}
 /* 記録トグル（カード右上の丸アイコン。ON時は色で状態が読める） */
 .rec-btns{position:absolute;top:8px;right:102px;display:flex;gap:5px;z-index:2}
 .rec-btn{
@@ -303,12 +304,9 @@ main{flex:1;position:relative;min-height:0}
 .card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
 .card-tag{font-size:10px;color:var(--ink-soft);background:var(--paper-deep);border-radius:4px;padding:2px 7px}
 .card-tag b{color:var(--ink);font-weight:500}
-/* 路線種別バッジ */
-.route-oval.route-kind{border-color:#4a7fbf;color:#4a7fbf}
-/* 道幅5段メーター */
-.wmeter{display:inline-flex;gap:2px;vertical-align:0}
-.wmeter i{width:7px;height:5px;border-radius:2px;background:var(--paper-deep);border:1px solid var(--contour)}
-.wmeter i.f{background:var(--ink);border-color:var(--ink)}
+/* 道幅ゲージ（センターラインスコア0-1をそのまま塗り幅に） */
+.wgauge{display:inline-block;width:44px;height:5px;border-radius:3px;background:var(--paper-deep);overflow:hidden;vertical-align:1px}
+.wgauge i{display:block;height:100%;background:var(--gauge);border-radius:3px}
 /* 起伏ストリップ（登り=橙/下り=青、3Dビューと同配色） */
 .elev-strip{height:6px;border-radius:3px;background:var(--paper-deep)}
 .elev-ud{white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-size:9px}

@@ -106,22 +106,19 @@ App.commitDriving = function(){
 
 /* ── visit confirm card（一覧カードと同じ構成: 路線種別・道幅メーター・勾配・起伏ストリップ） ── */
 App.visitConfirmCardHtml = function(t){
-  var w5 = Math.max(0, Math.min(5, Math.round((t.width || 0) * 5)));
-  var wm = ""; for(var wi = 0; wi < 5; wi++) wm += '<i class="' + (wi < w5 ? "f" : "") + '"></i>';
   var strip = App.elevStripCss ? App.elevStripCss(t) : null;
   var tn = (t.tunnelSections || []).length, br = (t.bridgeSections || []).length;
   return '<article class="card">' +
     '<div class="card-top">' +
-      '<div class="card-labels">' + (t.prefecture ? '<span class="route-oval">' + App.escapeHtml(t.prefecture) + '</span>' : (t._pref ? '<span class="route-oval">' + App.escapeHtml(App.PREFECTURES[t._pref] || "") + '</span>' : "")) + (t.city ? '<span class="route-oval">' + App.escapeHtml(t.city) + '</span>' : "") + (t.routeLabel ? '<span class="route-oval route-kind">' + App.escapeHtml(t.routeLabel) + '</span>' : "") + '</div>' +
+      '<div class="card-labels">' + (t.prefecture ? '<span class="route-oval">' + App.escapeHtml(t.prefecture) + '</span>' : (t._pref ? '<span class="route-oval">' + App.escapeHtml(App.PREFECTURES[t._pref] || "") + '</span>' : "")) + (t.city ? '<span class="route-oval">' + App.escapeHtml(t.city) + '</span>' : "") + '</div>' +
       '<h3>' + App.escapeHtml(t.name) + '</h3>' +
     '</div>' +
-    '<p class="meta">距離 <b>' + t.lengthKm + 'km</b> ・ 標高差 <b>' + t.height + 'm</b> ・ 道幅 <span class="wmeter">' + wm + '</span></p>' +
+    '<p class="meta">距離 <b>' + t.lengthKm + 'km</b> ・ 標高差 <b>' + t.height + 'm</b> ・ 道幅 <span class="wgauge"><i style="width:' + Math.round((t.width || 0) * 100) + '%"></i></span></p>' +
     '<div class="bars">' +
       '<span class="bl">コーナー</span><div class="stacked"><span style="width:' + t.pctStrong + '%;background:var(--corner-strong)"></span><span style="width:' + t.pctMedium + '%;background:var(--corner-medium)"></span><span style="width:' + t.pctWeak + '%;background:var(--corner-weak)"></span><span style="width:' + t.pctStraight + '%;background:var(--straight)"></span></div><span class="bv">' + (t.pctStrong + t.pctMedium + t.pctWeak) + '%</span>' +
-      '<span class="bl">勾配</span><div class="stacked"><span style="width:' + t.pctSteep + '%;background:var(--elev-steep)"></span><span style="width:' + t.pctModerate + '%;background:var(--elev-moderate)"></span><span style="width:' + t.pctGentle + '%;background:var(--elev-gentle)"></span><span style="width:' + t.pctFlat + '%;background:var(--elev-flat)"></span></div><span class="bv">' + (t.pctSteep + t.pctModerate + t.pctGentle) + '%</span>' +
       '<span class="bl">起伏</span><div class="elev-strip"' + (strip ? ' style="background:' + strip + '"' : '') + '></div><span class="bv elev-ud">' + (t.uphillCnt != null ? '<b class="u">↑' + t.uphillCnt + '</b><b class="d">↓' + (t.downhillCnt != null ? t.downhillCnt : 0) + '</b>' : '') + '</span>' +
     '</div>' +
-    '<div class="card-tags">' + (tn > 0 ? '<span class="card-tag">トンネル <b>' + tn + '</b></span>' : '') + (br > 0 ? '<span class="card-tag">橋 <b>' + br + '</b></span>' : '') + (t.buildingCnt != null ? (t.buildingCnt > 0 ? '<span class="card-tag">🏠 ×' + t.buildingCnt + '</span>' : '<span class="card-tag">🏠 なし</span>') : "") + '</div>' +
+    '<div class="card-tags">' + (tn > 0 ? '<span class="card-tag">トンネル <b>' + tn + '</b></span>' : '') + (br > 0 ? '<span class="card-tag">🌉 ×' + br + '</span>' : '') + (t.buildingCnt != null ? (t.buildingCnt > 0 ? '<span class="card-tag">🏠 ×' + t.buildingCnt + '</span>' : '<span class="card-tag">🏠 なし</span>') : "") + '</div>' +
     '<div class="thumb"><span class="thumb-spin"></span></div>' +
   '</article>';
 };
