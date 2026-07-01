@@ -26,8 +26,12 @@ const {
 } = useGoogleMap(apiKey)
 
 onMounted(async () => {
-  // Googleインスタンスのみ初期化（座標はダミー）
   await initGoogleService([], { latitude: 0, longitude: 0, roadWidthType: 'ONE_LANE' })
+  await loadFromUrl('/api/review/23')
+  if (isLoaded.value) {
+    await fetchAndApplyAllLocations()
+    handleGeometryMove(0)
+  }
 })
 
 const { data: locations, setQueryParams } = useGetLocations()
@@ -52,15 +56,34 @@ provide(UseHomeStateKey, homeState)
 
 const geometryPointPageNoJump = ref(1)
 
-const { loadGeometries, isLoaded, originalGeometries, geometries } = homeState
+const { loadGeometries, loadFromUrl, applyLocations, isLoaded, originalGeometries, geometries } = homeState
 
 const {
   changeFilterGeometry,
+  filterCriteria,
   filteredGeometries,
   selectedGeometryIndex,
   selectedGeometry,
   changeSelectedGeometry
 } = useGeometry(geometries)
+
+const fetchAndApplyAllLocations = async () => {
+  const allPoints = originalGeometries.value.flat()
+  if (allPoints.length === 0) return
+  let minLat = allPoints[0].latitude, maxLat = allPoints[0].latitude
+  let minLng = allPoints[0].longitude, maxLng = allPoints[0].longitude
+  for (const p of allPoints) {
+    if (p.latitude < minLat) minLat = p.latitude
+    if (p.latitude > maxLat) maxLat = p.latitude
+    if (p.longitude < minLng) minLng = p.longitude
+    if (p.longitude > maxLng) maxLng = p.longitude
+  }
+  const res = await fetch(`/api/locations?minLatitude=${minLat}&maxLatitude=${maxLat}&minLongitude=${minLng}&maxLongitude=${maxLng}`)
+  if (res.ok) {
+    const locs = await res.json()
+    applyLocations(locs)
+  }
+}
 
 /**
  * csv読込
@@ -72,6 +95,7 @@ const handleLoadCsv = async (e: Event) => {
   if (!fileList.length) return
   const file = target.files?.[0]
   await loadGeometries(file)
+  await fetchAndApplyAllLocations()
   changeSelectedGeometry(0)
   changeSelectedGeometryPoint(0)
 
@@ -143,6 +167,38 @@ const {
 
 const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
 const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
+
+const handleWideLaneClick = async (hasWideLane: boolean) => {
+  if (!locations.value) return
+  const location = locations.value.find((location) => {
+    return (
+      location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
+      location.point.coordinates[0] === selectedGeometryPoint.value.longitude
+    )
+  })
+  if (location) {
+    await patchLocations.mutateAsync({
+      id: location.id,
+      location: { has_wide_lane: hasWideLane }
+    })
+  }
+}
+
+const handleShoulderClick = async (hasShoulder: boolean) => {
+  if (!locations.value) return
+  const location = locations.value.find((location) => {
+    return (
+      location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
+      location.point.coordinates[0] === selectedGeometryPoint.value.longitude
+    )
+  })
+  if (location) {
+    await patchLocations.mutateAsync({
+      id: location.id,
+      location: { has_shoulder: hasShoulder }
+    })
+  }
+}
 /**
  * 路面状態更新ハンドラー
  * @param roadWidthType
@@ -239,6 +295,8 @@ const handleChangeFilterGeometryClick = () => {
 useShortcuts({
   handleCenterlineClick,
   handleRoadTypeClick,
+  handleWideLaneClick,
+  handleShoulderClick,
   handleGeometryMove,
   handlePointMove,
   selectedGeometryPointIndex,
@@ -250,10 +308,10 @@ useShortcuts({
 </script>
 
 <template>
-  <div style="display: flex; width: 100%">
-    <div style="flex: 7; height: 1000px">
-      <div id="pano" style="flex: 5; background-color: gray; height: 1000px">street_view_area</div>
-      <div style="width: 100%">
+  <div style="display: flex; width: 100%; height: 100vh; overflow: hidden">
+    <div style="flex: 7; display: flex; flex-direction: column; height: 100vh">
+      <div id="pano" style="flex: 1; background-color: gray">street_view_area</div>
+      <div>
         <div class="button-container">
           <!-- 道幅 -->
           <span style="display: none">
@@ -327,6 +385,52 @@ useShortcuts({
               no(2
             </button>
           </span>
+          <!-- 車線幅 -->
+          <div style="background: orange; display: inline; padding: 2px 4px; margin-left: 10px">--</div>
+          <span>
+            <button
+              class="button-style"
+              data-tooltip="車線幅が十分"
+              style="background: lightgreen"
+              @click="handleWideLaneClick(true)"
+            >
+              <span v-show="selectedLocation?.has_wide_lane === true" style="color: red">★</span>
+              広い
+            </button>
+            <button
+              class="button-style"
+              data-tooltip="車線幅が狭い"
+              style="background: salmon"
+              @click="handleWideLaneClick(false)"
+            >
+              <span v-show="selectedLocation?.has_wide_lane === false" style="color: red">★</span>
+              狭い
+            </button>
+          </span>
+
+          <!-- 路肩 -->
+          <div style="background: orange; display: inline; padding: 2px 4px; margin-left: 10px">--</div>
+          <span>
+            <button
+              class="button-style"
+              data-tooltip="路肩あり"
+              style="background: lightgreen"
+              @click="handleShoulderClick(true)"
+            >
+              <span v-show="selectedLocation?.has_shoulder === true" style="color: red">★</span>
+              路肩○
+            </button>
+            <button
+              class="button-style"
+              data-tooltip="路肩なし"
+              style="background: salmon"
+              @click="handleShoulderClick(false)"
+            >
+              <span v-show="selectedLocation?.has_shoulder === false" style="color: red">★</span>
+              路肩✕
+            </button>
+          </span>
+
           <button
             class="button-style"
             data-tooltip="戻る"
@@ -353,15 +457,17 @@ useShortcuts({
         </div>
       </div>
     </div>
-    <div id="map" style="flex: 2; background-color: darkgray; height: 1000px">google_map_area</div>
-    <div style="flex: 2; background-color: white">
-      <table border="1" style="height: 1000px; overflow-y: auto; display: block">
+    <div id="map" style="flex: 2; background-color: darkgray; height: 100vh">google_map_area</div>
+    <div style="flex: 2; background-color: white; display: flex; flex-direction: column; height: 100vh">
+      <table border="1" style="flex: 1; overflow-y: auto; display: block">
         <thead>
           <tr style="background: lightblue">
             <th>DB</th>
             <th>地理座標</th>
             <th>路面状態</th>
             <th>ｾﾝﾀｰﾗｲﾝ</th>
+            <th>車線幅</th>
+            <th>路肩</th>
           </tr>
         </thead>
         <tbody>
@@ -391,44 +497,29 @@ useShortcuts({
               {{ point.roadWidthType }}
             </td>
             <td>{{ point.hasCenterLine }}</td>
+            <td>{{ point.hasWideLane }}</td>
+            <td>{{ point.hasShoulder }}</td>
           </tr>
         </tbody>
       </table>
-      <div>
-        <button
-          @click="handleGeometryMove(selectedGeometryIndex - 2)"
-          :disabled="selectedGeometryIndex < 2 || isLoaded === false"
-        >
-          ◀◀
-        </button>
-        <button
-          @click="handleGeometryMove(selectedGeometryIndex - 1)"
-          :disabled="selectedGeometryIndex < 1 || isLoaded === false"
-        >
-          ◀
-        </button>
-        <button
-          @click="handleGeometryMove(selectedGeometryIndex + 1)"
-          :disabled="selectedGeometryIndex + 2 > filteredGeometries.length || isLoaded === false"
-        >
-          ▶
-        </button>
-        <button
-          @click="handleGeometryMove(selectedGeometryIndex + 2)"
-          :disabled="selectedGeometryIndex + 3 > filteredGeometries.length || isLoaded === false"
-        >
-          ▶▶</button
-        ><span style="margin-right: 20px"
-          >{{ selectedGeometryIndex + 1 }}/{{ filteredGeometries.length }}</span
-        >
-        <button @click="handleChangeFilterGeometryClick()">filter</button>
-        <br />
-        <input type="number" style="width: 50px" v-model="geometryPointPageNoJump" /><button
-          @click="handleGeometryMove(Number(geometryPointPageNoJump - 1))"
-        >
-          change
-        </button>
-        <input type="file" @change="handleLoadCsv" />
+      <div class="control-panel">
+        <div class="control-row">
+          <button @click="handleGeometryMove(selectedGeometryIndex - 2)" :disabled="selectedGeometryIndex < 2 || isLoaded === false">◀◀</button>
+          <button @click="handleGeometryMove(selectedGeometryIndex - 1)" :disabled="selectedGeometryIndex < 1 || isLoaded === false">◀</button>
+          <button @click="handleGeometryMove(selectedGeometryIndex + 1)" :disabled="selectedGeometryIndex + 2 > filteredGeometries.length || isLoaded === false">▶</button>
+          <button @click="handleGeometryMove(selectedGeometryIndex + 2)" :disabled="selectedGeometryIndex + 3 > filteredGeometries.length || isLoaded === false">▶▶</button>
+          <span>{{ selectedGeometryIndex + 1 }}/{{ filteredGeometries.length }}</span>
+          <input type="number" style="width: 40px; margin-left: 8px" v-model="geometryPointPageNoJump" />
+          <button @click="handleGeometryMove(Number(geometryPointPageNoJump - 1))">go</button>
+        </div>
+        <div class="control-row filter-row">
+          <button @click="handleChangeFilterGeometryClick()">filter</button>
+          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.roadWidthType" />道幅</label>
+          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.centerLine" />CL</label>
+          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.wideLane" />車線幅</label>
+          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.shoulder" />路肩</label>
+          <input type="file" @change="handleLoadCsv" style="margin-left: auto; font-size: 11px; max-width: 140px" />
+        </div>
       </div>
     </div>
   </div>
@@ -463,6 +554,41 @@ useShortcuts({
 }
 
 .button-container button:hover::after {
-  visibility: visible; /* ホバー時に見えるように */
+  visibility: visible;
+}
+.control-panel {
+  padding: 4px 6px;
+  border-top: 1px solid #ddd;
+  font-size: 12px;
+}
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+.filter-row {
+  border-top: 1px solid #eee;
+  padding-top: 4px;
+}
+.filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+  height: 22px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+  line-height: 1;
+}
+.filter-label:has(input:checked) {
+  background: #d0e8ff;
+  border-color: #6aa8e0;
+}
+.filter-label input {
+  margin: 0;
 }
 </style>
