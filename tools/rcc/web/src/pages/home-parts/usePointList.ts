@@ -26,8 +26,7 @@ export const usePointList = (
       })
       const roadWidthType = location?.road_width_type
       const hasCenterLine = location?.has_center_line
-      const hasWideLane = location?.has_wide_lane
-      const hasShoulder = location?.has_shoulder
+      const lineClearance = location?.line_clearance
       return {
         check: location,
         label: location ? '済' : '未',
@@ -35,8 +34,7 @@ export const usePointList = (
         longitude: point.longitude,
         roadWidthType: roadWidthType,
         hasCenterLine: hasCenterLine,
-        hasWideLane: hasWideLane,
-        hasShoulder: hasShoulder
+        lineClearance: lineClearance
       }
     })
   })

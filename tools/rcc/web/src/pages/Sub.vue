@@ -168,7 +168,7 @@ const {
 const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
 const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
 
-const handleWideLaneClick = async (hasWideLane: boolean) => {
+const handleLineClearanceClick = async (lineClearance: boolean) => {
   if (!locations.value) return
   const location = locations.value.find((location) => {
     return (
@@ -179,23 +179,7 @@ const handleWideLaneClick = async (hasWideLane: boolean) => {
   if (location) {
     await patchLocations.mutateAsync({
       id: location.id,
-      location: { has_wide_lane: hasWideLane }
-    })
-  }
-}
-
-const handleShoulderClick = async (hasShoulder: boolean) => {
-  if (!locations.value) return
-  const location = locations.value.find((location) => {
-    return (
-      location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
-      location.point.coordinates[0] === selectedGeometryPoint.value.longitude
-    )
-  })
-  if (location) {
-    await patchLocations.mutateAsync({
-      id: location.id,
-      location: { has_shoulder: hasShoulder }
+      location: { line_clearance: lineClearance }
     })
   }
 }
@@ -292,11 +276,10 @@ const handleChangeFilterGeometryClick = () => {
   handleGeometryMove(0)
 }
 
-const { inputMode } = useShortcuts({
+useShortcuts({
   handleCenterlineClick,
   handleRoadTypeClick,
-  handleWideLaneClick,
-  handleShoulderClick,
+  handleLineClearanceClick,
   handleGeometryMove,
   handlePointMove,
   selectedGeometryPointIndex,
@@ -384,47 +367,25 @@ const { inputMode } = useShortcuts({
               no(2
             </button>
           </span>
-          <!-- 車線幅 -->
+          <!-- ライン自由度 -->
           <span>
             <button
               class="button-style"
-              data-tooltip="車線幅が十分"
+              data-tooltip="ライン自由度あり"
               style="background: lightgreen"
-              @click="handleWideLaneClick(true)"
+              @click="handleLineClearanceClick(true)"
             >
-              <span v-show="selectedLocation?.has_wide_lane === true" style="color: red">★</span>
-              広い
+              <span v-show="selectedLocation?.line_clearance === true" style="color: red">★</span>
+              LC○
             </button>
             <button
               class="button-style"
-              data-tooltip="車線幅が狭い"
+              data-tooltip="ライン自由度なし"
               style="background: salmon"
-              @click="handleWideLaneClick(false)"
+              @click="handleLineClearanceClick(false)"
             >
-              <span v-show="selectedLocation?.has_wide_lane === false" style="color: red">★</span>
-              狭い
-            </button>
-          </span>
-
-          <!-- 路肩 -->
-          <span>
-            <button
-              class="button-style"
-              data-tooltip="路肩あり"
-              style="background: lightgreen"
-              @click="handleShoulderClick(true)"
-            >
-              <span v-show="selectedLocation?.has_shoulder === true" style="color: red">★</span>
-              路肩○
-            </button>
-            <button
-              class="button-style"
-              data-tooltip="路肩なし"
-              style="background: salmon"
-              @click="handleShoulderClick(false)"
-            >
-              <span v-show="selectedLocation?.has_shoulder === false" style="color: red">★</span>
-              路肩✕
+              <span v-show="selectedLocation?.line_clearance === false" style="color: red">★</span>
+              LC✕
             </button>
           </span>
 
@@ -451,10 +412,6 @@ const { inputMode } = useShortcuts({
           <span style="margin-left: 30px"
             >checked:<span style="color: red">{{ selectedGeometryCheckCount }}</span></span
           >
-          <span
-            class="mode-indicator"
-            :style="{ background: inputMode === 'lane' ? '#4caf50' : '#ff9800' }"
-          >{{ inputMode === 'lane' ? '車線幅 (z/x)' : '路肩 (z/x)' }}</span>
         </div>
       </div>
     </div>
@@ -467,8 +424,7 @@ const { inputMode } = useShortcuts({
             <th>地理座標</th>
             <th>路面状態</th>
             <th>ｾﾝﾀｰﾗｲﾝ</th>
-            <th>車線幅</th>
-            <th>路肩</th>
+            <th>LC</th>
           </tr>
         </thead>
         <tbody>
@@ -502,8 +458,7 @@ const { inputMode } = useShortcuts({
               {{ point.roadWidthType }}
             </td>
             <td>{{ point.hasCenterLine }}</td>
-            <td :style="{ backgroundColor: index === selectedGeometryPointIndex && inputMode === 'lane' ? '#ffe0b2' : '' }">{{ point.hasWideLane }}</td>
-            <td :style="{ backgroundColor: index === selectedGeometryPointIndex && inputMode === 'shoulder' ? '#ffe0b2' : '' }">{{ point.hasShoulder }}</td>
+            <td :style="{ backgroundColor: index === selectedGeometryPointIndex ? '#ffe0b2' : '' }">{{ point.lineClearance }}</td>
           </tr>
         </tbody>
       </table>
@@ -521,8 +476,7 @@ const { inputMode } = useShortcuts({
           <button @click="handleChangeFilterGeometryClick()">filter</button>
           <label class="filter-label"><input type="checkbox" v-model="filterCriteria.roadWidthType" />道幅</label>
           <label class="filter-label"><input type="checkbox" v-model="filterCriteria.centerLine" />CL</label>
-          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.wideLane" />車線幅</label>
-          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.shoulder" />路肩</label>
+          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.lineClearance" />LC</label>
           <input type="file" @change="handleLoadCsv" style="margin-left: auto; font-size: 11px; max-width: 140px" />
         </div>
       </div>
@@ -596,13 +550,5 @@ const { inputMode } = useShortcuts({
 }
 .filter-label input {
   margin: 0;
-}
-.mode-indicator {
-  margin-left: 10px;
-  padding: 2px 8px;
-  color: white;
-  font-weight: bold;
-  font-size: 12px;
-  border-radius: 4px;
 }
 </style>

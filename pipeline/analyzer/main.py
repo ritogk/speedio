@@ -496,17 +496,25 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     gdf_edges_elevation_unevenness[output_columns].to_csv(output_dir, index=False)
 
     import pandas as pd
+    # review.csv用: claude_center_line_scoreの平均が低い（狭い道）を除外
+    gdf_review = gdf_edges[gdf_edges["score_claude_center_line_section"] > 0.75]
+    review_balance = gdf_review[gdf_review.index.isin(gdf_edges_balance.index)].sort_values("score", ascending=False)
+    review_week = gdf_review[gdf_review.index.isin(gdf_edges_week.index)].sort_values("score", ascending=False)
+    review_medium = gdf_review[gdf_review.index.isin(gdf_edges_medium.index)].sort_values("score", ascending=False)
+    review_strong = gdf_review[gdf_review.index.isin(gdf_edges_strong.index)].sort_values("score", ascending=False)
+    review_elevation = gdf_review[gdf_review.index.isin(gdf_edges_elevation_unevenness.index)].sort_values("score", ascending=False)
+    print(f"  📋 review filter: {len(gdf_edges)} -> {len(gdf_review)} (score_claude_center_line_section > 0.75)")
     review_frames = [
-        gdf_edges_balance.head(50),
-        gdf_edges_week.head(50),
-        gdf_edges_medium.head(50),
-        gdf_edges_strong.head(50),
-        gdf_edges_elevation_unevenness.head(50),
+        review_balance.head(50),
+        review_week.head(50),
+        review_medium.head(50),
+        review_strong.head(50),
+        review_elevation.head(50),
     ]
     review = pd.concat(review_frames)
     review = review[~review.index.duplicated(keep='first')]
     if len(review) < 300:
-        remaining = gdf_edges_balance[~gdf_edges_balance.index.isin(review.index)]
+        remaining = review_balance[~review_balance.index.isin(review.index)]
         review = pd.concat([review, remaining.head(300 - len(review))])
     review = review.sort_values("score", ascending=False).head(300)
     review_path = f"{os.path.dirname(os.path.abspath(__file__))}/../../data/targets/{prefecture_code}/review.csv"

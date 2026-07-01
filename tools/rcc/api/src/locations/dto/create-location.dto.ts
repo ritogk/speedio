@@ -24,13 +24,8 @@ export class CreateLocationDto {
   @IsBoolean()
   has_center_line: boolean;
 
-  @ApiProperty({ description: '車線幅が十分か', required: false })
+  @ApiProperty({ description: '走行ラインの自由度があるか', required: false })
   @IsBoolean()
   @IsOptional()
-  has_wide_lane?: boolean;
-
-  @ApiProperty({ description: '路肩があるか', required: false })
-  @IsBoolean()
-  @IsOptional()
-  has_shoulder?: boolean;
+  line_clearance?: boolean;
 }

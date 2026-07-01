@@ -235,7 +235,7 @@ const updateMapMarker = (point: PointType) => {
 const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
 const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
 
-const handleWideLaneClick = async (hasWideLane: boolean) => {
+const handleLineClearanceClick = async (lineClearance: boolean) => {
   if (!locations.value) return
   const location = locations.value.find((location) => {
     return (
@@ -246,23 +246,7 @@ const handleWideLaneClick = async (hasWideLane: boolean) => {
   if (location) {
     await patchLocations.mutateAsync({
       id: location.id,
-      location: { has_wide_lane: hasWideLane }
-    })
-  }
-}
-
-const handleShoulderClick = async (hasShoulder: boolean) => {
-  if (!locations.value) return
-  const location = locations.value.find((location) => {
-    return (
-      location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
-      location.point.coordinates[0] === selectedGeometryPoint.value.longitude
-    )
-  })
-  if (location) {
-    await patchLocations.mutateAsync({
-      id: location.id,
-      location: { has_shoulder: hasShoulder }
+      location: { line_clearance: lineClearance }
     })
   }
 }
@@ -382,8 +366,7 @@ const geometryPointPageNoJump = ref(1)
 useShortcuts({
   handleCenterlineClick,
   handleRoadTypeClick,
-  handleWideLaneClick,
-  handleShoulderClick,
+  handleLineClearanceClick,
   handleGeometryMove,
   handlePointMove,
   selectedGeometryPointIndex,
@@ -531,49 +514,25 @@ onBeforeUnmount(() => {
             </button>
           </span>
 
-          <!-- 車線幅 -->
-          <div style="background: orange; display: inline; padding: 2px 4px; margin-left: 10px">--</div>
+          <!-- ライン自由度 -->
           <span>
             <button
               class="button-style"
-              data-tooltip="車線幅が十分"
+              data-tooltip="ライン自由度あり"
               style="background: lightgreen"
-              @click="handleWideLaneClick(true)"
+              @click="handleLineClearanceClick(true)"
             >
-              <span v-show="selectedLocation?.has_wide_lane === true" style="color: red">★</span>
-              広い
+              <span v-show="selectedLocation?.line_clearance === true" style="color: red">★</span>
+              LC○
             </button>
             <button
               class="button-style"
-              data-tooltip="車線幅が狭い"
+              data-tooltip="ライン自由度なし"
               style="background: salmon"
-              @click="handleWideLaneClick(false)"
+              @click="handleLineClearanceClick(false)"
             >
-              <span v-show="selectedLocation?.has_wide_lane === false" style="color: red">★</span>
-              狭い
-            </button>
-          </span>
-
-          <!-- 路肩 -->
-          <div style="background: orange; display: inline; padding: 2px 4px; margin-left: 10px">--</div>
-          <span>
-            <button
-              class="button-style"
-              data-tooltip="路肩あり"
-              style="background: lightgreen"
-              @click="handleShoulderClick(true)"
-            >
-              <span v-show="selectedLocation?.has_shoulder === true" style="color: red">★</span>
-              路肩○
-            </button>
-            <button
-              class="button-style"
-              data-tooltip="路肩なし"
-              style="background: salmon"
-              @click="handleShoulderClick(false)"
-            >
-              <span v-show="selectedLocation?.has_shoulder === false" style="color: red">★</span>
-              路肩✕
+              <span v-show="selectedLocation?.line_clearance === false" style="color: red">★</span>
+              LC✕
             </button>
           </span>
 
@@ -613,8 +572,7 @@ onBeforeUnmount(() => {
             <th>地理座標</th>
             <th>路面状態</th>
             <th>ｾﾝﾀｰﾗｲﾝ</th>
-            <th>車線幅</th>
-            <th>路肩</th>
+            <th>LC</th>
           </tr>
         </thead>
         <tbody>
@@ -644,8 +602,7 @@ onBeforeUnmount(() => {
               {{ point.roadWidthType }}
             </td>
             <td>{{ point.hasCenterLine }}</td>
-            <td>{{ point.hasWideLane }}</td>
-            <td>{{ point.hasShoulder }}</td>
+            <td>{{ point.lineClearance }}</td>
           </tr>
         </tbody>
       </table>
@@ -663,8 +620,7 @@ onBeforeUnmount(() => {
           <button @click="handleChangeFilterGeometryClick()">filter</button>
           <label class="filter-label"><input type="checkbox" v-model="filterCriteria.roadWidthType" />道幅</label>
           <label class="filter-label"><input type="checkbox" v-model="filterCriteria.centerLine" />CL</label>
-          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.wideLane" />車線幅</label>
-          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.shoulder" />路肩</label>
+          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.lineClearance" />LC</label>
           <input type="file" @change="loadCsv" style="margin-left: auto; font-size: 11px; max-width: 140px" />
         </div>
       </div>

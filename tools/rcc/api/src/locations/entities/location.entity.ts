@@ -151,18 +151,9 @@ export class Location {
     nullable: true,
   })
   @ApiProperty({
-    description: '車線幅が十分か（ライン取りに余裕があるか）',
+    description: '走行ラインの自由度があるか',
   })
-  has_wide_lane?: boolean;
-
-  @Column({
-    type: 'boolean',
-    nullable: true,
-  })
-  @ApiProperty({
-    description: '路肩があるか',
-  })
-  has_shoulder?: boolean;
+  line_clearance?: boolean;
 
   @CreateDateColumn()
   @ApiProperty({ description: '作成日時' })
