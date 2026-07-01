@@ -1,13 +1,17 @@
 import { onKeyStroke } from '@vueuse/core'
-import type { Ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import {
   type RoadWidthType
 } from '@/pages/home-parts/useCsv'
 
+export type LaneWidth = 'NORMAL' | 'NARROW'
+export type RoadMargin = 'LARGE' | 'MEDIUM' | 'NONE'
+
 export const useShortcuts = (options: {
   handleCenterlineClick: (hasCenterLine: boolean, roadWidthType: RoadWidthType) => void,
   handleRoadTypeClick: (roadWidthType: RoadWidthType) => void,
-  handleLineClearanceClick: (lineClearance: boolean) => void,
+  handleLaneWidthClick: (laneWidth: LaneWidth) => Promise<void>,
+  handleRoadMarginClick: (roadMargin: RoadMargin) => Promise<void>,
   handleGeometryMove: (index: number) => void,
   handlePointMove: (index: number) => void,
   selectedGeometryPointIndex: Ref<number>,
@@ -17,7 +21,8 @@ export const useShortcuts = (options: {
   selectedBeforeRoadType: Ref<any>,
 }) => {
   const {
-    handleLineClearanceClick,
+    handleLaneWidthClick,
+    handleRoadMarginClick,
     handleGeometryMove,
     handlePointMove,
     selectedGeometryPointIndex,
@@ -26,6 +31,9 @@ export const useShortcuts = (options: {
     selectedRoadType,
     selectedBeforeRoadType
   } = options
+
+  const pendingLaneWidth = ref<LaneWidth | null>(null)
+  const pendingRoadMargin = ref<RoadMargin | null>(null)
 
   const advanceToNext = () => {
     if (selectedGeometryPointIndex.value + 2 >= selectedGeometry.value.length) {
@@ -37,13 +45,57 @@ export const useShortcuts = (options: {
     selectedRoadType.value = 'ONE_LANE'
   }
 
-  // \\キー: 進む（最後のポイントならジオメトリー切替）
+  const resetPending = () => {
+    pendingLaneWidth.value = null
+    pendingRoadMargin.value = null
+  }
+
+  const tryCommit = async () => {
+    if (pendingLaneWidth.value && pendingRoadMargin.value) {
+      await handleLaneWidthClick(pendingLaneWidth.value)
+      await handleRoadMarginClick(pendingRoadMargin.value)
+      resetPending()
+      advanceToNext()
+    }
+  }
+
+  // 左手: road_margin
+  onKeyStroke(['z'], (e) => {
+    pendingRoadMargin.value = 'LARGE'
+    tryCommit()
+    e.preventDefault()
+  })
+  onKeyStroke(['x'], (e) => {
+    pendingRoadMargin.value = 'MEDIUM'
+    tryCommit()
+    e.preventDefault()
+  })
+  onKeyStroke(['c'], (e) => {
+    pendingRoadMargin.value = 'NONE'
+    tryCommit()
+    e.preventDefault()
+  })
+  // 右手: lane_width
+  onKeyStroke(['m'], (e) => {
+    pendingLaneWidth.value = 'NORMAL'
+    tryCommit()
+    e.preventDefault()
+  })
+  onKeyStroke([','], (e) => {
+    pendingLaneWidth.value = 'NARROW'
+    tryCommit()
+    e.preventDefault()
+  })
+
+  // \\キー: 進む
   onKeyStroke(['\\'], (e) => {
+    resetPending()
     advanceToNext()
     e.preventDefault()
   })
-  // /キー: 戻る（最初のポイントならジオメトリー切替）
+  // /キー: 戻る
   onKeyStroke(['/'], (e) => {
+    resetPending()
     if (selectedGeometryPointIndex.value === 0) {
       handleGeometryMove(selectedGeometryIndex.value - 1)
     } else {
@@ -53,6 +105,7 @@ export const useShortcuts = (options: {
   })
   // Endキー: 3つ進む
   onKeyStroke(['End'], (e) => {
+    resetPending()
     if (selectedGeometryPointIndex.value + 3 >= selectedGeometry.value.length) {
       handleGeometryMove(selectedGeometryIndex.value + 3)
     } else {
@@ -64,23 +117,16 @@ export const useShortcuts = (options: {
   })
   // ]キー: ジオメトリ移動（進む）
   onKeyStroke([']'], (e) => {
+    resetPending()
     handleGeometryMove(selectedGeometryIndex.value + 1)
     e.preventDefault()
   })
   // :キー: ジオメトリ移動（戻る）
   onKeyStroke([':'], (e) => {
+    resetPending()
     handleGeometryMove(selectedGeometryIndex.value - 1)
     e.preventDefault()
   })
-  // z/xキー: line_clearance入力 + 次へ進む
-  onKeyStroke(['z'], (e) => {
-    handleLineClearanceClick(true)
-    advanceToNext()
-    e.preventDefault()
-  })
-  onKeyStroke(['x'], (e) => {
-    handleLineClearanceClick(false)
-    advanceToNext()
-    e.preventDefault()
-  })
+
+  return { pendingLaneWidth, pendingRoadMargin }
 }

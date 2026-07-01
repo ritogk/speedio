@@ -168,7 +168,7 @@ const {
 const selectedRoadType = ref<RoadWidthType>('ONE_LANE')
 const selectedBeforeRoadType = ref<RoadWidthType>('ONE_LANE')
 
-const handleLineClearanceClick = async (lineClearance: boolean) => {
+const handleLaneWidthClick = async (laneWidth: string) => {
   if (!locations.value) return
   const location = locations.value.find((location) => {
     return (
@@ -179,7 +179,23 @@ const handleLineClearanceClick = async (lineClearance: boolean) => {
   if (location) {
     await patchLocations.mutateAsync({
       id: location.id,
-      location: { line_clearance: lineClearance }
+      location: { lane_width: laneWidth as any }
+    })
+  }
+}
+
+const handleRoadMarginClick = async (roadMargin: string) => {
+  if (!locations.value) return
+  const location = locations.value.find((location) => {
+    return (
+      location.point.coordinates[1] === selectedGeometryPoint.value.latitude &&
+      location.point.coordinates[0] === selectedGeometryPoint.value.longitude
+    )
+  })
+  if (location) {
+    await patchLocations.mutateAsync({
+      id: location.id,
+      location: { road_margin: roadMargin as any }
     })
   }
 }
@@ -276,10 +292,11 @@ const handleChangeFilterGeometryClick = () => {
   handleGeometryMove(0)
 }
 
-useShortcuts({
+const { pendingLaneWidth, pendingRoadMargin } = useShortcuts({
   handleCenterlineClick,
   handleRoadTypeClick,
-  handleLineClearanceClick,
+  handleLaneWidthClick,
+  handleRoadMarginClick,
   handleGeometryMove,
   handlePointMove,
   selectedGeometryPointIndex,
@@ -367,25 +384,30 @@ useShortcuts({
               no(2
             </button>
           </span>
-          <!-- ライン自由度 -->
-          <span>
-            <button
-              class="button-style"
-              data-tooltip="ライン自由度あり"
-              style="background: lightgreen"
-              @click="handleLineClearanceClick(true)"
-            >
-              <span v-show="selectedLocation?.line_clearance === true" style="color: red">★</span>
-              LC○
+          <!-- 車線幅 (m/,) -->
+          <span :style="{ background: pendingLaneWidth ? '#c8e6c9' : '', borderRadius: '4px', padding: '0 2px' }">
+            <button class="button-style" data-tooltip="幅:普通(m)" @click="handleLaneWidthClick('NORMAL')">
+              <span v-show="selectedLocation?.lane_width === 'NORMAL'" style="color: red">★</span>
+              幅○
             </button>
-            <button
-              class="button-style"
-              data-tooltip="ライン自由度なし"
-              style="background: salmon"
-              @click="handleLineClearanceClick(false)"
-            >
-              <span v-show="selectedLocation?.line_clearance === false" style="color: red">★</span>
-              LC✕
+            <button class="button-style" data-tooltip="幅:狭い(,)" @click="handleLaneWidthClick('NARROW')">
+              <span v-show="selectedLocation?.lane_width === 'NARROW'" style="color: red">★</span>
+              幅✕
+            </button>
+          </span>
+          <!-- 余裕 (z/x/c) -->
+          <span :style="{ background: pendingRoadMargin ? '#c8e6c9' : '', borderRadius: '4px', padding: '0 2px' }">
+            <button class="button-style" data-tooltip="余裕:大(z)" @click="handleRoadMarginClick('LARGE')">
+              <span v-show="selectedLocation?.road_margin === 'LARGE'" style="color: red">★</span>
+              大
+            </button>
+            <button class="button-style" data-tooltip="余裕:中(x)" @click="handleRoadMarginClick('MEDIUM')">
+              <span v-show="selectedLocation?.road_margin === 'MEDIUM'" style="color: red">★</span>
+              中
+            </button>
+            <button class="button-style" data-tooltip="余裕:無(c)" @click="handleRoadMarginClick('NONE')">
+              <span v-show="selectedLocation?.road_margin === 'NONE'" style="color: red">★</span>
+              無
             </button>
           </span>
 
@@ -424,7 +446,8 @@ useShortcuts({
             <th>地理座標</th>
             <th>路面状態</th>
             <th>ｾﾝﾀｰﾗｲﾝ</th>
-            <th>LC</th>
+            <th>幅</th>
+            <th>余裕</th>
           </tr>
         </thead>
         <tbody>
@@ -458,7 +481,8 @@ useShortcuts({
               {{ point.roadWidthType }}
             </td>
             <td>{{ point.hasCenterLine }}</td>
-            <td style="min-width: 40px" :style="{ backgroundColor: index === selectedGeometryPointIndex ? '#ffe0b2' : '' }">{{ point.lineClearance }}</td>
+            <td :style="{ backgroundColor: index === selectedGeometryPointIndex ? (pendingLaneWidth ? '#c8e6c9' : '#ffe0b2') : '' }">{{ point.laneWidth }}</td>
+            <td :style="{ backgroundColor: index === selectedGeometryPointIndex ? (pendingRoadMargin ? '#c8e6c9' : '#ffe0b2') : '' }">{{ point.roadMargin }}</td>
           </tr>
         </tbody>
       </table>
@@ -476,7 +500,8 @@ useShortcuts({
           <button @click="handleChangeFilterGeometryClick()">filter</button>
           <label class="filter-label"><input type="checkbox" v-model="filterCriteria.roadWidthType" />道幅</label>
           <label class="filter-label"><input type="checkbox" v-model="filterCriteria.centerLine" />CL</label>
-          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.lineClearance" />LC</label>
+          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.laneWidth" />幅</label>
+          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.roadMargin" />余裕</label>
           <input type="file" @change="handleLoadCsv" style="margin-left: auto; font-size: 11px; max-width: 140px" />
         </div>
       </div>

@@ -14,7 +14,8 @@ export type PointType = {
 export type CheckedFields = {
   roadWidthType: boolean
   centerLine: boolean
-  lineClearance: boolean
+  laneWidth: boolean
+  roadMargin: boolean
 }
 
 export type GeometryPointType = {
@@ -94,7 +95,8 @@ const useHomeState = (): UseHomeStateType => {
           checkedFields: {
             roadWidthType: !!loc.road_width_type && loc.road_width_type !== 'UNCONFIRMED',
             centerLine: loc.has_center_line !== null && loc.has_center_line !== undefined,
-            lineClearance: loc.line_clearance !== null && loc.line_clearance !== undefined,
+            laneWidth: loc.lane_width !== null && loc.lane_width !== undefined,
+            roadMargin: loc.road_margin !== null && loc.road_margin !== undefined,
           }
         }
       })

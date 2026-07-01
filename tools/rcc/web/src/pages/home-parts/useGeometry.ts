@@ -4,7 +4,8 @@ import type { PointType, GeometryPointType } from '@/pages/home-parts/useCsv'
 export type FilterCriteria = {
   roadWidthType: boolean
   centerLine: boolean
-  lineClearance: boolean
+  laneWidth: boolean
+  roadMargin: boolean
 }
 
 export const useGeometry = (
@@ -14,7 +15,8 @@ export const useGeometry = (
   const filterCriteria = reactive<FilterCriteria>({
     roadWidthType: true,
     centerLine: true,
-    lineClearance: false,
+    laneWidth: false,
+    roadMargin: false,
   })
   const appliedCriteria = ref<FilterCriteria>({ ...filterCriteria })
   const filterVersion = ref(0)
@@ -27,11 +29,12 @@ export const useGeometry = (
 
   const isPointChecked = (point: GeometryPointType, criteria: FilterCriteria): boolean => {
     if (!point.initialChecked) return false
-    if (!criteria.roadWidthType && !criteria.centerLine && !criteria.lineClearance) return false
+    if (!criteria.roadWidthType && !criteria.centerLine && !criteria.laneWidth && !criteria.roadMargin) return false
     const f = point.checkedFields
     if (criteria.roadWidthType && !f.roadWidthType) return false
     if (criteria.centerLine && !f.centerLine) return false
-    if (criteria.lineClearance && !f.lineClearance) return false
+    if (criteria.laneWidth && !f.laneWidth) return false
+    if (criteria.roadMargin && !f.roadMargin) return false
     return true
   }
 

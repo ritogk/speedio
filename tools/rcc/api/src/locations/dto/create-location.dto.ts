@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsNumber, IsEnum, IsBoolean, IsOptional } from 'class-validator';
-import { RoadWidthType } from '../entities/location.entity';
+import { RoadWidthType, LaneWidth, RoadMargin } from '../entities/location.entity';
 export class CreateLocationDto {
   @ApiProperty({ description: '緯度' })
   @IsNumber()
@@ -24,8 +24,13 @@ export class CreateLocationDto {
   @IsBoolean()
   has_center_line: boolean;
 
-  @ApiProperty({ description: '走行ラインの自由度があるか', required: false })
-  @IsBoolean()
+  @ApiProperty({ description: '車線幅', enum: LaneWidth, required: false })
+  @IsEnum(LaneWidth)
   @IsOptional()
-  line_clearance?: boolean;
+  lane_width?: LaneWidth;
+
+  @ApiProperty({ description: '路側の余裕', enum: RoadMargin, required: false })
+  @IsEnum(RoadMargin)
+  @IsOptional()
+  road_margin?: RoadMargin;
 }

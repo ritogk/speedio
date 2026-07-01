@@ -10,6 +10,17 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
+export enum LaneWidth {
+  NORMAL = 'NORMAL',
+  NARROW = 'NARROW',
+}
+
+export enum RoadMargin {
+  LARGE = 'LARGE',
+  MEDIUM = 'MEDIUM',
+  NONE = 'NONE',
+}
+
 export enum RoadWidthType {
   TWO_LANE_SHOULDER = 'TWO_LANE_SHOULDER', // ２車線かつ路肩あり
   TWO_LANE = 'TWO_LANE', // 2車線かつ路肩なし
@@ -147,13 +158,26 @@ export class Location {
   claude_is_tunnel?: boolean;
 
   @Column({
-    type: 'boolean',
+    type: 'enum',
+    enum: LaneWidth,
     nullable: true,
   })
   @ApiProperty({
-    description: '走行ラインの自由度があるか',
+    description: '車線幅',
+    enum: LaneWidth,
   })
-  line_clearance?: boolean;
+  lane_width?: LaneWidth;
+
+  @Column({
+    type: 'enum',
+    enum: RoadMargin,
+    nullable: true,
+  })
+  @ApiProperty({
+    description: '路側の余裕',
+    enum: RoadMargin,
+  })
+  road_margin?: RoadMargin;
 
   @CreateDateColumn()
   @ApiProperty({ description: '作成日時' })
