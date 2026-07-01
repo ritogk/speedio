@@ -36,7 +36,7 @@ export const useShortcuts = (options: {
   const inputMode = ref<InputMode>('lane')
 
   const advanceToNext = () => {
-    if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
+    if (selectedGeometryPointIndex.value + 2 >= selectedGeometry.value.length) {
       handleGeometryMove(selectedGeometryIndex.value + 1)
     } else {
       handlePointMove(selectedGeometryPointIndex.value + 1)
