@@ -85,6 +85,11 @@ description = "product/app dev server"
 dir = "product"
 run = "pnpm dev"
 
+[tasks."rcc:dev"]
+description = "rcc dev server (turbo: openapi生成 → api + web)"
+dir = "tools/rcc"
+run = "pnpm dev"
+
 [tasks."deploy:prod"]
 description = "CDK deploy 本番環境"
 dir = "infra"
