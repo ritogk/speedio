@@ -377,19 +377,21 @@ App.drawMap = function(list){
   var nextMarkers = {};
   list.slice(0, App.MARKER_N).forEach((t,i)=>{
     var m = markersById[t.id];
-    if(!m){
+    var isNew = !m;
+    if(isNew){
       var el = document.createElement("div");
       el.addEventListener("click",function(){
         var tt = App.lastRanked.find(x=>x.id === Number(el.dataset.tid));
         if(tt) App.revealAndSelect(tt);
       });
-      m = new maplibregl.Marker({element:el, occludedOpacity:1}).addTo(App.map);
+      m = new maplibregl.Marker({element:el, occludedOpacity:1});
     }
     var mel = m.getElement();
     mel.dataset.tid = t.id;
     mel.className = "rank-marker tier-" + App.tierOf(i, list.length);
     mel.textContent = i+1;
     m.setLngLat([t.center[1], t.center[0]]);
+    if(isNew) m.addTo(App.map);
     nextMarkers[t.id] = m;
     delete markersById[t.id];
   });
