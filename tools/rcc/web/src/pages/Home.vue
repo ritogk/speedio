@@ -542,17 +542,17 @@ onBeforeUnmount(() => {
               幅✕
             </button>
           </span>
-          <!-- 余裕 -->
+          <!-- 路肩 -->
           <span>
-            <button class="button-style" data-tooltip="余裕:大" style="background: lightgreen" @click="handleRoadMarginClick('LARGE')">
+            <button class="button-style" data-tooltip="路肩:大" style="background: lightgreen" @click="handleRoadMarginClick('LARGE')">
               <span v-show="selectedLocation?.road_margin === 'LARGE'" style="color: red">★</span>
               大
             </button>
-            <button class="button-style" data-tooltip="余裕:中" style="background: bisque" @click="handleRoadMarginClick('MEDIUM')">
+            <button class="button-style" data-tooltip="路肩:中" style="background: bisque" @click="handleRoadMarginClick('MEDIUM')">
               <span v-show="selectedLocation?.road_margin === 'MEDIUM'" style="color: red">★</span>
               中
             </button>
-            <button class="button-style" data-tooltip="余裕:無" style="background: salmon" @click="handleRoadMarginClick('NONE')">
+            <button class="button-style" data-tooltip="路肩:無" style="background: salmon" @click="handleRoadMarginClick('NONE')">
               <span v-show="selectedLocation?.road_margin === 'NONE'" style="color: red">★</span>
               無
             </button>
@@ -594,8 +594,8 @@ onBeforeUnmount(() => {
             <th>地理座標</th>
             <th>路面状態</th>
             <th>ｾﾝﾀｰﾗｲﾝ</th>
-            <th>幅</th>
-            <th>余裕</th>
+            <th>路肩</th>
+            <th>道幅</th>
           </tr>
         </thead>
         <tbody>
@@ -625,8 +625,8 @@ onBeforeUnmount(() => {
               {{ point.roadWidthType }}
             </td>
             <td>{{ point.hasCenterLine }}</td>
-            <td>{{ point.laneWidth }}</td>
             <td>{{ point.roadMargin }}</td>
+            <td>{{ point.laneWidth }}</td>
           </tr>
         </tbody>
       </table>
@@ -645,7 +645,7 @@ onBeforeUnmount(() => {
           <label class="filter-label"><input type="checkbox" v-model="filterCriteria.roadWidthType" />道幅</label>
           <label class="filter-label"><input type="checkbox" v-model="filterCriteria.centerLine" />CL</label>
           <label class="filter-label"><input type="checkbox" v-model="filterCriteria.laneWidth" />幅</label>
-          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.roadMargin" />余裕</label>
+          <label class="filter-label"><input type="checkbox" v-model="filterCriteria.roadMargin" />路肩</label>
           <input type="file" @change="loadCsv" style="margin-left: auto; font-size: 11px; max-width: 140px" />
         </div>
       </div>
