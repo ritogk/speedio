@@ -535,15 +535,16 @@ const { inputMode } = useShortcuts({
 <style scoped>
 .button-container .button-style {
   position: relative;
-  width: 70px; /* ボタンの横幅を50pxに設定 */
-  height: 50px; /* ボタンの高さを50pxに設定 */
-  margin: 5px; /* ボタンの間に少し余白を設ける */
-  font-size: 16px; /* テキストのサイズを調整 */
+  width: 55px;
+  height: 30px;
+  margin: 2px;
+  font-size: 12px;
   border: 1px solid #222;
   border-radius: 3px;
 }
 .button-container {
   text-align: center;
+  padding: 2px 0;
 }
 .button-container button::after {
   content: attr(data-tooltip); /* data-tooltip属性からテキストを取得 */
@@ -599,11 +600,11 @@ const { inputMode } = useShortcuts({
   margin: 0;
 }
 .mode-indicator {
-  margin-left: 20px;
-  padding: 4px 12px;
+  margin-left: 10px;
+  padding: 2px 8px;
   color: white;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 12px;
   border-radius: 4px;
 }
 </style>
