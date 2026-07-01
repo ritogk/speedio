@@ -9,7 +9,7 @@ const INITIAL_CAM = Object.freeze({
   NAV_RETURN: "nav-return"  // ナビから戻った: 対象峠にズーム
 });
 
-var markers = [];
+var markersById = {};
 var pendingGeojson = null;
 var orbitRaf = null;
 var ringLabelMarkers = [];
@@ -373,19 +373,28 @@ App.drawMap = function(list){
   if(App.mapReady){ App.map.getSource("touge").setData(geojson); App.updateOverlapLayer(); App.updateTollOverlapLayer(); }
   else pendingGeojson = geojson;
 
-  // ランクマーカー
-  markers.forEach(m=>m.remove());
-  markers = [];
+  // ランクマーカー（峠IDで差分更新: 残る峠は順位・位置の書き換えだけ、消えた峠のみremove）
+  var nextMarkers = {};
   list.slice(0, App.MARKER_N).forEach((t,i)=>{
-    var el = document.createElement("div");
-    el.className = "rank-marker tier-" + App.tierOf(i, list.length);
-    el.textContent = i+1;
-    el.addEventListener("click",()=>App.revealAndSelect(t));
-    var m = new maplibregl.Marker({element:el, occludedOpacity:1})
-      .setLngLat([t.center[1], t.center[0]])
-      .addTo(App.map);
-    markers.push(m);
+    var m = markersById[t.id];
+    if(!m){
+      var el = document.createElement("div");
+      el.addEventListener("click",function(){
+        var tt = App.lastRanked.find(x=>x.id === Number(el.dataset.tid));
+        if(tt) App.revealAndSelect(tt);
+      });
+      m = new maplibregl.Marker({element:el, occludedOpacity:1}).addTo(App.map);
+    }
+    var mel = m.getElement();
+    mel.dataset.tid = t.id;
+    mel.className = "rank-marker tier-" + App.tierOf(i, list.length);
+    mel.textContent = i+1;
+    m.setLngLat([t.center[1], t.center[0]]);
+    nextMarkers[t.id] = m;
+    delete markersById[t.id];
   });
+  Object.values(markersById).forEach(m=>m.remove());
+  markersById = nextMarkers;
 };
 
 App.viewPadding = function(extra){
@@ -443,13 +452,18 @@ App.flyToTouge = function(t){
   t.poly.forEach(p=>b.extend([p[1],p[0]]));
   App.cancelOrbit();
   var cam = App.map.cameraForBounds(b, {bearing, maxZoom:maxZ, padding:App.viewPadding(30)});
+  var center = cam?.center ?? [t.center[1], t.center[0]];
+  var to = maplibregl.LngLat.convert(center);
+  var from = App.map.getCenter();
+  var distKm = App.haversineKm(from.lat, from.lng, to.lat, to.lng);
+  // 近距離のカード見比べは短く、遠距離ジャンプだけ長めに（essentialを付けずreduced-motion設定も尊重）
+  var duration = Math.round(Math.min(1800, 500 + distKm * 25));
   App.map.flyTo({
-    center: cam?.center ?? [t.center[1], t.center[0]],
+    center: center,
     zoom: cam?.zoom ?? maxZ,
     pitch: mobile ? 64 : 70,
     bearing,
-    duration:1800,
-    essential:true
+    duration: duration
   });
 };
 

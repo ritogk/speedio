@@ -148,7 +148,7 @@ App._checkVisitByLocation = function(){
 
 App.checkPendingVisitOnLoad = function(){
   if(!App.pendingVisitKey) return;
-  App.showVisitConfirm();
+  App._checkVisitByLocation();
   App.initialCamera(INITIAL_CAM.NAV_RETURN);
 };
 
@@ -200,7 +200,7 @@ App.initVisit = function(){
     }
     if(document.visibilityState === "visible"){
       if(!App.pendingVisitKey) App.restoreDriving();
-      if(App.pendingVisitKey) App.showVisitConfirm();
+      if(App.pendingVisitKey) App._checkVisitByLocation();
     }
   });
 
