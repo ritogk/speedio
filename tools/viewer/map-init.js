@@ -467,7 +467,8 @@ App.flyToTouge = function(t){
   });
 };
 
-App.showVisitLine = function(userLatLng, t){
+// 線・マーカー・ラベルのデータ更新のみ（カメラは動かさない）
+App.updateVisitLine = function(userLatLng, t){
   App.placeLocMarker(userLatLng[1], userLatLng[0]);
   var st = t.poly[0];
   App.map.getSource("visit-line").setData({
@@ -506,7 +507,13 @@ App.showVisitLine = function(userLatLng, t){
       geometry:{type:"Point", coordinates:[st[1], st[0]]}
     });
   }
-  var mobile = window.innerWidth <= 760;
+  return bearing;
+};
+
+// データ更新 + カメラ移動（durationで補正時の短縮に対応）
+App.showVisitLine = function(userLatLng, t, duration){
+  var bearing = App.updateVisitLine(userLatLng, t);
+  var st = t.poly[0];
   var pullback = 0.03;
   var behindLat = userLatLng[0] - pullback * (st[0] - userLatLng[0]);
   var behindLng = userLatLng[1] - pullback * (st[1] - userLatLng[1]);
@@ -526,8 +533,7 @@ App.showVisitLine = function(userLatLng, t){
       zoom: cam ? cam.zoom + 1.6 : 13.5,
       pitch: 65,
       bearing: bearing,
-      duration: 1400,
-      essential: true
+      duration: duration || 1400
     });
   }, 100);
 };
@@ -558,12 +564,18 @@ App.initialCamera = function(state){
       action = function(){
         if(savedLatLng) App.showVisitLine(savedLatLng, navT);
         else App.flyToTouge(navT);
+        // 高速設定（OSキャッシュ許可+Wi-Fi測位）で現在地を取り直し、線データだけ補正。
+        // キャッシュ位置と300m以上ズレていた時のみ短いカメラ補正を入れる。
         navigator.geolocation.getCurrentPosition(function(pos){
           var fresh = [pos.coords.latitude, pos.coords.longitude];
           App.pendingVisitStartLatLng = fresh;
           App.saveDriving(App.pendingVisitKey, navT, fresh);
-          App.showVisitLine(fresh, navT);
-        }, function(){}, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
+          if(!savedLatLng){ App.showVisitLine(fresh, navT); return; }
+          App.updateVisitLine(fresh, navT);
+          if(App.haversineKm(savedLatLng[0], savedLatLng[1], fresh[0], fresh[1]) >= 0.3){
+            App.showVisitLine(fresh, navT, 600);
+          }
+        }, function(){}, {enableHighAccuracy:false, timeout:3000, maximumAge:60000});
       };
       break;
     case INITIAL_CAM.RESTORED:
