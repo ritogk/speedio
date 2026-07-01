@@ -385,7 +385,6 @@ const { inputMode } = useShortcuts({
             </button>
           </span>
           <!-- 車線幅 -->
-          <div style="background: orange; display: inline; padding: 2px 4px; margin-left: 10px">--</div>
           <span>
             <button
               class="button-style"
@@ -408,7 +407,6 @@ const { inputMode } = useShortcuts({
           </span>
 
           <!-- 路肩 -->
-          <div style="background: orange; display: inline; padding: 2px 4px; margin-left: 10px">--</div>
           <span>
             <button
               class="button-style"
