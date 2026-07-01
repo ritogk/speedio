@@ -7,6 +7,8 @@ import {
 export const useShortcuts = (options: {
   handleCenterlineClick: (hasCenterLine: boolean, roadWidthType: RoadWidthType) => void,
   handleRoadTypeClick: (roadWidthType: RoadWidthType) => void,
+  handleWideLaneClick: (hasWideLane: boolean) => void,
+  handleShoulderClick: (hasShoulder: boolean) => void,
   handleGeometryMove: (index: number) => void,
   handlePointMove: (index: number) => void,
   selectedGeometryPointIndex: Ref<number>,
@@ -18,6 +20,8 @@ export const useShortcuts = (options: {
   const {
     handleCenterlineClick,
     handleRoadTypeClick,
+    handleWideLaneClick,
+    handleShoulderClick,
     handleGeometryMove,
     handlePointMove,
     selectedGeometryPointIndex,
@@ -84,6 +88,26 @@ export const useShortcuts = (options: {
   // :キー: ジオメトリ移動（戻る）
   onKeyStroke([':'], (e) => {
     handleGeometryMove(selectedGeometryIndex.value - 1)
+    e.preventDefault()
+  })
+  // aキー: 車線幅が十分
+  onKeyStroke(['a'], (e) => {
+    handleWideLaneClick(true)
+    e.preventDefault()
+  })
+  // sキー: 車線幅が狭い
+  onKeyStroke(['s'], (e) => {
+    handleWideLaneClick(false)
+    e.preventDefault()
+  })
+  // qキー: 路肩あり
+  onKeyStroke(['q'], (e) => {
+    handleShoulderClick(true)
+    e.preventDefault()
+  })
+  // wキー: 路肩なし
+  onKeyStroke(['w'], (e) => {
+    handleShoulderClick(false)
     e.preventDefault()
   })
 } 

@@ -146,6 +146,24 @@ export class Location {
   })
   claude_is_tunnel?: boolean;
 
+  @Column({
+    type: 'boolean',
+    nullable: true,
+  })
+  @ApiProperty({
+    description: '車線幅が十分か（ライン取りに余裕があるか）',
+  })
+  has_wide_lane?: boolean;
+
+  @Column({
+    type: 'boolean',
+    nullable: true,
+  })
+  @ApiProperty({
+    description: '路肩があるか',
+  })
+  has_shoulder?: boolean;
+
   @CreateDateColumn()
   @ApiProperty({ description: '作成日時' })
   created_at: Date;

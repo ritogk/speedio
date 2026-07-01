@@ -26,13 +26,17 @@ export const usePointList = (
       })
       const roadWidthType = location?.road_width_type
       const hasCenterLine = location?.has_center_line
+      const hasWideLane = location?.has_wide_lane
+      const hasShoulder = location?.has_shoulder
       return {
         check: location,
         label: location ? '済' : '未',
         latitude: point.latitude,
         longitude: point.longitude,
         roadWidthType: roadWidthType,
-        hasCenterLine: hasCenterLine
+        hasCenterLine: hasCenterLine,
+        hasWideLane: hasWideLane,
+        hasShoulder: hasShoulder
       }
     })
   })
