@@ -454,7 +454,7 @@ const { inputMode } = useShortcuts({
           <span
             class="mode-indicator"
             :style="{ background: inputMode === 'lane' ? '#4caf50' : '#ff9800' }"
-          >{{ inputMode === 'lane' ? '車線幅 (a/s)' : '路肩 (a/s)' }}</span>
+          >{{ inputMode === 'lane' ? '車線幅 (z/x)' : '路肩 (z/x)' }}</span>
         </div>
       </div>
     </div>

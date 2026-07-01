@@ -85,8 +85,8 @@ export const useShortcuts = (options: {
     inputMode.value = 'lane'
     e.preventDefault()
   })
-  // a/sキー: モードに応じて車線幅 or 路肩を入力
-  onKeyStroke(['a'], (e) => {
+  // z/xキー: モードに応じて車線幅 or 路肩を入力
+  onKeyStroke(['z'], (e) => {
     if (inputMode.value === 'lane') {
       handleWideLaneClick(true)
       inputMode.value = 'shoulder'
@@ -97,7 +97,7 @@ export const useShortcuts = (options: {
     }
     e.preventDefault()
   })
-  onKeyStroke(['s'], (e) => {
+  onKeyStroke(['x'], (e) => {
     if (inputMode.value === 'lane') {
       handleWideLaneClick(false)
       inputMode.value = 'shoulder'
