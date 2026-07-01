@@ -45,21 +45,6 @@ export const useShortcuts = (options: {
     selectedRoadType.value = 'ONE_LANE'
   }
 
-  // zキー: センターラインあり
-  onKeyStroke(['z'], (e) => {
-    handleCenterlineClick(true, 'TWO_LANE')
-    e.preventDefault()
-  })
-  // xキー: センターラインなし
-  onKeyStroke(['x'], (e) => {
-    handleCenterlineClick(false, 'ONE_LANE_SPACIOUS')
-    e.preventDefault()
-  })
-  // cキー: センターラインなし
-  onKeyStroke(['c'], (e) => {
-    handleCenterlineClick(false, 'ONE_LANE')
-    e.preventDefault()
-  })
   // \\キー: 進む（最後のポイントならジオメトリー切替）
   onKeyStroke(['\\'], (e) => {
     advanceToNext()
