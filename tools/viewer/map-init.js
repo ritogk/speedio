@@ -380,15 +380,18 @@ App.drawMap = function(list){
     var isNew = !m;
     if(isNew){
       var el = document.createElement("div");
+      el.className = "rank-marker";
       el.addEventListener("click",function(){
         var tt = App.lastRanked.find(x=>x.id === Number(el.dataset.tid));
         if(tt) App.revealAndSelect(tt);
       });
       m = new maplibregl.Marker({element:el, occludedOpacity:1});
     }
+    // className丸ごと代入はMapLibreが付与するmaplibregl-marker(position:absolute)を消すのでclassListで差し替える
     var mel = m.getElement();
     mel.dataset.tid = t.id;
-    mel.className = "rank-marker tier-" + App.tierOf(i, list.length);
+    mel.classList.remove("tier-1","tier-2","tier-3","tier-4");
+    mel.classList.add("tier-" + App.tierOf(i, list.length));
     mel.textContent = i+1;
     m.setLngLat([t.center[1], t.center[0]]);
     if(isNew) m.addTo(App.map);
@@ -564,6 +567,9 @@ App.initialCamera = function(state){
       var navT = App.pendingVisitTouge;
       var savedLatLng = App.pendingVisitStartLatLng;
       action = function(){
+        // 対象峠のカードを選択状態に（カメラは動かさないselectCardを使う。
+        // シート状態はshowVisitLineのviewPadding計算に効くので先に確定させる）
+        if(matched){ App.selectCard(matched.id, true); App.setSheet("card-peek"); }
         if(savedLatLng) App.showVisitLine(savedLatLng, navT);
         else App.flyToTouge(navT);
         // 高速設定（OSキャッシュ許可+Wi-Fi測位）で現在地を取り直し、線データだけ補正。
