@@ -50,43 +50,20 @@ export const useShortcuts = (options: {
     pendingRoadMargin.value = null
   }
 
-  const tryCommit = () => {
-    if (pendingLaneWidth.value && pendingRoadMargin.value) {
-      resetPending()
-      advanceToNext()
-    }
-  }
-
-  // 左手: road_margin (即保存)
+  // road_margin (z/x/c) — 即保存+次へ進む
   onKeyStroke(['z'], (e) => {
-    pendingRoadMargin.value = 'LARGE'
     handleRoadMarginClick('LARGE')
-    tryCommit()
+    advanceToNext()
     e.preventDefault()
   })
   onKeyStroke(['x'], (e) => {
-    pendingRoadMargin.value = 'MEDIUM'
     handleRoadMarginClick('MEDIUM')
-    tryCommit()
+    advanceToNext()
     e.preventDefault()
   })
   onKeyStroke(['c'], (e) => {
-    pendingRoadMargin.value = 'NONE'
     handleRoadMarginClick('NONE')
-    tryCommit()
-    e.preventDefault()
-  })
-  // 右手: lane_width (即保存)
-  onKeyStroke(['m'], (e) => {
-    pendingLaneWidth.value = 'NORMAL'
-    handleLaneWidthClick('NORMAL')
-    tryCommit()
-    e.preventDefault()
-  })
-  onKeyStroke([','], (e) => {
-    pendingLaneWidth.value = 'NARROW'
-    handleLaneWidthClick('NARROW')
-    tryCommit()
+    advanceToNext()
     e.preventDefault()
   })
 

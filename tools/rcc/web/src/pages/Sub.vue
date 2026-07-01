@@ -384,28 +384,17 @@ const { pendingLaneWidth, pendingRoadMargin } = useShortcuts({
               no(2
             </button>
           </span>
-          <!-- 車線幅 (m/,) -->
-          <span :style="{ background: pendingLaneWidth ? '#c8e6c9' : '', borderRadius: '4px', padding: '0 2px' }">
-            <button class="button-style" data-tooltip="幅:普通(m)" @click="handleLaneWidthClick('NORMAL')">
-              <span v-show="selectedLocation?.lane_width === 'NORMAL'" style="color: red">★</span>
-              幅○
-            </button>
-            <button class="button-style" data-tooltip="幅:狭い(,)" @click="handleLaneWidthClick('NARROW')">
-              <span v-show="selectedLocation?.lane_width === 'NARROW'" style="color: red">★</span>
-              幅✕
-            </button>
-          </span>
           <!-- 路肩 (z/x/c) -->
-          <span :style="{ background: pendingRoadMargin ? '#c8e6c9' : '', borderRadius: '4px', padding: '0 2px' }">
-            <button class="button-style" data-tooltip="路肩:大(z)" @click="handleRoadMarginClick('LARGE')">
+          <span>
+            <button class="button-style" data-tooltip="路肩:大(z)" style="background: lightgreen" @click="handleRoadMarginClick('LARGE')">
               <span v-show="selectedLocation?.road_margin === 'LARGE'" style="color: red">★</span>
               大
             </button>
-            <button class="button-style" data-tooltip="路肩:中(x)" @click="handleRoadMarginClick('MEDIUM')">
+            <button class="button-style" data-tooltip="路肩:中(x)" style="background: bisque" @click="handleRoadMarginClick('MEDIUM')">
               <span v-show="selectedLocation?.road_margin === 'MEDIUM'" style="color: red">★</span>
               中
             </button>
-            <button class="button-style" data-tooltip="路肩:無(c)" @click="handleRoadMarginClick('NONE')">
+            <button class="button-style" data-tooltip="路肩:無(c)" style="background: salmon" @click="handleRoadMarginClick('NONE')">
               <span v-show="selectedLocation?.road_margin === 'NONE'" style="color: red">★</span>
               無
             </button>
@@ -447,7 +436,6 @@ const { pendingLaneWidth, pendingRoadMargin } = useShortcuts({
             <th>路面状態</th>
             <th>ｾﾝﾀｰﾗｲﾝ</th>
             <th>路肩</th>
-            <th>道幅</th>
           </tr>
         </thead>
         <tbody>
@@ -481,8 +469,7 @@ const { pendingLaneWidth, pendingRoadMargin } = useShortcuts({
               {{ point.roadWidthType }}
             </td>
             <td>{{ point.hasCenterLine }}</td>
-            <td :style="{ backgroundColor: index === selectedGeometryPointIndex ? (pendingRoadMargin ? '#c8e6c9' : '#ffe0b2') : '' }">{{ point.roadMargin }}</td>
-            <td :style="{ backgroundColor: index === selectedGeometryPointIndex ? (pendingLaneWidth ? '#c8e6c9' : '#ffe0b2') : '' }">{{ point.laneWidth }}</td>
+            <td>{{ point.roadMargin }}</td>
           </tr>
         </tbody>
       </table>

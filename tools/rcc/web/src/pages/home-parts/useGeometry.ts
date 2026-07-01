@@ -13,8 +13,8 @@ export const useGeometry = (
 ) => {
   const isFilterGeometry = ref(true)
   const filterCriteria = reactive<FilterCriteria>({
-    roadWidthType: true,
-    centerLine: true,
+    roadWidthType: false,
+    centerLine: false,
     laneWidth: false,
     roadMargin: false,
   })

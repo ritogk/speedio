@@ -26,7 +26,8 @@ export function useGoogleMap(apiKey: string) {
       document.getElementById('pano') as HTMLElement,
       {
         position: { lat: point.latitude, lng: point.longitude },
-        pov: { heading: 0, pitch: 10 }
+        pov: { heading: 0, pitch: 10 },
+        keyboardShortcuts: false
       }
     )
   }
