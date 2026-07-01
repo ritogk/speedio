@@ -609,26 +609,30 @@ main{flex:1;position:relative;min-height:0}
 }
 .nav-picker-cancel:hover{color:var(--ink)}
 
+/* 非モーダル: 暗幕なし+シート外はタップ透過。走行ビューの現在地・破線が隠れないようにする */
 .visit-confirm-overlay{
   position:fixed;inset:0;z-index:2650;
-  background:rgba(0,0,0,.45);
   display:none;align-items:flex-end;justify-content:center;
+  pointer-events:none;
 }
 .visit-confirm-overlay.show{display:flex}
 .visit-confirm{
+  pointer-events:auto;
   background:var(--paper);border-radius:14px 14px 0 0;
-  width:100%;max-width:400px;padding:24px 16px calc(env(safe-area-inset-bottom,0px) + 16px);
+  width:100%;max-width:400px;padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 12px);
   animation:slideUp .25s ease-out;text-align:center;
+  box-shadow:0 -6px 24px rgba(0,0,0,.22);
 }
-.visit-confirm h3{font-size:15px;font-weight:700;margin-bottom:12px}
-.vc-card{text-align:left;margin-bottom:16px}
+.visit-confirm h3{font-size:15px;font-weight:700;margin-bottom:10px}
+.vc-card{text-align:left;margin-bottom:12px}
 .vc-card .card{cursor:default;margin-bottom:0;padding-right:104px} /* 右側にルートサムネ分の余白 */
 .vc-card .card:hover{border-color:var(--line)}
-.visit-confirm-btns{display:flex;flex-direction:column;gap:8px}
+.visit-confirm-btns{display:flex;gap:8px}
 .visit-confirm-btn{
+  flex:1;
   font:inherit;font-size:14px;font-weight:600;cursor:pointer;
   border:1px solid var(--line);border-radius:var(--radius);
-  background:var(--card);color:var(--ink);padding:14px;
+  background:var(--card);color:var(--ink);padding:14px 8px;
   transition:border-color .15s;
 }
 .visit-confirm-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}

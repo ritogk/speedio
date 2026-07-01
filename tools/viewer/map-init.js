@@ -580,11 +580,20 @@ App.showVisitLine = function(userLatLng, t, duration){
   var behindLng = userLatLng[1] - pullback * (st[1] - userLatLng[1]);
   App.cancelOrbit();
   var pts = [[behindLng, behindLat], [userLatLng[1], userLatLng[0]], [st[1], st[0]]];
+  // 訪問確認ダイアログ表示中はその実高さ分だけ下を空け、現在地・破線がシートに隠れないようにする
+  var vcOverlay = document.getElementById("visitConfirm");
+  var vcSheet = vcOverlay && vcOverlay.classList.contains("show") ? vcOverlay.querySelector(".visit-confirm") : null;
+  var dialogH = vcSheet ? vcSheet.offsetHeight : 0;
+  var pad = App.viewPadding(20);
+  pad.bottom = Math.max(pad.bottom + 120, dialogH ? dialogH + 40 : 0);
+  var safe = defaultSafePadding();
+  if(dialogH) safe.bottom = Math.max(safe.bottom, dialogH + 24);
   var cam = App.cameraForPointsPitched(pts, {
-    padding: Object.assign(App.viewPadding(20), {bottom: App.viewPadding(20).bottom + 120}),
+    padding: pad,
     bearing: bearing,
     pitch: 65,
-    zoomBias: 1.6
+    zoomBias: 1.6,
+    safePadding: safe
   });
   var seq = ++visitCamSeq;
   setTimeout(function(){
@@ -598,7 +607,7 @@ App.showVisitLine = function(userLatLng, t, duration){
       try{
         var live = {center: App.map.getCenter(), bearing: App.map.getBearing(), pitch: App.map.getPitch()};
         var cur = App.map.getZoom();
-        var z = maxZoomFittingPoints(live, pts, defaultSafePadding(), cur, cur - 3);
+        var z = maxZoomFittingPoints(live, pts, safe, cur, cur - 3);
         if(z < cur - 0.05) App.map.easeTo({zoom: z, duration: 500});
       }catch(e){}
     });

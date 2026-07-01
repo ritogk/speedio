@@ -131,6 +131,11 @@ App.showVisitConfirm = function(){
   App.$("vcCard").innerHTML = App.visitConfirmCardHtml(App.pendingVisitTouge);
   App.$("vcTitle").textContent = "この峠に行きましたか？";
   App.$("visitConfirm").classList.add("show");
+  // シートの実高さが確定した後にカメラを引き直し、現在地・破線をシート上の見える領域に収める
+  if(App.pendingVisitStartLatLng && App.showVisitLine){
+    var startLL = App.pendingVisitStartLatLng, vcT = App.pendingVisitTouge;
+    requestAnimationFrame(function(){ App.showVisitLine(startLL, vcT, 700); });
+  }
   // ルートサムネ（一覧カードと同じキャッシュ）を右側に表示
   var thumbEl = App.$("vcCard").querySelector(".thumb");
   if(thumbEl && App.getRouteThumb){
@@ -198,10 +203,13 @@ App.initVisit = function(){
     e.stopPropagation();
     App.$("visitConfirm").classList.remove("show");
     App.commitDriving();
+    // シートが消えて下が空くので、走行ビューを本来の構図に戻す
+    if(App.pendingVisitStartLatLng && App.pendingVisitTouge){
+      App.showVisitLine(App.pendingVisitStartLatLng, App.pendingVisitTouge, 700);
+    }
   });
   App.$("vcNo").addEventListener("click", function(){ App.closeVisitConfirm(); App.clearPendingVisit(); });
-  // 背景タップは「閉じるだけ」（走行中状態は維持。解除は明示的に「行ってない」でのみ）
-  App.$("visitConfirm").addEventListener("click", function(e){ if(e.target === App.$("visitConfirm")) App.closeVisitConfirm(); });
+  // 非モーダル化に伴い背景タップ閉じは廃止（シート外はpointer-events:noneで地図操作に透過）
 
   /* 走行中チップ: タップで対象峠へ移動、✕で確認ダイアログ（走行した/走行中/行ってない を任意のタイミングで選べる） */
   App.$("drivingChip").addEventListener("click", function(e){
