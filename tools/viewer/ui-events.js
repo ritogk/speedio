@@ -738,9 +738,6 @@ App.initUI = function(){
     map.resize();
   });
 
-  /* ---- header element rearrangement ---- */
-  $("prefTags").prepend($("prefSelect"));
-
   /* ---- locate button proxies (mobile/PC) ---- */
   $("mLocateBtn").addEventListener("click", function(){ $("locateBtn").click(); });
   $("pcLocateBtn").addEventListener("click", function(){ $("locateBtn").click(); });

@@ -179,6 +179,21 @@ main{flex:1;position:relative;min-height:0}
   font-size:13px;line-height:1;color:var(--ink-soft);cursor:pointer;padding:0;
 }
 .pref-tag .pref-tag-x:hover{background:var(--contour);color:var(--ink)}
+/* PC用検索ボックス（パネル最上部。クリックで検索/県選択オーバーレイを開く） */
+.pc-search{
+  display:none;flex:1;min-width:0;align-items:center;gap:7px;height:34px;
+  background:var(--paper-deep);border:1px solid var(--line);border-radius:999px;
+  padding:0 12px;cursor:pointer;font:inherit;font-size:12px;color:var(--ink-soft);
+}
+.pc-search:hover{border-color:var(--contour);background:var(--paper)}
+.pc-search:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.pc-search .pcs-text{white-space:nowrap}
+.pc-search .pcs-sep{color:var(--contour)}
+.pc-search .pcs-pref{
+  font-weight:700;color:var(--ink);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;min-width:0;
+}
+
 .searchbox{padding:2px 0 8px}
 .searchbox input{
   width:100%;font:inherit;font-size:13px;
@@ -469,7 +484,35 @@ main{flex:1;position:relative;min-height:0}
   }
   .side-handle:hover{color:var(--ink);background:var(--paper-deep)}
   .panel.hidden-side .side-handle .chevron{transform:scaleX(-1)}
+
+  /* === モバイル操作モデルへの統合（承認済みPC UI） === */
+  .sheet-head{align-items:center}
+  .pc-search{display:flex}
+  /* 検索はオーバーレイに集約、並び替えチップ行は廃止 */
+  .panel .searchbox{display:none}
+  .panel .presets{display:none}
+  /* 並べ替えドロップダウン（モバイル部品を共用） */
+  .m-sort-select{display:flex;padding:6px 0 8px;border-bottom:1px dashed var(--contour);margin-bottom:8px}
+  /* 絞り込みチップは地図左上へ */
+  .m-filter-wrap{display:block;top:10px;left:10px;right:auto;width:auto}
+  .m-filter-bar{padding:0;overflow-x:visible}
+  .m-filter-wrap::before,.m-filter-wrap::after{display:none}
+  /* 検索/県選択オーバーレイは中央モーダルとして表示 */
+  .m-search-overlay{
+    top:56px;left:50%;right:auto;bottom:auto;
+    width:480px;max-height:min(72dvh,640px);
+    border-radius:14px;
+    transform:translateX(-50%);
+    animation:pc-so-in .18s ease-out;
+  }
+  .m-so-head{padding:10px 14px}
+  /* ボタン列はモバイル側の1セットに統一 */
+  .map-float{display:none}
+  .m-right-col{display:flex}
+  .m-right-col .m-terrain-btn,.m-right-col .m-locate-btn,
+  .m-right-col .m-voice-btn,.m-right-col .m-voice-help{display:flex}
 }
+@keyframes pc-so-in{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
 
 .print-overlay{
   position:fixed;inset:0;z-index:2500;

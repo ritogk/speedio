@@ -188,29 +188,22 @@ App.initMobileUI = function() {
   }
 
   function updateMobilePillText(){
-    var prefEl = App.$("mSpPref");
-    var sepEl = App.$("mSpSep");
-    var textEl = App.$("mSpText");
-    textEl.textContent = "峠を検索";
-
     var names = [].concat(Array.from(App.loadedPrefs)).sort().map(function(c){ return App.PREFECTURES[c]; }).filter(Boolean);
-    if(names.length === 0){
-      prefEl.textContent = "";
-      sepEl.style.display = "none";
-    }else{
-      sepEl.style.display = "";
-      if(names.length <= 2){
-        prefEl.textContent = names.join("・");
-      }else{
-        prefEl.textContent = names[0] + " +" + (names.length - 1);
-      }
-    }
+    var label = names.length === 0 ? "" :
+      names.length <= 2 ? names.join("・") : names[0] + " +" + (names.length - 1);
+
+    App.$("mSpText").textContent = "峠を検索";
+    App.$("mSpPref").textContent = label;
+    App.$("mSpSep").style.display = label ? "" : "none";
+    // PC側検索ボックスにも同じ選択県ラベルを反映
+    App.$("pcsPref").textContent = label;
+    App.$("pcsSep").style.display = label ? "" : "none";
   }
 
   var backdrop = App.$("mSearchBackdrop");
 
-  // 検索ピルをタップ → オーバーレイ表示
-  pill.addEventListener("click", function() {
+  // 検索ピル(モバイル) / パネル検索ボックス(PC) → オーバーレイ表示
+  function openSearchOverlay(){
     syncMobilePrefState();
     syncFilterChips();
     soInput.value = App.searchQuery || "";
@@ -218,7 +211,9 @@ App.initMobileUI = function() {
     backdrop.classList.add("show");
     renderSearchResults(soInput.value);
     setTimeout(function(){ soInput.focus(); }, 100);
-  });
+  }
+  pill.addEventListener("click", openSearchOverlay);
+  App.$("pcSearchBtn").addEventListener("click", openSearchOverlay);
 
   // 閉じる
   App.closeMobileSearch = function(){
