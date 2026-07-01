@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Location } from './locations/entities/location.entity';
 import { LocationsModule } from './locations/locations.module';
 import { BuildingsModule } from './buildings/buildings.module';
+import { ReviewModule } from './review/review.module';
 import { Building } from './buildings/entities/building.entity';
 
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -30,6 +31,7 @@ import { join } from 'path';
     }),
     LocationsModule,
     BuildingsModule,
+    ReviewModule,
   ],
   providers: [AppService],
 })

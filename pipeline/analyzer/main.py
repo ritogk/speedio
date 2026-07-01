@@ -494,6 +494,26 @@ def main(search_area_polygon:Polygon|MultiPolygon, plane_epsg_code:str, prefectu
     gdf_edges_elevation_unevenness = gdf_edges[(gdf_edges["elevation_unevenness_count"] >= 2) & (gdf_edges['score_building'] >= 0.3)].sort_values("elevation_unevenness_count", ascending=False).head(200)
     output_dir = f"{os.path.dirname(os.path.abspath(__file__))}/../../data/elevation_unevenness.csv"
     gdf_edges_elevation_unevenness[output_columns].to_csv(output_dir, index=False)
+
+    import pandas as pd
+    review_frames = [
+        gdf_edges_balance.head(50),
+        gdf_edges_week.head(50),
+        gdf_edges_medium.head(50),
+        gdf_edges_strong.head(50),
+        gdf_edges_elevation_unevenness.head(50),
+    ]
+    review = pd.concat(review_frames)
+    review = review[~review.index.duplicated(keep='first')]
+    if len(review) < 300:
+        remaining = gdf_edges_balance[~gdf_edges_balance.index.isin(review.index)]
+        review = pd.concat([review, remaining.head(300 - len(review))])
+    review = review.sort_values("score", ascending=False).head(300)
+    review_path = f"{os.path.dirname(os.path.abspath(__file__))}/../../data/targets/{prefecture_code}/review.csv"
+    os.makedirs(os.path.dirname(review_path), exist_ok=True)
+    review[output_columns].to_csv(review_path, index=False)
+    print(f"  📋 review.csv: {len(review)} rows -> {review_path}")
+
     execution_timer_ins.finish()
 
     # gdf_edgesをscoreの大きい順に並び替える
