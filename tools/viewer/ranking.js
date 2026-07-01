@@ -104,9 +104,9 @@ function cardHtml(t, rank, total){
         <button class="btn" data-act="3d"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 9l10 6 10-6-10-6z"/><path d="M2 15l10 6 10-6"/><path d="M2 9v6"/><path d="M22 9v6"/></svg> 3D</button>\
       </div>\
       <div class="rec-btns">\
+        '+(t.distanceKm!=null?'<span class="dist-tag">\u{1F4CD}'+(t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm))+'km</span>':"")+'\
         <button class="rec-btn'+(isF?' on-fav':'')+'" data-act="fav" aria-label="お気に入り">'+(isF?'★':'☆')+'</button>\
         <button class="rec-btn'+(isV?' on-visit':'')+'" data-act="visit" aria-label="走行済">\u{1F697}</button>\
-        '+(t.distanceKm!=null?'<span class="dist-tag">\u{1F4CD}'+(t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm))+'km</span>':"")+'\
       </div>\
       <div class="thumb" data-tid="'+t.id+'"><span class="thumb-spin"></span></div>\
     </article>';
