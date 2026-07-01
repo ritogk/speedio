@@ -50,7 +50,6 @@ window.App = {
   },
   MARKER_N: 20,
   PAGE_N: 30,
-  BUMP_SVG: '<svg class="bump-ico" viewBox="0 0 20 18"><path d="M0 9Q5 1 10 9Q15 17 20 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
 
   // --- ミュータブル状態 ---
   // owner: map-init.js
@@ -120,9 +119,6 @@ window.App = {
     var dLat=toR(lat2-lat1), dLng=toR(lng2-lng1);
     var a=Math.pow(Math.sin(dLat/2),2)+Math.cos(toR(lat1))*Math.cos(toR(lat2))*Math.pow(Math.sin(dLng/2),2);
     return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-  },
-  bumpIcons: function(n){
-    return App.BUMP_SVG+' ×'+n;
   },
   todayStr: new Date().toISOString().slice(0, 10),
   VISIT_DELAY_KEY: "touge.visitDelay",

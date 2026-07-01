@@ -79,6 +79,7 @@ function elevStripCss(t){
   elevStripCache[key] = result;
   return result;
 }
+App.elevStripCss = elevStripCss; // 訪問確認ダイアログのカードでも同じストリップを使う
 
 function cardHtml(t, rank, total){
   var sv = App.streetViewUrl(t.poly);

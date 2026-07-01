@@ -302,7 +302,6 @@ main{flex:1;position:relative;min-height:0}
 .cl-cause.construction{background:#F57F17}
 .card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
 .card-tag{font-size:10px;color:var(--ink-soft);background:var(--paper-deep);border-radius:4px;padding:2px 7px}
-.bump-ico{width:14px;height:10px;vertical-align:-1px}
 .card-tag b{color:var(--ink);font-weight:500}
 /* 路線種別バッジ */
 .route-oval.route-kind{border-color:#4a7fbf;color:#4a7fbf}
@@ -393,29 +392,52 @@ main{flex:1;position:relative;min-height:0}
 .overlay-3d-close:hover{background:rgba(255,255,255,.15)}
 .overlay-3d-tools{
   position:absolute;top:14px;right:14px;z-index:10;
-  display:flex;flex-direction:column;gap:8px;
+  display:flex;flex-direction:column;gap:12px;align-items:flex-end;
 }
-.overlay-3d-toggle{
-  flex-shrink:0;
-  font:inherit;font-size:11px;font-weight:500;cursor:pointer;
-  border:1px solid rgba(255,255,255,.25);border-radius:999px;
-  background:rgba(0,0,0,.45);color:#fff;padding:6px 14px;
-  white-space:nowrap;
+.o3d-group{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0}
+.o3d-group-label{
+  font-size:10px;font-weight:600;letter-spacing:.08em;
+  color:rgba(255,255,255,.55);padding-right:4px;user-select:none;
 }
-.overlay-3d-toggle:hover{background:rgba(255,255,255,.15)}
-.overlay-3d-toggle.active{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.6)}
+.o3d-seg{
+  display:flex;gap:2px;padding:3px;
+  background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.16);
+  border-radius:10px;backdrop-filter:blur(6px);
+}
+.o3d-btn{
+  font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  border:none;border-radius:7px;background:transparent;
+  color:rgba(255,255,255,.85);padding:7px 12px;min-height:32px;
+  white-space:nowrap;-webkit-tap-highlight-color:transparent;
+}
+.o3d-btn:hover{background:rgba(255,255,255,.12)}
+.o3d-btn.active{background:var(--accent);color:#fff}
+.o3d-btn.active:hover{background:var(--accent)}
+/* チェック型トグル（表示レイヤー系）: 排他選択と区別するためチェックボックスで状態を明示 */
+.o3d-check::before{
+  content:"✓";display:inline-block;width:13px;height:13px;
+  font-size:10px;line-height:12px;text-align:center;
+  border:1.5px solid rgba(255,255,255,.5);border-radius:3.5px;
+  color:transparent;margin-right:6px;vertical-align:-1.5px;
+}
+.o3d-check.active::before{color:#fff;border-color:#fff;background:rgba(255,255,255,.18)}
 .overlay-3d-cam{
   position:absolute;bottom:48px;right:14px;z-index:10;
-  display:flex;gap:1px;
-  background:rgba(0,0,0,.35);border-radius:8px;overflow:hidden;
+  display:flex;flex-direction:column;gap:4px;align-items:flex-end;
 }
-.overlay-3d-cam-btn{
-  font:inherit;font-size:11px;font-weight:500;cursor:pointer;
-  border:none;background:rgba(255,255,255,.1);color:#fff;
-  padding:7px 14px;white-space:nowrap;
+@media (max-width:760px){
+  /* タイトルと被る右上縦積みをやめ、アプリ本体のチップ行と同じヘッダー下の横スクロール行に */
+  .overlay-3d-tools{
+    top:64px;left:0;right:0;
+    flex-direction:row;align-items:flex-end;gap:10px;
+    overflow-x:auto;padding:0 12px 8px;
+    scrollbar-width:none;
+  }
+  .overlay-3d-tools::-webkit-scrollbar{display:none}
+  .o3d-group{align-items:flex-start}
+  .o3d-group-label{padding-right:0;padding-left:4px}
+  .o3d-btn{min-height:38px;padding:9px 12px}
 }
-.overlay-3d-cam-btn:hover{background:rgba(255,255,255,.22)}
-.overlay-3d-cam-btn:active{background:rgba(255,255,255,.3)}
 .overlay-3d-info{color:#fff;font-size:13px;line-height:1.6}
 .overlay-3d-info b{font-weight:700}
 .overlay-3d-hint{
