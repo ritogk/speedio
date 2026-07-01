@@ -50,6 +50,18 @@ App.removeVisit = function(stableKey){
   localStorage.setItem("touge.visitedDates", JSON.stringify(App.visitedDates));
 };
 
+/* ── driving chip（走行中状態の可視化） ── */
+App.updateDrivingChip = function(){
+  var chip = App.$("drivingChip");
+  if(!chip) return;
+  if(App.pendingVisitKey && App.pendingVisitTouge){
+    App.$("drivingChipText").textContent = "走行中: " + (App.pendingVisitTouge.name || "峠");
+    chip.classList.add("show");
+  }else{
+    chip.classList.remove("show");
+  }
+};
+
 /* ── visit commit / clear ── */
 App.commitPendingVisit = function(){
   if(!App.pendingVisitKey) return;
@@ -64,6 +76,7 @@ App.commitPendingVisit = function(){
   App.pendingVisitTouge = null;
   App.pendingVisitTs = 0;
   App.pendingVisitStartLatLng = null;
+  App.updateDrivingChip();
   App.render();
 };
 
@@ -73,6 +86,7 @@ App.clearPendingVisit = function(){
   App.pendingVisitTouge = null;
   App.pendingVisitTs = 0;
   App.pendingVisitStartLatLng = null;
+  App.updateDrivingChip();
 };
 
 App.commitDriving = function(){
@@ -190,6 +204,27 @@ App.initVisit = function(){
     App.commitDriving();
   });
   App.$("vcNo").addEventListener("click", function(){ App.closeVisitConfirm(); App.clearPendingVisit(); });
+
+  /* 走行中チップ: タップで対象峠へ移動、✕で走行中を解除 */
+  App.$("drivingChip").addEventListener("click", function(e){
+    if(e.target.closest("#drivingChipClose")){
+      if(window.confirm("走行中をやめますか？（訪問は記録されません）")){
+        App.clearPendingVisit();
+        if(App.clearVisitLine) App.clearVisitLine();
+      }
+      return;
+    }
+    var t = App.pendingVisitTouge;
+    if(!t) return;
+    var matched = App.lastRanked.find(function(x){ return x.stableKey === App.pendingVisitKey; });
+    if(matched){
+      App.pendingVisitTouge = t = matched;
+      App.selectCard(matched.id, true);
+      App.setSheet("card-peek");
+    }
+    if(App.pendingVisitStartLatLng) App.showVisitLine(App.pendingVisitStartLatLng, t);
+    else App.flyToTouge(t);
+  });
   App.$("visitConfirm").addEventListener("click", function(e){ if(e.target === App.$("visitConfirm")){ vcStep2Key = null; App.closeVisitConfirm(); App.clearPendingVisit(); } });
 
   /* visibilitychange — save driving on hide, check location on return */
@@ -200,10 +235,12 @@ App.initVisit = function(){
     }
     if(document.visibilityState === "visible"){
       if(!App.pendingVisitKey) App.restoreDriving();
+      App.updateDrivingChip();
       if(App.pendingVisitKey) App._checkVisitByLocation();
     }
   });
 
   /* restore any in-progress drive */
   App.restoreDriving();
+  App.updateDrivingChip();
 };

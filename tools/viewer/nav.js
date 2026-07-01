@@ -14,6 +14,7 @@ App.openNav = function(t){
     App.pendingVisitTs = 0;
     App.pendingVisitStartLatLng = App.userLatLng ? [App.userLatLng[0], App.userLatLng[1]] : null;
     App.saveDriving(t.stableKey, t, App.pendingVisitStartLatLng);
+    App.updateDrivingChip();
     if(!App.pendingVisitStartLatLng && navigator.geolocation){
       navigator.geolocation.getCurrentPosition(function(pos){
         App.pendingVisitStartLatLng = [pos.coords.latitude, pos.coords.longitude];
