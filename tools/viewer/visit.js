@@ -122,6 +122,7 @@ App.visitConfirmCardHtml = function(t){
 };
 
 App.showVisitConfirm = function(){
+  if(!App.recordUiEnabled()) return; // PCでは記録UIを出さない（管理者パネルでON可）
   if(!App.pendingVisitKey || !App.pendingVisitTouge) return;
   if(Date.now() - lastDialogShownAt < DIALOG_COOLDOWN_MS) return;
   lastDialogShownAt = Date.now();
@@ -178,6 +179,7 @@ App.checkPendingVisitOnLoad = function(){
 
 /* ── init: DOM listeners + restore ── */
 App.initVisit = function(){
+  document.body.classList.toggle("no-record-ui", !App.recordUiEnabled());
   App.$("vcYes").addEventListener("click", function(){
     var key = App.pendingVisitKey;
     App.commitPendingVisit();

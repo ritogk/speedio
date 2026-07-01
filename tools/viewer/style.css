@@ -1039,3 +1039,11 @@ main{flex:1;position:relative;min-height:0}
   0%{opacity:.6}
   100%{opacity:1}
 }
+
+/* 記録UI(行った/お気に入り/走行中)の非表示 — PCでは基本OFF、管理者パネルでON可 */
+body.no-record-ui .visited-tag,
+body.no-record-ui .fav-tag,
+body.no-record-ui #hideVisitedBtn,
+body.no-record-ui #showFavoritesBtn,
+body.no-record-ui .driving-chip,
+body.no-record-ui .visit-confirm-overlay{display:none !important}

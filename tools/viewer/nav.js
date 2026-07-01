@@ -8,7 +8,8 @@ var pendingNavTouge = null;
 var NAV_LABELS = {google:"Google Maps", yahoo:"Yahoo!カーナビ"};
 
 App.openNav = function(t){
-  if(t.stableKey){
+  // 記録UIが無効(PC)なら走行状態を保存しない = 後で「行った?」ダイアログも出ない
+  if(t.stableKey && App.recordUiEnabled()){
     App.pendingVisitKey = t.stableKey;
     App.pendingVisitTouge = t;
     App.pendingVisitTs = 0;

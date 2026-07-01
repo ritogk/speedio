@@ -174,4 +174,12 @@ window.App = {
   // --- isMobile ---
   isMobileDevice: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
   isMobile: function(){ return window.innerWidth <= 760; },
+
+  // --- 記録UI（行った/お気に入り/走行中） ---
+  // 記録はlocalStorage保存でデバイス間同期がないため、PCでは基本OFF。
+  // デバッグ用に管理者パネルのチェックでPCでも表示できる。
+  PC_RECORD_KEY: "touge.pcRecordUi",
+  recordUiEnabled: function(){
+    return this.isMobileDevice || localStorage.getItem(this.PC_RECORD_KEY) === "1";
+  },
 };

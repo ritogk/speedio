@@ -24,6 +24,14 @@ App.initAdmin = function() {
     if(e.target.checked) localStorage.setItem(App.VISIT_IMMEDIATE_KEY, "1");
     else localStorage.removeItem(App.VISIT_IMMEDIATE_KEY);
   });
+  // PCで記録UI(行った/お気に入り/走行中)を表示する（デバッグ用。基本OFF）
+  App.$("pcRecordChk").checked = localStorage.getItem(App.PC_RECORD_KEY) === "1";
+  App.$("pcRecordChk").addEventListener("change", e=>{
+    if(e.target.checked) localStorage.setItem(App.PC_RECORD_KEY, "1");
+    else localStorage.removeItem(App.PC_RECORD_KEY);
+    document.body.classList.toggle("no-record-ui", !App.recordUiEnabled());
+    App.render();
+  });
   const toggleAdmin = ()=> wp.classList.toggle("collapsed");
   App.$("adminToggleBtn").addEventListener("click", toggleAdmin);
   App.$("wpClose").addEventListener("click", ()=> wp.classList.add("collapsed"));
