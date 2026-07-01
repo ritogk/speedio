@@ -195,19 +195,34 @@ App.checkPendingVisitOnLoad = function(){
 
 /* ── init: DOM listeners + restore ── */
 App.initVisit = function(){
+  var pendingFavKey = null;
+
   App.$("vcYes").addEventListener("click", function(){
     var key = App.pendingVisitKey;
+    var t = App.pendingVisitTouge;
     App.commitPendingVisit();
     App.closeVisitConfirm();
-    // お気に入りは2枚目のモーダルではなく、アクション付きトーストでワンタップ追加に
+    // お気に入りは走行記録とは別ダイアログで確認する
     if(key && !App.favoriteKeys.has(key)){
-      App.toastAction("走行済みに記録しました", "★ お気に入りに追加", function(){
-        App.favoriteKeys.add(key);
-        App.saveFavorites();
-        App.toast("お気に入りに追加しました");
-        App.render();
-      });
+      pendingFavKey = key;
+      App.$("favTitle").textContent = "「" + ((t && t.name) || "この峠") + "」をお気に入りに追加しますか？";
+      App.$("favConfirm").classList.add("show");
     }
+  });
+
+  App.$("favYes").addEventListener("click", function(){
+    if(pendingFavKey){
+      App.favoriteKeys.add(pendingFavKey);
+      App.saveFavorites();
+      App.toast("お気に入りに追加しました");
+      App.render();
+    }
+    pendingFavKey = null;
+    App.$("favConfirm").classList.remove("show");
+  });
+  App.$("favNo").addEventListener("click", function(){
+    pendingFavKey = null;
+    App.$("favConfirm").classList.remove("show");
   });
 
   App.$("vcDriving").addEventListener("click", function(e){
