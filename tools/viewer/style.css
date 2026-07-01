@@ -273,22 +273,20 @@ main{flex:1;position:relative;min-height:0}
 }
 .card-top h3:hover::after{display:block}
 .dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap}
-.visited-tag{
-  display:inline;font:inherit;font-size:10px;font-weight:600;
-  color:var(--contour);opacity:.35;
-  cursor:pointer;-webkit-tap-highlight-color:transparent;
-  border:none;background:transparent;padding:0;
+/* 記録トグル（カード右上の丸アイコン。ON時は色で状態が読める） */
+.rec-btns{position:absolute;top:8px;right:102px;display:flex;gap:5px;z-index:2}
+.rec-btn{
+  width:26px;height:26px;border-radius:50%;cursor:pointer;
+  border:1px solid var(--line);background:var(--card);color:var(--contour);
+  font:inherit;font-size:13px;line-height:1;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .12s,border-color .12s,background .12s;
 }
-.visited-tag:hover{opacity:.7}
-.visited-tag.visited-on{color:var(--accent);opacity:1}
-.fav-tag{
-  display:inline;font:inherit;font-size:10px;font-weight:600;
-  color:var(--contour);
-  cursor:pointer;-webkit-tap-highlight-color:transparent;
-  border:none;background:transparent;padding:0;
-}
-.fav-tag:hover{color:var(--accent)}
-.fav-tag.fav-on{color:var(--accent)}
+.rec-btn:hover{border-color:var(--contour)}
+.rec-btn.on-fav{color:#F5A623;border-color:#F5A623;background:#FFF8EC}
+.rec-btn.on-visit{color:#9B30FF;border-color:#9B30FF;background:#F7EFFF}
+.card-labels{padding-right:62px} /* 右上の記録トグルとの重なり回避 */
 .meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
 .meta b{color:var(--ink);font-weight:500}
 .bars{display:grid;grid-template-columns:58px 1fr 28px;gap:3px 8px;align-items:center}
@@ -306,6 +304,19 @@ main{flex:1;position:relative;min-height:0}
 .card-tag{font-size:10px;color:var(--ink-soft);background:var(--paper-deep);border-radius:4px;padding:2px 7px}
 .bump-ico{width:14px;height:10px;vertical-align:-1px}
 .card-tag b{color:var(--ink);font-weight:500}
+/* 路線種別バッジ */
+.route-oval.route-kind{border-color:#4a7fbf;color:#4a7fbf}
+/* 道幅5段メーター */
+.wmeter{display:inline-flex;gap:2px;vertical-align:0}
+.wmeter i{width:7px;height:5px;border-radius:2px;background:var(--paper-deep);border:1px solid var(--contour)}
+.wmeter i.f{background:var(--ink);border-color:var(--ink)}
+/* 起伏ストリップ（登り=橙/下り=青、3Dビューと同配色） */
+.elev-strip{height:6px;border-radius:3px;background:var(--paper-deep)}
+.elev-ud{white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-size:9px}
+.elev-ud .u{color:#E8553D;font-weight:700}
+.elev-ud .d{color:#4A90D9;font-weight:700}
+/* 走行済み日付バッジ */
+.visit-badge{font-size:10px;font-weight:600;color:#9B30FF;background:#F7EFFF;border-radius:4px;padding:2px 7px}
 .card-actions{display:flex;gap:5px;margin-top:9px}
 .btn{
   font:inherit;font-size:11px;font-weight:500;cursor:pointer;

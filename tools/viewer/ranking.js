@@ -41,19 +41,71 @@ App.searchQuery = "";
 App.lastRanked = [];
 
 // file-local
+// 起伏ストリップ: elevation_unevenness_sectionsの登り/下り区間をルート上の位置に割り当て、
+// hard-stopグラデーションにする（3Dビューの登り/下り配色と同色）。結果は峠ごとにキャッシュ。
+var elevStripCache = {};
+var ELEV_STRIP_COLORS = {0:"#DFE1E6", 1:"#E8553D", 2:"#4A90D9"}; // 平坦 / 登り / 下り
+function elevStripCss(t){
+  var key = t.stableKey || ("id" + t.id);
+  if(elevStripCache[key] !== undefined) return elevStripCache[key];
+  var pts = t.poly, es = t.elevSections;
+  var result = null;
+  if(pts.length > 1 && es && ((es.uphill && es.uphill.length) || (es.downhill && es.downhill.length))){
+    var dirs = new Array(pts.length).fill(0);
+    var assign = function(sections, code){
+      (sections || []).forEach(function(sec){
+        var si = 0, ei = pts.length - 1, bs = Infinity, be = Infinity;
+        for(var i = 0; i < pts.length; i++){
+          var ds = (pts[i][0]-sec.start[0])*(pts[i][0]-sec.start[0]) + (pts[i][1]-sec.start[1])*(pts[i][1]-sec.start[1]);
+          var de = (pts[i][0]-sec.end[0])*(pts[i][0]-sec.end[0]) + (pts[i][1]-sec.end[1])*(pts[i][1]-sec.end[1]);
+          if(ds < bs){ bs = ds; si = i; }
+          if(de < be){ be = de; ei = i; }
+        }
+        if(si > ei){ var tmp = si; si = ei; ei = tmp; }
+        for(var j = si; j <= ei; j++) dirs[j] = code;
+      });
+    };
+    assign(es.uphill, 1);
+    assign(es.downhill, 2);
+    var stops = [], s = 0;
+    for(var i = 1; i <= dirs.length; i++){
+      if(i === dirs.length || dirs[i] !== dirs[s]){
+        stops.push(ELEV_STRIP_COLORS[dirs[s]] + " " + (s/dirs.length*100).toFixed(1) + "% " + (i/dirs.length*100).toFixed(1) + "%");
+        s = i;
+      }
+    }
+    result = "linear-gradient(90deg," + stops.join(",") + ")";
+  }
+  elevStripCache[key] = result;
+  return result;
+}
+
 function cardHtml(t, rank, total){
   var sv = App.streetViewUrl(t.poly);
+  var isV = t.stableKey && App.visitedKeys.has(t.stableKey);
+  var isF = t.stableKey && App.favoriteKeys.has(t.stableKey);
+  var vd = isV ? App.visitedDates[t.stableKey] : null;
+  var vLabel = vd ? Number(vd.slice(5,7)) + "/" + Number(vd.slice(8,10)) + " 走行" : null;
+  var w5 = Math.max(0, Math.min(5, Math.round((t.width || 0) * 5)));
+  var wm = ""; for(var wi = 0; wi < 5; wi++) wm += '<i class="'+(wi<w5?"f":"")+'"></i>';
+  var strip = elevStripCss(t);
+  var tn = (t.tunnelSections||[]).length, br = (t.bridgeSections||[]).length;
   return '\
     <article class="card" data-id="'+t.id+'" tabindex="0">\
-      <div class="card-top">\
-        <div class="card-labels"><span class="rank-num">'+(rank+1)+'</span>'+(t.prefecture?'<span class="route-oval">'+App.escapeHtml(t.prefecture)+'</span>':(t._pref?'<span class="route-oval">'+App.escapeHtml(App.PREFECTURES[t._pref]||"")+'</span>':""))+(t.city?'<span class="route-oval">'+App.escapeHtml(t.city)+'</span>':"")+(t.distanceKm!=null?'<span class="dist-tag">\u{1F4CD}'+(t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm))+'km</span>':"")+'</div><h3 data-full="'+App.escapeHtml(t.name)+'">'+App.escapeHtml(t.name)+'</h3>\
+      <div class="rec-btns">\
+        <button class="rec-btn'+(isF?' on-fav':'')+'" data-act="fav" aria-label="お気に入り">'+(isF?'★':'☆')+'</button>\
+        <button class="rec-btn'+(isV?' on-visit':'')+'" data-act="visit" aria-label="走行済">\u{1F697}</button>\
       </div>\
-      <p class="meta">距離: <b>'+t.lengthKm+'km</b> 高さ: <b>'+t.height+'m</b> <button class="visited-tag'+(t.stableKey&&App.visitedKeys.has(t.stableKey)?' visited-on':'')+'" data-act="visit">'+(t.stableKey&&App.visitedKeys.has(t.stableKey)?'\u{1F697}済':'\u{1F697}')+'</button> <button class="fav-tag'+(t.stableKey&&App.favoriteKeys.has(t.stableKey)?' fav-on':'')+'" data-act="fav">'+(t.stableKey&&App.favoriteKeys.has(t.stableKey)?'★':'☆')+'</button></p>\
+      <div class="card-top">\
+        <div class="card-labels"><span class="rank-num">'+(rank+1)+'</span>'+(t.prefecture?'<span class="route-oval">'+App.escapeHtml(t.prefecture)+'</span>':(t._pref?'<span class="route-oval">'+App.escapeHtml(App.PREFECTURES[t._pref]||"")+'</span>':""))+(t.city?'<span class="route-oval">'+App.escapeHtml(t.city)+'</span>':"")+'<span class="route-oval route-kind">'+App.escapeHtml(t.routeLabel)+'</span>'+(t.distanceKm!=null?'<span class="dist-tag">\u{1F4CD}'+(t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm))+'km</span>':"")+'</div><h3 data-full="'+App.escapeHtml(t.name)+'">'+App.escapeHtml(t.name)+'</h3>\
+      </div>\
+      <p class="meta">距離 <b>'+t.lengthKm+'km</b> ・ 標高差 <b>'+t.height+'m</b> ・ 道幅 <span class="wmeter">'+wm+'</span></p>\
       <div class="bars">\
         <span class="bl">コーナー</span><div class="stacked"><span style="width:'+t.pctStrong+'%;background:var(--corner-strong)"></span><span style="width:'+t.pctMedium+'%;background:var(--corner-medium)"></span><span style="width:'+t.pctWeak+'%;background:var(--corner-weak)"></span><span style="width:'+t.pctStraight+'%;background:var(--straight)"></span></div><span class="bv">'+(t.pctStrong+t.pctMedium+t.pctWeak)+'%</span>\
-        <span class="bl">標高</span><div class="stacked"><span style="width:'+t.pctSteep+'%;background:var(--elev-steep)"></span><span style="width:'+t.pctModerate+'%;background:var(--elev-moderate)"></span><span style="width:'+t.pctGentle+'%;background:var(--elev-gentle)"></span><span style="width:'+t.pctFlat+'%;background:var(--elev-flat)"></span></div><span class="bv">'+(t.pctSteep+t.pctModerate+t.pctGentle)+'%</span>\
+        <span class="bl">勾配</span><div class="stacked"><span style="width:'+t.pctSteep+'%;background:var(--elev-steep)"></span><span style="width:'+t.pctModerate+'%;background:var(--elev-moderate)"></span><span style="width:'+t.pctGentle+'%;background:var(--elev-gentle)"></span><span style="width:'+t.pctFlat+'%;background:var(--elev-flat)"></span></div><span class="bv">'+(t.pctSteep+t.pctModerate+t.pctGentle)+'%</span>\
+        <span class="bl">起伏</span><div class="elev-strip"'+(strip?' style="background:'+strip+'"':'')+'></div><span class="bv elev-ud">'+(t.uphillCnt!=null?'<b class="u">↑'+t.uphillCnt+'</b><b class="d">↓'+(t.downhillCnt!=null?t.downhillCnt:0)+'</b>':'')+'</span>\
       </div>\
-      <div class="card-tags">'+(t.unevennessCount!=null?(t.unevennessCount>0?'<span class="card-tag">'+App.bumpIcons(t.unevennessCount)+'</span>':'<span class="card-tag">'+App.BUMP_SVG+' なし</span>'):"")+(t.buildingCnt!=null?(t.buildingCnt>0?'<span class="card-tag">\u{1F3E0} ×'+t.buildingCnt+'</span>':'<span class="card-tag">\u{1F3E0} なし</span>'):"")+'</div>\
+      <div class="card-tags">'+(vLabel?'<span class="visit-badge">\u{1F697} '+vLabel+'</span>':'')+(tn>0?'<span class="card-tag">トンネル <b>'+tn+'</b></span>':'')+(br>0?'<span class="card-tag">橋 <b>'+br+'</b></span>':'')+(t.buildingCnt!=null?(t.buildingCnt>0?'<span class="card-tag">\u{1F3E0} ×'+t.buildingCnt+'</span>':'<span class="card-tag">\u{1F3E0} なし</span>'):"")+'</div>\
       <div class="card-actions">\
         <button class="btn primary" data-act="nav" data-id="'+t.id+'">\u{1F697} 行く</button>\
         '+(sv?'<a class="btn" href="'+sv+'" target="_blank" rel="noopener" data-act="link">\u{1F441} 路面</a>':"")+'\
@@ -177,8 +229,20 @@ App.renderCards = function(){
           if(App.hideVisited || App.showOnlyVisited){ App.renderAndFit(); return; }
           var vBtn = e.target.closest('[data-act="visit"]');
           var isV = App.visitedKeys.has(t.stableKey);
-          vBtn.textContent = isV ? '\u{1F697}済' : '\u{1F697}';
-          vBtn.classList.toggle("visited-on", isV);
+          vBtn.classList.toggle("on-visit", isV);
+          // 日付バッジも即時反映（次のrender待ちにしない）
+          var card = vBtn.closest(".card");
+          var badge = card.querySelector(".visit-badge");
+          if(!isV && badge) badge.remove();
+          if(isV && !badge){
+            var vd = App.visitedDates[t.stableKey];
+            if(vd){
+              var b = document.createElement("span");
+              b.className = "visit-badge";
+              b.textContent = "\u{1F697} " + Number(vd.slice(5,7)) + "/" + Number(vd.slice(8,10)) + " 走行";
+              card.querySelector(".card-tags").prepend(b);
+            }
+          }
         }
         return;
       }
@@ -193,7 +257,7 @@ App.renderCards = function(){
           var favBtn = e.target.closest('[data-act="fav"]');
           var isFav = App.favoriteKeys.has(t.stableKey);
           favBtn.textContent = isFav ? '★' : '☆';
-          favBtn.classList.toggle("fav-on", isFav);
+          favBtn.classList.toggle("on-fav", isFav);
         }
         return;
       }
