@@ -90,7 +90,7 @@ function cardHtml(t, rank, total){
   return '\
     <article class="card" data-id="'+t.id+'" tabindex="0">\
       <div class="card-top">\
-        <div class="card-labels"><span class="rank-num">'+(rank+1)+'</span>'+(t.prefecture?'<span class="route-oval">'+App.escapeHtml(t.prefecture)+'</span>':(t._pref?'<span class="route-oval">'+App.escapeHtml(App.PREFECTURES[t._pref]||"")+'</span>':""))+(t.city?'<span class="route-oval">'+App.escapeHtml(t.city)+'</span>':"")+(t.distanceKm!=null?'<span class="dist-tag">\u{1F4CD}'+(t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm))+'km</span>':"")+'</div><h3 data-full="'+App.escapeHtml(t.name)+'">'+App.escapeHtml(t.name)+'</h3>\
+        <div class="card-labels"><span class="rank-num">'+(rank+1)+'</span>'+(t.prefecture?'<span class="route-oval">'+App.escapeHtml(t.prefecture)+'</span>':(t._pref?'<span class="route-oval">'+App.escapeHtml(App.PREFECTURES[t._pref]||"")+'</span>':""))+(t.city?'<span class="route-oval">'+App.escapeHtml(t.city)+'</span>':"")+'</div><h3 data-full="'+App.escapeHtml(t.name)+'">'+App.escapeHtml(t.name)+'</h3>\
       </div>\
       <p class="meta">距離 <b>'+t.lengthKm+'km</b> ・ 標高差 <b>'+t.height+'m</b> ・ 道幅 <span class="wgauge"><i style="width:'+Math.round((t.width||0)*100)+'%"></i></span></p>\
       <div class="bars">\
@@ -106,6 +106,7 @@ function cardHtml(t, rank, total){
       <div class="rec-btns">\
         <button class="rec-btn'+(isF?' on-fav':'')+'" data-act="fav" aria-label="お気に入り">'+(isF?'★':'☆')+'</button>\
         <button class="rec-btn'+(isV?' on-visit':'')+'" data-act="visit" aria-label="走行済">\u{1F697}</button>\
+        '+(t.distanceKm!=null?'<span class="dist-tag">\u{1F4CD}'+(t.distanceKm<10?t.distanceKm.toFixed(1):Math.round(t.distanceKm))+'km</span>':"")+'\
       </div>\
       <div class="thumb" data-tid="'+t.id+'"><span class="thumb-spin"></span></div>\
     </article>';

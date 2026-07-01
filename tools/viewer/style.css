@@ -273,10 +273,10 @@ main{flex:1;position:relative;min-height:0}
   box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none;
 }
 .card-top h3:hover::after{display:block}
-.dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap;flex-shrink:0}
-/* 記録トグル: サムネの縦を削ってその上に置く（カード高さ・テキスト行に影響しない、
-   ラベル行はフル幅なので距離タグを右端まで寄せられる） */
-.rec-btns{position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:2}
+.dist-tag{font-size:11px;font-weight:700;color:var(--accent);white-space:nowrap;flex-shrink:0}
+/* 記録トグル+現在地からの距離: カード最右上（サムネの縦を削った上の領域）。
+   並びは ☆ 🚗 📍km で距離が一番右端 */
+.rec-btns{position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:2;align-items:center}
 #cards .card .thumb{top:46px} /* トグル分だけサムネを下げる（ダイアログのカードは対象外） */
 .rec-btn{
   width:26px;height:26px;border-radius:50%;cursor:pointer;
