@@ -274,16 +274,10 @@ main{flex:1;position:relative;min-height:0}
 }
 .card-top h3:hover::after{display:block}
 .dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap;flex-shrink:0}
-/* 記録トグル
-   PC: パネル幅が狭いのでサムネの縦を削ってその上に置く（カード高さ・テキスト行に影響なし）
-   スマホ: 横に余裕があるのでテキスト領域の右上（サムネ左隣）に置き、サムネはフル高さのまま */
+/* 記録トグル: サムネの縦を削ってその上に置く（カード高さ・テキスト行に影響しない、
+   ラベル行はフル幅なので距離タグを右端まで寄せられる） */
 .rec-btns{position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:2}
 #cards .card .thumb{top:46px} /* トグル分だけサムネを下げる（ダイアログのカードは対象外） */
-@media (max-width:760px){
-  .rec-btns{top:8px;right:102px}
-  #cards .card .thumb{top:10px}
-  #cards .card .card-labels{padding-right:62px} /* 距離タグがトグル下に潜らないよう余白確保 */
-}
 .rec-btn{
   width:26px;height:26px;border-radius:50%;cursor:pointer;
   border:1px solid var(--line);background:var(--card);color:var(--contour);
