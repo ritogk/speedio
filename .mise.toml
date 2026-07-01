@@ -120,6 +120,8 @@ aws s3 sync tools/viewer/dist/ s3://speedio-old-viewer-788594208758/ \
   --exclude "targets/*" --exclude "terrain_elevations/*" \
   --content-type "application/json" \
   --cache-control "no-cache"
+aws s3 cp tools/viewer/dist/manifest.webmanifest s3://speedio-old-viewer-788594208758/manifest.webmanifest \
+  --content-type "application/manifest+json" --cache-control "no-cache"
 aws cloudfront create-invalidation --distribution-id EBM4FK68PMJX0 --paths "/*"
 """
 

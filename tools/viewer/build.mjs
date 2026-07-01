@@ -54,7 +54,11 @@ html = html.replace(
 
 writeFileSync(resolve(dist, "index_3.html"), html);
 
-for (const f of ["data-version.json", "icon.png"]) {
+for (const f of [
+  "data-version.json", "icon.png",
+  "manifest.webmanifest", "sw.js",
+  "icon-192.png", "icon-512.png", "icon-512-maskable.png", "icon-180.png",
+]) {
   if (existsSync(resolve(src, f))) {
     cpSync(resolve(src, f), resolve(dist, f));
   }

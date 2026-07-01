@@ -5,3 +5,4 @@ geometry_data.json
 *.json
 !infra/**/*.json
 dist/
+!icon-*.png
