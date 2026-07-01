@@ -10,12 +10,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from torchvision import transforms
 from tqdm import tqdm
 
-from config import MODELS_DIR, DATA_DIR, MODEL_CONFIG, IMAGE_CONFIG, PROJECT_ROOT
+from config import MODELS_DIR, DATA_DIR, MODEL_CONFIG, IMAGE_CONFIG, PROJECT_ROOT, get_device
 from dataset import CenterLineDataset
 from model import CenterLineClassifier, count_parameters
 
@@ -159,12 +158,16 @@ def find_optimal_threshold(model, loader, device, target="balanced"):
     model.eval()
     all_preds = []
     all_labels = []
+    use_amp = device == "cuda"
 
     with torch.no_grad():
         for batch in tqdm(loader, desc="Threshold optimization"):
             images = batch["image"].to(device)
             labels = batch["label"]
-            with autocast():
+            if use_amp:
+                with torch.amp.autocast("cuda"):
+                    outputs = model(images)
+            else:
                 outputs = model(images)
             probs = torch.sigmoid(outputs).cpu().tolist()
             all_preds.extend(probs)
@@ -205,6 +208,7 @@ def train_epoch(model, loader, criterion, optimizer, scaler, device, grad_clip=0
     total_loss = 0
     all_preds = []
     all_labels = []
+    use_amp = device == "cuda"
 
     pbar = tqdm(loader, desc="Training")
     for batch in pbar:
@@ -213,18 +217,23 @@ def train_epoch(model, loader, criterion, optimizer, scaler, device, grad_clip=0
 
         optimizer.zero_grad()
 
-        with autocast():
+        if use_amp:
+            with torch.amp.autocast("cuda"):
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+            scaler.scale(loss).backward()
+            if grad_clip > 0:
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+            scaler.step(optimizer)
+            scaler.update()
+        else:
             outputs = model(images)
             loss = criterion(outputs, labels)
-
-        scaler.scale(loss).backward()
-
-        if grad_clip > 0:
-            scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
-
-        scaler.step(optimizer)
-        scaler.update()
+            loss.backward()
+            if grad_clip > 0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+            optimizer.step()
 
         total_loss += loss.item()
         probs = torch.sigmoid(outputs).detach().cpu().tolist()
@@ -244,13 +253,18 @@ def evaluate(model, loader, criterion, device):
     total_loss = 0
     all_preds = []
     all_labels = []
+    use_amp = device == "cuda"
 
     with torch.no_grad():
         for batch in tqdm(loader, desc="Evaluating"):
             images = batch["image"].to(device)
             labels = batch["label"].to(device)
 
-            with autocast():
+            if use_amp:
+                with torch.amp.autocast("cuda"):
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
+            else:
                 outputs = model(images)
                 loss = criterion(outputs, labels)
 
@@ -275,7 +289,7 @@ def train(args):
         return
 
     # Device
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = get_device()
     print(f"Using device: {device}")
     if device == "cuda":
         print(f"GPU: {torch.cuda.get_device_name(0)}")
@@ -367,7 +381,7 @@ def train(args):
     scheduler = get_scheduler_with_warmup(optimizer, args.warmup_epochs, args.epochs)
 
     # Mixed precision
-    scaler = GradScaler()
+    scaler = torch.amp.GradScaler("cuda", enabled=(device == "cuda"))
 
     # Training loop
     best_f1 = 0
@@ -480,12 +494,16 @@ def train(args):
     # Evaluate with balanced threshold
     all_preds = []
     all_labels = []
+    use_amp = device == "cuda"
     model.eval()
     with torch.no_grad():
         for batch in test_loader:
             images = batch["image"].to(device)
             labels = batch["label"]
-            with autocast():
+            if use_amp:
+                with torch.amp.autocast("cuda"):
+                    outputs = model(images)
+            else:
                 outputs = model(images)
             probs = torch.sigmoid(outputs).cpu().tolist()
             all_preds.extend(probs)

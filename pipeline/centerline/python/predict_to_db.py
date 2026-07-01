@@ -13,7 +13,7 @@ import torch
 from PIL import Image
 from tqdm import tqdm
 
-from config import MODELS_DIR, TMP_DIR, TARGETS_DIR, IMAGE_CONFIG, DB_CONFIG
+from config import MODELS_DIR, TMP_DIR, TARGETS_DIR, IMAGE_CONFIG, DB_CONFIG, get_device
 from dataset import get_transforms
 from model import CenterLineClassifier
 
@@ -133,7 +133,7 @@ def predict_to_db(pref_code: str, batch_size: int = 128, write_db: bool = False,
 
     # 3. モデルロード
     print("\nLoading model...")
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = get_device()
     print(f"  Device: {device}")
 
     if model_path is None:

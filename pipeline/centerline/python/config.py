@@ -2,6 +2,8 @@
 
 import os
 from pathlib import Path
+
+import torch
 from dotenv import load_dotenv
 
 # .envファイルを読み込み
@@ -50,6 +52,14 @@ IMAGE_CONFIG = {
     "height": 960,
     "crop_size": 960,  # Center crop to square
 }
+
+def get_device() -> str:
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
 
 # Ensure directories exist
 TMP_DIR.mkdir(exist_ok=True)

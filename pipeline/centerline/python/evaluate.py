@@ -8,7 +8,7 @@ from psycopg2.extras import execute_batch
 import torch
 from tqdm import tqdm
 
-from config import DATA_DIR, MODELS_DIR, DB_CONFIG
+from config import DATA_DIR, MODELS_DIR, DB_CONFIG, get_device
 from dataset import CenterLineDataset, get_transforms
 from model import CenterLineClassifier
 from train import calculate_metrics
@@ -59,7 +59,7 @@ def evaluate_model(model_path: str = None, split: str = "test", batch_size: int 
         return
 
     # Device
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = get_device()
     print(f"Using device: {device}")
 
     # Load model

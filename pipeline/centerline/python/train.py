@@ -5,10 +5,9 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
-from torch.cuda.amp import GradScaler, autocast
 from tqdm import tqdm
 
-from config import TRAIN_CONFIG, MODELS_DIR, DATA_DIR
+from config import TRAIN_CONFIG, MODELS_DIR, DATA_DIR, get_device
 from dataset import get_dataloaders
 from model import CenterLineClassifier, count_parameters
 
@@ -45,6 +44,7 @@ def train_epoch(model, loader, criterion, optimizer, scaler, device):
     total_loss = 0
     all_preds = []
     all_labels = []
+    use_amp = device == "cuda"
 
     pbar = tqdm(loader, desc="Training")
     for batch in pbar:
@@ -53,14 +53,18 @@ def train_epoch(model, loader, criterion, optimizer, scaler, device):
 
         optimizer.zero_grad()
 
-        # Mixed precision
-        with autocast():
+        if use_amp:
+            with torch.amp.autocast("cuda"):
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
             outputs = model(images)
             loss = criterion(outputs, labels)
-
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+            loss.backward()
+            optimizer.step()
 
         total_loss += loss.item()
         probs = torch.sigmoid(outputs).detach().cpu().tolist()
@@ -81,12 +85,18 @@ def evaluate(model, loader, criterion, device):
     all_preds = []
     all_labels = []
 
+    use_amp = device == "cuda"
+
     with torch.no_grad():
         for batch in tqdm(loader, desc="Evaluating"):
             images = batch["image"].to(device)
             labels = batch["label"].to(device)
 
-            with autocast():
+            if use_amp:
+                with torch.amp.autocast("cuda"):
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
+            else:
                 outputs = model(images)
                 loss = criterion(outputs, labels)
 
@@ -114,7 +124,7 @@ def train(
         return
 
     # Device
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = get_device()
     print(f"Using device: {device}")
 
     if device == "cuda":
@@ -136,7 +146,7 @@ def train(
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.01)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
-    scaler = GradScaler()
+    scaler = torch.amp.GradScaler("cuda", enabled=(device == "cuda"))
 
     # Training loop
     best_f1 = 0

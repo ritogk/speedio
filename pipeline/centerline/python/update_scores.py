@@ -14,7 +14,7 @@ import torch
 from PIL import Image
 from tqdm import tqdm
 
-from config import DB_CONFIG, TMP_DIR, MODELS_DIR
+from config import DB_CONFIG, TMP_DIR, MODELS_DIR, get_device
 from dataset import get_transforms
 from model import CenterLineClassifier
 
@@ -83,7 +83,7 @@ def main():
 
     # 4. モデルロード
     print("\nLoading model...")
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = get_device()
     print(f"  Device: {device}")
 
     model_path = Path(args.model) if args.model else MODELS_DIR / "vit_centerline_best.pt"

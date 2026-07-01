@@ -7,7 +7,7 @@ from pathlib import Path
 import torch
 from PIL import Image
 
-from config import MODELS_DIR, MODEL_CONFIG
+from config import MODELS_DIR, MODEL_CONFIG, get_device
 from dataset import get_transforms
 from model import CenterLineClassifier
 
@@ -25,7 +25,7 @@ class CenterLineInference:
             model_path = MODELS_DIR / "vit_centerline_best.pt"
 
         if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = get_device()
 
         self.device = device
         self.transform = get_transforms(is_training=False)

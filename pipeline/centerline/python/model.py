@@ -47,8 +47,11 @@ class CenterLineClassifier(nn.Module):
         return probs
 
 
-def load_model(checkpoint_path: str, device: str = "cuda"):
+def load_model(checkpoint_path: str, device: str = None):
     """学習済みモデルをロード"""
+    from config import get_device
+    if device is None:
+        device = get_device()
     model = CenterLineClassifier(pretrained=False)
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.to(device)
