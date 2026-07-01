@@ -257,11 +257,11 @@ main{flex:1;position:relative;min-height:0}
   display:flex;align-items:center;justify-content:center;
 }
 .card-top{display:flex;flex-direction:column;gap:5px;margin-bottom:5px}
-.card-labels{display:flex;align-items:center;gap:7px;min-width:0}
+.card-labels{display:flex;align-items:center;gap:7px}
 .route-oval{
   font-size:10px;font-weight:500;color:var(--ink-soft);
   border:1px solid var(--contour);border-radius:999px;padding:1px 8px;white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;min-width:0;flex-shrink:1; /* 収まらない時は省略して記録トグル/サムネの下に潜らせない */
+  flex-shrink:0; /* 県・市は絶対に隠さない */
 }
 .card-top h3{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative}
 .card-top h3::after{
@@ -274,8 +274,8 @@ main{flex:1;position:relative;min-height:0}
 }
 .card-top h3:hover::after{display:block}
 .dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap;flex-shrink:0}
-/* 記録トグル（カード右上の丸アイコン。ON時は色で状態が読める） */
-.rec-btns{position:absolute;top:8px;right:102px;display:flex;gap:5px;z-index:2}
+/* 記録トグル（アクション行の右端。ON時は色で状態が読める） */
+.rec-btns{display:flex;gap:5px;margin-left:auto;align-items:center}
 .rec-btn{
   width:26px;height:26px;border-radius:50%;cursor:pointer;
   border:1px solid var(--line);background:var(--card);color:var(--contour);
@@ -287,7 +287,6 @@ main{flex:1;position:relative;min-height:0}
 .rec-btn:hover{border-color:var(--contour)}
 .rec-btn.on-fav{color:#F5A623;border-color:#F5A623;background:#FFF8EC}
 .rec-btn.on-visit{color:#9B30FF;border-color:#9B30FF;background:#F7EFFF}
-.card-labels{padding-right:62px} /* 右上の記録トグルとの重なり回避 */
 .meta{font-size:11px;color:var(--ink-soft);margin-bottom:7px}
 .meta b{color:var(--ink);font-weight:500}
 .bars{display:grid;grid-template-columns:58px 1fr 28px;gap:3px 8px;align-items:center}
