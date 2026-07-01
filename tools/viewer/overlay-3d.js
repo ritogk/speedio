@@ -925,28 +925,16 @@ App.open3DView = async function(t){
       gradBtn.classList.toggle("active", roadColorMode === "gradient");
     }
 
-    secBtn.onclick = ()=>{
-      roadColorMode = roadColorMode === "corner" ? "off" : "corner";
+    // セグメント選択（アクティブをもう一度押すと色分けオフ）
+    var setColorMode = (mode)=>{
+      roadColorMode = roadColorMode === mode ? "off" : mode;
       updateToggleBtnStates();
       updateRoadVisibility();
     };
-
-    if(eSecs){
-      toggleBtn.style.display = "";
-      toggleBtn.onclick = ()=>{
-        roadColorMode = roadColorMode === "elev" ? "corner" : "elev";
-        updateToggleBtnStates();
-        updateRoadVisibility();
-      };
-    }else{
-      toggleBtn.style.display = "none";
-    }
-
-    gradBtn.onclick = ()=>{
-      roadColorMode = roadColorMode === "gradient" ? "corner" : "gradient";
-      updateToggleBtnStates();
-      updateRoadVisibility();
-    };
+    secBtn.onclick = ()=>setColorMode("corner");
+    toggleBtn.style.display = eSecs ? "" : "none";
+    if(eSecs) toggleBtn.onclick = ()=>setColorMode("elev");
+    gradBtn.onclick = ()=>setColorMode("gradient");
 
     // トンネル/橋トグル（3Dオブジェクトの表示/非表示）
     var hasInfra = tunnelObjs.length > 0 || bridgeObjs.length > 0;
@@ -978,12 +966,8 @@ App.open3DView = async function(t){
 
     var printBtn = App.$("toggle3dPrint");
     var isAdmin3d = localStorage.getItem("touge.admin") === "true" || localStorage.getItem("speedio_admin") === "1";
-    if(isAdmin3d){
-      printBtn.style.display = "";
-      printBtn.onclick = ()=> App.openPrintView(t);
-    }else{
-      printBtn.style.display = "none";
-    }
+    App.$("group3dAdmin").style.display = isAdmin3d ? "" : "none";
+    if(isAdmin3d) printBtn.onclick = ()=> App.openPrintView(t);
 
     var paramsEl = App.$("params3d");
     if(isAdmin3d){

@@ -413,14 +413,16 @@ main{flex:1;position:relative;min-height:0}
 .o3d-btn:hover{background:rgba(255,255,255,.12)}
 .o3d-btn.active{background:var(--accent);color:#fff}
 .o3d-btn.active:hover{background:var(--accent)}
-/* チェック型トグル（表示レイヤー系）: 排他選択と区別するためチェックボックスで状態を明示 */
+/* チェック型トグル（表示レイヤー系）: 排他選択(accent)と区別し、状態はチェックボックスで示す */
 .o3d-check::before{
   content:"✓";display:inline-block;width:13px;height:13px;
   font-size:10px;line-height:12px;text-align:center;
   border:1.5px solid rgba(255,255,255,.5);border-radius:3.5px;
   color:transparent;margin-right:6px;vertical-align:-1.5px;
 }
-.o3d-check.active::before{color:#fff;border-color:#fff;background:rgba(255,255,255,.18)}
+.o3d-check.active{background:rgba(255,255,255,.14);color:#fff}
+.o3d-check.active:hover{background:rgba(255,255,255,.2)}
+.o3d-check.active::before{color:#101410;border-color:#fff;background:#fff}
 .overlay-3d-cam{
   position:absolute;bottom:48px;right:14px;z-index:10;
   display:flex;flex-direction:column;gap:4px;align-items:flex-end;

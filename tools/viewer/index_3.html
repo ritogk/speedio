@@ -327,19 +327,37 @@
       <div class="overlay-3d-info" id="info3d"></div>
     </div>
     <div class="overlay-3d-tools" id="tools3d">
-      <button class="overlay-3d-toggle active" id="toggle3dSection">セクション</button>
-      <button class="overlay-3d-toggle" id="toggle3dColor" style="display:none">登り/下り</button>
-      <button class="overlay-3d-toggle" id="toggle3dGradient">勾配</button>
-      <button class="overlay-3d-toggle" id="toggle3dInfra">トンネル/橋</button>
-      <button class="overlay-3d-toggle" id="toggle3dBuildings" style="display:none">🏠 建物</button>
-      <button class="overlay-3d-toggle" id="toggle3dPrint" style="display:none">🖨 印刷</button>
+      <div class="o3d-group">
+        <span class="o3d-group-label">色分け</span>
+        <div class="o3d-seg">
+          <button class="o3d-btn active" id="toggle3dSection">コーナー</button>
+          <button class="o3d-btn" id="toggle3dColor" style="display:none">登り/下り</button>
+          <button class="o3d-btn" id="toggle3dGradient">勾配</button>
+        </div>
+      </div>
+      <div class="o3d-group">
+        <span class="o3d-group-label">表示</span>
+        <div class="o3d-seg">
+          <button class="o3d-btn o3d-check" id="toggle3dInfra">トンネル/橋</button>
+          <button class="o3d-btn o3d-check" id="toggle3dBuildings" style="display:none">建物</button>
+        </div>
+      </div>
+      <div class="o3d-group" id="group3dAdmin" style="display:none">
+        <span class="o3d-group-label">管理</span>
+        <div class="o3d-seg">
+          <button class="o3d-btn" id="toggle3dPrint">印刷</button>
+        </div>
+      </div>
     </div>
     <div class="overlay-3d-legend" id="legend3d"></div>
     <div class="overlay-3d-params" id="params3d"></div>
     <div class="overlay-3d-cam">
-      <button class="overlay-3d-cam-btn" id="cam3dTop">真上</button>
-      <button class="overlay-3d-cam-btn" id="cam3dSide">側面</button>
-      <button class="overlay-3d-cam-btn" id="cam3dReset">リセット</button>
+      <span class="o3d-group-label">視点</span>
+      <div class="o3d-seg">
+        <button class="o3d-btn" id="cam3dTop">真上</button>
+        <button class="o3d-btn" id="cam3dSide">側面</button>
+        <button class="o3d-btn" id="cam3dReset">リセット</button>
+      </div>
     </div>
     <div class="overlay-3d-hint">1本指で回転 ・ 2本指で移動/ズーム</div>
   </div>
