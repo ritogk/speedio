@@ -205,13 +205,11 @@ App.initVisit = function(){
   });
   App.$("vcNo").addEventListener("click", function(){ App.closeVisitConfirm(); App.clearPendingVisit(); });
 
-  /* 走行中チップ: タップで対象峠へ移動、✕で走行中を解除 */
+  /* 走行中チップ: タップで対象峠へ移動、✕で確認ダイアログ（走行した/走行中/行ってない を任意のタイミングで選べる） */
   App.$("drivingChip").addEventListener("click", function(e){
     if(e.target.closest("#drivingChipClose")){
-      if(window.confirm("走行中をやめますか？（訪問は記録されません）")){
-        App.clearPendingVisit();
-        if(App.clearVisitLine) App.clearVisitLine();
-      }
+      lastDialogShownAt = 0; // ユーザー起点なのでクールダウンを無視して必ず開く
+      App.showVisitConfirm();
       return;
     }
     var t = App.pendingVisitTouge;

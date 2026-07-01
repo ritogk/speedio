@@ -118,13 +118,16 @@ main{flex:1;position:relative;min-height:0}
 @media (max-width:760px){
   .view-ctrl button{width:40px;height:40px;font-size:17px}
   .view-ctrl{gap:6px}
-  .view-ctrl,.legend{transition:bottom .28s cubic-bezier(.3,.9,.3,1),opacity .2s}
-  body:has(.panel.half) .view-ctrl{bottom:calc(44dvh + 14px)}
+  .view-ctrl,.legend,.driving-chip{transition:bottom .28s cubic-bezier(.3,.9,.3,1),opacity .2s}
+  body:has(.panel.half) .view-ctrl,
+  body:has(.panel.half) .driving-chip{bottom:calc(44dvh + 14px)}
   body:has(.panel.half) .legend{bottom:calc(44dvh + 10px)}
-  body:has(.panel.card-peek) .view-ctrl{bottom:calc(var(--card-peek-h,96)*1px + 14px)}
+  body:has(.panel.card-peek) .view-ctrl,
+  body:has(.panel.card-peek) .driving-chip{bottom:calc(var(--card-peek-h,96)*1px + 14px)}
   body:has(.panel.card-peek) .legend{bottom:calc(var(--card-peek-h,96)*1px + 10px)}
   body:has(.panel.full) .view-ctrl,
-  body:has(.panel.full) .legend{opacity:0;pointer-events:none}
+  body:has(.panel.full) .legend,
+  body:has(.panel.full) .driving-chip{opacity:0;pointer-events:none}
 }
 
 .legend{
@@ -684,16 +687,21 @@ main{flex:1;position:relative;min-height:0}
   position:absolute;top:56px;left:0;right:0;z-index:1240;
 }
 
-/* 走行中チップ（「行く」押下〜訪問確認までの状態表示。タップで対象峠へ、✕で解除） */
+/* 走行中チップ（「行く」押下〜訪問確認までの状態表示。タップで対象峠へ、✕で確認ダイアログ）
+   画面下部センターに置き、凡例と同様ボトムシートに追従して持ち上がる */
 .driving-chip{
   display:none;
-  position:absolute;top:10px;left:10px;z-index:1230;
+  position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(var(--sheet-peek) + 14px);z-index:1150;
   max-width:min(70vw,300px);height:34px;
   background:var(--paper);border-radius:999px;
   padding:5px 5px 5px 12px;
   box-shadow:0 1px 6px rgba(0,0,0,.16);
   align-items:center;gap:6px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;
+}
+@media (min-width:761px){
+  .driving-chip{bottom:24px}
 }
 .driving-chip.show{display:flex}
 .driving-chip .dc-ico{font-size:14px;flex-shrink:0}
@@ -709,9 +717,6 @@ main{flex:1;position:relative;min-height:0}
   -webkit-tap-highlight-color:transparent;
 }
 .driving-chip .dc-close:active{background:rgba(0,0,0,.14)}
-@media (max-width:760px){
-  .driving-chip{top:96px} /* 検索ピル+フィルターバーの下 */
-}
 .m-filter-bar{
   display:flex;
   padding:4px 10px;gap:5px;
