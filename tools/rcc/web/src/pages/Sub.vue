@@ -292,7 +292,7 @@ const handleChangeFilterGeometryClick = () => {
   handleGeometryMove(0)
 }
 
-useShortcuts({
+const { inputMode } = useShortcuts({
   handleCenterlineClick,
   handleRoadTypeClick,
   handleWideLaneClick,
@@ -453,6 +453,10 @@ useShortcuts({
           <span style="margin-left: 30px"
             >checked:<span style="color: red">{{ selectedGeometryCheckCount }}</span></span
           >
+          <span
+            class="mode-indicator"
+            :style="{ background: inputMode === 'lane' ? '#4caf50' : '#ff9800' }"
+          >{{ inputMode === 'lane' ? '車線幅 (a/s)' : '路肩 (a/s)' }}</span>
         </div>
       </div>
     </div>
@@ -593,5 +597,13 @@ useShortcuts({
 }
 .filter-label input {
   margin: 0;
+}
+.mode-indicator {
+  margin-left: 20px;
+  padding: 4px 12px;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  border-radius: 4px;
 }
 </style>

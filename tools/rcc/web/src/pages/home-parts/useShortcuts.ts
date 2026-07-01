@@ -1,8 +1,10 @@
 import { onKeyStroke } from '@vueuse/core'
-import type { Ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import {
   type RoadWidthType
 } from '@/pages/home-parts/useCsv'
+
+export type InputMode = 'lane' | 'shoulder'
 
 export const useShortcuts = (options: {
   handleCenterlineClick: (hasCenterLine: boolean, roadWidthType: RoadWidthType) => void,
@@ -31,6 +33,18 @@ export const useShortcuts = (options: {
     selectedBeforeRoadType
   } = options
 
+  const inputMode = ref<InputMode>('lane')
+
+  const advanceToNext = () => {
+    if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
+      handleGeometryMove(selectedGeometryIndex.value + 1)
+    } else {
+      handlePointMove(selectedGeometryPointIndex.value + 1)
+    }
+    selectedBeforeRoadType.value = selectedRoadType.value
+    selectedRoadType.value = 'ONE_LANE'
+  }
+
   // zキー: センターラインあり
   onKeyStroke(['z'], (e) => {
     handleCenterlineClick(true, 'TWO_LANE')
@@ -48,29 +62,22 @@ export const useShortcuts = (options: {
   })
   // \\キー: 進む（最後のポイントならジオメトリー切替）
   onKeyStroke(['\\'], (e) => {
-    // 最後のポイントの場合はジオメトリーを切り替える
-    if (selectedGeometryPointIndex.value + 1 === selectedGeometry.value.length) {
-      handleGeometryMove(selectedGeometryIndex.value + 1)
-    } else {
-      handlePointMove(selectedGeometryPointIndex.value + 1)
-    }
-    selectedBeforeRoadType.value = selectedRoadType.value
-    selectedRoadType.value = 'ONE_LANE'
+    advanceToNext()
+    inputMode.value = 'lane'
     e.preventDefault()
   })
   // /キー: 戻る（最初のポイントならジオメトリー切替）
   onKeyStroke(['/'], (e) => {
-    // 最初のポイントの場合はジオメトリーを切り替える
     if (selectedGeometryPointIndex.value === 0) {
       handleGeometryMove(selectedGeometryIndex.value - 1)
     } else {
       handlePointMove(selectedGeometryPointIndex.value - 1)
     }
+    inputMode.value = 'lane'
     e.preventDefault()
   })
-  // Endキー: 3つ進む（最後のポイントならジオメトリー切替）
+  // Endキー: 3つ進む
   onKeyStroke(['End'], (e) => {
-    // 最後のポイントの場合はジオメトリーを切り替える
     if (selectedGeometryPointIndex.value + 3 >= selectedGeometry.value.length) {
       handleGeometryMove(selectedGeometryIndex.value + 3)
     } else {
@@ -78,36 +85,44 @@ export const useShortcuts = (options: {
     }
     selectedBeforeRoadType.value = selectedRoadType.value
     selectedRoadType.value = 'ONE_LANE'
+    inputMode.value = 'lane'
     e.preventDefault()
   })
   // ]キー: ジオメトリ移動（進む）
   onKeyStroke([']'], (e) => {
     handleGeometryMove(selectedGeometryIndex.value + 1)
+    inputMode.value = 'lane'
     e.preventDefault()
   })
   // :キー: ジオメトリ移動（戻る）
   onKeyStroke([':'], (e) => {
     handleGeometryMove(selectedGeometryIndex.value - 1)
+    inputMode.value = 'lane'
     e.preventDefault()
   })
-  // aキー: 車線幅が十分
+  // a/sキー: モードに応じて車線幅 or 路肩を入力
   onKeyStroke(['a'], (e) => {
-    handleWideLaneClick(true)
+    if (inputMode.value === 'lane') {
+      handleWideLaneClick(true)
+      inputMode.value = 'shoulder'
+    } else {
+      handleShoulderClick(true)
+      advanceToNext()
+      inputMode.value = 'lane'
+    }
     e.preventDefault()
   })
-  // sキー: 車線幅が狭い
   onKeyStroke(['s'], (e) => {
-    handleWideLaneClick(false)
+    if (inputMode.value === 'lane') {
+      handleWideLaneClick(false)
+      inputMode.value = 'shoulder'
+    } else {
+      handleShoulderClick(false)
+      advanceToNext()
+      inputMode.value = 'lane'
+    }
     e.preventDefault()
   })
-  // qキー: 路肩あり
-  onKeyStroke(['q'], (e) => {
-    handleShoulderClick(true)
-    e.preventDefault()
-  })
-  // wキー: 路肩なし
-  onKeyStroke(['w'], (e) => {
-    handleShoulderClick(false)
-    e.preventDefault()
-  })
-} 
+
+  return { inputMode }
+}
