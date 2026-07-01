@@ -641,11 +641,15 @@ App.initialCamera = function(state){
         // 対象峠のカードを選択状態に（カメラは動かさないselectCardを使う。
         // シート状態はshowVisitLineのviewPadding計算に効くので先に確定させる）
         if(matched){
-          App.selectCard(matched.id, true);
           var vcOpen = App.$("visitConfirm").classList.contains("show");
           // 確認ダイアログ表示中はリストシートを上げない（ボトムサーフェスは一枚）。閉じた時にカード表示へ
-          if(vcOpen) App._vcPrevSheet = "card-peek";
-          else App.setSheet("card-peek");
+          if(vcOpen){
+            App.selectCard(matched.id, true);
+            App._vcPrevSheet = "card-peek";
+          } else if(!App.restoreCardPeek(matched.id)){
+            App.selectCard(matched.id, true);
+            App.setSheet("card-peek");
+          }
         }
         if(savedLatLng) App.showVisitLine(savedLatLng, navT);
         else App.flyToTouge(navT);

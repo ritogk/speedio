@@ -540,6 +540,21 @@ App.selectCard = function(id, scroll){
   App.highlightOnMap(id);
 };
 
+// card-peek状態を選択カードから再構築する。
+// setSheet("card-peek")はクラスを付けるだけで高さ(inline transform)を復元しないため、
+// peek等から戻す時はこれを使う。カードが仮想リスト未描画でも同期スクロールで描画してから測る。
+App.restoreCardPeek = function(id){
+  var target = id != null ? id : vsActiveId;
+  if(target == null) return false;
+  vsActiveId = target;
+  vsScrollToCard(target, false); // 同期スクロール+vsRenderでカードDOMを確定させる
+  var card = document.querySelector('.card[data-id="'+target+'"]');
+  if(!card) return false;
+  App.selectCard(target, false); // active付与+transform/--card-peek-h再計算+地図ハイライト
+  App.setSheet("card-peek");
+  return true;
+};
+
 // 選択中の峠を地図上で強調（白グロー + 非選択を強フェード）
 App.highlightOnMap = function(id){
   if(!App.mapReady) return;

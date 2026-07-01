@@ -154,7 +154,15 @@ App.showVisitConfirm = function(){
 
 App._vcPrevSheet = null;
 App._vcRestoreSheet = function(){
-  if(App._vcPrevSheet){ App.setSheet(App._vcPrevSheet); App._vcPrevSheet = null; }
+  if(!App._vcPrevSheet) return;
+  var state = App._vcPrevSheet;
+  App._vcPrevSheet = null;
+  if(state === "card-peek"){
+    // setSheetだけではcard-peek高さ(inline transform)が戻らないため、選択カードから再構築する
+    if(App.restoreCardPeek && App.restoreCardPeek()) return;
+    state = "peek"; // 選択カードがリストに無い場合は素のpeekへ
+  }
+  App.setSheet(state);
 };
 
 App.closeVisitConfirm = function(){
@@ -250,8 +258,11 @@ App.initVisit = function(){
     var matched = App.lastRanked.find(function(x){ return x.stableKey === App.pendingVisitKey; });
     if(matched){
       App.pendingVisitTouge = t = matched;
-      App.selectCard(matched.id, true);
-      App.setSheet("card-peek");
+      // カードが仮想リスト未描画でも確実にのぞかせる（selectCardは描画済みDOMにしか高さを設定できない）
+      if(!App.restoreCardPeek(matched.id)){
+        App.selectCard(matched.id, true);
+        App.setSheet("card-peek");
+      }
     }
     if(App.pendingVisitStartLatLng) App.showVisitLine(App.pendingVisitStartLatLng, t);
     else App.flyToTouge(t);
