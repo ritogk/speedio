@@ -27,3 +27,5 @@ pipeline/analyzer/shape
 
 *.png
 /cache/
+pipeline/roadwidth/output/
+test-results/
