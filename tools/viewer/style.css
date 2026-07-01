@@ -484,35 +484,7 @@ main{flex:1;position:relative;min-height:0}
   }
   .side-handle:hover{color:var(--ink);background:var(--paper-deep)}
   .panel.hidden-side .side-handle .chevron{transform:scaleX(-1)}
-
-  /* === モバイル操作モデルへの統合（承認済みPC UI） === */
-  .sheet-head{align-items:center}
-  .pc-search{display:flex}
-  /* 検索はオーバーレイに集約、並び替えチップ行は廃止 */
-  .panel .searchbox{display:none}
-  .panel .presets{display:none}
-  /* 並べ替えドロップダウン（モバイル部品を共用） */
-  .m-sort-select{display:flex;padding:6px 0 8px;border-bottom:1px dashed var(--contour);margin-bottom:8px}
-  /* 絞り込みチップは地図左上へ */
-  .m-filter-wrap{display:block;top:10px;left:10px;right:auto;width:auto}
-  .m-filter-bar{padding:0;overflow-x:visible}
-  .m-filter-wrap::before,.m-filter-wrap::after{display:none}
-  /* 検索/県選択オーバーレイは中央モーダルとして表示 */
-  .m-search-overlay{
-    top:56px;left:50%;right:auto;bottom:auto;
-    width:480px;max-height:min(72dvh,640px);
-    border-radius:14px;
-    transform:translateX(-50%);
-    animation:pc-so-in .18s ease-out;
-  }
-  .m-so-head{padding:10px 14px}
-  /* ボタン列はモバイル側の1セットに統一 */
-  .map-float{display:none}
-  .m-right-col{display:flex}
-  .m-right-col .m-terrain-btn,.m-right-col .m-locate-btn,
-  .m-right-col .m-voice-btn,.m-right-col .m-voice-help{display:flex}
 }
-@keyframes pc-so-in{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
 
 .print-overlay{
   position:fixed;inset:0;z-index:2500;
@@ -1090,3 +1062,34 @@ main{flex:1;position:relative;min-height:0}
   0%{opacity:.6}
   100%{opacity:1}
 }
+
+/* === PC: モバイル操作モデルへの統合（承認済みPC UI） ===
+   注意: 各モバイル部品の基底定義より後に置くこと（同一詳細度の後勝ちで上書きするため） */
+@media (min-width:761px){
+  .sheet-head{align-items:center}
+  .pc-search{display:flex}
+  /* 検索はオーバーレイに集約、並び替えチップ行は廃止 */
+  .panel .searchbox{display:none}
+  .panel .presets{display:none}
+  /* 並べ替えドロップダウン（モバイル部品を共用） */
+  .m-sort-select{display:flex;padding:6px 0 8px;border-bottom:1px dashed var(--contour);margin-bottom:8px}
+  /* 絞り込みチップは地図左上へ */
+  .m-filter-wrap{display:block;top:10px;left:10px;right:auto;width:auto}
+  .m-filter-bar{padding:0;overflow-x:visible}
+  .m-filter-wrap::before,.m-filter-wrap::after{display:none}
+  /* 検索/県選択オーバーレイは中央モーダルとして表示 */
+  .m-search-overlay{
+    top:56px;left:50%;right:auto;bottom:auto;
+    width:480px;max-height:min(72dvh,640px);
+    border-radius:14px;
+    transform:translateX(-50%);
+    animation:pc-so-in .18s ease-out;
+  }
+  .m-so-head{padding:10px 14px}
+  /* ボタン列はモバイル側の1セットに統一 */
+  .map-float{display:none}
+  .m-right-col{display:flex}
+  .m-right-col .m-terrain-btn,.m-right-col .m-locate-btn,
+  .m-right-col .m-voice-btn,.m-right-col .m-voice-help{display:flex}
+}
+@keyframes pc-so-in{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
