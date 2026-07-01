@@ -355,7 +355,6 @@ useShortcuts({
             -
           </span>
           <!-- センターライン -->
-          <div style="background: red" v-show="currentPoint?.roadWidthType == 'TWO_LANE'">--</div>
           <span>
             <button
               class="button-style"
@@ -458,8 +457,8 @@ useShortcuts({
       </div>
     </div>
     <div id="map" style="flex: 2; background-color: darkgray; height: 100vh">google_map_area</div>
-    <div style="flex: 2; background-color: white; display: flex; flex-direction: column; height: 100vh">
-      <table border="1" style="flex: 1; overflow-y: auto; display: block">
+    <div style="flex: 1.5; background-color: white; display: flex; flex-direction: column; height: 100vh">
+      <table border="1" style="flex: 1; overflow-y: auto; display: block; width: 100%">
         <thead>
           <tr style="background: lightblue">
             <th>DB</th>
@@ -488,10 +487,14 @@ useShortcuts({
             >
               {{ point.label }}
             </td>
-            <td>{{ point.latitude }}, {{ point.longitude }}</td>
+            <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ point.latitude.toFixed(4) }}, {{ point.longitude.toFixed(4) }}</td>
             <td
               :style="{
-                backgroundColor: point.roadWidthType !== 'TWO_LANE' ? 'gray' : 'transparent'
+                backgroundColor: point.roadWidthType !== 'TWO_LANE' ? 'gray' : 'transparent',
+                maxWidth: '60px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
               }"
             >
               {{ point.roadWidthType }}
