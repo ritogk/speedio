@@ -458,7 +458,7 @@ useShortcuts({
               {{ point.roadWidthType }}
             </td>
             <td>{{ point.hasCenterLine }}</td>
-            <td :style="{ backgroundColor: index === selectedGeometryPointIndex ? '#ffe0b2' : '' }">{{ point.lineClearance }}</td>
+            <td style="min-width: 40px" :style="{ backgroundColor: index === selectedGeometryPointIndex ? '#ffe0b2' : '' }">{{ point.lineClearance }}</td>
           </tr>
         </tbody>
       </table>
