@@ -312,8 +312,6 @@ main{flex:1;position:relative;min-height:0}
 .elev-ud{white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-size:9px}
 .elev-ud .u{color:#E8553D;font-weight:700}
 .elev-ud .d{color:#4A90D9;font-weight:700}
-/* 走行済み日付バッジ */
-.visit-badge{font-size:10px;font-weight:600;color:#9B30FF;background:#F7EFFF;border-radius:4px;padding:2px 7px}
 .card-actions{display:flex;gap:5px;margin-top:9px}
 .btn{
   font:inherit;font-size:11px;font-weight:500;cursor:pointer;

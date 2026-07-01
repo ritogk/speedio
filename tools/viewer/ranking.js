@@ -85,8 +85,6 @@ function cardHtml(t, rank, total){
   var sv = App.streetViewUrl(t.poly);
   var isV = t.stableKey && App.visitedKeys.has(t.stableKey);
   var isF = t.stableKey && App.favoriteKeys.has(t.stableKey);
-  var vd = isV ? App.visitedDates[t.stableKey] : null;
-  var vLabel = vd ? Number(vd.slice(5,7)) + "/" + Number(vd.slice(8,10)) + " 走行" : null;
   var strip = elevStripCss(t);
   var tn = (t.tunnelSections||[]).length, br = (t.bridgeSections||[]).length;
   return '\
@@ -99,7 +97,7 @@ function cardHtml(t, rank, total){
         <span class="bl">コーナー</span><div class="stacked"><span style="width:'+t.pctStrong+'%;background:var(--corner-strong)"></span><span style="width:'+t.pctMedium+'%;background:var(--corner-medium)"></span><span style="width:'+t.pctWeak+'%;background:var(--corner-weak)"></span><span style="width:'+t.pctStraight+'%;background:var(--straight)"></span></div><span class="bv">'+(t.pctStrong+t.pctMedium+t.pctWeak)+'%</span>\
         <span class="bl">起伏</span><div class="elev-strip"'+(strip?' style="background:'+strip+'"':'')+'></div><span class="bv elev-ud">'+(t.uphillCnt!=null?'<b class="u">↑'+t.uphillCnt+'</b><b class="d">↓'+(t.downhillCnt!=null?t.downhillCnt:0)+'</b>':'')+'</span>\
       </div>\
-      <div class="card-tags">'+(vLabel?'<span class="visit-badge">\u{1F697} '+vLabel+'</span>':'')+(tn>0?'<span class="card-tag">トンネル <b>'+tn+'</b></span>':'')+(br>0?'<span class="card-tag">\u{1F309} ×'+br+'</span>':'')+(t.buildingCnt!=null?(t.buildingCnt>0?'<span class="card-tag">\u{1F3E0} ×'+t.buildingCnt+'</span>':'<span class="card-tag">\u{1F3E0} なし</span>'):"")+'</div>\
+      <div class="card-tags">'+(tn>0?'<span class="card-tag">トンネル <b>'+tn+'</b></span>':'')+(br>0?'<span class="card-tag">\u{1F309} ×'+br+'</span>':'')+(t.buildingCnt!=null?(t.buildingCnt>0?'<span class="card-tag">\u{1F3E0} ×'+t.buildingCnt+'</span>':'<span class="card-tag">\u{1F3E0} なし</span>'):"")+'</div>\
       <div class="card-actions">\
         <button class="btn primary" data-act="nav" data-id="'+t.id+'">\u{1F697} 行く</button>\
         '+(sv?'<a class="btn" href="'+sv+'" target="_blank" rel="noopener" data-act="link">\u{1F441} 路面</a>':"")+'\
@@ -228,19 +226,6 @@ App.renderCards = function(){
           var vBtn = e.target.closest('[data-act="visit"]');
           var isV = App.visitedKeys.has(t.stableKey);
           vBtn.classList.toggle("on-visit", isV);
-          // 日付バッジも即時反映（次のrender待ちにしない）
-          var card = vBtn.closest(".card");
-          var badge = card.querySelector(".visit-badge");
-          if(!isV && badge) badge.remove();
-          if(isV && !badge){
-            var vd = App.visitedDates[t.stableKey];
-            if(vd){
-              var b = document.createElement("span");
-              b.className = "visit-badge";
-              b.textContent = "\u{1F697} " + Number(vd.slice(5,7)) + "/" + Number(vd.slice(8,10)) + " 走行";
-              card.querySelector(".card-tags").prepend(b);
-            }
-          }
         }
         return;
       }
