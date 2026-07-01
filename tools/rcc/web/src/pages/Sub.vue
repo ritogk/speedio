@@ -467,8 +467,8 @@ const { inputMode } = useShortcuts({
             <th>地理座標</th>
             <th>路面状態</th>
             <th>ｾﾝﾀｰﾗｲﾝ</th>
-            <th>車線幅</th>
-            <th>路肩</th>
+            <th :style="{ backgroundColor: inputMode === 'lane' ? '#c8e6c9' : '' }">車線幅</th>
+            <th :style="{ backgroundColor: inputMode === 'shoulder' ? '#ffe0b2' : '' }">路肩</th>
           </tr>
         </thead>
         <tbody>
@@ -502,8 +502,8 @@ const { inputMode } = useShortcuts({
               {{ point.roadWidthType }}
             </td>
             <td>{{ point.hasCenterLine }}</td>
-            <td>{{ point.hasWideLane }}</td>
-            <td>{{ point.hasShoulder }}</td>
+            <td :style="{ backgroundColor: inputMode === 'lane' ? '#e8f5e9' : '' }">{{ point.hasWideLane }}</td>
+            <td :style="{ backgroundColor: inputMode === 'shoulder' ? '#fff3e0' : '' }">{{ point.hasShoulder }}</td>
           </tr>
         </tbody>
       </table>
