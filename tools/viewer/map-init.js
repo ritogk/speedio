@@ -420,6 +420,61 @@ App.viewPadding = function(extra){
   return {top:e, left:e, right:e, bottom:e};
 };
 
+// pitch後がけでも全点が画面内に残るカメラを求める。
+// cameraForBoundsはpitch 0（真上視点）前提で計算するため、そのままpitchと
+// ズーム補正を後がけすると手前側の点が画面下に落ちる（特に横長のPC画面。
+// スマホ縦画面はviewPaddingの大きな余白が偶然吸収していた）。
+// 候補カメラをtransformのcloneに投影し、全点がsafePadding内に入るまでズームを引く。
+App.cameraForPointsPitched = function(lngLats, opts){
+  var b = new maplibregl.LngLatBounds();
+  lngLats.forEach(function(p){ b.extend(p); });
+  var cam;
+  try{
+    // maxZoom:undefined を渡すとmaplibreのデフォルトを上書きしてNaN例外になるため、指定時のみ含める
+    var boundsOpts = {bearing: opts.bearing || 0, padding: opts.padding};
+    if(opts.maxZoom != null) boundsOpts.maxZoom = opts.maxZoom;
+    cam = App.map.cameraForBounds(b, boundsOpts);
+  }catch(e){}
+  if(!cam) return null;
+  var zoom = cam.zoom + (opts.zoomBias || 0);
+  var result = {center: cam.center, bearing: opts.bearing || 0, pitch: opts.pitch || 0};
+  try{
+    result.zoom = maxZoomFittingPoints(result, lngLats, opts.safePadding || defaultSafePadding(), zoom, cam.zoom - 3);
+  }catch(e){
+    // transform.cloneは内部API。万一失敗しても従来の「補正なし後がけ」にフォールバックする
+    result.zoom = zoom;
+  }
+  return result;
+};
+
+var defaultSafePadding = function(){
+  return window.innerWidth <= 760 ? App.viewPadding(16) : {top:60, left:60, right:60, bottom:80};
+};
+
+// baseCam(center/bearing/pitch)を固定し、全点がsafe内に投影される最大ズームを探す。
+// terrain有効時はlocationPointにterrainを渡すと実投影(map.project)と一致する。
+// tr.elevationはcloneの値をそのまま使う（上書きすると実投影とズレる）。
+// 注意: 未ロード地点のDEMは標高0扱いになるため、カメラ移動前の予測は
+// 山間部で甘くなる。移動後idleで再判定して補正する前提。
+var maxZoomFittingPoints = function(baseCam, lngLats, safe, startZoom, minZoom){
+  var tr = App.map.transform.clone();
+  var terrain = App.map.terrain;
+  tr.center = maplibregl.LngLat.convert(baseCam.center);
+  tr.bearing = baseCam.bearing;
+  tr.pitch = baseCam.pitch;
+  var fits = function(z){
+    tr.zoom = z;
+    return lngLats.every(function(p){
+      var pt = tr.locationPoint(maplibregl.LngLat.convert(p), terrain);
+      return pt.x >= safe.left && pt.x <= tr.width - safe.right &&
+             pt.y >= safe.top && pt.y <= tr.height - safe.bottom;
+    });
+  };
+  var z = startZoom;
+  while(z > minZoom && !fits(z)) z -= 0.2;
+  return z;
+};
+
 App.fitBoundsZoomed = function(b, opts){
   try{
     var cam = App.map.cameraForBounds(b, opts);
@@ -516,29 +571,36 @@ App.updateVisitLine = function(userLatLng, t){
 };
 
 // データ更新 + カメラ移動（durationで補正時の短縮に対応）
+var visitCamSeq = 0;
 App.showVisitLine = function(userLatLng, t, duration){
   var bearing = App.updateVisitLine(userLatLng, t);
   var st = t.poly[0];
   var pullback = 0.03;
   var behindLat = userLatLng[0] - pullback * (st[0] - userLatLng[0]);
   var behindLng = userLatLng[1] - pullback * (st[1] - userLatLng[1]);
-  var b = new maplibregl.LngLatBounds();
-  b.extend([behindLng, behindLat]);
-  b.extend([userLatLng[1], userLatLng[0]]);
-  b.extend([st[1], st[0]]);
   App.cancelOrbit();
-  var cam = App.map.cameraForBounds(b, {
+  var pts = [[behindLng, behindLat], [userLatLng[1], userLatLng[0]], [st[1], st[0]]];
+  var cam = App.cameraForPointsPitched(pts, {
     padding: Object.assign(App.viewPadding(20), {bottom: App.viewPadding(20).bottom + 120}),
     bearing: bearing,
-    pitch: 65
+    pitch: 65,
+    zoomBias: 1.6
   });
+  var seq = ++visitCamSeq;
   setTimeout(function(){
-    App.map.flyTo({
-      center: cam ? cam.center : [userLatLng[1], userLatLng[0]],
-      zoom: cam ? cam.zoom + 1.6 : 13.5,
-      pitch: 65,
-      bearing: bearing,
-      duration: duration || 1400
+    App.map.flyTo(cam
+      ? {...cam, duration: duration || 1400}
+      : {center:[userLatLng[1], userLatLng[0]], zoom:13.5, pitch:65, bearing:bearing, duration:duration || 1400});
+    // 移動前の判定は未ロード地点のDEM標高を0とみなすため、山間部では両端が
+    // まだ画面外に残ることがある。タイルが揃うidle後に再判定して一度だけ補正する。
+    App.map.once("idle", function(){
+      if(seq !== visitCamSeq) return;
+      try{
+        var live = {center: App.map.getCenter(), bearing: App.map.getBearing(), pitch: App.map.getPitch()};
+        var cur = App.map.getZoom();
+        var z = maxZoomFittingPoints(live, pts, defaultSafePadding(), cur, cur - 3);
+        if(z < cur - 0.05) App.map.easeTo({zoom: z, duration: 500});
+      }catch(e){}
     });
   }, 100);
 };
