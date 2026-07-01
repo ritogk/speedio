@@ -563,7 +563,7 @@ App.revealAndSelect = function(t){
   var card = document.querySelector('.card[data-id="'+t.id+'"]');
   if(card && App.isMobile()){
     var panel = App.$("panel");
-    var h = App.$("sheetHandle").offsetHeight + card.offsetHeight + 14;
+    var h = App.$("sheetHandle").offsetHeight + card.offsetHeight + 6; // 余白はカード間ギャップ(8px)未満に抑え、次のカードの頭を覗かせない
     panel.style.transform = "translateY(calc(100% - "+h+"px))";
     document.documentElement.style.setProperty("--card-peek-h", h);
   }
@@ -579,7 +579,7 @@ App.selectCard = function(id, scroll){
   if(card) card.classList.add("active");
   if(card && App.isMobile()){
     var panel = App.$("panel");
-    var h = App.$("sheetHandle").offsetHeight + card.offsetHeight + 14;
+    var h = App.$("sheetHandle").offsetHeight + card.offsetHeight + 6; // 余白はカード間ギャップ(8px)未満に抑え、次のカードの頭を覗かせない
     panel.style.transform = "translateY(calc(100% - "+h+"px))";
     document.documentElement.style.setProperty("--card-peek-h", h);
   }
