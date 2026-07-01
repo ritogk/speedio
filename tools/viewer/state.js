@@ -126,6 +126,7 @@ window.App = {
   },
   todayStr: new Date().toISOString().slice(0, 10),
   VISIT_DELAY_KEY: "touge.visitDelay",
+  VISIT_IMMEDIATE_KEY: "touge.visitImmediate",
   getVisitDelayMs: function(){ return (parseInt(localStorage.getItem(App.VISIT_DELAY_KEY),10) || 60) * 1000; },
 
   // --- Toast / Loading ---

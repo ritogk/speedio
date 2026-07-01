@@ -144,6 +144,8 @@ var lastDialogShownAt = 0;
 
 App._checkVisitByLocation = function(){
   if(!App.pendingVisitKey || !App.pendingVisitTs) return;
+  // 管理者パネル「即時表示」ON時は移動チェックをスキップして即ダイアログ（デバッグ用）
+  if(localStorage.getItem(App.VISIT_IMMEDIATE_KEY) === "1"){ App.showVisitConfirm(); return; }
   var start = App.pendingVisitStartLatLng;
   var elapsed = Date.now() - App.pendingVisitTs;
   if(!start || !navigator.geolocation){

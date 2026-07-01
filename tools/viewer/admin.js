@@ -18,6 +18,12 @@ App.initAdmin = function() {
     e.target.value = v;
     localStorage.setItem(App.VISIT_DELAY_KEY, v);
   });
+  // 訪問確認ダイアログを移動チェックなしで即表示する（デバッグ用）
+  App.$("visitImmediateChk").checked = localStorage.getItem(App.VISIT_IMMEDIATE_KEY) === "1";
+  App.$("visitImmediateChk").addEventListener("change", e=>{
+    if(e.target.checked) localStorage.setItem(App.VISIT_IMMEDIATE_KEY, "1");
+    else localStorage.removeItem(App.VISIT_IMMEDIATE_KEY);
+  });
   const toggleAdmin = ()=> wp.classList.toggle("collapsed");
   App.$("adminToggleBtn").addEventListener("click", toggleAdmin);
   App.$("wpClose").addEventListener("click", ()=> wp.classList.add("collapsed"));
