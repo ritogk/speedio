@@ -104,10 +104,10 @@ function cardHtml(t, rank, total){
         <button class="btn primary" data-act="nav" data-id="'+t.id+'">\u{1F697} 行く</button>\
         '+(sv?'<a class="btn" href="'+sv+'" target="_blank" rel="noopener" data-act="link">\u{1F441} 路面</a>':"")+'\
         <button class="btn" data-act="3d"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 9l10 6 10-6-10-6z"/><path d="M2 15l10 6 10-6"/><path d="M2 9v6"/><path d="M22 9v6"/></svg> 3D</button>\
-        <span class="rec-btns">\
-          <button class="rec-btn'+(isF?' on-fav':'')+'" data-act="fav" aria-label="お気に入り">'+(isF?'★':'☆')+'</button>\
-          <button class="rec-btn'+(isV?' on-visit':'')+'" data-act="visit" aria-label="走行済">\u{1F697}</button>\
-        </span>\
+      </div>\
+      <div class="rec-btns">\
+        <button class="rec-btn'+(isF?' on-fav':'')+'" data-act="fav" aria-label="お気に入り">'+(isF?'★':'☆')+'</button>\
+        <button class="rec-btn'+(isV?' on-visit':'')+'" data-act="visit" aria-label="走行済">\u{1F697}</button>\
       </div>\
       <div class="thumb" data-tid="'+t.id+'"><span class="thumb-spin"></span></div>\
     </article>';

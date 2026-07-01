@@ -274,8 +274,9 @@ main{flex:1;position:relative;min-height:0}
 }
 .card-top h3:hover::after{display:block}
 .dist-tag{font-size:11px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap;flex-shrink:0}
-/* 記録トグル（アクション行の右端。ON時は色で状態が読める） */
-.rec-btns{display:flex;gap:5px;margin-left:auto;align-items:center}
+/* 記録トグル（サムネ列の右上。サムネの縦を少し狭めた分の領域に置く＝カード高さに影響しない） */
+.rec-btns{position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:2}
+#cards .card .thumb{top:46px} /* トグル分だけサムネを下げる（ダイアログのカードは対象外） */
 .rec-btn{
   width:26px;height:26px;border-radius:50%;cursor:pointer;
   border:1px solid var(--line);background:var(--card);color:var(--contour);
