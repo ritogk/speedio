@@ -422,6 +422,14 @@ function processThumbQueue(){
   }
 }
 
+// 外部（訪問確認ダイアログ等）から同じキャッシュでルートサムネを取得する
+App.getRouteThumb = function(t, w, h){
+  if(thumbCache[t.id] === undefined){
+    thumbCache[t.id] = renderRouteThumb(t, w, h).catch(function(){ return null; });
+  }
+  return Promise.resolve(thumbCache[t.id]);
+};
+
 function fillThumb(el){
   var tid = Number(el.dataset.tid);
   var t = App.lastRanked.find(function(x){ return x.id === tid; });

@@ -117,6 +117,7 @@ App.visitConfirmCardHtml = function(t){
       '<span class="bl">標高</span><div class="track"><div class="fill u" style="width:' + Math.round(t.updown * 100) + '%"></div></div><span class="bv">' + Math.round(t.updown * 100) + '</span>' +
     '</div>' +
     '<div class="card-tags">' + (t.unevennessCount != null ? (t.unevennessCount > 0 ? '<span class="card-tag">' + App.bumpIcons(t.unevennessCount) + '</span>' : '<span class="card-tag">' + App.BUMP_SVG + ' なし</span>') : "") + (t.buildingCnt != null ? (t.buildingCnt > 0 ? '<span class="card-tag">🏠 ×' + t.buildingCnt + '</span>' : '<span class="card-tag">🏠 なし</span>') : "") + '</div>' +
+    '<div class="thumb"><span class="thumb-spin"></span></div>' +
   '</article>';
 };
 
@@ -129,6 +130,15 @@ App.showVisitConfirm = function(){
   App.$("vcCard").innerHTML = App.visitConfirmCardHtml(App.pendingVisitTouge);
   App.$("vcTitle").textContent = "この峠に行きましたか？";
   App.$("visitConfirm").classList.add("show");
+  // ルートサムネ（一覧カードと同じキャッシュ）を右側に表示
+  var thumbEl = App.$("vcCard").querySelector(".thumb");
+  if(thumbEl && App.getRouteThumb){
+    App.getRouteThumb(App.pendingVisitTouge, (thumbEl.clientWidth || 84) * 2, (thumbEl.clientHeight || 116) * 2).then(function(url){
+      if(!thumbEl.isConnected) return;
+      if(url) thumbEl.innerHTML = '<img src="' + url + '" alt="コース形状">';
+      else thumbEl.textContent = "—";
+    });
+  }
 };
 
 App.closeVisitConfirm = function(){

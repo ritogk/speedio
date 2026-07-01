@@ -622,7 +622,7 @@ main{flex:1;position:relative;min-height:0}
 }
 .visit-confirm h3{font-size:15px;font-weight:700;margin-bottom:12px}
 .vc-card{text-align:left;margin-bottom:16px}
-.vc-card .card{cursor:default;margin-bottom:0}
+.vc-card .card{cursor:default;margin-bottom:0;padding-right:104px} /* 右側にルートサムネ分の余白 */
 .vc-card .card:hover{border-color:var(--line)}
 .visit-confirm-btns{display:flex;flex-direction:column;gap:8px}
 .visit-confirm-btn{
