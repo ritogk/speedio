@@ -640,7 +640,13 @@ App.initialCamera = function(state){
       action = function(){
         // 対象峠のカードを選択状態に（カメラは動かさないselectCardを使う。
         // シート状態はshowVisitLineのviewPadding計算に効くので先に確定させる）
-        if(matched){ App.selectCard(matched.id, true); App.setSheet("card-peek"); }
+        if(matched){
+          App.selectCard(matched.id, true);
+          var vcOpen = App.$("visitConfirm").classList.contains("show");
+          // 確認ダイアログ表示中はリストシートを上げない（ボトムサーフェスは一枚）。閉じた時にカード表示へ
+          if(vcOpen) App._vcPrevSheet = "card-peek";
+          else App.setSheet("card-peek");
+        }
         if(savedLatLng) App.showVisitLine(savedLatLng, navT);
         else App.flyToTouge(navT);
         // 高速設定（OSキャッシュ許可+Wi-Fi測位）で現在地を取り直し、線データだけ補正。

@@ -688,6 +688,10 @@ main{flex:1;position:relative;min-height:0}
   border:none;background:transparent;color:var(--ink-soft);padding:8px;
 }
 .visit-confirm-cancel:hover{color:var(--ink)}
+/* モバイルでは峠リストのボトムシートと同じ全幅にして「一枚のシート」に見せる */
+@media (max-width:760px){
+  .visit-confirm{max-width:none}
+}
 
 .admin-panel{
   position:absolute;right:10px;bottom:calc(var(--sheet-peek) + 14px);z-index:1100;

@@ -131,6 +131,11 @@ App.showVisitConfirm = function(){
   App.$("vcCard").innerHTML = App.visitConfirmCardHtml(App.pendingVisitTouge);
   App.$("vcTitle").textContent = "この峠に行きましたか？";
   App.$("visitConfirm").classList.add("show");
+  // ボトムサーフェスは常に一枚: 表示中は峠リストのシートをpeekまで下げ、閉じた時に元へ戻す
+  if(App.sheetState && App.sheetState !== "peek"){
+    App._vcPrevSheet = App.sheetState;
+    App.setSheet("peek");
+  }
   // シートの実高さが確定した後にカメラを引き直し、現在地・破線をシート上の見える領域に収める
   if(App.pendingVisitStartLatLng && App.showVisitLine){
     var startLL = App.pendingVisitStartLatLng, vcT = App.pendingVisitTouge;
@@ -147,9 +152,15 @@ App.showVisitConfirm = function(){
   }
 };
 
+App._vcPrevSheet = null;
+App._vcRestoreSheet = function(){
+  if(App._vcPrevSheet){ App.setSheet(App._vcPrevSheet); App._vcPrevSheet = null; }
+};
+
 App.closeVisitConfirm = function(){
   App.$("visitConfirm").classList.remove("show");
   App.clearVisitLine();
+  App._vcRestoreSheet();
 };
 
 /* ── location-based visit check ── */
@@ -203,6 +214,7 @@ App.initVisit = function(){
     e.stopPropagation();
     App.$("visitConfirm").classList.remove("show");
     App.commitDriving();
+    App._vcRestoreSheet();
     // シートが消えて下が空くので、走行ビューを本来の構図に戻す
     if(App.pendingVisitStartLatLng && App.pendingVisitTouge){
       App.showVisitLine(App.pendingVisitStartLatLng, App.pendingVisitTouge, 700);
