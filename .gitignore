@@ -29,3 +29,6 @@ pipeline/analyzer/shape
 /cache/
 pipeline/roadwidth/output/
 test-results/
+pipeline/roadwidth/models/
+pipeline/roadwidth/output_smooth/
+pipeline/roadwidth/output_surface/

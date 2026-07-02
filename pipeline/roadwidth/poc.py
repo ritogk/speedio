@@ -62,6 +62,8 @@ def main():
             rec[f"ipm_width_{tag}"] = sec["paved_width"]
             rec[f"ipm_margin_l_{tag}"] = sec["margin_left"]
             rec[f"ipm_margin_r_{tag}"] = sec["margin_right"]
+            rec[f"lane_width_{tag}"] = sec["lane_width"]
+            rec[f"n_markings_{tag}"] = sec["n_markings"]
         results.append(rec)
         print(f"[{i+1}/{len(rows)}] {row['road_width_type']:18s} {row['road_margin'] or '-':6s} "
               f"D_w5={rec.get('width_5m')} I_w5={rec.get('ipm_width_5m')} I_w8={rec.get('ipm_width_8m')} "

@@ -182,11 +182,13 @@ def measure_cross_section(coords_st: np.ndarray, labels: np.ndarray, heights: np
     }
 
 
-def ipm_cross_section(seg: np.ndarray, dist: float):
+def ipm_cross_section(seg: np.ndarray, dist: float, height_map: np.ndarray = None):
     """純IPM計測: 平面仮定(カメラ高2.45m, pitch0)で前方dist[m]の断面を測る
 
     深度モデルを使わず、既知のカメラジオメトリのみで計算する。
     舗装幅 + 左右の平坦余地(sidewalk/terrain等)幅を返す。
+    height_map(深度由来の地面からの高さ)を渡すと、法面など地面から外れた
+    「余地」を除外できる。
     """
     v = int(round(CY + FY * CAM_HEIGHT / dist))
     if v >= seg.shape[0] - 2:
@@ -197,6 +199,10 @@ def ipm_cross_section(seg: np.ndarray, dist: float):
 
     is_road = np.isin(rows, list(ROAD_IDS)).sum(axis=0) >= 2
     is_margin = np.isin(rows, list(MARGIN_IDS)).sum(axis=0) >= 2
+    if height_map is not None:
+        # 地面平面から±0.5m以上外れる「余地」は法面・土手なので除外
+        h_row = np.median(height_map[v - 1:v + 2], axis=0)
+        is_margin &= np.abs(h_row) < 0.5
     if is_road.sum() < 10:
         return None
 
@@ -236,6 +242,30 @@ def ipm_cross_section(seg: np.ndarray, dist: float):
             u += step
         return min(CLEARANCE_CAP, n * m_per_px)
 
+    # 区画線クラスタから自車線の幅を求める
+    # 白線(Lane Marking)の連続塊の中心位置[m]を列挙し、自車(t=0)の左右で最も近い線を車線境界とする。
+    # 線がない側は舗装端を境界にする(=区画線なし道路では車線幅=舗装幅)
+    is_marking = np.isin(rows, [23, 24]).sum(axis=0) >= 2
+    clusters = []
+    run_start = None
+    for u in range(left, right + 1):
+        if is_marking[u]:
+            if run_start is None:
+                run_start = u
+        elif run_start is not None:
+            clusters.append(((run_start + u - 1) / 2 - CX) * m_per_px)
+            run_start = None
+    if run_start is not None:
+        clusters.append(((run_start + right) / 2 - CX) * m_per_px)
+    t_left = (left - CX) * m_per_px
+    t_right = (right - CX) * m_per_px
+    # 自車の直下・真横(±0.9m=車幅の半分程度)の白線は境界として扱わない
+    left_marks = [c for c in clusters if c < -0.9]
+    right_marks = [c for c in clusters if c > 0.9]
+    lane_left = max(left_marks) if left_marks else t_left
+    lane_right = min(right_marks) if right_marks else t_right
+    lane_width = lane_right - lane_left
+
     return {
         "s": dist,
         "paved_width": round(float(paved_width), 2),
@@ -244,10 +274,34 @@ def ipm_cross_section(seg: np.ndarray, dist: float):
         "v": v,
         "margin_left": round(margin_run(left, -1), 2),
         "margin_right": round(margin_run(right, 1), 2),
+        "lane_width": round(float(lane_width), 2),
+        "lane_u_left": int(lane_left / m_per_px + CX),
+        "lane_u_right": int(lane_right / m_per_px + CX),
+        "n_markings": len(clusters),
     }
 
 
-def measure_image(img: Image.Image, models, device: str, sections=(5.0, 8.0)):
+def summarize_sections(ipm_sections: list) -> dict:
+    """複数断面の中央値サマリ。1断面だけのノイズ(破線切れ目・影・汚れ)を吸収する"""
+    import statistics
+    if not ipm_sections:
+        return {}
+    paved = [s["paved_width"] for s in ipm_sections]
+    # 車線幅: 白線で区切れた断面のみ採用(区切れなかった断面は舗装幅に化けるため)
+    lanes = [s["lane_width"] for s in ipm_sections
+             if s["n_markings"] > 0 and s["lane_width"] < s["paved_width"] - 0.3]
+    return {
+        "paved_width_med": round(statistics.median(paved), 2),
+        "paved_width_spread": round(max(paved) - min(paved), 2),
+        "lane_width_med": round(statistics.median(lanes), 2) if len(lanes) >= 2 else None,
+        "margin_left_med": round(statistics.median([s["margin_left"] for s in ipm_sections]), 2),
+        "margin_right_med": round(statistics.median([s["margin_right"] for s in ipm_sections]), 2),
+        "n_sections": len(ipm_sections),
+    }
+
+
+def measure_image(img: Image.Image, models, device: str,
+                  sections=(4.0, 5.0, 6.5, 8.0, 10.0, 12.0)):
     """1画像の計測。結果dictと可視化用中間データを返す"""
     seg_proc, seg_model, dep_proc, dep_model = models
     seg = segment(img, seg_proc, seg_model, device)
@@ -291,9 +345,11 @@ def measure_image(img: Image.Image, models, device: str, sections=(5.0, 8.0)):
         if r is not None:
             results.append(r)
 
+    # 深度由来の「地面からの高さ」マップ。IPMの余地計測から法面・土手を除外するのに使う
+    height_map = h_coord.reshape(seg.shape)
     ipm_results = []
     for s in sections:
-        r = ipm_cross_section(seg, s)
+        r = ipm_cross_section(seg, s, height_map)
         if r is not None:
             ipm_results.append(r)
 
@@ -303,6 +359,7 @@ def measure_image(img: Image.Image, models, device: str, sections=(5.0, 8.0)):
         "inlier_ratio": round(float(inlier_ratio), 3),
         "sections": results,
         "ipm_sections": ipm_results,
+        "summary": summarize_sections(ipm_results),
     }
     viz = {"seg": seg, "n": n, "d": d_scaled, "f": f, "lat": lat}
     return meta, viz
@@ -352,10 +409,11 @@ def render_overlay(img: Image.Image, meta, viz) -> Image.Image:
         draw.rounded_rectangle([x0, y0, x0 + w + 2 * pad, y0 + h + 2 * pad], radius=6, fill=bg)
         draw.text((cx - w / 2 - box[0], cy - h / 2 - box[1]), text, fill=fg, font=font)
 
-    for sec in meta.get("ipm_sections", []):
+    for i, sec in enumerate(meta.get("ipm_sections", [])):
         v = sec["v"]
         m_per_px = sec["s"] / FX
         ul, ur = sec["u_left"], sec["u_right"]
+        badge_y = v - 32 if i % 2 == 0 else v + 34  # 断面が多いときのバッジ重なり回避
 
         # 余地(オレンジ): 舗装端の外側
         for edge, margin, step in [(ul, sec["margin_left"], -1), (ur, sec["margin_right"], 1)]:
@@ -370,7 +428,16 @@ def render_overlay(img: Image.Image, meta, viz) -> Image.Image:
         draw.line([(ul, v), (ur, v)], fill=CYAN, width=6)
         for u in (ul, ur):
             draw.line([(u, v - 16), (u, v + 16)], fill=CYAN, width=5)
-        badge((ul + ur) / 2, v - 32, f"{sec['paved_width']}m", font_big, CYAN)
+        badge((ul + ur) / 2, badge_y, f"{sec['paved_width']}m", font_big, CYAN)
+
+        # 自車線(緑): 区画線が検出できた場合のみ
+        GREEN = (80, 255, 120, 255)
+        if sec.get("n_markings", 0) > 0 and sec["lane_width"] < sec["paved_width"] - 0.3:
+            ll, lr = sec["lane_u_left"], sec["lane_u_right"]
+            draw.line([(ll, v - 14), (lr, v - 14)], fill=GREEN, width=4)
+            for u in (ll, lr):
+                draw.line([(u, v - 24), (u, v - 4)], fill=GREEN, width=4)
+            badge((ll + lr) / 2, v + 32, f"車線{sec['lane_width']}m", font_small, GREEN)
 
         # 前方距離ラベル(左端)
         badge(70, v, f"前方{sec['s']:.0f}m", font_small, (255, 255, 255, 255))
